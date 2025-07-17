@@ -2,87 +2,13 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <title>لوحة تحكم الفعاليات - Hormez Security</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      background: #111;
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      padding: 2rem;
-      text-align: center;
-    }
-    h1 {
-      color: gold;
-    }
-    .login {
-      max-width: 300px;
-      margin: auto;
-      margin-top: 50px;
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      font-size: 16px;
-    }
-    .dashboard {
-      display: none;
-      margin-top: 30px;
-    }
-    .event-title {
-      font-size: 24px;
-      margin-bottom: 20px;
-      color: gold;
-    }
-    .stat {
-      background: #222;
-      border: 2px solid #333;
-      margin: 1rem auto;
-      padding: 1.5rem;
-      border-radius: 12px;
-      max-width: 400px;
-    }
-    .label { font-size: 1.1rem; margin-bottom: 0.5rem; }
-    .value { font-size: 2rem; font-weight: bold; }
-  </style>
-</head>
-<body>
-  <h1>Hormez Security - لوحة تحكم الفعاليات</h1>
-
-  <div class="login">
-    <input type="text" id="eventName" placeholder="اسم الفعالية">
-    <input type="password" id="password" placeholder="كلمة المرور">
-    <button onclick="verifyAccess()">دخول</button>
-    <div id="loginStatus"></div>
-  </div>
-
-  <div class="dashboard" id="dashboard">
-    <div class="event-title" id="eventTitle"></div>
-    <div class="stat">
-      <div class="label">إجمالي الدعوات</div>
-      <div class="value" id="total">-</div>
-    </div>
-    <div class="stat">
-      <div class="label">تم الحضور</div>
-      <div class="value" id="scanned">-</div>
-    </div>
-    <div class="stat">
-      <div class="label">المتبقية</div>
-      <div class="value" id="pending">-</div>
-    </div>
-    <div class="stat">
-      <div class="label">نسبة الحضور</div>
-      <div class="value" id="percentage">-</div>
-    </div>
-  </div>
-
+  <title>Hormez-Dashboard | لوحة تحكم الفعاليات</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY", // سيتم استبداله من ملف خارجي لاحقًا
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
       authDomain: "hormez-inv.firebaseapp.com",
       projectId: "hormez-inv",
       storageBucket: "hormez-inv.appspot.com",
@@ -93,42 +19,87 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const eventPasswords = {
-      "زفاف خالد": "1234",
-      "معرض أبوظبي": "5678"
-    };
+    const passwordPrompt = prompt("🔐 أدخل كلمة المرور للفعالية:");
 
-    window.verifyAccess = async function() {
-      const event = document.getElementById("eventName").value.trim();
-      const pass = document.getElementById("password").value.trim();
-      const status = document.getElementById("loginStatus");
-
-      if (eventPasswords[event] === pass) {
-        status.textContent = "جارٍ تحميل البيانات...";
-        await loadStats(event);
-        document.querySelector(".login").style.display = "none";
-        document.getElementById("dashboard").style.display = "block";
-        document.getElementById("eventTitle").textContent = `الفعالية: ${event}`;
-      } else {
-        status.textContent = "❌ اسم الفعالية أو كلمة المرور غير صحيحة";
-        status.style.color = "red";
-      }
-    }
-
-    async function loadStats(eventName) {
+    async function loadDashboard() {
       const snapshot = await getDocs(collection(db, "invites"));
-      const data = snapshot.docs.map(doc => doc.data()).filter(d => d.eventName === eventName);
+      const rows = snapshot.docs.map(doc => doc.data());
+      const filtered = rows.filter(r => r.eventName === passwordPrompt);
 
-      const total = data.length;
-      const scanned = data.filter(r => r.status === "yes").length;
-      const pending = total - scanned;
-      const percentage = total > 0 ? ((scanned / total) * 100).toFixed(1) : 0;
+      const total = filtered.length;
+      const accepted = filtered.filter(r => r.status === "yes").length;
+      const rejected = filtered.filter(r => r.status === "no").length;
+      const pending = filtered.filter(r => r.status === "pending").length;
 
+      const attendanceRate = total > 0 ? Math.round((accepted / total) * 100) : 0;
+
+      document.getElementById("event-name").textContent = passwordPrompt;
       document.getElementById("total").textContent = total;
-      document.getElementById("scanned").textContent = scanned;
+      document.getElementById("accepted").textContent = accepted;
+      document.getElementById("rejected").textContent = rejected;
       document.getElementById("pending").textContent = pending;
-      document.getElementById("percentage").textContent = `${percentage}%`;
+      document.getElementById("rate").textContent = attendanceRate + "%";
+
+      const list = document.getElementById("scanned-list");
+      list.innerHTML = "";
+      filtered.filter(r => r.status === "yes").forEach(r => {
+        const li = document.createElement("li");
+        li.textContent = r.code;
+        list.appendChild(li);
+      });
     }
+
+    loadDashboard();
   </script>
+  <style>
+    body {
+      background: #0f0f0f;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    h2 { color: gold; }
+    .box {
+      display: inline-block;
+      background: #1f1f1f;
+      border: 2px solid gold;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 10px;
+      min-width: 160px;
+    }
+    .value { font-size: 28px; font-weight: bold; margin-top: 10px; color: gold; }
+    ul { list-style: none; padding: 0; }
+    li { color: #aaa; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h2>Hormez Security - لوحة تحكم الفعاليات</h2>
+  <h3 id="event-name"></h3>
+
+  <div class="box">
+    <div>📋 إجمالي الدعوات</div>
+    <div class="value" id="total">-</div>
+  </div>
+  <div class="box">
+    <div>✅ تم الحضور</div>
+    <div class="value" id="accepted">-</div>
+  </div>
+  <div class="box">
+    <div>❌ تم الرفض</div>
+    <div class="value" id="rejected">-</div>
+  </div>
+  <div class="box">
+    <div>⏳ في الانتظار</div>
+    <div class="value" id="pending">-</div>
+  </div>
+  <div class="box">
+    <div>📈 نسبة الحضور</div>
+    <div class="value" id="rate">-</div>
+  </div>
+
+  <h3 style="margin-top:40px">📑 الباركودات التي تم مسحها</h3>
+  <ul id="scanned-list"></ul>
 </body>
 </html>
