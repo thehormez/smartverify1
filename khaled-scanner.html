@@ -28,7 +28,7 @@
         scanner.stop();
         resultBox.textContent = "جارٍ التحقق من الدعوة...";
 
-        const code = result.data.trim();
+        const code = result.trim();
         const docRef = doc(db, "invites", code);
         const docSnap = await getDoc(docRef);
 
