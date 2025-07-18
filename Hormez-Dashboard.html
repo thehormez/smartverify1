@@ -6,7 +6,15 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { firebaseConfig } from "./firebaseConfig.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.appspot.com",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -30,7 +38,7 @@
 
     async function loadDashboard(eventName) {
       const snapshot = await getDocs(collection(db, "invites"));
-      const rows = snapshot.docs.map(doc => doc.data());
+      const rows = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const filtered = rows.filter(r => r.eventName === eventName);
 
       const total = filtered.length;
@@ -51,7 +59,7 @@
       list.innerHTML = "";
       filtered.filter(r => r.status === "yes").forEach(r => {
         const li = document.createElement("li");
-        li.textContent = r.code;
+        li.textContent = r.id;
         list.appendChild(li);
       });
     }
