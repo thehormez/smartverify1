@@ -72,22 +72,45 @@
   <div id="result"></div>
 
   <script>
+    let isProcessing = false;
+    let html5QrCode;
+    let selectedCameraId = null;
+
     function showResult(message, color) {
       const resultEl = document.getElementById("result");
       resultEl.textContent = message;
       resultEl.style.color = color;
     }
 
-    function onScanSuccess(decodedText, decodedResult) {
-      checkInvite(decodedText);
+    async function onScanSuccess(decodedText, decodedResult) {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      await checkInvite(decodedText);
+      await html5QrCode.stop();
+
+      setTimeout(() => {
+        html5QrCode.start(
+          selectedCameraId,
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+          },
+          onScanSuccess
+        ).catch(err => {
+          showResult("Restart error: " + err, 'red');
+        });
+        isProcessing = false;
+      }, 3000);
     }
 
-    const html5QrCode = new Html5Qrcode("reader");
+    html5QrCode = new Html5Qrcode("reader");
     Html5Qrcode.getCameras().then(devices => {
       if (devices && devices.length) {
         const backCamera = devices.find(device => device.label.toLowerCase().includes("back")) || devices[0];
+        selectedCameraId = backCamera.id;
         html5QrCode.start(
-          backCamera.id,
+          selectedCameraId,
           {
             fps: 10,
             qrbox: { width: 250, height: 250 }
