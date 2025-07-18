@@ -44,7 +44,7 @@
     async function loadDashboard(eventName) {
       const snapshot = await getDocs(collection(db, "invites"));
       const rows = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const filtered = rows.filter(r => r.eventName === eventName);
+      const filtered = rows.filter(r => r.eventName.trim() === eventName.trim());
 
       const total = filtered.length;
       const accepted = filtered.filter(r => r.status === "yes").length;
@@ -74,8 +74,8 @@
       const loginForm = document.getElementById("login-form");
       loginForm.onsubmit = e => {
         e.preventDefault();
-        const selected = document.getElementById("event-selector").value;
-        const entered = document.getElementById("event-password").value;
+        const selected = document.getElementById("event-selector").value.trim();
+        const entered = document.getElementById("event-password").value.trim();
         if (!selected || !entered) return alert("يرجى اختيار فعالية وإدخال كلمة المرور");
         if (eventPasswords[selected] === entered) {
           document.getElementById("login-box").style.display = "none";
