@@ -1,8 +1,32 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ماسح الباركود - زفاف خالد</title>
+  <title>QR Scanner - Khaled Wedding</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    h1 {
+      margin: 20px;
+      font-size: 24px;
+    }
+    #reader {
+      width: 90vw;
+      max-width: 500px;
+      margin: auto;
+      margin-top: 20px;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -19,81 +43,56 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function handleScan(code) {
-      const ref = doc(db, "invites", code);
-      const snap = await getDoc(ref);
-      const resultBox = document.getElementById("result");
-      if (!snap.exists()) {
-        resultBox.textContent = "❌ رقم الدعوة غير موجود";
-        resultBox.style.color = "red";
-        return;
-      }
-      const data = snap.data();
-      if (data.eventName !== "khaled wedding") {
-        resultBox.textContent = "❌ هذه الدعوة ليست لفعالية زفاف خالد";
-        resultBox.style.color = "red";
-        return;
-      }
-      if (data.status === "yes") {
-        resultBox.textContent = "✅ تم استخدام الدعوة مسبقًا";
-        resultBox.style.color = "orange";
+    async function verifyCode(qrCodeMessage) {
+      const docRef = doc(db, "invites", qrCodeMessage);
+      const docSnap = await getDoc(docRef);
+
+      const resultDiv = document.getElementById("result");
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.eventName === "khaled wedding") {
+          if (data.status === "pending") {
+            await updateDoc(docRef, { status: "scanned" });
+            resultDiv.textContent = `✅ Valid - ${qrCodeMessage}`;
+            resultDiv.style.color = 'lightgreen';
+          } else {
+            resultDiv.textContent = `⚠ Already scanned - ${qrCodeMessage}`;
+            resultDiv.style.color = 'orange';
+          }
+        } else {
+          resultDiv.textContent = `❌ Invalid Event - ${qrCodeMessage}`;
+          resultDiv.style.color = 'red';
+        }
       } else {
-        await updateDoc(ref, { status: "yes" });
-        resultBox.textContent = "✅ تم التحقق بنجاح";
-        resultBox.style.color = "lightgreen";
+        resultDiv.textContent = `❌ Code not found - ${qrCodeMessage}`;
+        resultDiv.style.color = 'red';
       }
     }
 
-    window.onload = () => {
-      const scanner = new Html5Qrcode("reader");
-      scanner.start(
+    function startScanner() {
+      const html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
-        code => {
-          scanner.stop();
-          handleScan(code);
-          setTimeout(() => {
-            document.getElementById("result").textContent = "";
-            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, code => {
-              scanner.stop();
-              handleScan(code);
-            });
-          }, 3000);
+        async (decodedText) => {
+          await verifyCode(decodedText);
         },
-        error => {}
-      );
-    };
+        (errorMessage) => {
+          // ignore errors
+        }
+      ).catch(err => {
+        document.getElementById("result").textContent = `Camera error: ${err}`;
+      });
+    }
+
+    window.addEventListener('load', () => {
+      startScanner();
+    });
   </script>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <style>
-    body {
-      background: #111;
-      color: white;
-      text-align: center;
-      font-family: 'Segoe UI', sans-serif;
-      padding: 20px;
-    }
-    h2 { color: gold; }
-    #reader {
-      width: 90%;
-      max-width: 500px;
-      margin: auto;
-      border: 2px solid gold;
-      border-radius: 12px;
-      padding: 10px;
-      background: #1a1a1a;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 20px;
-      font-weight: bold;
-    }
-  </style>
 </head>
 <body>
-  <h2>Hormez Security</h2>
-  <h3>زفاف خالد - التحقق من الدعوات</h3>
+  <h1>Hormez Security<br>khaled wedding</h1>
   <div id="reader"></div>
-  <div id="result"></div>
+  <div id="result">Scan a QR code...</div>
 </body>
 </html>
