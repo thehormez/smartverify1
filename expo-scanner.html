@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>ماسح الباركود - معرض أبوظبي</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.appspot.com",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function handleScan(code) {
+      const ref = doc(db, "invites", code);
+      const snap = await getDoc(ref);
+      const resultBox = document.getElementById("result");
+      if (!snap.exists()) {
+        resultBox.textContent = "❌ رقم الدعوة غير موجود";
+        resultBox.style.color = "red";
+        return;
+      }
+      const data = snap.data();
+      if (data.eventName !== "expo") {
+        resultBox.textContent = "❌ هذه الدعوة ليست لمعرض أبوظبي";
+        resultBox.style.color = "red";
+        return;
+      }
+      if (data.status === "yes") {
+        resultBox.textContent = "✅ تم استخدام الدعوة مسبقًا";
+        resultBox.style.color = "orange";
+      } else {
+        await updateDoc(ref, { status: "yes" });
+        resultBox.textContent = "✅ تم التحقق بنجاح";
+        resultBox.style.color = "lightgreen";
+      }
+    }
+
+    window.onload = () => {
+      const scanner = new Html5Qrcode("reader");
+      scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        code => {
+          scanner.stop();
+          handleScan(code);
+          setTimeout(() => {
+            document.getElementById("result").textContent = "";
+            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, code => {
+              scanner.stop();
+              handleScan(code);
+            });
+          }, 3000);
+        },
+        error => {}
+      );
+    };
+  </script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      text-align: center;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+    }
+    h2 { color: gold; }
+    #reader {
+      width: 90%;
+      max-width: 500px;
+      margin: auto;
+      border: 2px solid gold;
+      border-radius: 12px;
+      padding: 10px;
+      background: #1a1a1a;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>Hormez Security</h2>
+  <h3>معرض أبوظبي - التحقق من الدعوات</h3>
+  <div id="reader"></div>
+  <div id="result"></div>
+</body>
+</html>
