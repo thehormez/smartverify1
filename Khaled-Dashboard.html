@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Khaled Wedding Dashboard</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.appspot.com",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadStats() {
+      const querySnapshot = await getDocs(collection(db, "invites"));
+      let total = 0, accepted = 0, rejected = 0, pending = 0;
+      let scannedCodes = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.eventName === "khaled wedding") {
+          total++;
+          if (data.status === "yes") {
+            accepted++;
+            scannedCodes.push(doc.id);
+          } else if (data.status === "rejected") {
+            rejected++;
+          } else {
+            pending++;
+          }
+        }
+      });
+
+      document.getElementById("totalCount").textContent = total;
+      document.getElementById("acceptedCount").textContent = accepted;
+      document.getElementById("rejectedCount").textContent = rejected;
+      document.getElementById("pendingCount").textContent = pending;
+      document.getElementById("attendanceRate").textContent = total ? ((accepted / total) * 100).toFixed(1) + "%" : "0%";
+      document.getElementById("scannedList").innerHTML = scannedCodes.map(code => `<li>${code}</li>`).join('');
+    }
+
+    window.onload = loadStats;
+  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 30px;
+    }
+    .stat {
+      border-radius: 10px;
+      padding: 20px;
+      margin: 10px auto;
+      width: 300px;
+      color: white;
+      font-size: 20px;
+    }
+    #accepted { background: #4caf50; }
+    #rejected { background: #f44336; }
+    #pending { background: #ff9800; }
+    #total { background: #607d8b; }
+    #rate { background: #3f51b5; }
+    ul { text-align: left; max-width: 400px; margin: 20px auto; padding: 0; list-style: none; }
+    li { background: #eee; padding: 8px; margin-bottom: 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h2>Khaled Wedding Dashboard</h2>
+  <div id="total" class="stat">Total Invites: <span id="totalCount">0</span></div>
+  <div id="accepted" class="stat">Accepted: <span id="acceptedCount">0</span></div>
+  <div id="rejected" class="stat">Rejected: <span id="rejectedCount">0</span></div>
+  <div id="pending" class="stat">Pending: <span id="pendingCount">0</span></div>
+  <div id="rate" class="stat">Attendance Rate: <span id="attendanceRate">0%</span></div>
+
+  <h3>Scanned Codes</h3>
+  <ul id="scannedList"></ul>
+</body>
+</html>
