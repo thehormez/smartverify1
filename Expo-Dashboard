@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Expo Dashboard</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.appspot.com",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadDashboard() {
+      const querySnapshot = await getDocs(collection(db, "invites"));
+      const scanned = [];
+      let total = 0, accepted = 0, rejected = 0, pending = 0;
+
+      querySnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.eventName === "expo") {
+          total++;
+          if (data.status === "yes") {
+            accepted++;
+            scanned.push(doc.id);
+          } else if (data.status === "rejected") {
+            rejected++;
+          } else {
+            pending++;
+          }
+        }
+      });
+
+      const percentage = total ? ((accepted / total) * 100).toFixed(1) : 0;
+      document.getElementById("total").textContent = total;
+      document.getElementById("accepted").textContent = accepted;
+      document.getElementById("rejected").textContent = rejected;
+      document.getElementById("pending").textContent = pending;
+      document.getElementById("percentage").textContent = percentage + "%";
+      document.getElementById("scanned-list").innerHTML = scanned.map(code => `<li>${code}</li>`).join("");
+    }
+
+    window.onload = loadDashboard;
+  </script>
+  <style>
+    body { font-family: Arial; padding: 40px; background: #f5f5f5; text-align: center; }
+    h2 { margin-bottom: 20px; }
+    .card { padding: 20px; margin: 10px auto; width: 300px; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; }
+    .accepted { background: #4CAF50; }
+    .rejected { background: #f44336; }
+    .pending { background: #ff9800; }
+    .total { background: #2196F3; }
+    .percent { background: #9c27b0; }
+    ul { list-style: none; padding: 0; margin-top: 20px; }
+    li { font-size: 14px; padding: 2px; }
+  </style>
+</head>
+<body>
+  <h2>Hormez Security - Expo Dashboard</h2>
+  <div class="card total">Total Invites: <span id="total">0</span></div>
+  <div class="card accepted">Accepted: <span id="accepted">0</span></div>
+  <div class="card rejected">Rejected: <span id="rejected">0</span></div>
+  <div class="card pending">Pending: <span id="pending">0</span></div>
+  <div class="card percent">Attendance Rate: <span id="percentage">0%</span></div>
+
+  <h3>Scanned Invites:</h3>
+  <ul id="scanned-list"></ul>
+</body>
+</html>
