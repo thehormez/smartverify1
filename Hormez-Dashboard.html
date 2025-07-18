@@ -19,12 +19,27 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const passwordPrompt = prompt("🔐 أدخل كلمة المرور للفعالية:");
+    async function loadEventNames() {
+      const snapshot = await getDocs(collection(db, "invites"));
+      const eventsSet = new Set();
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.eventName) eventsSet.add(data.eventName);
+      });
 
-    async function loadDashboard() {
+      const select = document.getElementById("event-selector");
+      eventsSet.forEach(event => {
+        const option = document.createElement("option");
+        option.value = event;
+        option.textContent = event;
+        select.appendChild(option);
+      });
+    }
+
+    async function loadDashboard(eventName) {
       const snapshot = await getDocs(collection(db, "invites"));
       const rows = snapshot.docs.map(doc => doc.data());
-      const filtered = rows.filter(r => r.eventName === passwordPrompt);
+      const filtered = rows.filter(r => r.eventName === eventName);
 
       const total = filtered.length;
       const accepted = filtered.filter(r => r.status === "yes").length;
@@ -33,7 +48,7 @@
 
       const attendanceRate = total > 0 ? Math.round((accepted / total) * 100) : 0;
 
-      document.getElementById("event-name").textContent = passwordPrompt;
+      document.getElementById("event-name").textContent = eventName;
       document.getElementById("total").textContent = total;
       document.getElementById("accepted").textContent = accepted;
       document.getElementById("rejected").textContent = rejected;
@@ -49,7 +64,13 @@
       });
     }
 
-    loadDashboard();
+    window.onload = async () => {
+      await loadEventNames();
+      document.getElementById("event-selector").addEventListener("change", e => {
+        const eventName = e.target.value;
+        if (eventName) loadDashboard(eventName);
+      });
+    };
   </script>
   <style>
     body {
@@ -72,10 +93,19 @@
     .value { font-size: 28px; font-weight: bold; margin-top: 10px; color: gold; }
     ul { list-style: none; padding: 0; }
     li { color: #aaa; font-size: 14px; }
+    select {
+      padding: 10px;
+      margin: 10px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
   <h2>Hormez Security - لوحة تحكم الفعاليات</h2>
+  <label>🔍 اختر الفعالية:</label>
+  <select id="event-selector">
+    <option value="">-- اختر --</option>
+  </select>
   <h3 id="event-name"></h3>
 
   <div class="box">
