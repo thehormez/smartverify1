@@ -20,7 +20,7 @@
     const db = getFirestore(app);
 
     const eventPasswords = {
-      "زفاف خالد": "khaled123",
+      "زفاف خالد": "khalid123",
       "معرض ابوظبي": "expo2025"
     };
 
@@ -85,6 +85,13 @@
           alert("❌ كلمة المرور غير صحيحة!");
         }
       };
+
+      const togglePassword = document.getElementById("toggle-password");
+      togglePassword.onclick = () => {
+        const pass = document.getElementById("event-password");
+        pass.type = pass.type === "password" ? "text" : "password";
+        togglePassword.textContent = pass.type === "password" ? "👁️" : "🙈";
+      };
     };
   </script>
   <style>
@@ -108,25 +115,38 @@
     .value { font-size: 28px; font-weight: bold; margin-top: 10px; color: gold; }
     ul { list-style: none; padding: 0; }
     li { color: #aaa; font-size: 14px; }
-    select, input[type=password] {
+    select, input[type=password], input[type=text] {
       padding: 10px;
       margin: 10px;
       font-size: 16px;
     }
     #dashboard-box { display: none; }
+    #toggle-password {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      margin-left: -30px;
+      position: relative;
+      right: 10px;
+    }
   </style>
 </head>
 <body>
   <h2>Hormez Security - لوحة تحكم الفعاليات</h2>
 
   <div id="login-box">
-    <label>🔍 اختر الفعالية:</label>
-    <select id="event-selector">
-      <option value="">-- اختر --</option>
-    </select><br>
-    <input id="event-password" type="password" placeholder="كلمة المرور" /><br>
-    <button type="submit" form="login-form">تسجيل الدخول</button>
-    <form id="login-form"></form>
+    <form id="login-form">
+      <label>🔍 اختر الفعالية:</label>
+      <select id="event-selector">
+        <option value="">-- اختر --</option>
+      </select><br>
+      <div style="position: relative; display: inline-block;">
+        <input id="event-password" type="password" placeholder="كلمة المرور" />
+        <button type="button" id="toggle-password">👁️</button>
+      </div><br>
+      <button type="submit">تسجيل الدخول</button>
+    </form>
   </div>
 
   <div id="dashboard-box">
