@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <title>Khaled Wedding QR Scanner</title>
+  <title>ماسح باركود - زفاف خالد</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import QrScanner from "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
@@ -19,110 +20,73 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function checkInvite(code) {
-      const docRef = doc(db, "invites", code);
-      const docSnap = await getDoc(docRef);
+    window.onload = () => {
+      const video = document.getElementById('video');
+      const resultBox = document.getElementById('result');
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.eventName === "khaled wedding") {
-          if (data.status === "pending") {
-            await updateDoc(docRef, { status: "yes" });
-            showResult(`✅ Invitation is valid and marked as used: ${code}`, 'green');
-          } else {
-            showResult(`⚠️ Invitation already used: ${code}`, 'orange');
-          }
+      const scanner = new QrScanner(video, async result => {
+        scanner.stop();
+        resultBox.textContent = "جارٍ التحقق من الدعوة...";
+
+        const code = result.data.trim();
+        const docRef = doc(db, "invites", code);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+          resultBox.textContent = "❌ رقم الدعوة غير موجود.";
         } else {
-          showResult("❌ This code does not belong to Khaled Wedding.", 'red');
+          const data = docSnap.data();
+          if (data.eventName !== "khaled wedding") {
+            resultBox.textContent = "❌ هذا الباركود ليس لزفاف خالد.";
+          } else if (data.status === "yes") {
+            resultBox.textContent = "⚠️ تم استخدام الدعوة مسبقًا.";
+          } else {
+            await updateDoc(docRef, { status: "yes" });
+            resultBox.textContent = "✅ دعوة صالحة. تم تسجيل الحضور.";
+          }
         }
-      } else {
-        showResult("❌ Invitation not found.", 'red');
-      }
-    }
 
-    window.checkInvite = checkInvite;
+        setTimeout(() => {
+          resultBox.textContent = "";
+          scanner.start();
+        }, 3000);
+      });
+
+      QrScanner.hasCamera().then(hasCamera => {
+        if (hasCamera) {
+          scanner.start();
+        } else {
+          resultBox.textContent = "❌ لا يوجد كاميرا متاحة.";
+        }
+      });
+    }
   </script>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
-      font-family: Arial;
+      background: #000;
+      color: #fff;
       text-align: center;
-      padding: 40px;
+      font-family: Arial, sans-serif;
+      padding: 20px;
     }
-    h2 {
-      margin-bottom: 10px;
+    h1 {
+      margin-bottom: 20px;
     }
-    #reader {
-      width: 320px;
-      margin: 0 auto 20px auto;
-      border: 2px solid #ccc;
-      padding: 10px;
+    video {
+      width: 100%;
+      max-width: 400px;
+      border: 3px solid #fff;
+      border-radius: 10px;
     }
     #result {
-      font-size: 18px;
-      font-weight: bold;
+      margin-top: 20px;
+      font-size: 20px;
     }
   </style>
 </head>
 <body>
-  <h2>Hormez Security</h2>
-  <h3 style="margin-top: 0;">Khaled Wedding</h3>
-
-  <div id="reader"></div>
+  <h1>ماسح باركود - زفاف خالد</h1>
+  <video id="video"></video>
   <div id="result"></div>
-
-  <script>
-    let isProcessing = false;
-    let html5QrCode;
-    let selectedCameraId = null;
-
-    function showResult(message, color) {
-      const resultEl = document.getElementById("result");
-      resultEl.textContent = message;
-      resultEl.style.color = color;
-    }
-
-    async function onScanSuccess(decodedText, decodedResult) {
-      if (isProcessing) return;
-      isProcessing = true;
-
-      await checkInvite(decodedText);
-      await html5QrCode.stop();
-
-      setTimeout(() => {
-        html5QrCode.start(
-          selectedCameraId,
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-          },
-          onScanSuccess
-        ).catch(err => {
-          showResult("Restart error: " + err, 'red');
-        });
-        isProcessing = false;
-      }, 3000);
-    }
-
-    html5QrCode = new Html5Qrcode("reader");
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
-        const backCamera = devices.find(device => device.label.toLowerCase().includes("back")) || devices[0];
-        selectedCameraId = backCamera.id;
-        html5QrCode.start(
-          selectedCameraId,
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-          },
-          onScanSuccess
-        );
-      } else {
-        showResult("No camera found.", 'red');
-      }
-    }).catch(err => {
-      showResult("Camera error: " + err, 'red');
-    });
-  </script>
 </body>
 </html>
