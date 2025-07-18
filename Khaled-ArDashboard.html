@@ -22,13 +22,16 @@
     async function loadStats() {
       const querySnapshot = await getDocs(collection(db, "invites"));
       let total = 0, used = 0, rejected = 0, pending = 0;
+      let usedCodes = [];
 
       querySnapshot.forEach(doc => {
         const data = doc.data();
         if (data.eventName === "khaled wedding") {
           total++;
-          if (data.status === "yes") used++;
-          else if (data.status === "rejected") rejected++;
+          if (data.status === "yes") {
+            used++;
+            usedCodes.push(doc.id);
+          } else if (data.status === "rejected") rejected++;
           else pending++;
         }
       });
@@ -40,6 +43,7 @@
       document.getElementById("rejected").textContent = `المرفوضة: ${rejected}`;
       document.getElementById("pending").textContent = `المعلقة: ${pending}`;
       document.getElementById("percentage").textContent = `نسبة الحضور: ${usedPercent}%`;
+      document.getElementById("codes").innerHTML = usedCodes.map(code => `<li>${code}</li>`).join('');
     }
 
     window.onload = loadStats;
@@ -47,7 +51,8 @@
   <style>
     body {
       font-family: 'Arial', sans-serif;
-      background: #f7f7f7;
+      background: #121212;
+      color: white;
       text-align: center;
       padding: 40px;
       direction: rtl;
@@ -56,18 +61,20 @@
       margin-bottom: 20px;
     }
     .card {
-      background: white;
+      background: #1e1e1e;
       border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       margin: 15px auto;
       padding: 20px;
-      max-width: 400px;
+      max-width: 500px;
       font-size: 20px;
+      color: white;
     }
     .card.green { border-right: 8px solid #4CAF50; }
     .card.orange { border-right: 8px solid #FF9800; }
     .card.red { border-right: 8px solid #F44336; }
     .card.gray { border-right: 8px solid #9E9E9E; }
+    ul { list-style: none; padding: 0; margin-top: 20px; }
+    li { background: #2a2a2a; padding: 8px; margin: 4px auto; max-width: 300px; border-radius: 6px; }
   </style>
 </head>
 <body>
@@ -77,5 +84,7 @@
   <div class="card gray" id="pending"></div>
   <div class="card orange" id="percentage"></div>
   <div class="card" id="total"></div>
+  <h3 style="margin-top:40px;">الأكواد التي تم مسحها:</h3>
+  <ul id="codes"></ul>
 </body>
 </html>
