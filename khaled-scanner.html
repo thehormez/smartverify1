@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Upload Khaled Wedding Barcodes</title>
+  <title>Khaled Wedding QR Scanner</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
@@ -19,47 +19,67 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function uploadBarcodes() {
-      for (let i = 1; i <= 10; i++) {
-        const code = `KH_${String(i).padStart(3, '0')}`;
-        await setDoc(doc(db, "invites", code), {
-          status: "pending",
-          eventName: "khaled wedding"
-        });
-        console.log(`✅ Uploaded: ${code}`);
+    async function checkInvite(code) {
+      const docRef = doc(db, "invites", code);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.eventName === "khaled wedding") {
+          if (data.status === "pending") {
+            await updateDoc(docRef, { status: "yes" });
+            showResult(`✅ Invitation is valid and marked as used: ${code}`, 'green');
+          } else {
+            showResult(`⚠️ Invitation already used: ${code}`, 'orange');
+          }
+        } else {
+          showResult("❌ This code does not belong to Khaled Wedding.", 'red');
+        }
+      } else {
+        showResult("❌ Invitation not found.", 'red');
       }
-      alert("✅ 10 barcodes uploaded for Khaled Wedding");
     }
 
-    window.uploadBarcodes = uploadBarcodes;
+    window.checkInvite = checkInvite;
   </script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 40px;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
     #reader {
-      width: 300px;
-      margin: 20px auto;
+      width: 320px;
+      margin: 0 auto 20px auto;
       border: 2px solid #ccc;
       padding: 10px;
     }
     #result {
       font-size: 18px;
-      color: green;
-      text-align: center;
+      font-weight: bold;
     }
   </style>
 </head>
-<body style="font-family: Arial; text-align: center; padding: 40px;">
-  <h2>Upload 10 Barcodes for Khaled Wedding</h2>
-  <button onclick="uploadBarcodes()" style="padding: 12px 24px; font-size: 16px;">
-    Start Upload
-  </button>
+<body>
+  <h2>Hormez Security</h2>
+  <h3 style="margin-top: 0;">Khaled Wedding</h3>
 
   <div id="reader"></div>
   <div id="result"></div>
 
   <script>
+    function showResult(message, color) {
+      const resultEl = document.getElementById("result");
+      resultEl.textContent = message;
+      resultEl.style.color = color;
+    }
+
     function onScanSuccess(decodedText, decodedResult) {
-      document.getElementById("result").textContent = `✅ Scanned: ${decodedText}`;
+      checkInvite(decodedText);
     }
 
     const html5QrCode = new Html5Qrcode("reader");
@@ -75,10 +95,10 @@
           onScanSuccess
         );
       } else {
-        document.getElementById("result").textContent = "No camera found.";
+        showResult("No camera found.", 'red');
       }
     }).catch(err => {
-      document.getElementById("result").textContent = "Camera error: " + err;
+      showResult("Camera error: " + err, 'red');
     });
   </script>
 </body>
