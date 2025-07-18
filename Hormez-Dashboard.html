@@ -19,6 +19,11 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const eventPasswords = {
+      "زفاف خالد": "khalid123",
+      "معرض ابوظبي": "expo2025"
+    };
+
     async function loadEventNames() {
       const snapshot = await getDocs(collection(db, "invites"));
       const eventsSet = new Set();
@@ -66,10 +71,20 @@
 
     window.onload = async () => {
       await loadEventNames();
-      document.getElementById("event-selector").addEventListener("change", e => {
-        const eventName = e.target.value;
-        if (eventName) loadDashboard(eventName);
-      });
+      const loginForm = document.getElementById("login-form");
+      loginForm.onsubmit = e => {
+        e.preventDefault();
+        const selected = document.getElementById("event-selector").value;
+        const entered = document.getElementById("event-password").value;
+        if (!selected || !entered) return alert("يرجى اختيار فعالية وإدخال كلمة المرور");
+        if (eventPasswords[selected] === entered) {
+          document.getElementById("login-box").style.display = "none";
+          document.getElementById("dashboard-box").style.display = "block";
+          loadDashboard(selected);
+        } else {
+          alert("❌ كلمة المرور غير صحيحة!");
+        }
+      };
     };
   </script>
   <style>
@@ -93,43 +108,52 @@
     .value { font-size: 28px; font-weight: bold; margin-top: 10px; color: gold; }
     ul { list-style: none; padding: 0; }
     li { color: #aaa; font-size: 14px; }
-    select {
+    select, input[type=password] {
       padding: 10px;
       margin: 10px;
       font-size: 16px;
     }
+    #dashboard-box { display: none; }
   </style>
 </head>
 <body>
   <h2>Hormez Security - لوحة تحكم الفعاليات</h2>
-  <label>🔍 اختر الفعالية:</label>
-  <select id="event-selector">
-    <option value="">-- اختر --</option>
-  </select>
-  <h3 id="event-name"></h3>
 
-  <div class="box">
-    <div>📋 إجمالي الدعوات</div>
-    <div class="value" id="total">-</div>
-  </div>
-  <div class="box">
-    <div>✅ تم الحضور</div>
-    <div class="value" id="accepted">-</div>
-  </div>
-  <div class="box">
-    <div>❌ تم الرفض</div>
-    <div class="value" id="rejected">-</div>
-  </div>
-  <div class="box">
-    <div>⏳ في الانتظار</div>
-    <div class="value" id="pending">-</div>
-  </div>
-  <div class="box">
-    <div>📈 نسبة الحضور</div>
-    <div class="value" id="rate">-</div>
+  <div id="login-box">
+    <label>🔍 اختر الفعالية:</label>
+    <select id="event-selector">
+      <option value="">-- اختر --</option>
+    </select><br>
+    <input id="event-password" type="password" placeholder="كلمة المرور" /><br>
+    <button type="submit" form="login-form">تسجيل الدخول</button>
+    <form id="login-form"></form>
   </div>
 
-  <h3 style="margin-top:40px">📑 الباركودات التي تم مسحها</h3>
-  <ul id="scanned-list"></ul>
+  <div id="dashboard-box">
+    <h3 id="event-name"></h3>
+    <div class="box">
+      <div>📋 إجمالي الدعوات</div>
+      <div class="value" id="total">-</div>
+    </div>
+    <div class="box">
+      <div>✅ تم الحضور</div>
+      <div class="value" id="accepted">-</div>
+    </div>
+    <div class="box">
+      <div>❌ تم الرفض</div>
+      <div class="value" id="rejected">-</div>
+    </div>
+    <div class="box">
+      <div>⏳ في الانتظار</div>
+      <div class="value" id="pending">-</div>
+    </div>
+    <div class="box">
+      <div>📈 نسبة الحضور</div>
+      <div class="value" id="rate">-</div>
+    </div>
+
+    <h3 style="margin-top:40px">📑 الباركودات التي تم مسحها</h3>
+    <ul id="scanned-list"></ul>
+  </div>
 </body>
 </html>
