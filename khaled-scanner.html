@@ -2,59 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Khaled Wedding Scanner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #000;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-
-    h1 {
-      margin-bottom: 10px;
-      font-size: 24px;
-      color: gold;
-    }
-
-    h2 {
-      margin-top: 0;
-      font-size: 20px;
-      color: white;
-    }
-
-    #reader {
-      width: 100%;
-      max-width: 400px;
-      margin: 20px auto;
-      border: 2px solid #fff;
-      border-radius: 12px;
-    }
-
-    #result {
-      font-size: 18px;
-      font-weight: bold;
-      margin-top: 20px;
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-  <h1>Hormez Security</h1>
-  <h2>Event: Khaled Wedding</h2>
-
-  <div id="reader"></div>
-  <div id="result">Waiting for scan...</div>
-
+  <title>Upload Khaled Wedding Barcodes</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
@@ -68,44 +19,55 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const html5QrCode = new Html5Qrcode("reader");
-
-    async function onScanSuccess(decodedText, decodedResult) {
-      html5QrCode.pause(); // Pause scanning momentarily
-
-      const resultEl = document.getElementById("result");
-      resultEl.textContent = "⏳ Checking invitation...";
-
-      const docRef = doc(db, "invites", decodedText.trim());
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.eventName === "khaled wedding") {
-          if (data.status === "pending") {
-            await updateDoc(docRef, { status: "scanned" });
-            resultEl.innerHTML = `<span style="color: lightgreen;">✅ Invitation valid. Welcome!</span>`;
-          } else {
-            resultEl.innerHTML = `<span style="color: orange;">⚠️ Already scanned.</span>`;
-          }
-        } else {
-          resultEl.innerHTML = `<span style="color: red;">❌ Wrong event.</span>`;
-        }
-      } else {
-        resultEl.innerHTML = `<span style="color: red;">❌ Invitation not found.</span>`;
+    async function uploadBarcodes() {
+      for (let i = 1; i <= 10; i++) {
+        const code = `KH_${String(i).padStart(3, '0')}`;
+        await setDoc(doc(db, "invites", code), {
+          status: "pending",
+          eventName: "khaled wedding"
+        });
+        console.log(`✅ Uploaded: ${code}`);
       }
-
-      setTimeout(() => {
-        resultEl.textContent = "Waiting for scan...";
-        html5QrCode.resume(); // Resume scanning
-      }, 3000);
+      alert("✅ 10 barcodes uploaded for Khaled Wedding");
     }
 
+    window.uploadBarcodes = uploadBarcodes;
+  </script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    #reader {
+      width: 300px;
+      margin: 20px auto;
+      border: 2px solid #ccc;
+      padding: 10px;
+    }
+    #result {
+      font-size: 18px;
+      color: green;
+      text-align: center;
+    }
+  </style>
+</head>
+<body style="font-family: Arial; text-align: center; padding: 40px;">
+  <h2>Upload 10 Barcodes for Khaled Wedding</h2>
+  <button onclick="uploadBarcodes()" style="padding: 12px 24px; font-size: 16px;">
+    Start Upload
+  </button>
+
+  <div id="reader"></div>
+  <div id="result"></div>
+
+  <script>
+    function onScanSuccess(decodedText, decodedResult) {
+      document.getElementById("result").textContent = `✅ Scanned: ${decodedText}`;
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
     Html5Qrcode.getCameras().then(devices => {
       if (devices && devices.length) {
-        const cameraId = devices[0].id;
+        const backCamera = devices.find(device => device.label.toLowerCase().includes("back")) || devices[0];
         html5QrCode.start(
-          cameraId,
+          backCamera.id,
           {
             fps: 10,
             qrbox: { width: 250, height: 250 }
