@@ -2,31 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>QR Scanner - Khaled Wedding</title>
+  <title>Khaled Wedding Scanner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
       margin: 0;
+      font-family: Arial, sans-serif;
       background-color: #000;
       color: #fff;
-      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 24px;
+      color: gold;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 20px;
+      color: white;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      margin: 20px auto;
+      border: 2px solid #fff;
+      border-radius: 12px;
+    }
+
+    #result {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 20px;
       text-align: center;
     }
-    h1 {
-      margin: 20px;
-      font-size: 24px;
-    }
-    #reader {
-      width: 90vw;
-      max-width: 500px;
-      margin: auto;
-      margin-top: 20px;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-    }
   </style>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+</head>
+<body>
+  <h1>Hormez Security</h1>
+  <h2>Event: Khaled Wedding</h2>
+
+  <div id="reader"></div>
+  <div id="result">Waiting for scan...</div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -43,56 +68,56 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function verifyCode(qrCodeMessage) {
-      const docRef = doc(db, "invites", qrCodeMessage);
+    const html5QrCode = new Html5Qrcode("reader");
+
+    async function onScanSuccess(decodedText, decodedResult) {
+      html5QrCode.pause(); // Pause scanning momentarily
+
+      const resultEl = document.getElementById("result");
+      resultEl.textContent = "⏳ Checking invitation...";
+
+      const docRef = doc(db, "invites", decodedText.trim());
       const docSnap = await getDoc(docRef);
 
-      const resultDiv = document.getElementById("result");
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.eventName === "khaled wedding") {
           if (data.status === "pending") {
             await updateDoc(docRef, { status: "scanned" });
-            resultDiv.textContent = `✅ Valid - ${qrCodeMessage}`;
-            resultDiv.style.color = 'lightgreen';
+            resultEl.innerHTML = `<span style="color: lightgreen;">✅ Invitation valid. Welcome!</span>`;
           } else {
-            resultDiv.textContent = `⚠ Already scanned - ${qrCodeMessage}`;
-            resultDiv.style.color = 'orange';
+            resultEl.innerHTML = `<span style="color: orange;">⚠️ Already scanned.</span>`;
           }
         } else {
-          resultDiv.textContent = `❌ Invalid Event - ${qrCodeMessage}`;
-          resultDiv.style.color = 'red';
+          resultEl.innerHTML = `<span style="color: red;">❌ Wrong event.</span>`;
         }
       } else {
-        resultDiv.textContent = `❌ Code not found - ${qrCodeMessage}`;
-        resultDiv.style.color = 'red';
+        resultEl.innerHTML = `<span style="color: red;">❌ Invitation not found.</span>`;
       }
+
+      setTimeout(() => {
+        resultEl.textContent = "Waiting for scan...";
+        html5QrCode.resume(); // Resume scanning
+      }, 3000);
     }
 
-    function startScanner() {
-      const html5QrCode = new Html5Qrcode("reader");
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        async (decodedText) => {
-          await verifyCode(decodedText);
-        },
-        (errorMessage) => {
-          // ignore errors
-        }
-      ).catch(err => {
-        document.getElementById("result").textContent = `Camera error: ${err}`;
-      });
-    }
-
-    window.addEventListener('load', () => {
-      startScanner();
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length) {
+        const cameraId = devices[0].id;
+        html5QrCode.start(
+          cameraId,
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+          },
+          onScanSuccess
+        );
+      } else {
+        document.getElementById("result").textContent = "No camera found.";
+      }
+    }).catch(err => {
+      document.getElementById("result").textContent = "Camera error: " + err;
     });
   </script>
-</head>
-<body>
-  <h1>Hormez Security<br>khaled wedding</h1>
-  <div id="reader"></div>
-  <div id="result">Scan a QR code...</div>
 </body>
 </html>
