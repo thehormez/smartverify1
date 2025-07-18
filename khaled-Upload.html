@@ -22,7 +22,7 @@
     async function uploadKhaledInvites() {
       const total = 10;
       for (let i = 1; i <= total; i++) {
-        const code = `KH-${String(i).padStart(3, '0')}`;
+        const code = `KH_${String(i).padStart(3, '0')}`;
         await setDoc(doc(db, "invites", code), {
           status: "pending",
           eventName: "khaled wedding"
