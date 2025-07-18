@@ -20,8 +20,8 @@
     const db = getFirestore(app);
 
     const eventPasswords = {
-      "زفاف خالد": "khalid123",
-      "معرض ابوظبي": "expo2025"
+      "khaled wedding": "khalid123",
+      "expo": "expo2025"
     };
 
     async function loadEventNames() {
@@ -29,10 +29,11 @@
       const eventsSet = new Set();
       snapshot.docs.forEach(doc => {
         const data = doc.data();
-        if (data.eventName) eventsSet.add(data.eventName);
+        if (data.eventName) eventsSet.add(data.eventName.trim());
       });
 
       const select = document.getElementById("event-selector");
+      select.innerHTML = '<option value="">-- اختر --</option>';
       eventsSet.forEach(event => {
         const option = document.createElement("option");
         option.value = event;
@@ -44,7 +45,7 @@
     async function loadDashboard(eventName) {
       const snapshot = await getDocs(collection(db, "invites"));
       const rows = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const filtered = rows.filter(r => r.eventName.trim() === eventName.trim());
+      const filtered = rows.filter(r => r.eventName.trim().toLowerCase() === eventName.trim().toLowerCase());
 
       const total = filtered.length;
       const accepted = filtered.filter(r => r.status === "yes").length;
@@ -77,7 +78,7 @@
         const selected = document.getElementById("event-selector").value.trim();
         const entered = document.getElementById("event-password").value.trim();
         if (!selected || !entered) return alert("يرجى اختيار فعالية وإدخال كلمة المرور");
-        if (eventPasswords[selected] === entered) {
+        if (eventPasswords[selected.toLowerCase()] === entered) {
           document.getElementById("login-box").style.display = "none";
           document.getElementById("dashboard-box").style.display = "block";
           loadDashboard(selected);
