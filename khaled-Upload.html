@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Upload Invites - Khaled Wedding</title>
+  <meta charset="UTF-8">
+  <title>Upload KH Invites</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -19,52 +19,25 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function uploadKhaledInvites() {
+    async function uploadInvites() {
       const total = 10;
       for (let i = 1; i <= total; i++) {
         const code = `KH_${String(i).padStart(3, '0')}`;
         await setDoc(doc(db, "invites", code), {
-          status: "pending",
+          code: code,
+          status: "available",
           eventName: "khaled wedding"
         });
-        console.log(`Uploaded: ${code}`);
+        console.log(`✅ Uploaded: ${code}`);
       }
-      alert("10 Khaled Wedding invites uploaded successfully!");
+      alert("✅ All 10 invites uploaded successfully.");
     }
 
-    async function uploadExpoInvites() {
-      const total = 10;
-      for (let i = 1; i <= total; i++) {
-        const code = `EX-${String(i).padStart(3, '0')}`;
-        await setDoc(doc(db, "invites", code), {
-          status: "pending",
-          eventName: "expo"
-        });
-        console.log(`Uploaded: ${code}`);
-      }
-      alert("10 Expo invites uploaded successfully!");
-    }
-
-    window.uploadKhaledInvites = uploadKhaledInvites;
-    window.uploadExpoInvites = uploadExpoInvites;
+    window.uploadInvites = uploadInvites;
   </script>
-  <style>
-    body {
-      font-family: Arial;
-      padding: 40px;
-      text-align: center;
-    }
-    button {
-      padding: 12px 24px;
-      font-size: 16px;
-      margin: 10px;
-      cursor: pointer;
-    }
-  </style>
 </head>
-<body>
-  <h2>Upload Event Invites to Firebase</h2>
-  <button onclick="uploadKhaledInvites()">Upload 10 for Khaled Wedding</button>
-  <button onclick="uploadExpoInvites()">Upload 10 for Expo</button>
+<body style="text-align: center; padding: 40px; font-family: Arial;">
+  <h2>Upload 10 Invites for Khaled Wedding</h2>
+  <button onclick="uploadInvites()" style="padding: 12px 24px; font-size: 18px;">Upload Now</button>
 </body>
 </html>
