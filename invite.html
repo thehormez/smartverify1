@@ -39,9 +39,15 @@
       }
 
       const docRef = snapshot.docs[0].ref;
-      const code = snapshot.docs[0].data().code;
+      const docData = snapshot.docs[0].data();
 
-      await updateDoc(docRef, { status: "confirmed" });
+      let code = docData.code;
+      if (!code) {
+        code = snapshot.docs[0].id;
+        await updateDoc(docRef, { status: "confirmed", code });
+      } else {
+        await updateDoc(docRef, { status: "confirmed" });
+      }
 
       localStorage.setItem("userConfirmed", code);
       document.getElementById("content").innerHTML = `
