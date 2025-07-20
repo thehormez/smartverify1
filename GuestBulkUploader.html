@@ -18,7 +18,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    function uploadGuests() {
+    async function uploadGuests() {
       const eventName = "khaled wedding";
       const guestCount = parseInt(document.getElementById("guestCount").value);
 
@@ -27,7 +27,9 @@
         return;
       }
 
+      const batchLimit = 500;
       let batch = db.batch();
+      let count = 0;
 
       for (let i = 1; i <= guestCount; i++) {
         const guestId = `khaled_wedding_guest_${String(i).padStart(3, '0')}`;
@@ -38,16 +40,24 @@
           status: "pending",
           assignedCode: null
         });
+
+        count++;
+
+        if (count === batchLimit || i === guestCount) {
+          try {
+            await batch.commit();
+            console.log(`✅ Batch committed with ${count} guests`);
+          } catch (error) {
+            console.error("Error committing batch:", error);
+            alert("❌ Failed to upload guests. See console for details.");
+            return;
+          }
+          batch = db.batch();
+          count = 0;
+        }
       }
 
-      batch.commit()
-        .then(() => {
-          alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
-        })
-        .catch((error) => {
-          console.error("Error uploading guests:", error);
-          alert("❌ Failed to upload guests. See console for details.");
-        });
+      alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
     }
   </script>
   <style>
