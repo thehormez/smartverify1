@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>دعوتك لحضور المناسبة</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.appspot.com",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function confirmAttendance() {
+      const q = query(collection(db, "invites"), where("status", "==", "available"), where("eventName", "==", "khaled wedding"));
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) {
+        document.getElementById("response").innerHTML = "⛔️ عذرًا، لا توجد دعوات متاحة حاليًا.";
+        return;
+      }
+      const docSnap = snapshot.docs[0];
+      const inviteId = docSnap.id;
+      await updateDoc(doc(db, "invites", inviteId), { status: "confirmed" });
+
+      // عرض بطاقة الدعوة مع الباركود
+      document.getElementById("card").innerHTML = `
+        <div style="border: 2px dashed #fff; padding: 20px; margin-top: 30px;">
+          <h2>🎉 تم تأكيد حضورك</h2>
+          <p>رقم دعوتك: <strong>${inviteId}</strong></p>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?data=${inviteId}&size=200x200" alt="QR Code" />
+          <p style="margin-top: 10px">يرجى الاحتفاظ بهذه الدعوة وتقديمها عند الدخول</p>
+        </div>
+      `;
+      document.getElementById("buttons").style.display = "none";
+    }
+
+    window.confirmAttendance = confirmAttendance;
+    window.rejectAttendance = () => {
+      document.getElementById("response").innerHTML = "😢 نأسف لعدم تمكنك من الحضور. نتمنى رؤيتك في مناسبات قادمة.";
+      document.getElementById("buttons").style.display = "none";
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #000;
+      color: #fff;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 18px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .yes {
+      background-color: #4caf50;
+      color: white;
+    }
+    .no {
+      background-color: #f44336;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>نتشرف بدعوتكم لحضور "زفاف خالد"</h1>
+  <p>الرجاء تأكيد الحضور بالضغط على الزر المناسب أدناه:</p>
+  <div id="buttons">
+    <button class="yes" onclick="confirmAttendance()">أوافق على الحضور</button>
+    <button class="no" onclick="rejectAttendance()">أعتذر عن الحضور</button>
+  </div>
+  <div id="response" style="margin-top: 30px; font-size: 20px;"></div>
+  <div id="card"></div>
+</body>
+</html>
