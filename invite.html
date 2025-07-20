@@ -5,7 +5,7 @@
   <title>دعوتك الإلكترونية</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
@@ -19,12 +19,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function generateRandomCode() {
-      const random = Math.floor(100000 + Math.random() * 900000);
-      return `AUTO_${random}`;
-    }
-
-    async function handleResponse(response) {
+    async function confirmInvite() {
       const userConfirmed = localStorage.getItem("userConfirmed");
       if (userConfirmed) {
         document.getElementById("content").innerHTML = `
@@ -35,31 +30,37 @@
         return;
       }
 
-      if (response === "confirmed") {
-        const newCode = await generateRandomCode();
-        await addDoc(collection(db, "invites"), {
-          code: newCode,
-          status: "confirmed",
-          eventName: "khaled wedding"
-        });
+      const q = query(collection(db, "invites"), where("eventName", "==", "khaled wedding"), where("status", "==", "available"));
+      const snapshot = await getDocs(q);
 
-        localStorage.setItem("userConfirmed", newCode);
-        document.getElementById("content").innerHTML = `
-          <h2>🎉 شكرًا لتأكيد الحضور</h2>
-          <p>تم تأكيد حضورك بنجاح.</p>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${newCode}" alt="باركود الدعوة" />
-          <p>يرجى إبراز هذا الباركود عند الوصول.</p>
-        `;
-      } else {
-        document.getElementById("content").innerHTML = `
-          <h2>❌ نأسف لعدم تمكنك من الحضور</h2>
-          <p>شكرًا لإبلاغنا.</p>
-        `;
+      if (snapshot.empty) {
+        document.getElementById("content").innerHTML = `<h2>❌ عذرًا، لا توجد دعوات متاحة حاليًا</h2>`;
+        return;
       }
+
+      const docRef = snapshot.docs[0].ref;
+      const code = snapshot.docs[0].data().code;
+
+      await updateDoc(docRef, { status: "confirmed" });
+
+      localStorage.setItem("userConfirmed", code);
+      document.getElementById("content").innerHTML = `
+        <h2>🎉 شكرًا لتأكيد الحضور</h2>
+        <p>تم تأكيد حضورك بنجاح.</p>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${code}" alt="باركود الدعوة" />
+        <p>يرجى إبراز هذا الباركود عند الوصول.</p>
+      `;
     }
 
-    window.confirmInvite = () => handleResponse("confirmed");
-    window.declineInvite = () => handleResponse("declined");
+    async function declineInvite() {
+      document.getElementById("content").innerHTML = `
+        <h2>❌ نأسف لعدم تمكنك من الحضور</h2>
+        <p>شكرًا لإبلاغنا.</p>
+      `;
+    }
+
+    window.confirmInvite = confirmInvite;
+    window.declineInvite = declineInvite;
   </script>
   <style>
     body {
