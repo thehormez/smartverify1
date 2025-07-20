@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Khaled Wedding RSVP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #111;
+      color: #fff;
+      text-align: center;
+      padding: 40px;
+    }
+    .card {
+      background: #222;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      max-width: 450px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: normal;
+      margin-bottom: 30px;
+    }
+    button {
+      background-color: #00c896;
+      border: none;
+      color: white;
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 12px;
+    }
+    .hidden {
+      display: none;
+    }
+    #barcodeCard {
+      margin-top: 30px;
+    }
+    img.barcode {
+      margin-top: 20px;
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>You're Invited!</h1>
+    <h2>Welcome to the Wedding of Khaled</h2>
+    <p>Please confirm your attendance below.</p>
+    <button onclick="confirmAttendance()">✅ I will attend</button>
+    <button onclick="declineAttendance()">❌ I can't attend</button>
+    <div id="barcodeCard" class="hidden">
+      <p>Thank you! This is your invitation barcode:</p>
+      <img id="barcodeImage" class="barcode" src="" alt="Barcode" />
+    </div>
+  </div>
+
+  <script>
+    async function confirmAttendance() {
+      const guestId = getGuestIdFromURL();
+      if (!guestId) return alert("Invalid guest.");
+      const res = await fetch(`https://your-firebase-api/assignBarcode?guestId=${guestId}`);
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById("barcodeImage").src = data.barcodeURL;
+        document.getElementById("barcodeCard").classList.remove("hidden");
+      } else {
+        alert(data.message || "Failed to assign barcode.");
+      }
+    }
+
+    async function declineAttendance() {
+      alert("We're sorry you can't make it. Your response has been saved.");
+      // You can also send a fetch() to update Firestore status to 'declined'
+    }
+
+    function getGuestIdFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('guestId');
+    }
+  </script>
+</body>
+</html>
