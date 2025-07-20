@@ -42,7 +42,7 @@
         }
         alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
       } catch (error) {
-        console.error("❌ Upload failed:", error.message);
+        console.error("❌ Upload failed:", error);
         alert("❌ Failed to upload guests. See console for details.");
       }
     }
