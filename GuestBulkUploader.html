@@ -31,7 +31,8 @@
       try {
         for (let i = 1; i <= guestCount; i++) {
           const guestId = `khaled_wedding_guest_${String(i).padStart(3, '0')}`;
-          await setDoc(doc(db, "guests", guestId), {
+          const docRef = doc(db, "guests", guestId);
+          await setDoc(docRef, {
             id: guestId,
             eventName: eventName,
             status: "pending",
@@ -41,7 +42,7 @@
         }
         alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
       } catch (error) {
-        console.error("❌ Upload failed:", error);
+        console.error("❌ Upload failed:", error.message);
         alert("❌ Failed to upload guests. See console for details.");
       }
     }
