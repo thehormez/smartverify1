@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RSVP Confirmation</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f8f8;
+      padding: 50px;
+      text-align: center;
+    }
+    #container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      margin: auto;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h2>Confirm Attendance</h2>
+    <p>You're invited! Please confirm your attendance below.</p>
+    <button id="confirmBtn">I will attend</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.appspot.com",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const params = new URLSearchParams(window.location.search);
+    const guestId = params.get("guestId");
+
+    document.getElementById("confirmBtn").onclick = async () => {
+      if (!guestId) {
+        document.getElementById("result").innerText = "❌ Invalid guest ID.";
+        return;
+      }
+
+      const guestRef = db.collection("guests").doc(guestId);
+      const guestDoc = await guestRef.get();
+
+      if (!guestDoc.exists) {
+        document.getElementById("result").innerText = "❌ Guest not found.";
+        return;
+      }
+
+      const guestData = guestDoc.data();
+      if (guestData.status === "confirmed" && guestData.assignedCode) {
+        document.getElementById("result").innerText = `✅ You have already confirmed. Your invite code is: ${guestData.assignedCode}`;
+        return;
+      }
+
+      const inviteQuery = await db.collection("invites")
+        .where("eventName", "==", guestData.eventName)
+        .where("status", "==", "pending")
+        .limit(1)
+        .get();
+
+      if (inviteQuery.empty) {
+        document.getElementById("result").innerText = "❌ No more invites available.";
+        return;
+      }
+
+      const inviteDoc = inviteQuery.docs[0];
+      await db.collection("invites").doc(inviteDoc.id).update({ status: "assigned" });
+      await guestRef.update({ status: "confirmed", assignedCode: inviteDoc.id });
+
+      document.getElementById("result").innerText = `✅ Thank you! Your invite code is: ${inviteDoc.id}`;
+    };
+  </script>
+</body>
+</html>
