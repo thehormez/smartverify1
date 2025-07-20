@@ -5,7 +5,7 @@
   <title>دعوتك الإلكترونية</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
@@ -38,24 +38,38 @@
         return;
       }
 
-      const docRef = snapshot.docs[0].ref;
-      const docData = snapshot.docs[0].data();
+      let success = false;
+      for (const docSnap of snapshot.docs) {
+        try {
+          await runTransaction(db, async (transaction) => {
+            const docRef = docSnap.ref;
+            const docData = (await transaction.get(docRef)).data();
 
-      let code = docData.code;
-      if (!code) {
-        code = snapshot.docs[0].id;
-        await updateDoc(docRef, { status: "confirmed", code });
-      } else {
-        await updateDoc(docRef, { status: "confirmed" });
+            if (docData.status !== "available") {
+              throw "Not available";
+            }
+
+            transaction.update(docRef, { status: "confirmed" });
+            const code = docData.code || docSnap.id;
+            localStorage.setItem("userConfirmed", code);
+            document.getElementById("content").innerHTML = `
+              <h2>🎉 شكرًا لتأكيد الحضور</h2>
+              <p>تم تأكيد حضورك بنجاح.</p>
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${code}" alt="باركود الدعوة" />
+              <p>يرجى إبراز هذا الباركود عند الوصول.</p>
+            `;
+            success = true;
+          });
+          break;
+        } catch (e) {
+          console.log(`❌ فشل استخدام الكود ${docSnap.id}: ${e}`);
+          continue;
+        }
       }
 
-      localStorage.setItem("userConfirmed", code);
-      document.getElementById("content").innerHTML = `
-        <h2>🎉 شكرًا لتأكيد الحضور</h2>
-        <p>تم تأكيد حضورك بنجاح.</p>
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${code}" alt="باركود الدعوة" />
-        <p>يرجى إبراز هذا الباركود عند الوصول.</p>
-      `;
+      if (!success) {
+        document.getElementById("content").innerHTML = `<h2>❌ عذرًا، حدثت مشكلة أثناء تأكيد الحضور</h2>`;
+      }
     }
 
     async function declineInvite() {
