@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Guest Bulk Uploader</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
       authDomain: "hormez-inv.firebaseapp.com",
@@ -16,10 +15,10 @@
       appId: "1:747519941805:web:468fada2492700e9da3a24"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    window.uploadGuests = async function () {
+    function uploadGuests() {
       const eventName = "khaled wedding";
       const guestCount = parseInt(document.getElementById("guestCount").value);
 
@@ -28,18 +27,27 @@
         return;
       }
 
+      let batch = db.batch();
+
       for (let i = 1; i <= guestCount; i++) {
         const guestId = `khaled_wedding_guest_${String(i).padStart(3, '0')}`;
-        await setDoc(doc(db, "guests", guestId), {
+        const guestRef = db.collection("guests").doc(guestId);
+        batch.set(guestRef, {
           id: guestId,
           eventName: eventName,
           status: "pending",
           assignedCode: null
         });
-        console.log(`✅ Added: ${guestId}`);
       }
 
-      alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
+      batch.commit()
+        .then(() => {
+          alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
+        })
+        .catch((error) => {
+          console.error("Error uploading guests:", error);
+          alert("❌ Failed to upload guests. See console for details.");
+        });
     }
   </script>
   <style>
