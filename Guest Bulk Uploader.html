@@ -3,47 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>Guest Bulk Uploader</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-      authDomain: "hormez-inv.firebaseapp.com",
-      projectId: "hormez-inv",
-      storageBucket: "hormez-inv.appspot.com",
-      messagingSenderId: "747519941805",
-      appId: "1:747519941805:web:468fada2492700e9da3a24"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    async function uploadGuests() {
-      const eventName = document.getElementById("eventName").value;
-      const guestCount = parseInt(document.getElementById("guestCount").value);
-
-      if (!eventName || !guestCount || guestCount <= 0) {
-        alert("Please provide a valid event name and number of guests.");
-        return;
-      }
-
-      for (let i = 1; i <= guestCount; i++) {
-        const guestId = `${eventName.replace(/\s+/g, '_').toLowerCase()}_guest_${String(i).padStart(3, '0')}`;
-        await setDoc(doc(db, "guests", guestId), {
-          id: guestId,
-          eventName: eventName,
-          status: "pending",
-          assignedCode: null
-        });
-        console.log(`✅ Added: ${guestId}`);
-      }
-
-      alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
-    }
-
-    window.uploadGuests = uploadGuests;
-  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -70,5 +31,42 @@
   <input type="text" id="eventName" placeholder="Event Name (e.g. khaled wedding)" /> <br />
   <input type="number" id="guestCount" placeholder="Number of Guests" /> <br />
   <button onclick="uploadGuests()">Upload Guests</button>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.appspot.com",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function uploadGuests() {
+      const eventName = document.getElementById("eventName").value.trim();
+      const guestCount = parseInt(document.getElementById("guestCount").value);
+
+      if (!eventName || !guestCount || guestCount <= 0) {
+        alert("Please provide a valid event name and number of guests.");
+        return;
+      }
+
+      for (let i = 1; i <= guestCount; i++) {
+        const guestId = `${eventName.replace(/\s+/g, '_').toLowerCase()}_guest_${String(i).padStart(3, '0')}`;
+        await db.collection("guests").doc(guestId).set({
+          id: guestId,
+          eventName: eventName,
+          status: "pending",
+          assignedCode: null
+        });
+        console.log(`✅ Added: ${guestId}`);
+      }
+
+      alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
+    }
+  </script>
 </body>
 </html>
