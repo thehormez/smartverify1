@@ -19,34 +19,56 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const guestId = urlParams.get("id");
+
     async function confirmAttendance() {
-      const storedCode = localStorage.getItem("confirmedCode_khaled");
-      if (storedCode) {
-        displayCard(storedCode);
+      if (!guestId) {
+        document.getElementById("response").innerHTML = "❌ رابط غير صالح. يرجى التواصل مع المنظم.";
         return;
       }
 
-      document.querySelector(".yes").disabled = true;
-
       try {
-        const q = query(collection(db, "invites"), where("status", "==", "available"), where("eventName", "==", "khaled wedding"));
+        const q = query(collection(db, "guests"), where("id", "==", guestId));
         const snapshot = await getDocs(q);
+
         if (snapshot.empty) {
-          document.getElementById("response").innerHTML = "⛔️ عذرًا، لا توجد دعوات متاحة حاليًا.";
+          document.getElementById("response").innerHTML = "❌ الضيف غير موجود في قاعدة البيانات.";
           return;
         }
 
-        const docSnap = snapshot.docs[0];
-        const inviteId = docSnap.id;
+        const guestDoc = snapshot.docs[0];
+        const guestData = guestDoc.data();
 
-        // حفظ الكود مباشرة
-        localStorage.setItem("confirmedCode_khaled", inviteId);
-        await updateDoc(doc(db, "invites", inviteId), { status: "confirmed" });
+        if (guestData.status === "confirmed") {
+          displayCard(guestData.assignedCode);
+        } else {
+          // ابحث عن باركود متاح
+          const invitesQ = query(collection(db, "invites"), where("status", "==", "available"), where("eventName", "==", guestData.eventName));
+          const invitesSnap = await getDocs(invitesQ);
 
-        displayCard(inviteId);
+          if (invitesSnap.empty) {
+            document.getElementById("response").innerHTML = "⛔️ لا توجد دعوات متاحة حالياً.";
+            return;
+          }
+
+          const inviteDoc = invitesSnap.docs[0];
+          const inviteId = inviteDoc.id;
+
+          await updateDoc(doc(db, "guests", guestDoc.id), {
+            status: "confirmed",
+            assignedCode: inviteId
+          });
+
+          await updateDoc(doc(db, "invites", inviteId), {
+            status: "confirmed"
+          });
+
+          displayCard(inviteId);
+        }
       } catch (e) {
-        console.error("خطأ أثناء تأكيد الحضور:", e);
-        document.getElementById("response").innerHTML = "❌ حدث خطأ. يرجى المحاولة مرة أخرى.";
+        console.error("خطأ في تأكيد الحضور:", e);
+        document.getElementById("response").innerHTML = "❌ حدث خطأ. حاول مجددًا لاحقًا.";
       } finally {
         document.getElementById("buttons").style.display = "none";
       }
@@ -66,13 +88,7 @@
 
     window.confirmAttendance = confirmAttendance;
     window.rejectAttendance = () => {
-      document.getElementById("response").innerHTML = "😢 نأسف لعدم تمكنك من الحضور. نتمنى رؤيتك في مناسبات قادمة.";
-      document.getElementById("buttons").style.display = "none";
-    }
-
-    const previousCode = localStorage.getItem("confirmedCode_khaled");
-    if (previousCode) {
-      displayCard(previousCode);
+      document.getElementById("response").innerHTML = "😢 نأسف لعدم تمكنك من الحضور.";
       document.getElementById("buttons").style.display = "none";
     }
   </script>
@@ -107,7 +123,7 @@
   </style>
 </head>
 <body>
-  <h1>نتشرف بدعوتكم لحضور "زفاف خالد"</h1>
+  <h1>نتشرف بدعوتكم لحضور المناسبة</h1>
   <p>الرجاء تأكيد الحضور بالضغط على الزر المناسب أدناه:</p>
   <div id="buttons">
     <button class="yes" onclick="confirmAttendance()">أوافق على الحضور</button>
