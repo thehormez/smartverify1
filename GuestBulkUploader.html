@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>Guest Bulk Uploader</title>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
       authDomain: "hormez-inv.firebaseapp.com",
@@ -15,10 +16,10 @@
       appId: "1:747519941805:web:468fada2492700e9da3a24"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    async function uploadGuests() {
+    window.uploadGuests = async function () {
       const eventName = "khaled wedding";
       const guestCount = parseInt(document.getElementById("guestCount").value);
 
@@ -27,37 +28,22 @@
         return;
       }
 
-      const batchLimit = 500;
-      let batch = db.batch();
-      let count = 0;
-
-      for (let i = 1; i <= guestCount; i++) {
-        const guestId = `khaled_wedding_guest_${String(i).padStart(3, '0')}`;
-        const guestRef = db.collection("guests").doc(guestId);
-        batch.set(guestRef, {
-          id: guestId,
-          eventName: eventName,
-          status: "pending",
-          assignedCode: null
-        });
-
-        count++;
-
-        if (count === batchLimit || i === guestCount) {
-          try {
-            await batch.commit();
-            console.log(`✅ Batch committed with ${count} guests`);
-          } catch (error) {
-            console.error("Error committing batch:", error);
-            alert("❌ Failed to upload guests. See console for details.");
-            return;
-          }
-          batch = db.batch();
-          count = 0;
+      try {
+        for (let i = 1; i <= guestCount; i++) {
+          const guestId = `khaled_wedding_guest_${String(i).padStart(3, '0')}`;
+          await setDoc(doc(db, "guests", guestId), {
+            id: guestId,
+            eventName: eventName,
+            status: "pending",
+            assignedCode: null
+          });
+          console.log(`✅ Uploaded: ${guestId}`);
         }
+        alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
+      } catch (error) {
+        console.error("❌ Upload failed:", error);
+        alert("❌ Failed to upload guests. See console for details.");
       }
-
-      alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
     }
   </script>
   <style>
