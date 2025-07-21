@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Guest Bulk Uploader</title>
+  <meta charset="UTF-8" />
+  <title>RSVP - Khaled Wedding</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
@@ -19,58 +20,94 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    window.uploadGuests = async function () {
-      const eventName = "khaled wedding";
-      const guestCount = parseInt(document.getElementById("guestCount").value);
+    async function handleRSVP(accept) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const guestId = urlParams.get("guest");
 
-      if (isNaN(guestCount) || guestCount <= 0) {
-        alert("Please provide a valid number of guests.");
+      if (!guestId) {
+        alert("Missing guest identifier.");
         return;
       }
 
-      try {
-        for (let i = 1; i <= guestCount; i++) {
-          const guestId = `khaled_wedding_guest_${String(i).padStart(3, '0')}`;
-          const docRef = doc(db, "guests", guestId);
-          await setDoc(docRef, {
-            id: guestId,
-            eventName: eventName,
-            status: "pending",
-            assignedCode: null
-          });
-          console.log(`✅ Uploaded: ${guestId}`);
-        }
-        alert(`✅ Successfully uploaded ${guestCount} guests for event: ${eventName}`);
-      } catch (error) {
-        console.error("❌ Upload failed:", error);
-        alert("❌ Failed to upload guests. See console for details.");
+      const guestRef = doc(db, "guests", guestId);
+      const guestSnap = await getDoc(guestRef);
+
+      if (!guestSnap.exists()) {
+        alert("Guest not found.");
+        return;
       }
+
+      const guestData = guestSnap.data();
+
+      if (accept === false) {
+        await updateDoc(guestRef, { status: "declined" });
+        document.getElementById("response").innerText = "❌ Thank you for your response. We hope to see you next time.";
+        return;
+      }
+
+      if (guestData.status === "confirmed" && guestData.assignedCode) {
+        showInvitationCard(guestData.assignedCode);
+        return;
+      }
+
+      const codesRef = collection(db, "invites");
+      const codeQuery = query(codesRef, where("status", "==", "pending"), where("eventName", "==", guestData.eventName));
+      const snapshot = await getDocs(codeQuery);
+
+      if (snapshot.empty) {
+        document.getElementById("response").innerText = "❌ Sorry, no invitations available.";
+        return;
+      }
+
+      const codeDoc = snapshot.docs[0];
+      const code = codeDoc.id;
+
+      await updateDoc(codeDoc.ref, { status: "confirmed" });
+      await updateDoc(guestRef, { status: "confirmed", assignedCode: code });
+
+      showInvitationCard(code);
     }
+
+    function showInvitationCard(code) {
+      document.getElementById("rsvp-section").style.display = "none";
+      document.getElementById("response").innerHTML = `
+        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.1);">
+          <h3 style="margin-bottom: 10px;">🎉 Your Invitation 🎉</h3>
+          <p style="font-size: 18px;">Thank you for confirming. Your access code is:</p>
+          <div style="font-size: 22px; margin: 10px 0; font-weight: bold;">${code}</div>
+          <img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(code)}" alt="QR Code">
+          <p style="font-size: 16px; margin-top: 10px;">Please show this QR code at the entrance.</p>
+        </div>`;
+    }
+
+    window.handleRSVP = handleRSVP;
   </script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
+      font-family: Arial;
       padding: 50px;
-      background-color: #f4f4f4;
-    }
-    input, button {
-      padding: 12px;
-      margin: 10px;
-      font-size: 16px;
+      background-color: #fff8f0;
+      text-align: center;
     }
     button {
-      background-color: #4caf50;
-      color: white;
+      padding: 14px 24px;
+      font-size: 18px;
+      margin: 12px;
       border: none;
-      cursor: pointer;
       border-radius: 8px;
+      cursor: pointer;
     }
+    .yes { background-color: #4CAF50; color: white; }
+    .no { background-color: #f44336; color: white; }
   </style>
 </head>
 <body>
-  <h2>Bulk Upload Guests for Khaled Wedding</h2>
-  <input type="number" id="guestCount" placeholder="Number of Guests" /> <br />
-  <button onclick="uploadGuests()">Upload Guests</button>
+  <h2>You're invited to Khaled Wedding 🎉</h2>
+  <p>Please confirm your attendance:</p>
+  <div id="rsvp-section">
+    <button class="yes" onclick="handleRSVP(true)">✅ I will attend</button>
+    <button class="no" onclick="handleRSVP(false)">❌ I cannot attend</button>
+  </div>
+  <div id="response" style="margin-top: 30px; font-size: 18px;"></div>
 </body>
 </html>
