@@ -2,91 +2,98 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Khaled Wedding RSVP</title>
+  <title>RSVP - Khaled Wedding</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.appspot.com",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function handleRSVP(accept) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const guestId = urlParams.get("guest");
+
+      if (!guestId) {
+        alert("Missing guest identifier.");
+        return;
+      }
+
+      const guestRef = doc(db, "guests", guestId);
+      const guestSnap = await getDoc(guestRef);
+
+      if (!guestSnap.exists()) {
+        alert("Guest not found.");
+        return;
+      }
+
+      const guestData = guestSnap.data();
+
+      if (accept === false) {
+        await updateDoc(guestRef, { status: "declined" });
+        document.getElementById("response").innerText = "❌ Thank you for your response. We hope to see you next time.";
+        return;
+      }
+
+      if (guestData.status === "confirmed" && guestData.assignedCode) {
+        document.getElementById("response").innerText = `✅ You have already confirmed. Your code: ${guestData.assignedCode}`;
+        return;
+      }
+
+      const codesRef = collection(db, "invites");
+      const codeQuery = query(codesRef, where("status", "==", "pending"), where("eventName", "==", guestData.eventName));
+      const snapshot = await getDocs(codeQuery);
+
+      if (snapshot.empty) {
+        document.getElementById("response").innerText = "❌ Sorry, no invitations available.";
+        return;
+      }
+
+      const codeDoc = snapshot.docs[0];
+      const code = codeDoc.id;
+
+      await updateDoc(codeDoc.ref, { status: "confirmed" });
+      await updateDoc(guestRef, { status: "confirmed", assignedCode: code });
+
+      document.getElementById("response").innerHTML = `✅ Thank you for confirming. Your code is: <strong>${code}</strong>`;
+    }
+
+    window.handleRSVP = handleRSVP;
+  </script>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #111;
-      color: #fff;
+      font-family: Arial;
+      padding: 50px;
+      background-color: #fff8f0;
       text-align: center;
-      padding: 40px;
-    }
-    .card {
-      background: #222;
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-      max-width: 450px;
-      margin: auto;
-    }
-    h1 {
-      font-size: 28px;
-      margin-bottom: 10px;
-    }
-    h2 {
-      font-size: 20px;
-      font-weight: normal;
-      margin-bottom: 30px;
     }
     button {
-      background-color: #00c896;
+      padding: 14px 24px;
+      font-size: 18px;
+      margin: 12px;
       border: none;
-      color: white;
-      padding: 15px 30px;
-      margin: 10px;
-      font-size: 16px;
+      border-radius: 8px;
       cursor: pointer;
-      border-radius: 12px;
     }
-    .hidden {
-      display: none;
-    }
-    #barcodeCard {
-      margin-top: 30px;
-    }
-    img.barcode {
-      margin-top: 20px;
-      max-width: 100%;
-    }
+    .yes { background-color: #4CAF50; color: white; }
+    .no { background-color: #f44336; color: white; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>You're Invited!</h1>
-    <h2>Welcome to the Wedding of Khaled</h2>
-    <p>Please confirm your attendance below.</p>
-    <button onclick="confirmAttendance()">✅ I will attend</button>
-    <button onclick="declineAttendance()">❌ I can't attend</button>
-    <div id="barcodeCard" class="hidden">
-      <p>Thank you! This is your invitation barcode:</p>
-      <img id="barcodeImage" class="barcode" src="" alt="Barcode" />
-    </div>
-  </div>
-
-  <script>
-    async function confirmAttendance() {
-      const guestId = getGuestIdFromURL();
-      if (!guestId) return alert("Invalid guest.");
-      const res = await fetch(`https://your-firebase-api/assignBarcode?guestId=${guestId}`);
-      const data = await res.json();
-      if (data.success) {
-        document.getElementById("barcodeImage").src = data.barcodeURL;
-        document.getElementById("barcodeCard").classList.remove("hidden");
-      } else {
-        alert(data.message || "Failed to assign barcode.");
-      }
-    }
-
-    async function declineAttendance() {
-      alert("We're sorry you can't make it. Your response has been saved.");
-      // You can also send a fetch() to update Firestore status to 'declined'
-    }
-
-    function getGuestIdFromURL() {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('guestId');
-    }
-  </script>
+  <h2>You're invited to Khaled Wedding 🎉</h2>
+  <p>Please confirm your attendance:</p>
+  <button class="yes" onclick="handleRSVP(true)">✅ I will attend</button>
+  <button class="no" onclick="handleRSVP(false)">❌ I cannot attend</button>
+  <p id="response" style="margin-top: 30px; font-size: 18px;"></p>
 </body>
 </html>
