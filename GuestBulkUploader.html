@@ -30,7 +30,7 @@
 
       try {
         for (let i = 1; i <= guestCount; i++) {
-          const guestId = `guest-kh_${String(i).padStart(3, '0')}`;
+          const guestId = `khaled_wedding_guest_${String(i).padStart(3, '0')}`;
           const docRef = doc(db, "guests", guestId);
           await setDoc(docRef, {
             id: guestId,
