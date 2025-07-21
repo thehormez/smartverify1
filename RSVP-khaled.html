@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>RSVP - Khaled Wedding</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script type="module">
@@ -46,7 +46,7 @@
       }
 
       if (guestData.status === "confirmed" && guestData.assignedCode) {
-        document.getElementById("response").innerText = `✅ You have already confirmed. Your code: ${guestData.assignedCode}`;
+        showInvitationCard(guestData.assignedCode);
         return;
       }
 
@@ -65,7 +65,18 @@
       await updateDoc(codeDoc.ref, { status: "confirmed" });
       await updateDoc(guestRef, { status: "confirmed", assignedCode: code });
 
-      document.getElementById("response").innerHTML = `✅ Thank you for confirming. Your code is: <strong>${code}</strong>`;
+      showInvitationCard(code);
+    }
+
+    function showInvitationCard(code) {
+      document.getElementById("rsvp-section").style.display = "none";
+      document.getElementById("response").innerHTML = `
+        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.1);">
+          <h3 style="margin-bottom: 10px;">🎉 Your Invitation 🎉</h3>
+          <p style="font-size: 18px;">Thank you for confirming. Your access code is:</p>
+          <div style="font-size: 22px; margin: 10px 0; font-weight: bold;">${code}</div>
+          <p style="font-size: 16px;">Please show this code at the entrance.</p>
+        </div>`;
     }
 
     window.handleRSVP = handleRSVP;
@@ -92,8 +103,10 @@
 <body>
   <h2>You're invited to Khaled Wedding 🎉</h2>
   <p>Please confirm your attendance:</p>
-  <button class="yes" onclick="handleRSVP(true)">✅ I will attend</button>
-  <button class="no" onclick="handleRSVP(false)">❌ I cannot attend</button>
-  <p id="response" style="margin-top: 30px; font-size: 18px;"></p>
+  <div id="rsvp-section">
+    <button class="yes" onclick="handleRSVP(true)">✅ I will attend</button>
+    <button class="no" onclick="handleRSVP(false)">❌ I cannot attend</button>
+  </div>
+  <div id="response" style="margin-top: 30px; font-size: 18px;"></div>
 </body>
 </html>
