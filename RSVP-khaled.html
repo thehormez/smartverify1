@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
   <meta charset="UTF-8" />
-  <title>RSVP - Khaled Wedding</title>
+  <title>تأكيد الحضور - زفاف خالد</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -20,42 +20,34 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const eventName = "khaled wedding";
+
+    window.onload = () => {
+      const storedCode = localStorage.getItem("assignedCode");
+      if (storedCode) {
+        showInvitationCard(storedCode);
+      }
+    };
+
     async function handleRSVP(accept) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const guestId = urlParams.get("guest");
-
-      if (!guestId) {
-        alert("Missing guest identifier.");
+      if (!accept) {
+        localStorage.removeItem("assignedCode");
+        document.getElementById("response").innerText = "❌ شكراً لتأكيدك. نتمنى رؤيتك في مناسبات قادمة.";
         return;
       }
 
-      const guestRef = doc(db, "guests", guestId);
-      const guestSnap = await getDoc(guestRef);
-
-      if (!guestSnap.exists()) {
-        alert("Guest not found.");
-        return;
-      }
-
-      const guestData = guestSnap.data();
-
-      if (accept === false) {
-        await updateDoc(guestRef, { status: "declined" });
-        document.getElementById("response").innerText = "❌ Thank you for your response. We hope to see you next time.";
-        return;
-      }
-
-      if (guestData.status === "confirmed" && guestData.assignedCode) {
-        showInvitationCard(guestData.assignedCode);
+      const storedCode = localStorage.getItem("assignedCode");
+      if (storedCode) {
+        showInvitationCard(storedCode);
         return;
       }
 
       const codesRef = collection(db, "invites");
-      const codeQuery = query(codesRef, where("status", "==", "pending"), where("eventName", "==", guestData.eventName));
+      const codeQuery = query(codesRef, where("status", "==", "pending"), where("eventName", "==", eventName));
       const snapshot = await getDocs(codeQuery);
 
       if (snapshot.empty) {
-        document.getElementById("response").innerText = "❌ Sorry, no invitations available.";
+        document.getElementById("response").innerText = "❌ عذراً، لا توجد دعوات متاحة حالياً.";
         return;
       }
 
@@ -63,8 +55,7 @@
       const code = codeDoc.id;
 
       await updateDoc(codeDoc.ref, { status: "confirmed" });
-      await updateDoc(guestRef, { status: "confirmed", assignedCode: code });
-
+      localStorage.setItem("assignedCode", code);
       showInvitationCard(code);
     }
 
@@ -72,10 +63,10 @@
       document.getElementById("rsvp-section").style.display = "none";
       document.getElementById("response").innerHTML = `
         <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.1);">
-          <h3 style="margin-bottom: 10px;">🎉 Your Invitation 🎉</h3>
-          <p style="font-size: 18px;">Thank you for confirming. Your access code is:</p>
+          <h3 style="margin-bottom: 10px;">🎉 تم تأكيد حضورك 🎉</h3>
+          <p style="font-size: 18px;">يرجى إبراز هذا الباركود عند الدخول:</p>
           <div style="font-size: 22px; margin: 10px 0; font-weight: bold;">${code}</div>
-          <p style="font-size: 16px;">Please show this code at the entrance.</p>
+          <img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(code)}" alt="QR Code">
         </div>`;
     }
 
@@ -87,6 +78,7 @@
       padding: 50px;
       background-color: #fff8f0;
       text-align: center;
+      direction: rtl;
     }
     button {
       padding: 14px 24px;
@@ -101,11 +93,11 @@
   </style>
 </head>
 <body>
-  <h2>You're invited to Khaled Wedding 🎉</h2>
-  <p>Please confirm your attendance:</p>
+  <h2>🎉 دعوة لحضور زفاف خالد 🎉</h2>
+  <p>يرجى تأكيد الحضور:</p>
   <div id="rsvp-section">
-    <button class="yes" onclick="handleRSVP(true)">✅ I will attend</button>
-    <button class="no" onclick="handleRSVP(false)">❌ I cannot attend</button>
+    <button class="yes" onclick="handleRSVP(true)">✅ أوافق على الحضور</button>
+    <button class="no" onclick="handleRSVP(false)">❌ لا أستطيع الحضور</button>
   </div>
   <div id="response" style="margin-top: 30px; font-size: 18px;"></div>
 </body>
