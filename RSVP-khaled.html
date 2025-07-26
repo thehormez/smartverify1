@@ -62,9 +62,10 @@
 
     function showInvitationCard(code) {
       document.getElementById("rsvp-section").style.display = "none";
+      const qrImage = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${encodeURIComponent(code)}`;
       document.getElementById("response").innerHTML = `
-        <div style="position: relative; display: inline-block; width: 320px; height: 550px; background-image: url('https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-card-qr-bg.png'); background-size: cover; border-radius: 12px;">
-          <img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(code)}" alt="QR Code" style="position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); width: 120px; height: 120px; background: white; padding: 6px; border-radius: 10px;">
+        <div style="position: relative; display: inline-block; width: 340px; height: 600px; background-image: url('https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-card-qr-bg.png'); background-size: cover; border-radius: 12px; background-position: center;">
+          <img src="${qrImage}" alt="QR Code" style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); width: 150px; height: 150px; background: white; padding: 6px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3);">
         </div>`;
     }
 
