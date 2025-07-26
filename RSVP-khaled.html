@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8" />
-  <title>دعوة زفاف خالد - تأكيد الحضور</title>
+  <title>دعوة زفاف خالد</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -61,10 +61,9 @@
     }
 
     function showInvitationCard(code) {
-      document.getElementById("invitation-card").style.display = "none";
       document.getElementById("rsvp-section").style.display = "none";
       document.getElementById("response").innerHTML = `
-        <div style="position: relative; display: inline-block; width: 320px; height: 550px; background-image: url('https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-invite-bg.png'); background-size: cover; border-radius: 12px;">
+        <div style="position: relative; display: inline-block; width: 320px; height: 550px; background-image: url('https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-card-qr-bg.png'); background-size: cover; border-radius: 12px;">
           <img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(code)}" alt="QR Code" style="position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); width: 120px; height: 120px; background: white; padding: 6px; border-radius: 10px;">
         </div>`;
     }
@@ -74,29 +73,31 @@
   <style>
     body {
       font-family: Arial;
-      padding: 0;
-      margin: 0;
-      background-color: #ffffff;
+      padding: 20px;
+      background-color: #f5f5f5;
       text-align: center;
       direction: rtl;
     }
-    #invitation-card {
-      width: 100%;
-      max-width: 400px;
-      margin: auto;
+    .card {
+      width: 340px;
+      height: 600px;
+      background-image: url('https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-invite-main.png');
+      background-size: cover;
+      background-position: center;
+      margin: 0 auto;
+      border-radius: 12px;
+      position: relative;
     }
-    .card-img {
+    .buttons {
+      position: absolute;
+      bottom: 30px;
       width: 100%;
-      height: auto;
-      display: block;
-    }
-    .buttons-container {
-      margin: 20px;
+      text-align: center;
     }
     button {
-      padding: 14px 24px;
-      font-size: 18px;
-      margin: 12px;
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 10px;
       border: none;
       border-radius: 8px;
       cursor: pointer;
@@ -106,12 +107,11 @@
   </style>
 </head>
 <body>
-  <div id="invitation-card">
-    <img class="card-img" src="https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-invite-bg.png" alt="دعوة الزفاف">
-  </div>
-  <div id="rsvp-section" class="buttons-container">
-    <button class="yes" onclick="handleRSVP(true)">✅ أوافق على الحضور</button>
-    <button class="no" onclick="handleRSVP(false)">❌ لا أستطيع الحضور</button>
+  <div class="card">
+    <div class="buttons" id="rsvp-section">
+      <button class="yes" onclick="handleRSVP(true)">✅ أوافق على الحضور</button>
+      <button class="no" onclick="handleRSVP(false)">❌ لا أستطيع الحضور</button>
+    </div>
   </div>
   <div id="response" style="margin-top: 30px; font-size: 18px;"></div>
 </body>
