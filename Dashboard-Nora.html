@@ -106,23 +106,65 @@
     <div class="invite-form" id="inviteForm" style="display:none;">
       <h3>إرسال دعوة جديدة</h3>
       <label>📱 اختيار من سجل الهاتف:</label>
-      <input type="text" placeholder="ابحث عن جهة الاتصال... (تجريبي)" />
+      <input type="text" id="contactSearch" placeholder="ابحث عن جهة الاتصال... (تجريبي)" />
 
       <label>✍️ الاسم (يدوي):</label>
-      <input type="text" placeholder="أدخل اسم الضيف..." />
+      <input type="text" id="guestName" placeholder="أدخل اسم الضيف..." />
 
       <label>📞 رقم الهاتف:</label>
-      <input type="text" placeholder="أدخل الرقم (9715xxxxxxxx)..." />
+      <input type="text" id="guestPhone" placeholder="أدخل الرقم (9715xxxxxxxx)..." />
 
       <label>🔢 عدد الدعوات:</label>
-      <input type="number" placeholder="مثال: 2" />
+      <input type="number" id="guestCount" placeholder="مثال: 2" />
 
-      <button>إرسال الدعوة</button>
+      <button onclick="sendInvitation()">إرسال الدعوة</button>
     </div>
   </div>
 
-  <script>
-    function showInviteForm() {
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.appspot.com",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function sendInvitation() {
+      const name = document.getElementById("guestName").value.trim();
+      const phone = document.getElementById("guestPhone").value.trim();
+      const count = document.getElementById("guestCount").value.trim();
+
+      if (!name || !phone || !count) {
+        alert("يرجى تعبئة جميع الحقول");
+        return;
+      }
+
+      try {
+        const docRef = await addDoc(collection(db, "guest_requests"), {
+          name,
+          phone,
+          count: parseInt(count),
+          event: "khaled_wedding",
+          status: "pending",
+          timestamp: serverTimestamp()
+        });
+        alert("✅ تم إرسال الدعوة بنجاح!");
+        document.getElementById("inviteForm").reset();
+      } catch (e) {
+        console.error("خطأ في إرسال الدعوة: ", e);
+        alert("❌ حدث خطأ. يرجى المحاولة لاحقاً");
+      }
+    }
+
+    window.showInviteForm = function() {
       document.getElementById("inviteForm").style.display = "block";
     }
   </script>
