@@ -62,11 +62,27 @@
 
     function showInvitationCard(code) {
       document.getElementById("rsvp-section").style.display = "none";
-      const qrImage = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${encodeURIComponent(code)}`;
-      document.getElementById("response").innerHTML = `
-        <div style="position: relative; display: inline-block; width: 340px; height: 600px; background-image: url('https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-card-qr-bg.png'); background-size: cover; border-radius: 12px; background-position: center;">
-          <img src="${qrImage}" alt="QR Code" style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); width: 150px; height: 150px; background: white; padding: 6px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3);">
-        </div>`;
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = 340;
+      canvas.height = 600;
+
+      const background = new Image();
+      background.src = "https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-card-qr-bg.png";
+
+      background.onload = () => {
+        ctx.drawImage(background, 0, 0, 340, 600);
+
+        const qr = new Image();
+        qr.src = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${encodeURIComponent(code)}`;
+
+        qr.onload = () => {
+          ctx.drawImage(qr, 95, 430, 150, 150);
+          const finalImage = canvas.toDataURL();
+          document.getElementById("response").innerHTML = `<img src="${finalImage}" alt="دعوة" style="border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">`;
+        };
+      };
     }
 
     window.handleRSVP = handleRSVP;
