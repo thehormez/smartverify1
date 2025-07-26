@@ -1,142 +1,129 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <title>لوحة التحكم - Hormez Security</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة تحكم نورا | Hormez</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Cairo', sans-serif;
-      background-color: #000;
-      color: #fff;
-      margin: 0;
-      padding: 0;
+      font-family: Arial;
       direction: rtl;
+      background-color: #000;
+      color: gold;
+      margin: 0;
     }
     header {
-      background-color: #d4af37;
-      padding: 15px;
+      background-color: black;
+      color: gold;
+      padding: 20px;
       text-align: center;
       font-size: 24px;
-      font-weight: bold;
     }
-    .container {
+    .sidebar {
+      background-color: #1c1c1c;
+      width: 260px;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      right: 0;
       padding: 20px;
+      box-sizing: border-box;
+    }
+    .sidebar h2 {
+      font-size: 20px;
+      margin-bottom: 30px;
+    }
+    .sidebar button {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 12px;
+      background-color: gold;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      color: black;
+      cursor: pointer;
+    }
+    .content {
+      margin-right: 280px;
+      padding: 30px;
     }
     .stats {
-      display: flex;
-      justify-content: space-around;
-      margin-bottom: 20px;
-    }
-    .stat {
-      background-color: #1a1a1a;
-      padding: 15px;
-      border-radius: 8px;
-      text-align: center;
-    }
-    .stat h3 {
-      margin: 0;
-      font-size: 20px;
-      color: #d4af37;
-    }
-    .stat p {
-      margin: 5px 0 0;
-      font-size: 16px;
-    }
-    .invite-form {
-      background-color: #1a1a1a;
+      background-color: #2e2e2e;
       padding: 20px;
       border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    .stats p {
+      font-size: 18px;
+      margin: 5px 0;
+    }
+    .invite-form {
+      background-color: #2e2e2e;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .invite-form label {
+      display: block;
+      margin: 10px 0 5px;
     }
     .invite-form input {
       width: 100%;
-      padding: 12px;
-      font-size: 16px;
+      padding: 10px;
       border-radius: 6px;
       border: none;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
     .invite-form button {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      background-color: #d4af37;
-      color: #000;
+      background-color: gold;
+      color: black;
+      padding: 12px 20px;
       border: none;
       border-radius: 6px;
+      font-size: 16px;
       cursor: pointer;
-    }
-    .history {
-      margin-top: 30px;
-    }
-    .history h3 {
-      border-bottom: 1px solid #d4af37;
-      padding-bottom: 8px;
-    }
-    .invite-log {
-      background-color: #1a1a1a;
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-  <header>مرحبا بكِ نورا | Hormez Security</header>
-
-  <div class="container">
+  <header>HORMEZ SECURITY</header>
+  <div class="sidebar">
+    <h2>مرحبا بك يا نورا</h2>
+    <button>الصفحة الرئيسية</button>
+    <button onclick="showInviteForm()">دعوة جديدة</button>
+    <button>الإرسال</button>
+    <button>التذكير</button>
+    <button>الحضور</button>
+    <button>خروج</button>
+  </div>
+  <div class="content">
     <div class="stats">
-      <div class="stat">
-        <h3>عدد الدعوات</h3>
-        <p id="totalInvites">50</p>
-      </div>
-      <div class="stat">
-        <h3>المحجوز</h3>
-        <p id="reservedInvites">8</p>
-      </div>
-      <div class="stat">
-        <h3>الرصيد</h3>
-        <p id="remainingInvites">42</p>
-      </div>
+      <p>عدد الدعوات: 50</p>
+      <p>المحجوز: 8</p>
+      <p>المتبقي: 42</p>
     </div>
+    <div class="invite-form" id="inviteForm" style="display:none;">
+      <h3>إرسال دعوة جديدة</h3>
+      <label>📱 اختيار من سجل الهاتف:</label>
+      <input type="text" placeholder="ابحث عن جهة الاتصال... (تجريبي)" />
 
-    <div class="invite-form">
-      <h3>📨 دعوة جديدة</h3>
-      <input type="text" id="guestPhone" placeholder="أدخل رقم الهاتف">
-      <button onclick="sendInvite()">إنشاء الدعوة وإرسالها</button>
-    </div>
+      <label>✍️ الاسم (يدوي):</label>
+      <input type="text" placeholder="أدخل اسم الضيف..." />
 
-    <div class="history">
-      <h3>📋 سجل الدعوات المُرسلة</h3>
-      <div id="inviteHistory"></div>
+      <label>📞 رقم الهاتف:</label>
+      <input type="text" placeholder="أدخل الرقم (9715xxxxxxxx)..." />
+
+      <label>🔢 عدد الدعوات:</label>
+      <input type="number" placeholder="مثال: 2" />
+
+      <button>إرسال الدعوة</button>
     </div>
   </div>
 
   <script>
-    const eventName = "khaled wedding";
-    const db = firebase.firestore();
-
-    async function sendInvite() {
-      const phone = document.getElementById("guestPhone").value.trim();
-      if (!phone) return alert("يرجى إدخال رقم الهاتف");
-
-      const snapshot = await db.collection("invites")
-        .where("status", "==", "pending")
-        .where("eventName", "==", eventName)
-        .limit(1).get();
-
-      if (snapshot.empty) return alert("❌ لا توجد دعوات متاحة حالياً");
-
-      const docRef = snapshot.docs[0].ref;
-      await docRef.update({ status: "confirmed", phone });
-
-      const code = snapshot.docs[0].id;
-      const inviteDiv = document.createElement("div");
-      inviteDiv.className = "invite-log";
-      inviteDiv.innerText = `📤 تم إرسال دعوة إلى ${phone} (الكود: ${code})`;
-      document.getElementById("inviteHistory").prepend(inviteDiv);
-      document.getElementById("guestPhone").value = "";
+    function showInviteForm() {
+      document.getElementById("inviteForm").style.display = "block";
     }
   </script>
 </body>
