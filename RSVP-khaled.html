@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8" />
-  <title>تأكيد الحضور - زفاف خالد</title>
+  <title>دعوة زفاف خالد - تأكيد الحضور</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -32,6 +32,7 @@
     async function handleRSVP(accept) {
       if (!accept) {
         localStorage.removeItem("assignedCode");
+        document.getElementById("rsvp-section").style.display = "none";
         document.getElementById("response").innerText = "❌ شكراً لتأكيدك. نتمنى رؤيتك في مناسبات قادمة.";
         return;
       }
@@ -60,6 +61,7 @@
     }
 
     function showInvitationCard(code) {
+      document.getElementById("invitation-card").style.display = "none";
       document.getElementById("rsvp-section").style.display = "none";
       document.getElementById("response").innerHTML = `
         <div style="position: relative; display: inline-block; width: 320px; height: 550px; background-image: url('https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-invite-bg.png'); background-size: cover; border-radius: 12px;">
@@ -72,10 +74,24 @@
   <style>
     body {
       font-family: Arial;
-      padding: 50px;
-      background-color: #fff8f0;
+      padding: 0;
+      margin: 0;
+      background-color: #ffffff;
       text-align: center;
       direction: rtl;
+    }
+    #invitation-card {
+      width: 100%;
+      max-width: 400px;
+      margin: auto;
+    }
+    .card-img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .buttons-container {
+      margin: 20px;
     }
     button {
       padding: 14px 24px;
@@ -90,9 +106,10 @@
   </style>
 </head>
 <body>
-  <h2>🎉 دعوة لحضور زفاف خالد 🎉</h2>
-  <p>يرجى تأكيد الحضور:</p>
-  <div id="rsvp-section">
+  <div id="invitation-card">
+    <img class="card-img" src="https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-invite-bg.png" alt="دعوة الزفاف">
+  </div>
+  <div id="rsvp-section" class="buttons-container">
     <button class="yes" onclick="handleRSVP(true)">✅ أوافق على الحضور</button>
     <button class="no" onclick="handleRSVP(false)">❌ لا أستطيع الحضور</button>
   </div>
