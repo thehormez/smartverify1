@@ -90,7 +90,7 @@
   <header>HORMEZ SECURITY</header>
   <div class="sidebar">
     <h2>مرحبا بك يا نورا</h2>
-    <button>الصفحة الرئيسية</button>
+    <button onclick="location.reload()">الصفحة الرئيسية</button>
     <button onclick="showInviteForm()">دعوة جديدة</button>
     <button>الإرسال</button>
     <button>التذكير</button>
@@ -98,10 +98,10 @@
     <button>خروج</button>
   </div>
   <div class="content">
-    <div class="stats">
-      <p>عدد الدعوات: 50</p>
-      <p>المحجوز: 8</p>
-      <p>المتبقي: 42</p>
+    <div class="stats" id="stats">
+      <p>عدد الدعوات: ...</p>
+      <p>المحجوز: ...</p>
+      <p>المتبقي: ...</p>
     </div>
     <div class="invite-form" id="inviteForm" style="display:none;">
       <h3>إرسال دعوة جديدة</h3>
@@ -123,7 +123,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
@@ -137,6 +137,22 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    async function updateStats() {
+      const q = query(collection(db, "guest_requests"), where("event", "==", "khaled_wedding"));
+      const snapshot = await getDocs(q);
+      const total = snapshot.size;
+      let confirmed = 0;
+      snapshot.forEach(doc => {
+        if (doc.data().status === "confirmed") confirmed++;
+      });
+      const remaining = total - confirmed;
+      document.getElementById("stats").innerHTML = `
+        <p>عدد الدعوات: ${total}</p>
+        <p>المحجوز: ${confirmed}</p>
+        <p>المتبقي: ${remaining}</p>
+      `;
+    }
+
     async function sendInvitation() {
       const name = document.getElementById("guestName").value.trim();
       const phone = document.getElementById("guestPhone").value.trim();
@@ -148,7 +164,7 @@
       }
 
       try {
-        const docRef = await addDoc(collection(db, "guest_requests"), {
+        await addDoc(collection(db, "guest_requests"), {
           name,
           phone,
           count: parseInt(count),
@@ -158,6 +174,7 @@
         });
         alert("✅ تم إرسال الدعوة بنجاح!");
         document.getElementById("inviteForm").reset();
+        updateStats();
       } catch (e) {
         console.error("خطأ في إرسال الدعوة: ", e);
         alert("❌ حدث خطأ. يرجى المحاولة لاحقاً");
@@ -167,6 +184,8 @@
     window.showInviteForm = function() {
       document.getElementById("inviteForm").style.display = "block";
     }
+
+    updateStats();
   </script>
 </body>
 </html>
