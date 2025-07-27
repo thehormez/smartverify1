@@ -153,7 +153,22 @@
           eventName: "زفاف خالد"
         });
 
-        alert(`✅ تم إرسال الدعوة لـ ${name} (${phone}) بعدد ${count} دعوات. الكود: ${code}`);
+        // رسالة واتساب
+        const message = `مرحبًا ${name} 🌟
+نشكرك على تأكيد حضورك.
+🎫 عدد الدعوات: ${count}
+🔐 كود الدعوة: ${code}
+📍 الرجاء إبراز هذا الكود عند الدخول.
+
+مع تحيات Hormez Security ✅`;
+
+        const formattedPhone = phone.startsWith("0")
+          ? "971" + phone.substring(1)
+          : phone;
+
+        const whatsappLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappLink, "_blank");
+
         document.getElementById("guestName").value = "";
         document.getElementById("guestPhone").value = "";
         document.getElementById("guestCount").value = "";
