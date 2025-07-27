@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>لوحة تحكم Hormez</title>
 
-  <!-- ✅ تنسيق داخلي -->
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -87,16 +86,17 @@
     }
   </style>
 
-  <!-- ✅ Firebase CDN -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
       getFirestore,
       collection,
-      addDoc
+      addDoc,
+      getDocs,
+      query,
+      where
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // ✅ إعداد Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
       authDomain: "hormez-inv.firebaseapp.com",
@@ -109,8 +109,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ✅ التنقل بين الصفحات
-    window.showSection = function(id) {
+    function showSection(id) {
       document.querySelectorAll("section").forEach(sec => {
         sec.classList.add("hidden");
         sec.classList.remove("active");
@@ -119,23 +118,19 @@
       document.getElementById(id).classList.add("active");
     }
 
-    // ✅ تسجيل الخروج
-    window.logout = function() {
+    function logout() {
       alert("تم تسجيل الخروج.");
     }
 
-    // ✅ ميزة سحب من سجل الهاتف (تجريبية)
-    window.fetchFromContacts = function() {
+    function fetchFromContacts() {
       alert("هذه الخاصية تعمل فقط على الأجهزة التي تدعم الوصول إلى سجل الهاتف.");
     }
 
-    // ✅ توليد كود فريد
     function generateCode() {
       const rand = Math.floor(10000 + Math.random() * 90000);
       return `INV-${rand}`;
     }
 
-    // ✅ إرسال الدعوة
     window.submitInvite = async function () {
       const name = document.getElementById("guestName").value.trim();
       const phone = document.getElementById("guestPhone").value.trim();
@@ -162,14 +157,45 @@
         document.getElementById("guestName").value = "";
         document.getElementById("guestPhone").value = "";
         document.getElementById("guestCount").value = "";
+        updateDashboardStats("زفاف خالد");
       } catch (e) {
         console.error("خطأ في الإضافة:", e);
         alert("حدث خطأ أثناء إرسال الدعوة.");
       }
+    };
+
+    async function updateDashboardStats(eventName) {
+      try {
+        const invitesRef = collection(db, "invites");
+        const snapshot = await getDocs(query(invitesRef, where("eventName", "==", eventName)));
+
+        const total = snapshot.size;
+        let confirmed = 0;
+
+        snapshot.forEach(doc => {
+          const status = doc.data().status;
+          if (status === "yes") confirmed++;
+        });
+
+        const remaining = total - confirmed;
+
+        document.getElementById("totalInvites").innerText = total;
+        document.getElementById("confirmedInvites").innerText = confirmed;
+        document.getElementById("remainingInvites").innerText = remaining;
+      } catch (error) {
+        console.error("خطأ في جلب الإحصائيات:", error);
+      }
     }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      updateDashboardStats("زفاف خالد");
+    });
+
+    window.showSection = showSection;
+    window.logout = logout;
+    window.fetchFromContacts = fetchFromContacts;
   </script>
 </head>
-
 <body>
   <header>HORMEZ SECURITY</header>
 
