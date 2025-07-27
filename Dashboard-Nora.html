@@ -4,8 +4,172 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>لوحة تحكم Hormez</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <!-- ✅ تنسيق داخلي -->
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #111;
+      color: gold;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: black;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      background-color: #222;
+      padding: 10px;
+    }
+
+    nav button {
+      margin: 5px;
+      padding: 10px 15px;
+      background-color: gold;
+      color: black;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    main {
+      padding: 20px;
+      text-align: center;
+    }
+
+    section.hidden { display: none; }
+    section.active { display: block; }
+
+    .stats {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .card {
+      background-color: #222;
+      padding: 20px;
+      border-radius: 10px;
+      min-width: 200px;
+      box-shadow: 0 0 10px #000;
+    }
+
+    .label { font-size: 18px; color: #ccc; margin-bottom: 8px; }
+    .value { font-size: 26px; font-weight: bold; color: gold; }
+
+    .form {
+      max-width: 400px;
+      margin: auto;
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    input {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+  </style>
+
+  <!-- ✅ Firebase CDN -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ✅ إعداد Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.firebasestorage.app",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ✅ التنقل بين الصفحات
+    window.showSection = function(id) {
+      document.querySelectorAll("section").forEach(sec => {
+        sec.classList.add("hidden");
+        sec.classList.remove("active");
+      });
+      document.getElementById(id).classList.remove("hidden");
+      document.getElementById(id).classList.add("active");
+    }
+
+    // ✅ تسجيل الخروج
+    window.logout = function() {
+      alert("تم تسجيل الخروج.");
+    }
+
+    // ✅ ميزة سحب من سجل الهاتف (تجريبية)
+    window.fetchFromContacts = function() {
+      alert("هذه الخاصية تعمل فقط على الأجهزة التي تدعم الوصول إلى سجل الهاتف.");
+    }
+
+    // ✅ توليد كود فريد
+    function generateCode() {
+      const rand = Math.floor(10000 + Math.random() * 90000);
+      return `INV-${rand}`;
+    }
+
+    // ✅ إرسال الدعوة
+    window.submitInvite = async function () {
+      const name = document.getElementById("guestName").value.trim();
+      const phone = document.getElementById("guestPhone").value.trim();
+      const count = parseInt(document.getElementById("guestCount").value);
+
+      if (!name || !phone || !count) {
+        alert("يرجى تعبئة جميع الحقول.");
+        return;
+      }
+
+      const code = generateCode();
+
+      try {
+        await addDoc(collection(db, "invites"), {
+          name,
+          phone,
+          count,
+          code,
+          status: "pending",
+          eventName: "زفاف خالد"
+        });
+
+        alert(`✅ تم إرسال الدعوة لـ ${name} (${phone}) بعدد ${count} دعوات. الكود: ${code}`);
+        document.getElementById("guestName").value = "";
+        document.getElementById("guestPhone").value = "";
+        document.getElementById("guestCount").value = "";
+      } catch (e) {
+        console.error("خطأ في الإضافة:", e);
+        alert("حدث خطأ أثناء إرسال الدعوة.");
+      }
+    }
+  </script>
 </head>
+
 <body>
   <header>HORMEZ SECURITY</header>
 
@@ -51,171 +215,5 @@
       </div>
     </section>
   </main>
-
-  <script type="module" src="main.js"></script>
 </body>
 </html>
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #111;
-  color: gold;
-  margin: 0;
-  padding: 0;
-}
-
-header {
-  background-color: black;
-  padding: 20px;
-  text-align: center;
-  font-size: 24px;
-  font-weight: bold;
-}
-
-nav {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  background-color: #222;
-  padding: 10px;
-}
-
-nav button {
-  margin: 5px;
-  padding: 10px 15px;
-  background-color: gold;
-  color: black;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-main {
-  padding: 20px;
-  text-align: center;
-}
-
-section.hidden {
-  display: none;
-}
-
-section.active {
-  display: block;
-}
-
-.stats {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.card {
-  background-color: #222;
-  padding: 20px;
-  border-radius: 10px;
-  min-width: 200px;
-  box-shadow: 0 0 10px #000;
-}
-
-.label {
-  font-size: 18px;
-  color: #ccc;
-  margin-bottom: 8px;
-}
-
-.value {
-  font-size: 26px;
-  font-weight: bold;
-  color: gold;
-}
-
-.form {
-  max-width: 400px;
-  margin: auto;
-  background: #222;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px #000;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-input {
-  padding: 10px;
-  border-radius: 5px;
-  border: none;
-}
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-  authDomain: "hormez-inv.firebaseapp.com",
-  projectId: "hormez-inv",
-  storageBucket: "hormez-inv.firebasestorage.app",
-  messagingSenderId: "747519941805",
-  appId: "1:747519941805:web:468fada2492700e9da3a24"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-export { db };
-import { db } from './firebaseConfig.js';
-import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-function showSection(id) {
-  document.querySelectorAll("section").forEach(sec => {
-    sec.classList.add("hidden");
-    sec.classList.remove("active");
-  });
-  document.getElementById(id).classList.remove("hidden");
-  document.getElementById(id).classList.add("active");
-}
-
-function logout() {
-  alert("تم تسجيل الخروج.");
-}
-
-function fetchFromContacts() {
-  alert("هذه الخاصية تعمل فقط على الأجهزة التي تدعم الوصول إلى سجل الهاتف.");
-}
-
-function generateCode() {
-  const rand = Math.floor(10000 + Math.random() * 90000);
-  return `INV-${rand}`;
-}
-
-window.submitInvite = async function () {
-  const name = document.getElementById("guestName").value.trim();
-  const phone = document.getElementById("guestPhone").value.trim();
-  const count = parseInt(document.getElementById("guestCount").value);
-
-  if (!name || !phone || !count) {
-    alert("يرجى تعبئة جميع الحقول.");
-    return;
-  }
-
-  const code = generateCode();
-
-  try {
-    await addDoc(collection(db, "invites"), {
-      name,
-      phone,
-      count,
-      code,
-      status: "pending",
-      eventName: "زفاف خالد"
-    });
-
-    alert(`✅ تم إرسال الدعوة لـ ${name} (${phone}) بعدد ${count} دعوات. الكود: ${code}`);
-    document.getElementById("guestName").value = "";
-    document.getElementById("guestPhone").value = "";
-    document.getElementById("guestCount").value = "";
-  } catch (e) {
-    console.error("خطأ في الإضافة:", e);
-    alert("حدث خطأ أثناء إرسال الدعوة.");
-  }
-};
