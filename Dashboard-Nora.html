@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>لوحة تحكم Hormez</title>
+  <title>Dashboard Nora - مع رفع جهات الاتصال</title>
+
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
   <style>
     body {
@@ -49,26 +51,8 @@
     section.hidden { display: none; }
     section.active { display: block; }
 
-    .stats {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
-
-    .card {
-      background-color: #222;
-      padding: 20px;
-      border-radius: 10px;
-      min-width: 200px;
-      box-shadow: 0 0 10px #000;
-    }
-
-    .label { font-size: 18px; color: #ccc; margin-bottom: 8px; }
-    .value { font-size: 26px; font-weight: bold; color: gold; }
-
     .form {
-      max-width: 400px;
+      max-width: 500px;
       margin: auto;
       background: #222;
       padding: 20px;
@@ -79,36 +63,78 @@
       gap: 10px;
     }
 
-    input {
+    input, select {
       padding: 10px;
       border-radius: 5px;
       border: none;
     }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      direction: rtl;
+    }
+
+    th, td {
+      border: 1px solid #444;
+      padding: 8px;
+      color: #fff;
+    }
+
+    th {
+      background: #333;
+    }
+
+    .upload-box {
+      margin-top: 30px;
+    }
+
+    .send-btn {
+      background-color: gold;
+      color: black;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
+</head>
+<body>
+  <header>HORMEZ SECURITY</header>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      query,
-      where
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  <nav>
+    <button onclick="showSection('upload')">📂 رفع ملف جهات الاتصال</button>
+    <button onclick="showSection('manual')">✍️ دعوة يدوية</button>
+  </nav>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-      authDomain: "hormez-inv.firebaseapp.com",
-      projectId: "hormez-inv",
-      storageBucket: "hormez-inv.firebasestorage.app",
-      messagingSenderId: "747519941805",
-      appId: "1:747519941805:web:468fada2492700e9da3a24"
-    };
+  <main>
+    <!-- رفع ملف جهات الاتصال -->
+    <section id="upload" class="active">
+      <h2>📂 رفع ملف جهات الاتصال (Excel/CSV)</h2>
+      <div class="form upload-box">
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+        <div id="output"></div>
+      </div>
+    </section>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    <!-- دعوة يدوية -->
+    <section id="manual" class="hidden">
+      <h2>✍️ إرسال دعوة جديدة يدويًا</h2>
+      <div class="form">
+        <label>الاسم:</label>
+        <input type="text" id="guestName" placeholder="اسم الضيف" />
+        <label>رقم الهاتف:</label>
+        <input type="tel" id="guestPhone" placeholder="05xxxxxxxx" />
+        <label>عدد الدعوات:</label>
+        <input type="number" id="guestCount" placeholder="مثال: 1 أو 2" />
+        <button onclick="sendInvite()">إرسال الدعوة عبر واتساب</button>
+      </div>
+    </section>
+  </main>
 
+  <script>
     function showSection(id) {
       document.querySelectorAll("section").forEach(sec => {
         sec.classList.add("hidden");
@@ -118,43 +144,9 @@
       document.getElementById(id).classList.add("active");
     }
 
-    function logout() {
-      alert("تم تسجيل الخروج.");
-    }
-
-    function fetchFromContacts() {
-      alert("هذه الخاصية تعمل فقط على الأجهزة التي تدعم الوصول إلى سجل الهاتف.");
-    }
-
-    function generateCode() {
-      const rand = Math.floor(10000 + Math.random() * 90000);
-      return `INV-${rand}`;
-    }
-
-    window.submitInvite = async function () {
-      const name = document.getElementById("guestName").value.trim();
-      const phone = document.getElementById("guestPhone").value.trim();
-      const count = parseInt(document.getElementById("guestCount").value);
-
-      if (!name || !phone || !count) {
-        alert("يرجى تعبئة جميع الحقول.");
-        return;
-      }
-
-      const code = generateCode();
-
-      try {
-        await addDoc(collection(db, "invites"), {
-          name,
-          phone,
-          count,
-          code,
-          status: "pending",
-          eventName: "زفاف خالد"
-        });
-
-        // رسالة واتساب
-        const message = `مرحبًا ${name} 🌟
+    function sendViaWhatsApp(name, phone, count) {
+      const code = "INV-" + Math.floor(10000 + Math.random() * 90000);
+      const message = `مرحبًا ${name} 🌟
 نشكرك على تأكيد حضورك.
 🎫 عدد الدعوات: ${count}
 🔐 كود الدعوة: ${code}
@@ -162,99 +154,62 @@
 
 مع تحيات Hormez Security ✅`;
 
-        const formattedPhone = phone.startsWith("0")
-          ? "971" + phone.substring(1)
-          : phone;
+      const formattedPhone = phone.startsWith("0")
+        ? "971" + phone.substring(1)
+        : phone;
 
-        const whatsappLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappLink, "_blank");
-
-        document.getElementById("guestName").value = "";
-        document.getElementById("guestPhone").value = "";
-        document.getElementById("guestCount").value = "";
-        updateDashboardStats("زفاف خالد");
-      } catch (e) {
-        console.error("خطأ في الإضافة:", e);
-        alert("حدث خطأ أثناء إرسال الدعوة.");
-      }
-    };
-
-    async function updateDashboardStats(eventName) {
-      try {
-        const invitesRef = collection(db, "invites");
-        const snapshot = await getDocs(query(invitesRef, where("eventName", "==", eventName)));
-
-        const total = snapshot.size;
-        let confirmed = 0;
-
-        snapshot.forEach(doc => {
-          const status = doc.data().status;
-          if (status === "yes") confirmed++;
-        });
-
-        const remaining = total - confirmed;
-
-        document.getElementById("totalInvites").innerText = total;
-        document.getElementById("confirmedInvites").innerText = confirmed;
-        document.getElementById("remainingInvites").innerText = remaining;
-      } catch (error) {
-        console.error("خطأ في جلب الإحصائيات:", error);
-      }
+      const whatsappLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappLink, "_blank");
     }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      updateDashboardStats("زفاف خالد");
+    function sendInvite() {
+      const name = document.getElementById("guestName").value.trim();
+      const phone = document.getElementById("guestPhone").value.trim();
+      const count = document.getElementById("guestCount").value.trim();
+
+      if (!name || !phone || !count) {
+        alert("يرجى تعبئة جميع الحقول.");
+        return;
+      }
+
+      sendViaWhatsApp(name, phone, count);
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(sheet);
+
+        if (json.length === 0) {
+          document.getElementById('output').innerText = '⚠️ الملف فارغ أو التنسيق غير صحيح.';
+          return;
+        }
+
+        let html = '<table><thead><tr><th>الاسم</th><th>رقم الهاتف</th><th>عدد</th><th>إرسال</th></tr></thead><tbody>';
+        json.forEach(row => {
+          const name = row.name || '';
+          const phone = row.phone || '';
+          html += `<tr>
+                    <td>${name}</td>
+                    <td>${phone}</td>
+                    <td><input type="number" value="1" style="width: 50px;" id="count_${phone}" /></td>
+                    <td><button class="send-btn" onclick="sendViaWhatsApp('${name}', '${phone}', document.getElementById('count_${phone}').value)">إرسال</button></td>
+                  </tr>`;
+        });
+        html += '</tbody></table>';
+
+        document.getElementById('output').innerHTML = html;
+      };
+
+      reader.readAsArrayBuffer(file);
     });
-
-    window.showSection = showSection;
-    window.logout = logout;
-    window.fetchFromContacts = fetchFromContacts;
   </script>
-</head>
-<body>
-  <header>HORMEZ SECURITY</header>
-
-  <nav>
-    <button onclick="showSection('home')">الصفحة الرئيسية</button>
-    <button onclick="showSection('newInvite')">دعوة جديدة</button>
-    <button>الإرسال</button>
-    <button>التذكير</button>
-    <button>الحضور</button>
-    <button onclick="logout()">الخروج</button>
-  </nav>
-
-  <main>
-    <section id="home" class="active">
-      <h2>مرحبًا بك يا منظم الفعالية</h2>
-      <div class="stats">
-        <div class="card">
-          <div class="label">📦 إجمالي الدعوات</div>
-          <div class="value" id="totalInvites">0</div>
-        </div>
-        <div class="card">
-          <div class="label">✅ المحجوزة</div>
-          <div class="value" id="confirmedInvites">0</div>
-        </div>
-        <div class="card">
-          <div class="label">⌛ المتبقية</div>
-          <div class="value" id="remainingInvites">0</div>
-        </div>
-      </div>
-    </section>
-
-    <section id="newInvite" class="hidden">
-      <h2>إرسال دعوة جديدة</h2>
-      <div class="form">
-        <button onclick="fetchFromContacts()">📱 سحب من سجل الهاتف</button>
-        <label>الاسم:</label>
-        <input type="text" id="guestName" placeholder="اسم الضيف" />
-        <label>رقم الهاتف:</label>
-        <input type="tel" id="guestPhone" placeholder="05xxxxxxxx" />
-        <label>عدد الدعوات:</label>
-        <input type="number" id="guestCount" placeholder="مثال: 1 أو 2" />
-        <button onclick="submitInvite()">إرسال</button>
-      </div>
-    </section>
-  </main>
 </body>
 </html>
