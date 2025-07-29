@@ -71,6 +71,20 @@
     <button onclick="updateStatistics()" style="margin-top:10px; padding:8px 16px; font-weight:bold; background:gold; color:black; border:none; border-radius:8px; cursor:pointer;">🔄 تحديث الإحصائيات</button>
   </div>
 
+  <div style="padding: 20px; text-align: center;">
+    <h2>✍️ إرسال دعوة جديدة يدويًا</h2>
+    <input type="text" id="guestName" placeholder="الاسم الكامل" style="padding:10px; width:200px;" />
+    <input type="tel" id="guestPhone" placeholder="رقم الهاتف" style="padding:10px; width:200px;" />
+    <input type="number" id="guestCount" placeholder="عدد البطاقات" style="padding:10px; width:200px;" />
+    <button onclick="manualSend()" style="padding:10px 20px; margin: 10px; background:gold; color:black; border:none; border-radius:6px; font-weight:bold;">📤 إرسال</button>
+  </div>
+
+  <div style="padding: 20px; text-align: center;">
+    <h2>📂 أو رفع ملف Excel</h2>
+    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="padding:10px;" />
+    <div id="output"></div>
+  </div>
+
   <script>
     const baseImageURL = "https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-invite-main.png";
 
@@ -112,6 +126,64 @@
       };
       img.src = baseImageURL;
     }
+
+    function sendViaWhatsApp(name, phone, count) {
+      for (let i = 1; i <= count; i++) {
+        const code = "INV-" + Math.floor(10000 + Math.random() * 90000);
+        generateBarcodeCard(code, (imageUrl, barcode) => {
+          saveToFirestore(barcode, name, phone, imageUrl);
+
+          const message = `مرحبًا ${name} 🌟\n🎫 بطاقة الدعوة رقم ${i} من ${count}\n🔐 كود: ${barcode}`;
+          const formattedPhone = phone.startsWith("0") ? "971" + phone.substring(1) : phone;
+          const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+
+          const a = document.createElement("a");
+          a.href = imageUrl;
+          a.download = `${barcode}.png`;
+          a.click();
+
+          window.open(waLink, '_blank');
+        });
+      }
+    }
+
+    function manualSend() {
+      const name = document.getElementById("guestName").value.trim();
+      const phone = document.getElementById("guestPhone").value.trim();
+      const count = parseInt(document.getElementById("guestCount").value);
+      if (name && phone && count > 0) {
+        sendViaWhatsApp(name, phone, count);
+      } else {
+        alert("يرجى تعبئة جميع الحقول بشكل صحيح");
+      }
+    }
+
+    document.getElementById("excelFile").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(sheet);
+        let html = '<table border="1" style="margin:auto;margin-top:20px;"><tr><th>الاسم</th><th>رقم الهاتف</th><th>عدد</th><th>إرسال</th></tr>';
+        json.forEach((row, idx) => {
+          const name = row.name || row.الاسم || "";
+          const phone = row.phone || row.رقم || "";
+          const count = row.count || row.عدد || 1;
+          html += `<tr>
+            <td>${name}</td>
+            <td>${phone}</td>
+            <td>${count}</td>
+            <td><button onclick="sendViaWhatsApp('${name}', '${phone}', ${count})">إرسال</button></td>
+          </tr>`;
+        });
+        html += '</table>';
+        document.getElementById("output").innerHTML = html;
+      };
+      reader.readAsArrayBuffer(file);
+    });
   </script>
 </body>
 </html>
