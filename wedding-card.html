@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>صانع بطاقات الدعوات - نسخة صفحة واحدة</title>
+<!-- مكتبات خفيفة عبر CDN -->
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+<style>
+  :root{
+    --brand:#BDA06A; /* ذهبي */
+    --dark:#111;
+    --light:#fff;
+    --muted:#f4f4f4;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:system-ui, -apple-system, "Segoe UI", Tahoma, Arial, "Noto Naskh Arabic", "Amiri", sans-serif;
+    background:#fafafa; color:#111;
+  }
+  header{
+    background:var(--dark); color:var(--light); padding:16px 20px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  }
+  header h1{margin:0; font-size:18px; letter-spacing:0.5px}
+  header .badge{background:var(--brand); color:#000; padding:6px 10px; border-radius:12px; font-weight:600}
+  .container{display:grid; grid-template-columns:320px 1fr; gap:16px; padding:16px}
+  @media (max-width: 980px){ .container{grid-template-columns:1fr} }
+  .card{
+    background:#fff; border:1px solid #eaeaea; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,0.04);
+  }
+  .card .head{
+    padding:12px 14px; border-bottom:1px solid #eee; font-weight:700; color:#222;
+  }
+  .card .body{ padding:14px }
+  .grid{display:grid; gap:10px}
+  .grid.cols-2{grid-template-columns:1fr 1fr}
+  label{font-size:12px; color:#333; margin-bottom:2px; display:block}
+  input[type="text"], input[type="number"], input[type="color"], textarea, select{
+    width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; background:#fff; font-size:13px;
+  }
+  textarea{min-height:100px; resize:vertical}
+  .hint{font-size:11px; color:#666}
+  .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .btn{
+    appearance:none; border:0; background:var(--brand); color:#000; padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer;
+    transition:.2s; font-size:13px;
+  }
+  .btn:hover{filter:brightness(0.95)}
+  .btn.secondary{background:#eaeaea; color:#111}
+  .btn.ghost{background:transparent; border:1px solid #ddd}
+  .btn.block{width:100%}
+  .hr{height:1px; background:#eee; margin:12px 0}
+  canvas{max-width:100%; height:auto; border-radius:12px; border:1px dashed #ddd; background:#fff}
+  .preview-wrap{padding:10px; display:grid; gap:10px}
+  .pill{display:inline-flex; align-items:center; gap:6px; background:#f5f5f5; border:1px solid #eee; border-radius:999px; padding:6px 10px; font-size:12px}
+  .footer-note{font-size:11px; color:#666; padding:10px 16px 20px}
+  .list{max-height:180px; overflow:auto; border:1px solid #eee; border-radius:8px; padding:6px; background:#fff}
+  .list .item{display:flex; justify-content:space-between; padding:6px 8px; border-bottom:1px dashed #f0f0f0; font-size:12px}
+  .list .item:last-child{border-bottom:0}
+</style>
+</head>
+<body>
+<header>
+  <h1>HORMEZ SECURITY • صانع بطاقات الدعوات (نسخة خفيفة)</h1>
+  <span class="badge">صفحة واحدة • بدون تثبيت</span>
+</header>
+
+<div class="container">
+  <!-- اللوحة اليمنى: الإعدادات -->
+  <section class="card">
+    <div class="head">إعدادات الحدث</div>
+    <div class="body grid">
+      <div class="grid cols-2">
+        <div>
+          <label>اسم الحدث</label>
+          <input id="eventName" type="text" placeholder="مثال: زفاف خالد" value="زفاف خالد">
+        </div>
+        <div>
+          <label>التاريخ</label>
+          <input id="eventDate" type="text" placeholder="مثال: 12 يوليو 2025">
+        </div>
+      </div>
+      <div class="grid cols-2">
+        <div>
+          <label>المكان</label>
+          <input id="eventLocation" type="text" placeholder="مثال: قاعة المها - أبوظبي">
+        </div>
+        <div>
+          <label>رابط اللوكيشن (اختياري)</label>
+          <input id="eventMap" type="text" placeholder="https://maps.app.goo.gl/...">
+        </div>
+      </div>
+
+      <div class="grid cols-2">
+        <div>
+          <label>لون رئيسي</label>
+          <input id="primaryColor" type="color" value="#BDA06A">
+        </div>
+        <div>
+          <label>لون النص</label>
+          <input id="textColor" type="color" value="#111111">
+        </div>
+      </div>
+
+      <div class="grid cols-2">
+        <div>
+          <label>عرض البطاقة (بالبكسل)</label>
+          <input id="cardW" type="number" value="1200" min="600" step="50">
+        </div>
+        <div>
+          <label>ارتفاع البطاقة (بالبكسل)</label>
+          <input id="cardH" type="number" value="1800" min="800" step="50">
+        </div>
+      </div>
+
+      <div class="grid cols-2">
+        <div>
+          <label>خلفية البطاقة (صورة)</label>
+          <input id="bgInput" type="file" accept="image/*">
+          <div class="hint">يفضل صورة عمودية عالية الدقة</div>
+        </div>
+        <div>
+          <label>شعار (اختياري)</label>
+          <input id="logoInput" type="file" accept="image/*">
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="grid cols-2">
+        <div>
+          <label>بادئة الكود (Prefix)</label>
+          <input id="codePrefix" type="text" value="INV-">
+        </div>
+        <div>
+          <label>الترقيم يبدأ من</label>
+          <input id="codeStart" type="number" value="1" min="1">
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="btnPreview">معاينة بطاقة نموذج</button>
+        <button class="btn secondary" id="btnClear">مسح المعاينة</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div>
+        <label>إدخال الضيوف يدويًا</label>
+        <textarea id="guestTextarea" placeholder="الاسم,رقم الهاتف (اختياري),كود خاص (اختياري)
+مثال:
+أحمد علي,9715XXXXXXXX,
+فاطمة محمد,,INV-055"></textarea>
+        <div class="hint">كل سطر يمثل ضيفًا واحدًا. إذا لم تُدخل كودًا، سيتم توليده تلقائيًا.</div>
+      </div>
+
+      <div class="grid cols-2">
+        <div>
+          <label>رفع ملف CSV للضيوف</label>
+          <input id="csvInput" type="file" accept=".csv">
+          <div class="hint">أعمدة مقترحة: name, phone, code</div>
+        </div>
+        <div class="list" id="guestList"></div>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="btnGenerateAll">توليد الكل (PNG + ZIP)</button>
+        <button class="btn ghost" id="btnExportCSV">تصدير CSV للأسماء والأكواد</button>
+      </div>
+
+      <div>
+        <div class="hr"></div>
+        <div class="hint">
+          إرسال واتساب تلقائيًا يحتاج ربطًا بخادم (Twilio WhatsApp Business). في هذه النسخة، سيتم تجهيز نص الرسالة لتقوم بالإرسال اليدوي سريعًا.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- اللوحة اليسرى: المعاينة والمخرجات -->
+  <section class="card">
+    <div class="head">المعاينة + النتائج</div>
+    <div class="body">
+      <div class="row" style="justify-content:space-between; margin-bottom:8px">
+        <span class="pill">معاينة بحجم الكانفس</span>
+        <span class="pill" id="statusPill">جاهز</span>
+      </div>
+      <div class="preview-wrap">
+        <canvas id="cardCanvas" width="1200" height="1800"></canvas>
+        <div class="row">
+          <a id="downloadSample" class="btn secondary" download="sample-invite.png">تحميل المعاينة PNG</a>
+          <button id="btnCopyWhatsApp" class="btn ghost">نسخ نص واتساب</button>
+        </div>
+      </div>
+      <div class="footer-note">
+        تلميح: للحصول على أفضل دقة للطباعة، استخدم صور خلفية كبيرة (على الأقل 1800×2700 بكسل).
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  // عناصر DOM
+  const el = (id)=>document.getElementById(id);
+  const eventName = el('eventName');
+  const eventDate = el('eventDate');
+  const eventLocation = el('eventLocation');
+  const eventMap = el('eventMap');
+  const primaryColor = el('primaryColor');
+  const textColor = el('textColor');
+  const cardW = el('cardW');
+  const cardH = el('cardH');
+  const bgInput = el('bgInput');
+  const logoInput = el('logoInput');
+  const codePrefix = el('codePrefix');
+  const codeStart = el('codeStart');
+  const btnPreview = el('btnPreview');
+  const btnClear = el('btnClear');
+  const guestTextarea = el('guestTextarea');
+  const csvInput = el('csvInput');
+  const guestList = el('guestList');
+  const btnGenerateAll = el('btnGenerateAll');
+  const btnExportCSV = el('btnExportCSV');
+  const canvas = el('cardCanvas');
+  const ctx = canvas.getContext('2d');
+  const statusPill = el('statusPill');
+  const downloadSample = el('downloadSample');
+  const btnCopyWhatsApp = el('btnCopyWhatsApp');
+
+  // صور الخلفية/الشعار
+  let bgImage = null;
+  let logoImage = null;
+
+  // تحميل صورة من input
+  function loadImageFromInput(input, cb){
+    const file = input.files && input.files[0];
+    if(!file){ cb(null); return; }
+    const reader = new FileReader();
+    reader.onload = ()=> {
+      const img = new Image();
+      img.onload = ()=> cb(img);
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  bgInput.addEventListener('change', ()=> loadImageFromInput(bgInput, img=>{ bgImage = img; redrawPreview(); }));
+  logoInput.addEventListener('change', ()=> loadImageFromInput(logoInput, img=>{ logoImage = img; redrawPreview(); }));
+
+  // تغيير المقاس
+  function resizeCanvas(){
+    const w = parseInt(cardW.value||1200,10);
+    const h = parseInt(cardH.value||1800,10);
+    canvas.width = w; canvas.height = h;
+  }
+
+  // رسم معاينة بطاقة واحدة (نموذج)
+  async function redrawPreview(sampleName="ضيف كريم", sampleCode="INV-001"){
+    resizeCanvas();
+    const w = canvas.width, h = canvas.height;
+
+    // خلفية
+    if(bgImage){
+      // ملء الغلاف كاملاً مع الحفاظ على النسبة (cover)
+      const bgRatio = bgImage.width/bgImage.height;
+      const canvasRatio = w/h;
+      let dw, dh, dx, dy;
+      if(bgRatio > canvasRatio){
+        // أعرض أعرض من الكانفس
+        dh = h; dw = bgRatio * dh;
+        dx = -(dw - w)/2; dy = 0;
+      }else{
+        dw = w; dh = dw / bgRatio;
+        dx = 0; dy = -(dh - h)/2;
+      }
+      ctx.drawImage(bgImage, dx, dy, dw, dh);
+    }else{
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0,0,w,h);
+    }
+
+    // طبقة تدرّج خفيف للقراءة
+    const grad = ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0, "rgba(0,0,0,0.05)");
+    grad.addColorStop(1, "rgba(0,0,0,0.25)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,w,h);
+
+    // لوحة علوية نصف شفافة لعنوان الحدث
+    const panelH = Math.round(h*0.18);
+    ctx.fillStyle = hexToRgba(primaryColor.value || '#BDA06A', 0.85);
+    roundRect(ctx, Math.round(w*0.06), Math.round(h*0.06), Math.round(w*0.88), panelH, 24, true, false);
+
+    // شعار (اختياري)
+    if(logoImage){
+      const maxLogoW = Math.round(w*0.18), maxLogoH = Math.round(panelH*0.8);
+      const r = fitContain(logoImage.width, logoImage.height, maxLogoW, maxLogoH);
+      ctx.drawImage(logoImage, Math.round(w*0.07), Math.round(h*0.06 + (panelH - r.h)/2), r.w, r.h);
+    }
+
+    // نص العنوان + التاريخ + المكان
+    ctx.fillStyle = textColor.value || '#111111';
+    ctx.textAlign = 'right';
+    // عنوان الحدث
+    ctx.font = `700 ${Math.round(w*0.055)}px system-ui`;
+    ctx.fillText(eventName.value || 'اسم الحدث', Math.round(w*0.92), Math.round(h*0.06 + panelH*0.45));
+    // التاريخ
+    ctx.font = `500 ${Math.round(w*0.028)}px system-ui`;
+    ctx.fillText(eventDate.value || '', Math.round(w*0.92), Math.round(h*0.06 + panelH*0.75));
+    // المكان
+    ctx.font = `400 ${Math.round(w*0.026)}px system-ui`;
+    ctx.fillText(eventLocation.value || '', Math.round(w*0.92), Math.round(h*0.06 + panelH*0.93));
+
+    // بطاقة الضيف (منطقة سفلية)
+    const cardY = Math.round(h*0.32);
+    const cardHh = Math.round(h*0.54);
+    roundRect(ctx, Math.round(w*0.06), cardY, Math.round(w*0.88), cardHh, 28, true, false);
+    // ترويسة الضيف
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 ${Math.round(w*0.05)}px system-ui`;
+    ctx.textAlign='center';
+    ctx.fillText('دعوة خاصة', Math.round(w*0.5), cardY + Math.round(w*0.08));
+
+    // اسم الضيف
+    ctx.fillStyle = textColor.value || '#111111';
+    ctx.font = `700 ${Math.round(w*0.06)}px system-ui`;
+    ctx.fillText(sampleName, Math.round(w*0.5), cardY + Math.round(w*0.18));
+
+    // كود الدعوة
+    ctx.font = `600 ${Math.round(w*0.035)}px system-ui`;
+    ctx.fillText(sampleCode, Math.round(w*0.5), cardY + Math.round(w*0.24));
+
+    // QR code (مضمن)
+    const qrSize = Math.round(Math.min(w,h) * 0.32);
+    const qrX = Math.round(w*0.5 - qrSize/2);
+    const qrY = cardY + Math.round(cardHh*0.32);
+    const qrText = buildQRPayload(sampleCode);
+    const qrDataURL = await QRCode.toDataURL(qrText, {width: qrSize, margin: 1});
+    await drawImageFromDataURL(ctx, qrDataURL, qrX, qrY, qrSize, qrSize);
+
+    // سطر تعليمات
+    ctx.font = `500 ${Math.round(w*0.028)}px system-ui`;
+    ctx.fillText('يرجى إبراز الباركود عند الدخول', Math.round(w*0.5), cardY + Math.round(cardHh*0.92));
+
+    // ربط زر تحميل المعاينة
+    downloadSample.href = canvas.toDataURL('image/png');
+  }
+
+  function hexToRgba(hex, alpha=1){
+    const c = hex.replace('#','');
+    const bigint = parseInt(c,16);
+    let r,g,b;
+    if(c.length===3){
+      r = (bigint>>8)&0xF; g = (bigint>>4)&0xF; b = bigint&0xF;
+      r = r*17; g=g*17; b=b*17;
+    }else{
+      r = (bigint>>16)&255; g=(bigint>>8)&255; b=bigint&255;
+    }
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function roundRect(ctx, x, y, w, h, r, fill, stroke){
+    if(typeof r === 'number'){ r = {tl:r, tr:r, br:r, bl:r}; }
+    ctx.beginPath();
+    ctx.moveTo(x + r.tl, y);
+    ctx.lineTo(x + w - r.tr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+    ctx.lineTo(x + w, y + h - r.br);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+    ctx.lineTo(x + r.bl, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+    ctx.lineTo(x, y + r.tl);
+    ctx.quadraticCurveTo(x, y, x + r.tl, y);
+    ctx.closePath();
+    if(fill) ctx.fill();
+    if(stroke) ctx.stroke();
+  }
+
+  function fitContain(sw, sh, dw, dh){
+    const sr = sw/sh, dr = dw/dh;
+    if(sr > dr){ return {w:dw, h:Math.round(dw/sr)}; }
+    return {w:Math.round(dh*sr), h:dh};
+  }
+
+  function drawImageFromDataURL(ctx, dataURL, x,y,w,h){
+    return new Promise(res=>{
+      const img = new Image();
+      img.onload=()=>{ ctx.drawImage(img, x,y,w,h); res(); };
+      img.src = dataURL;
+    });
+  }
+
+  // Payload للـ QR (يمكن تغييره لاحقًا لدمج رابط تحقق)
+  function buildQRPayload(code){
+    const payload = { type:"invite", code, event: (eventName.value||"") };
+    return JSON.stringify(payload);
+  }
+
+  // تحليل الضيوف من textarea + csv
+  let guests = []; // {name, phone?, code?}
+  function parseTextareaGuests(){
+    const lines = (guestTextarea.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+    const arr = [];
+    for(const line of lines){
+      const parts = line.split(',').map(p=>p.trim());
+      const obj = { name: parts[0]||'', phone: parts[1]||'', code: parts[2]||'' };
+      if(obj.name){ arr.push(obj); }
+    }
+    return arr;
+  }
+  function refreshGuestList(){
+    guests = mergeGuests(); // من textarea + csv
+    guestList.innerHTML = '';
+    if(!guests.length){
+      guestList.innerHTML = '<div class="hint" style="padding:6px">لا يوجد ضيوف بعد.</div>';
+      return;
+    }
+    let i=1;
+    for(const g of guests){
+      const div = document.createElement('div');
+      div.className='item';
+      div.innerHTML = `<span>${i}. ${escapeHtml(g.name)}</span><span>${escapeHtml(g.code||'')}</span>`;
+      guestList.appendChild(div);
+      i++;
+    }
+  }
+
+  let guestsFromCSV = [];
+  csvInput.addEventListener('change', ()=>{
+    const file = csvInput.files && csvInput.files[0];
+    if(!file) return;
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (res)=>{
+        guestsFromCSV = (res.data||[]).map(r=>({
+          name: (r.name||r.Name||'').trim(),
+          phone: (r.phone||r.Phone||'').trim(),
+          code: (r.code||r.Code||'').trim(),
+        })).filter(g=>g.name);
+        refreshGuestList();
+      }
+    });
+  });
+
+  function mergeGuests(){
+    const a = parseTextareaGuests();
+    const all = [...guestsFromCSV, ...a];
+    // توليد أكواد مفقودة
+    let start = parseInt(codeStart.value||1,10);
+    const pref = codePrefix.value||'INV-';
+    return all.map(g=>{
+      if(!g.code){
+        const num = String(start).padStart(3,'0');
+        g.code = `${pref}${num}`;
+        start++;
+      }
+      return g;
+    });
+  }
+
+  function escapeHtml(s=''){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+  // معاينة نموذج
+  btnPreview.addEventListener('click', async ()=>{
+    status('جاري إنشاء المعاينة…');
+    await redrawPreview();
+    status('جاهز');
+  });
+
+  btnClear.addEventListener('click', ()=>{
+    guestTextarea.value='';
+    guestsFromCSV = [];
+    guestList.innerHTML='';
+    status('تم مسح المعاينة/القائمة.');
+  });
+
+  // توليد جميع الدعوات + ZIP
+  btnGenerateAll.addEventListener('click', async ()=>{
+    guests = mergeGuests();
+    if(!guests.length){ alert('أضف ضيوفًا أولاً.'); return; }
+    status(`توليد ${guests.length} بطاقة… انتظر`);
+    const zip = new JSZip();
+    let index=1;
+    for(const g of guests){
+      await drawCardForGuest(g);
+      const dataURL = canvas.toDataURL('image/png');
+      const base64 = dataURL.split(',')[1];
+      const safeName = sanitizeFilename(g.name||`guest-${index}`);
+      zip.file(`${pad(index)}-${safeName}.png`, base64, {base64:true});
+      index++;
+    }
+    const blob = await zip.generateAsync({type:'blob'});
+    saveAs(blob, `invites_${Date.now()}.zip`);
+    status('تم إنشاء ملف ZIP.');
+  });
+
+  function pad(n){ return String(n).padStart(3,'0'); }
+  function sanitizeFilename(s){ return s.replace(/[\\/:*?"<>|]+/g,'_').trim(); }
+
+  async function drawCardForGuest(guest){
+    const name = guest.name || 'ضيف كريم';
+    const code = guest.code || 'INV-XXX';
+    await redrawPreview(name, code);
+  }
+
+  // تصدير CSV
+  btnExportCSV.addEventListener('click', ()=>{
+    guests = mergeGuests();
+    if(!guests.length){ alert('لا يوجد ضيوف لتصديرهم.'); return; }
+    const rows = [['name','phone','code']];
+    for(const g of guests){ rows.push([g.name, g.phone||'', g.code||'']); }
+    const csv = rows.map(r=>r.map(v => `"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    saveAs(blob, `guests_${Date.now()}.csv`);
+  });
+
+  // نص رسالة واتساب (يدوي)
+  btnCopyWhatsApp.addEventListener('click', ()=>{
+    const msg = buildWhatsAppMessageSample();
+    navigator.clipboard.writeText(msg).then(()=>{
+      alert('تم نسخ رسالة واتساب. الصقها في المحادثة وأرفق صورة البطاقة.');
+    });
+  });
+
+  function buildWhatsAppMessageSample(){
+    const parts = [];
+    parts.push(`دعوة لحضور: ${eventName.value||''}`);
+    if(eventDate.value) parts.push(`التاريخ: ${eventDate.value}`);
+    if(eventLocation.value) parts.push(`المكان: ${eventLocation.value}`);
+    if(eventMap.value) parts.push(`الموقع على الخريطة: ${eventMap.value}`);
+    parts.push('');
+    parts.push('مرفق بطاقة الدعوة الخاصة بك. يرجى إبراز الباركود عند الدخول.');
+    return parts.join('\n');
+  }
+
+  function status(s){ statusPill.textContent = s; }
+
+  // معاينة أولية
+  redrawPreview();
+
+})();
+</script>
+</body>
+</html>
