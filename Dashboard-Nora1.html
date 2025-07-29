@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Nora - إرسال دعوات</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #111; color: gold; margin: 0; padding: 0; text-align: center; }
+    header { background: black; padding: 20px; font-size: 24px; font-weight: bold; }
+    input { padding: 10px; border-radius: 6px; border: none; }
+    button { padding: 10px 20px; background: gold; color: black; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+    canvas { display: none; }
+  </style>
+</head>
+<body>
+  <header>HORMEZ SECURITY</header>
+  <h2>📂 رفع ملف جهات الاتصال (Excel)</h2>
+  <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+  <div id="log"></div>
+  <canvas id="canvas" width="1080" height="1920"></canvas>
+
+  <script>
+    const templateURL = "https://yourdomain.com/khaled-invite-main.png"; // عدله لاحقًا إذا رفعت الخلفية علناً
+
+    document.getElementById('fileInput').addEventListener('change', async function (e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = async function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const contacts = XLSX.utils.sheet_to_json(sheet);
+        let codeIndex = 10000;
+
+        for (const contact of contacts) {
+          const name = contact.name;
+          const phone = contact.phone;
+          const count = parseInt(contact.count) || 1;
+
+          for (let i = 0; i < count; i++) {
+            const code = `INV-${codeIndex++}`;
+            const imageBlob = await generateCardWithBarcode(code);
+            const imgURL = URL.createObjectURL(imageBlob);
+
+            const waLink = `https://wa.me/971${phone.slice(1)}?text=${encodeURIComponent(
+              `مرحبًا ${name}، هذه بطاقة الدعوة رقم ${i + 1}:
+`)}&media=${encodeURIComponent(imgURL)}`;
+
+            const a = document.createElement("a");
+            a.href = imgURL;
+            a.download = `${code}.png`;
+            a.click(); // تحميل نسخة محلية
+
+            window.open(waLink, '_blank'); // فتح رابط واتساب
+          }
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    async function generateCardWithBarcode(code) {
+      return new Promise(resolve => {
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        const baseImage = new Image();
+        baseImage.crossOrigin = "anonymous";
+        baseImage.src = "khaled-invite-main.png"; // عدله حسب المسار النهائي
+        baseImage.onload = function () {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+
+          const qr = qrcode(0, 'L');
+          qr.addData(code);
+          qr.make();
+          const tileW = 150, tileH = 150;
+          const qrCanvas = document.createElement("canvas");
+          qrCanvas.width = tileW;
+          qrCanvas.height = tileH;
+          const qrCtx = qrCanvas.getContext("2d");
+          qrCtx.fillStyle = "white";
+          qrCtx.fillRect(0, 0, tileW, tileH);
+
+          const count = qr.getModuleCount();
+          for (let row = 0; row < count; row++) {
+            for (let col = 0; col < count; col++) {
+              qrCtx.fillStyle = qr.isDark(row, col) ? "black" : "white";
+              qrCtx.fillRect(col * tileW / count, row * tileH / count, tileW / count, tileH / count);
+            }
+          }
+
+          ctx.drawImage(qrCanvas, (canvas.width - tileW) / 2, canvas.height - tileH - 180);
+          canvas.toBlob(resolve);
+        };
+      });
+    }
+  </script>
+</body>
+</html>
