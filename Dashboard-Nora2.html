@@ -180,7 +180,7 @@
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const json = XLSX.utils.sheet_to_json(sheet);
-        let html = '<table border="1" style="margin:auto;margin-top:20px;"><tr><th>الاسم</th><th>رقم الهاتف</th><th>عدد</th><th>إرسال</th></tr>';
+        let html = '<table border="1" style="margin:auto;margin-top:20px;"><tr><th>الاسم</th><th>رقم الهاتف</th><th>عدد</th><th>إرسال</th><th>تحميل</th></tr>';
         json.forEach((row, idx) => {
           const name = row.name || row.الاسم || "";
           const phone = row.phone || row.رقم || "";
@@ -190,6 +190,7 @@
             <td>${phone}</td>
             <td>${count}</td>
             <td><button onclick="sendViaWhatsApp('${name}', '${phone}', ${count})">إرسال</button></td>
+            <td><button onclick="generateBarcodeCard('INV-${10000 + Math.floor(Math.random() * 90000)}', (url) => { const a = document.createElement('a'); a.href = url; a.download = 'دعوة.png'; a.click(); });">تحميل</button></td>
           </tr>`;
         });
         html += '</table>';
