@@ -60,7 +60,6 @@
   </script>
 </head>
 <body>
-  <!-- يستخدم هذا الكانفاس لتوليد صورة كرت الدعوة مع الباركود -->
   <canvas id="canvas" width="1080" height="1920" style="display:none;"></canvas>
 
   <div style="padding: 20px; background: #111; color: gold; text-align: center;">
@@ -77,6 +76,7 @@
     <input type="tel" id="guestPhone" placeholder="رقم الهاتف" style="padding:10px; width:200px;" />
     <input type="number" id="guestCount" placeholder="عدد البطاقات" style="padding:10px; width:200px;" />
     <button onclick="manualSend()" style="padding:10px 20px; margin: 10px; background:gold; color:black; border:none; border-radius:6px; font-weight:bold;">📤 إرسال</button>
+    <button onclick="downloadLastCard()" style="padding:10px 20px; margin: 10px; background:#444; color:white; border:none; border-radius:6px; font-weight:bold;">⬇️ تحميل آخر بطاقة دعوة</button>
   </div>
 
   <div style="padding: 20px; text-align: center;">
@@ -87,6 +87,7 @@
 
   <script>
     const baseImageURL = "https://raw.githubusercontent.com/thehormez/smartverify1/main/assets/khaled-invite-main.png";
+    let lastImageURL = "";
 
     function generateBarcodeCard(code, callback) {
       const canvas = document.getElementById("canvas");
@@ -118,6 +119,7 @@
         ctx.drawImage(qrCanvas, (canvas.width - tileW) / 2, canvas.height - tileH - 100);
         canvas.toBlob(blob => {
           const url = URL.createObjectURL(blob);
+          lastImageURL = url;
           callback(url, code);
         });
       };
@@ -155,6 +157,17 @@
         sendViaWhatsApp(name, phone, count);
       } else {
         alert("يرجى تعبئة جميع الحقول بشكل صحيح");
+      }
+    }
+
+    function downloadLastCard() {
+      if (lastImageURL) {
+        const a = document.createElement("a");
+        a.href = lastImageURL;
+        a.download = "دعوة.png";
+        a.click();
+      } else {
+        alert("لم يتم إنشاء أي بطاقة حتى الآن.");
       }
     }
 
