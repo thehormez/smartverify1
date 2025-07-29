@@ -3,98 +3,194 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Nora - إرسال دعوات</title>
+  <title>Dashboard Nora - مع رفع جهات الاتصال</title>
+
   <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #111; color: gold; margin: 0; padding: 0; text-align: center; }
-    header { background: black; padding: 20px; font-size: 24px; font-weight: bold; }
-    input { padding: 10px; border-radius: 6px; border: none; }
-    button { padding: 10px 20px; background: gold; color: black; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
-    canvas { display: none; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #111;
+      color: gold;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: black;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      background-color: #222;
+      padding: 10px;
+    }
+
+    nav button {
+      margin: 5px;
+      padding: 10px 15px;
+      background-color: gold;
+      color: black;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    main {
+      padding: 20px;
+      text-align: center;
+    }
+
+    section.hidden { display: none; }
+    section.active { display: block; }
+
+    .form {
+      max-width: 500px;
+      margin: auto;
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    input, select {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      direction: rtl;
+    }
+
+    th, td {
+      border: 1px solid #444;
+      padding: 8px;
+      color: #fff;
+    }
+
+    th {
+      background: #333;
+    }
+
+    .upload-box {
+      margin-top: 30px;
+    }
+
+    .send-btn {
+      background-color: gold;
+      color: black;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <header>HORMEZ SECURITY</header>
-  <h2>📂 رفع ملف جهات الاتصال (Excel)</h2>
-  <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
-  <div id="log"></div>
-  <canvas id="canvas" width="1080" height="1920"></canvas>
+
+  <nav>
+    <button onclick="showSection('upload')">📂 رفع ملف جهات الاتصال</button>
+    <button onclick="showSection('manual')">✍️ دعوة يدوية</button>
+  </nav>
+
+  <main>
+    <!-- رفع ملف جهات الاتصال -->
+    <section id="upload" class="active">
+      <h2>📂 رفع ملف جهات الاتصال (Excel/CSV)</h2>
+      <div class="form upload-box">
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+        <div id="output"></div>
+      </div>
+    </section>
+
+    <!-- دعوة يدوية -->
+    <section id="manual" class="hidden">
+      <h2>✍️ إرسال دعوة جديدة يدويًا</h2>
+      <div class="form">
+        <label>الاسم:</label>
+        <input type="text" id="guestName" placeholder="اسم الضيف" />
+        <label>رقم الهاتف:</label>
+        <input type="tel" id="guestPhone" placeholder="05xxxxxxxx" />
+        <label>عدد الدعوات:</label>
+        <input type="number" id="guestCount" placeholder="مثال: 1 أو 2" />
+        <button onclick="sendInvite()">إرسال الدعوة عبر واتساب</button>
+      </div>
+    </section>
+  </main>
 
   <script>
-    const templateURL = "https://yourdomain.com/khaled-invite-main.png"; // عدله لاحقًا إذا رفعت الخلفية علناً
+    function showSection(id) {
+      document.querySelectorAll("section").forEach(sec => {
+        sec.classList.add("hidden");
+        sec.classList.remove("active");
+      });
+      document.getElementById(id).classList.remove("hidden");
+      document.getElementById(id).classList.add("active");
+    }
 
-    document.getElementById('fileInput').addEventListener('change', async function (e) {
+    function sendViaWhatsApp(name, phone, count) {
+      for (let i = 1; i <= count; i++) {
+        const code = "INV-" + Math.floor(10000 + Math.random() * 90000);
+        const message = `مرحبًا ${name} 🌟\n🎫 بطاقة الدعوة رقم ${i} من ${count}\n🔐 كود: ${code}`;
+        const formattedPhone = phone.startsWith("0") ? "971" + phone.substring(1) : phone;
+        const link = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+        window.open(link, "_blank");
+      }
+    }
+
+    function sendInvite() {
+      const name = document.getElementById("guestName").value.trim();
+      const phone = document.getElementById("guestPhone").value.trim();
+      const count = parseInt(document.getElementById("guestCount").value.trim());
+      if (!name || !phone || isNaN(count)) {
+        alert("يرجى تعبئة جميع الحقول.");
+        return;
+      }
+      sendViaWhatsApp(name, phone, count);
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       const reader = new FileReader();
-      reader.onload = async function (e) {
+      reader.onload = function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const contacts = XLSX.utils.sheet_to_json(sheet);
-        let codeIndex = 10000;
-
-        for (const contact of contacts) {
-          const name = contact.name;
-          const phone = contact.phone;
-          const count = parseInt(contact.count) || 1;
-
-          for (let i = 0; i < count; i++) {
-            const code = `INV-${codeIndex++}`;
-            const imageBlob = await generateCardWithBarcode(code);
-            const imgURL = URL.createObjectURL(imageBlob);
-
-            const waLink = `https://wa.me/971${phone.slice(1)}?text=${encodeURIComponent(
-              `مرحبًا ${name}، هذه بطاقة الدعوة رقم ${i + 1}:
-`)}&media=${encodeURIComponent(imgURL)}`;
-
-            const a = document.createElement("a");
-            a.href = imgURL;
-            a.download = `${code}.png`;
-            a.click(); // تحميل نسخة محلية
-
-            window.open(waLink, '_blank'); // فتح رابط واتساب
-          }
-        }
+        let html = '<table><thead><tr><th>الاسم</th><th>رقم الهاتف</th><th>عدد</th><th>إرسال</th></tr></thead><tbody>';
+        contacts.forEach(row => {
+          const name = row.name || '';
+          const phone = row.phone || '';
+          const count = parseInt(row.count) || 1;
+          html += `<tr>
+                    <td>${name}</td>
+                    <td>${phone}</td>
+                    <td>${count}</td>
+                    <td><button class="send-btn" onclick="sendViaWhatsApp('${name}', '${phone}', ${count})">إرسال</button></td>
+                  </tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('output').innerHTML = html;
       };
       reader.readAsArrayBuffer(file);
     });
-
-    async function generateCardWithBarcode(code) {
-      return new Promise(resolve => {
-        const canvas = document.getElementById("canvas");
-        const ctx = canvas.getContext("2d");
-        const baseImage = new Image();
-        baseImage.crossOrigin = "anonymous";
-        baseImage.src = "khaled-invite-main.png"; // عدله حسب المسار النهائي
-        baseImage.onload = function () {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
-
-          const qr = qrcode(0, 'L');
-          qr.addData(code);
-          qr.make();
-          const tileW = 150, tileH = 150;
-          const qrCanvas = document.createElement("canvas");
-          qrCanvas.width = tileW;
-          qrCanvas.height = tileH;
-          const qrCtx = qrCanvas.getContext("2d");
-          qrCtx.fillStyle = "white";
-          qrCtx.fillRect(0, 0, tileW, tileH);
-
-          const count = qr.getModuleCount();
-          for (let row = 0; row < count; row++) {
-            for (let col = 0; col < count; col++) {
-              qrCtx.fillStyle = qr.isDark(row, col) ? "black" : "white";
-              qrCtx.fillRect(col * tileW / count, row * tileH / count, tileW / count, tileH / count);
-            }
-          }
-
-          ctx.drawImage(qrCanvas, (canvas.width - tileW) / 2, canvas.height - tileH - 180);
-          canvas.toBlob(resolve);
-        };
-      });
-    }
   </script>
 </body>
 </html>
