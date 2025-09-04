@@ -26,25 +26,23 @@
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
+    // حفظ مع معرف المستند = الكود نفسه (مثال: KH_001)
     window.saveToFirestore = async function saveToFirestore(code) {
       try {
         const ref = doc(db, "invites", code);
         const snap = await getDoc(ref);
         if (snap.exists()) {
-          console.log("⏭️ موجود مسبقًا:", code);
-          return;
+          return { ok: true, existed: true };
         }
-
         await setDoc(ref, {
           code,
           eventName: "زفاف خالد",
           status: "pending",
           createdAt: new Date().toISOString()
         }, { merge: false });
-
-        console.log("✔ تم الحفظ بمعرّف:", code);
+        return { ok: true, existed: false };
       } catch (e) {
-        console.error("❌ خطأ في حفظ الدعوة:", e);
+        return { ok: false, error: e?.message || String(e) };
       }
     }
   </script>
@@ -54,27 +52,37 @@
     .card { display: inline-block; margin: 15px; padding: 15px; background: #222; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
     .card canvas { display: block; margin: auto; }
     .download-btn { margin-top: 8px; padding: 6px 12px; border: none; border-radius: 6px; background: gold; color: #000; font-weight: bold; cursor: pointer; }
-    #downloadAllBtn { margin:20px; padding:10px 20px; background:gold; color:black; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+    #downloadAllBtn { margin:20px; padding:10px 20px; background:gold; color:black; border:none; border-radius:8px; font-weight:bold; cursor:pointer; display:none; }
+    .toolbar { margin-bottom: 10px; }
+    .log { margin:16px auto; max-width:820px; text-align:start; background:#1e1e1e; color:#eaeaea; padding:12px 14px; border-radius:10px; line-height:1.6; direction:ltr; white-space:pre-wrap; }
   </style>
 </head>
 <body>
   <h1>🎉 توليد 20 باركود - زفاف خالد</h1>
-  <button onclick="generateAll()" style="padding:10px 20px; background:gold; color:black; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">🔄 توليد + حفظ بمعرّف = الكود</button>
-  <button id="downloadAllBtn" onclick="downloadAll()" style="display:none;">⬇️ تحميل كل الباركود دفعة واحدة</button>
+  <div class="toolbar">
+    <button id="genBtn" onclick="generateAll()" style="padding:10px 20px; background:gold; color:black; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">🔄 توليد + حفظ بمعرّف = الكود</button>
+    <button id="downloadAllBtn" onclick="downloadAll()">⬇️ تحميل كل الباركود دفعة واحدة</button>
+  </div>
   <div id="cards"></div>
+  <pre id="log" class="log"></pre>
 
   <script>
     const generatedCanvases = [];
+    const logEl = document.getElementById('log');
+
+    function logLine(line) {
+      logEl.textContent += line + "\n";
+    }
 
     function generateQRCode(code) {
       const qr = qrcode(0, 'L');
-      qr.addData(code);
+      qr.addData(code); // نضع نص الكود فقط داخل QR
       qr.make();
 
       const size = 250;
       const canvas = document.createElement("canvas");
       canvas.width = size;
-      canvas.height = size + 40;
+      canvas.height = size + 40; // مساحة لكتابة الكود تحت الباركود
       const ctx = canvas.getContext("2d");
 
       const qrCanvas = document.createElement("canvas");
@@ -121,25 +129,45 @@
           link.href = URL.createObjectURL(blob);
           link.download = `${code}.png`;
           link.click();
+          setTimeout(() => URL.revokeObjectURL(link.href), 1500);
         });
       };
       container.appendChild(downloadBtn);
 
-      if (window.saveToFirestore) window.saveToFirestore(code);
-
       return container;
     }
 
-    function generateAll() {
+    async function generateAll() {
       const cardsDiv = document.getElementById("cards");
+      const dlAllBtn = document.getElementById("downloadAllBtn");
+      const genBtn = document.getElementById("genBtn");
+
+      genBtn.disabled = true;
+      logEl.textContent = "";
       cardsDiv.innerHTML = "";
       generatedCanvases.length = 0;
+
       for (let i = 1; i <= 20; i++) {
         const code = `KH_${String(i).padStart(3, '0')}`;
         const card = createCard(code);
         cardsDiv.appendChild(card);
+
+        if (window.saveToFirestore) {
+          const result = await window.saveToFirestore(code);
+          if (result?.ok) {
+            if (result.existed) logLine(`⏭️ موجود مسبقًا: ${code}`);
+            else logLine(`✅ تم الحفظ: ${code}`);
+          } else {
+            logLine(`❌ فشل حفظ ${code} → ${result?.error || 'Unknown error'}`);
+          }
+        } else {
+          logLine(`⚠️ لم يتم تحميل Firebase بعد. (saveToFirestore غير معرف)`);
+        }
       }
-      document.getElementById("downloadAllBtn").style.display = "inline-block";
+
+      dlAllBtn.style.display = "inline-block";
+      genBtn.disabled = false;
+      logLine("\nانتهى التوليد والحفظ. افحص Firestore مجموعة invites.");
     }
 
     function downloadAll() {
