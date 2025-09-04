@@ -3,126 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>توليد 20 باركود (KH_001 → KH_020)</title>
-
-  <!-- مكتبة توليد QR -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-
+  <title>Upload KH Invites</title>
   <style>
-    body { background:#111; color:gold; font-family:Tahoma, Arial, sans-serif; text-align:center; padding:24px; }
-    .actions { margin-bottom:16px; }
-    button { background:gold; color:#000; border:none; border-radius:10px; padding:10px 16px; font-weight:bold; cursor:pointer; }
-    button.secondary { background:#444; color:#fff; }
-    #status { margin-top:10px; color:#ccc; font-size:14px; }
-    .grid { display:flex; flex-wrap:wrap; justify-content:center; gap:16px; margin-top:20px; }
-    .card { background:#222; border-radius:12px; padding:14px; width:280px; box-shadow:0 6px 16px rgba(0,0,0,0.4); }
-    .card canvas { display:block; margin:0 auto; }
-    .code { margin-top:8px; font-size:18px; font-weight:bold; color:#FFD700; letter-spacing:0.5px; }
-    .download-btn { margin-top:8px; background:gold; color:#000; border:none; border-radius:8px; padding:6px 12px; font-weight:bold; cursor:pointer; }
+    body { font-family: Tahoma, Arial, sans-serif; background:#111; color:#ffd700; text-align:center; padding:24px; }
+    .btn { background:#ffd700; color:#000; border:none; border-radius:10px; padding:10px 18px; font-weight:bold; cursor:pointer; }
+    .muted { color:#ccc; font-size:14px; margin-top:8px; }
+    .log { margin:18px auto; max-width:720px; text-align:start; background:#1e1e1e; color:#eaeaea; padding:12px 14px; border-radius:10px; line-height:1.6; direction:ltr; }
+    progress { width: 320px; height: 12px; border-radius: 6px; margin-top: 10px; }
   </style>
+
+  <!-- Firebase SDK (Modules) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ضع إعدادات مشروعك (كما زودتني بها سابقاً)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.appspot.com",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // مولد الأكواد KH_001 → KH_020
+    function generateCodes(n = 20) {
+      const arr = [];
+      for (let i = 1; i <= n; i++) arr.push(`KH_${String(i).padStart(3, "0")}`);
+      return arr;
+    }
+
+    async function codeExists(code) {
+      const q = query(collection(db, "invites"), where("code", "==", code));
+      const snap = await getDocs(q);
+      return !snap.empty;
+    }
+
+    async function uploadInvites() {
+      const log  = document.getElementById("log");
+      const bar  = document.getElementById("bar");
+      const btn  = document.getElementById("btn");
+      log.textContent = "";
+      btn.disabled = true;
+
+      const codes = generateCodes(20);
+      let created = 0, skipped = 0;
+
+      for (let i = 0; i < codes.length; i++) {
+        const code = codes[i];
+        try {
+          // منع التكرار
+          if (await codeExists(code)) {
+            skipped++;
+            log.textContent += `⏭️ Skipped (exists): ${code}\n`;
+          } else {
+            await addDoc(collection(db, "invites"), {
+              code,
+              eventName: "زفاف خالد",
+              status: "pending",
+              createdAt: new Date().toISOString()
+            });
+            created++;
+            log.textContent += `✅ Created: ${code}\n`;
+          }
+        } catch (e) {
+          log.textContent += `❌ Error: ${code} -> ${e.message}\n`;
+        }
+
+        // تحديث الشريط
+        bar.value = ((i + 1) / codes.length) * 100;
+      }
+
+      log.textContent += `\n— Summary —\nCreated: ${created}\nSkipped (exists): ${skipped}\nTotal: ${codes.length}\n`;
+      btn.disabled = false;
+    }
+
+    // إتاحة الدالة للزر
+    window.uploadInvites = uploadInvites;
+  </script>
 </head>
 <body>
-  <h1>🎉 توليد باركود زفاف خالد</h1>
-  <div class="actions">
-    <button id="genBtn">توليد الباركود</button>
-    <button id="clearBtn" class="secondary">مسح النتائج</button>
-    <div id="status"></div>
-  </div>
+  <h2>Upload 20 Invites for Khaled Wedding</h2>
+  <button id="btn" class="btn" onclick="uploadInvites()">Upload Now</button>
 
-  <div id="cards" class="grid"></div>
-
-  <script>
-    // توليد QR لِلقيمة نفسها (بدون رابط)، والكتابة أسفله
-    function makeQrCanvas(value) {
-      const size = 250;               // حجم الباركود
-      const padForText = 42;          // مساحة النص تحت الباركود
-      const outer = document.createElement('canvas');
-      outer.width = size;
-      outer.height = size + padForText;
-      const ctx = outer.getContext('2d');
-
-      // إنشاء QR
-      const qr = qrcode(0, 'L');
-      qr.addData(value);
-      qr.make();
-
-      // رسم QR على كانفاس وسيط بحجم مضبوط
-      const inner = document.createElement('canvas');
-      inner.width = size;
-      inner.height = size;
-      const ictx = inner.getContext('2d');
-
-      const count = qr.getModuleCount();
-      const tileW = size / count;
-      const tileH = size / count;
-
-      for (let r = 0; r < count; r++) {
-        for (let c = 0; c < count; c++) {
-          ictx.fillStyle = qr.isDark(r, c) ? '#000000' : '#FFFFFF';
-          ictx.fillRect(Math.round(c * tileW), Math.round(r * tileH), Math.ceil(tileW), Math.ceil(tileH));
-        }
-      }
-
-      // خلفية بيضاء للكل + رسم QR
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, outer.width, outer.height);
-      ctx.drawImage(inner, 0, 0);
-
-      // كتابة الكود أسفل الباركود
-      ctx.fillStyle = '#000';
-      ctx.font = 'bold 18px Tahoma';
-      ctx.textAlign = 'center';
-      ctx.fillText(value, size / 2, size + 28);
-
-      return outer;
-    }
-
-    function cardElement(code) {
-      const wrap = document.createElement('div');
-      wrap.className = 'card';
-
-      const cnv = makeQrCanvas(code);
-      wrap.appendChild(cnv);
-
-      const codeDiv = document.createElement('div');
-      codeDiv.className = 'code';
-      codeDiv.textContent = code;
-      wrap.appendChild(codeDiv);
-
-      const btn = document.createElement('button');
-      btn.className = 'download-btn';
-      btn.textContent = '⬇️ تحميل الباركود';
-      btn.onclick = () => {
-        cnv.toBlob((blob) => {
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = code + '.png';
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-        });
-      };
-      wrap.appendChild(btn);
-
-      return wrap;
-    }
-
-    function generateAll() {
-      const container = document.getElementById('cards');
-      container.innerHTML = '';
-      const t0 = performance.now();
-      for (let i = 1; i <= 20; i++) {
-        const code = 'KH_' + String(i).padStart(3, '0');
-        container.appendChild(cardElement(code));
-      }
-      const ms = Math.round(performance.now() - t0);
-      document.getElementById('status').textContent = `✅ تم توليد 20 باركود في ~${ms}ms`;
-    }
-
-    document.getElementById('genBtn').addEventListener('click', generateAll);
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      document.getElementById('cards').innerHTML = '';
-      document.getElementById('status').textContent = '';
-    });
-  </script>
+  <div class="muted">سيتم إنشاء الأكواد KH_001 إلى KH_020 وحفظها داخل مجموعة <code>invites</code> في Firestore.</div>
+  <progress id="bar" max="100" value="0"></progress>
+  <pre id="log" class="log"></pre>
 </body>
 </html>
