@@ -7,7 +7,7 @@
   <style>
     :root{--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--ink:#0f172a;--muted:#64748b;--bg:#0b1020;--card:#0e172a}
     html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial; color:#e5e7eb}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;color:#e5e7eb}
     .wrap{max-width:960px;margin:0 auto;padding:20px}
     .brand{display:flex;align-items:center;gap:12px}
     .logo{width:38px;height:38px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center}
@@ -39,14 +39,33 @@
     .row > *{flex:1}
     .small{font-size:12px}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .tests li{margin:4px 0}
+    .pass{color:#16a34a}
+    .fail{color:#dc2626}
   </style>
-  <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
-  <!-- Camera lib (must load before module) -->
+  <!-- مكتبة الكاميرا: يجب تحميلها قبل تشغيل الماسح -->
   <script src="https://unpkg.com/html5-qrcode@2.3.10/dist/html5-qrcode.min.js"></script>
+
+  <!-- من أجل توافق زر onclick القديم، نعرّف غلافًا عالميًا مبكرًا -->
+  <script>
+    window.hs = window.hs || {};
+    window.startScanner = function(){
+      if (window.hs && typeof window.hs.startScanner === 'function') {
+        window.hs.startScanner();
+      } else {
+        alert('جارِ تحميل الماسح، أعد المحاولة خلال ثوانٍ...');
+      }
+    };
+  </script>
+
+  <!-- الكود الرئيسي (Module) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
+    // =========================
+    // 1) Firebase App Init
+    // =========================
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
       authDomain: "hormez-inv.firebaseapp.com",
@@ -55,40 +74,20 @@
       messagingSenderId: "747519941805",
       appId: "1:747519941805:web:468fada2492700e9da3a24"
     };
-
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
+    // =========================
+    // 2) Helpers & Params
+    // =========================
     const $ = (s, root=document) => root.querySelector(s);
     const params = new URLSearchParams(location.search);
     const EVENT_NAME = params.get('event') || 'زفاف خالد';
+    const SCANNER_TITLE = `ماسح ${EVENT_NAME}`;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      $('#eventName').textContent = EVENT_NAME;
-      $('#scannerTitle').textContent = SCANNER_TITLE;
-      restoreUI();
-      refreshKPIs().catch(console.error);
-    });
-
-    async function refreshKPIs(){
-      const qAll = query(collection(db,'invites'), where('EventName','==', EVENT_NAME));
-      const snapAll = await getDocs(qAll);
-      const total = snapAll.size;
-      let used = 0;
-      snapAll.forEach(d => { if((d.data().Status||'').toLowerCase()==='yes') used++; });
-      const left = Math.max(total - used, 0);
-      $('#kpiTotal').textContent = total;
-      $('#kpiUsed').textContent  = used;
-      $('#kpiLeft').textContent  = left;
-    }
-
-    let lastDecoded = '';
-    let lastAt = 0;
-
-    // =========================
-    // LocalStorage persistence
-    // =========================
+    // LocalStorage keys
     const LS = { code: 'hs:lastCode', kind: 'hs:lastKind', details: 'hs:lastDetails', docId: 'hs:lastDocId', event: 'hs:event' };
+
     function persistUI({code, kind, details, docId}){
       try{
         if(code !== undefined) localStorage.setItem(LS.code, code);
@@ -114,13 +113,81 @@
       }catch(_){/* ignore */}
     }
 
+    // =========================
+    // 3) KPIs
+    // =========================
+    async function refreshKPIs(){
+      const qAll = query(collection(db,'invites'), where('EventName','==', EVENT_NAME));
+      const snapAll = await getDocs(qAll);
+      const total = snapAll.size;
+      let used = 0;
+      snapAll.forEach(d => { if((d.data().Status||'').toLowerCase()==='yes') used++; });
+      const left = Math.max(total - used, 0);
+      $('#kpiTotal').textContent = total;
+      $('#kpiUsed').textContent  = used;
+      $('#kpiLeft').textContent  = left;
+    }
+
+    // =========================
+    // 4) Scanner
+    // =========================
+    let html5QrcodeScanner = null;
+    let lastDecoded = ''; let lastAt = 0;
+
     async function onScan(decodedText){
       const now = Date.now();
-      if(decodedText === lastDecoded && now - lastAt < 2000){ return; }
+      if(decodedText === lastDecoded && now - lastAt < 2000){ return; } // Debounce
       lastDecoded = decodedText; lastAt = now;
       $('#lastCode').textContent = decodedText;
-      localStorage.setItem('lastCode', decodedText);
+      persistUI({code: decodedText});
       await handleCode(decodedText.trim());
+    }
+
+    function normalizeCode(s){
+      if(!s) return '';
+      s = s.trim();
+      // السماح بصيغ JSON {"code":"KH_001"}
+      try{ const obj = JSON.parse(s); if(obj.code) return String(obj.code).trim(); }catch(_){/* ignore */}
+      s = s.replace(/[-\s]/g,'_').toUpperCase();
+      const m = s.match(/[A-Z]{2,}_[0-9]{3,}/);
+      return m ? m[0] : s;
+    }
+
+    async function lookupInviteByCode(code){
+      // المحاولة 1: وثيقة باسم الكود
+      const d = doc(db,'invites', code);
+      const ds = await getDoc(d);
+      if(ds.exists()) return { ref: d, data: ds.data() };
+      // المحاولة 2: البحث بالحقل Code == code
+      const q = query(collection(db,'invites'), where('Code','==', code));
+      const snap = await getDocs(q);
+      if(snap.empty) return null;
+      const first = snap.docs[0];
+      return { ref: first.ref, data: first.data() };
+    }
+
+    function showStatus(kind, text){
+      const box = $('#statusBox');
+      box.className = `status ${kind}`;
+      box.textContent = text;
+    }
+
+    function formatDetails(code, data){
+      const when = data.scannedAt?.toDate?.() ? data.scannedAt.toDate().toLocaleString('ar-EG') : '—';
+      return `الكود: ${code} • الحالة: ${(data.Status||'no').toUpperCase()} • آخر مسح: ${when}`;
+    }
+
+    function beep(kind='ok'){
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = kind==='ok' ? 880 : kind==='warn' ? 520 : 220;
+      o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.20);
+      o.start(); o.stop(ctx.currentTime+0.21);
     }
 
     async function handleCode(raw){
@@ -189,130 +256,12 @@
         persistUI({code, kind:'bad', details:'خطأ في الاتصال — حاول مجددًا', docId:''});
       }
     }
-        const { ref, data } = res;
 
-        if(data.EventName && data.EventName !== EVENT_NAME){
-          beep('warn');
-          showStatus('warn', `كود صحيح لكن لحدث مختلف: ${data.EventName}`);
-          $('#details').textContent = `Code: ${code} — Event: ${data.EventName}`;
-          return;
-        }
-
-        if((data.Status||'').toLowerCase()==='yes'){
-          beep('warn');
-          showStatus('warn','تم استخدام هذا الكود مسبقًا');
-          $('#details').textContent = formatDetails(code, data);
-          $('#undoBtn').dataset.id = ref.id;
-          $('#undoWrap').style.display = 'inline-block';
-          return;
-        }
-
-        await updateDoc(ref, {
-          Status: 'yes',
-          scannedAt: serverTimestamp(),
-          scannedBy: 'SEC-Device',
-          EventName: data.EventName || EVENT_NAME
-        });
-        beep('ok');
-        showStatus('ok','تم السماح بالدخول ✅');
-        $('#details').textContent = formatDetails(code, {...data, Status:'yes'});
-        $('#undoBtn').dataset.id = ref.id;
-        $('#undoWrap').style.display = 'inline-block';
-        refreshKPIs();
-      }catch(err){
-        console.error(err);
-        beep('bad');
-        showStatus('bad','خطأ في الاتصال — حاول مجددًا');
-      }
-    }
-
-    function normalizeCode(s){
-      if(!s) return '';
-      s = s.trim();
-      try{ const obj = JSON.parse(s); if(obj.code) return String(obj.code).trim(); }catch(_){ }
-      s = s.replace(/[-\s]/g,'_').toUpperCase();
-      const m = s.match(/[A-Z]{2,}_[0-9]{3,}/);
-      return m ? m[0] : s;
-    }
-
-    async function lookupInviteByCode(code){
-      const d = doc(db,'invites', code);
-      const ds = await getDoc(d);
-      if(ds.exists()) return { ref: d, data: ds.data() };
-      const q = query(collection(db,'invites'), where('Code','==', code));
-      const snap = await getDocs(q);
-      if(snap.empty) return null;
-      const first = snap.docs[0];
-      return { ref: first.ref, data: first.data() };
-    }
-
-    function showStatus(kind, text){
-      const box = $('#statusBox');
-      box.className = `status ${kind}`;
-      box.textContent = text;
-    }
-
-    function formatDetails(code, data){
-      const when = data.scannedAt?.toDate?.() ? data.scannedAt.toDate().toLocaleString('ar-EG') : '—';
-      return `الكود: ${code} • الحالة: ${(data.Status||'no').toUpperCase()} • آخر مسح: ${when}`;
-    }
-
-    function beep(kind='ok'){
-      const ctx = new (window.AudioContext||window.webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = kind==='ok' ? 880 : kind==='warn' ? 520 : 220;
-      o.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.20);
-      o.start(); o.stop(ctx.currentTime+0.21);
-    }
-
-    $('#undoBtn')?.addEventListener('click', async (e)=>{
-      const id = e.currentTarget.dataset.id;
-      if(!id) return;
-      try{
-        await updateDoc(doc(db,'invites', id), { Status: 'no' });
-        showStatus('neutral','تم إرجاع الحالة إلى غير مستخدم');
-        const currentCode = $('#lastCode').textContent || '';
-        $('#details').textContent = 'تم إرجاع الحالة إلى غير مستخدم';
-        persistUI({code: currentCode, kind:'neutral', details:'تم إرجاع الحالة إلى غير مستخدم', docId: id});
-        refreshKPIs().catch(console.error);
-      }catch(err){
-        console.error(err); showStatus('bad','تعذّر الإرجاع');
-        persistUI({kind:'bad', details:'تعذّر الإرجاع'});
-      }
-    });
-        showStatus('neutral','تم إرجاع الحالة إلى غير مستخدم');
-        refreshKPIs();
-      }catch(err){
-        console.error(err); showStatus('bad','تعذّر الإرجاع');
-      }
-    });
-
-    $('#manualForm')?.addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const code = normalizeCode($('#manualCode').value);
-      $('#lastCode').textContent = code || '—';
-      localStorage.setItem('lastCode', code);
-      if(code) await handleCode(code);
-    });
-
-    function restoreLastCode(){
-      const code = localStorage.getItem('lastCode');
-      if(code){
-        $('#lastCode').textContent = code;
-        handleCode(code);
-      }
-    }
-
-    let html5Qr = null;
-    function startScanner(){
+    // بدء تشغيل الكاميرا
+    function startScannerImpl(){
       const Html5QrcodeScanner = window.Html5QrcodeScanner;
       if(!Html5QrcodeScanner){
-        alert('مكتبة الكاميرا لم تُحمّل. تأكد من الاتصال بالإنترنت ثم أعد المحاولة.');
+        alert('مكتبة الكاميرا لم تُحمّل. تحقق من الإنترنت أو أعد التحميل.');
         return;
       }
       if(html5QrcodeScanner){ html5QrcodeScanner.clear().catch(()=>{}); html5QrcodeScanner = null; }
@@ -322,14 +271,83 @@
           { fps: 12, qrbox: 260, rememberLastUsedCamera: true, aspectRatio: 1.0 },
           false
         );
-        html5QrcodeScanner.render((txt)=>onScan(txt),(err)=>{/* silent */});
+        html5QrcodeScanner.render((txt)=>onScan(txt),(err)=>{/* ignore */});
       }catch(e){
         console.error(e);
-        showStatus('bad','تعذر تشغيل الكاميرا — تحقق من الأذونات والمتصفح (يتطلب HTTPS).');
+        showStatus('bad','تعذر تشغيل الكاميرا — يتطلب HTTPS وصلاحية الكاميرا.');
       }
     }
 
-    window.startScanner = startScanner;
+    // نعرّف دوالًا عامة داخل نافذة hs ثم نربط الغلاف العالمي الذي أضفناه قبل قليل
+    window.hs.startScanner = startScannerImpl;
+
+    // =========================
+    // 5) DOM Ready
+    // =========================
+    document.addEventListener('DOMContentLoaded', () => {
+      $('#eventName').textContent = EVENT_NAME;
+      $('#scannerTitle').textContent = SCANNER_TITLE;
+      restoreUI();
+      refreshKPIs().catch(console.error);
+
+      // ربط الأزرار (حتى لو فشل onclick القديم)
+      $('#startBtn')?.addEventListener('click', ()=> window.startScanner());
+      $('#manualForm')?.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const code = normalizeCode($('#manualCode').value);
+        $('#lastCode').textContent = code || '—';
+        persistUI({code});
+        if(code) await handleCode(code);
+      });
+      $('#undoBtn')?.addEventListener('click', async (e)=>{
+        const id = e.currentTarget.dataset.id;
+        if(!id) return;
+        try{
+          await updateDoc(doc(db,'invites', id), { Status: 'no' });
+          showStatus('neutral','تم إرجاع الحالة إلى غير مستخدم');
+          const currentCode = $('#lastCode').textContent || '';
+          $('#details').textContent = 'تم إرجاع الحالة إلى غير مستخدم';
+          persistUI({code: currentCode, kind:'neutral', details:'تم إرجاع الحالة إلى غير مستخدم', docId: id});
+          refreshKPIs().catch(console.error);
+        }catch(err){
+          console.error(err); showStatus('bad','تعذّر الإرجاع');
+          persistUI({kind:'bad', details:'تعذّر الإرجاع'});
+        }
+      });
+
+      // اختبارات
+      $('#runTests')?.addEventListener('click', runTests);
+    });
+
+    // =========================
+    // 6) Tests (بسيطة)
+    // =========================
+    function addTestResult(ok, msg){
+      const li = document.createElement('li');
+      li.textContent = (ok? '✔ ' : '✘ ') + msg;
+      li.className = ok? 'pass' : 'fail';
+      $('#tests').appendChild(li);
+    }
+
+    async function runTests(){
+      $('#tests').innerHTML = '';
+      addTestResult(typeof window.startScanner === 'function', 'startScanner متوفر عالميًا');
+      addTestResult(!!window.Html5QrcodeScanner, 'مكتبة Html5QrcodeScanner محمّلة');
+
+      try{
+        await refreshKPIs();
+        const total = $('#kpiTotal').textContent;
+        addTestResult(true, `اتصال Firestore ناجح — إجمالي الدعوات: ${total}`);
+      }catch(e){
+        addTestResult(false, 'فشل الوصول إلى Firestore (تحقق من القواعد/الإنترنت)');
+      }
+
+      // اختبار الاسترجاع من LocalStorage
+      const token = 'TEST_123';
+      persistUI({code: token, kind:'neutral', details:'اختبار الحفظ', docId:''});
+      const restored = localStorage.getItem(LS.code) === token;
+      addTestResult(restored, 'حفظ/استرجاع آخر كود في LocalStorage');
+    }
   </script>
 </head>
 <body>
@@ -346,7 +364,8 @@
     <div class="grid cols" style="margin-top:14px">
       <div class="card">
         <div class="row" style="align-items:center">
-          <button class="btn ok" onclick="startScanner()">تشغيل الكاميرا</button>
+          <!-- أبقينا onclick القديم لتوافق خلفي، وأضفنا أيضًا id لربط الحدث برمجيًا -->
+          <button id="startBtn" class="btn ok" onclick="startScanner()">تشغيل الكاميرا</button>
           <button class="btn ghost" onclick="document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()">وضع ملء الشاشة</button>
         </div>
         <div id="reader" style="margin-top:12px"></div>
@@ -384,11 +403,19 @@
             <div class="box"><div class="muted small">المتبقية</div><div id="kpiLeft" class="n">—</div></div>
           </div>
         </div>
+
+        <div class="card">
+          <div class="muted small">اختبارات سريعة</div>
+          <div class="row">
+            <button id="runTests" class="btn">تشغيل الاختبارات</button>
+          </div>
+          <ul id="tests" class="tests small" style="margin-top:8px"></ul>
+        </div>
       </div>
     </div>
 
     <div class="muted small" style="margin-top:10px">
-      ملاحظات: تعمل الصفحة على قراءة QR يحتوي نص الكود مباشرة (مثل <span class="mono">KH_001</span>) أو يحتوي JSON بالشكل <span class="mono">{"code":"KH_001"}</span>.
+      ملاحظات: تعمل الصفحة على قراءة QR يحتوي نص الكود مباشرة (مثل <span class="mono">KH_001</span>) أو يحتوي JSON بالشكل <span class="mono">{"code":"KH_001"}</span>. يُنصح بتشغيل الصفحة على HTTPS ومنح صلاحية الكاميرا للمتصفح.
     </div>
   </div>
 </body>
