@@ -1,11 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, RefreshCw, Percent, Users, ClipboardList, Globe } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
 
-// Firebase v10 modular
+// Firebase v10 modular (CDN ESM)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
   getFirestore,
@@ -14,11 +9,17 @@ import {
   where,
   onSnapshot,
   getDocs,
-  orderBy,
   limit,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-// --- CONFIG ---
+/**
+ * HORMEZ — Customer Dashboard (Clean / Clear)
+ * - No external UI libs (pure Tailwind classes)
+ * - Arabic/English UI with toggle + RTL/LTR
+ * - Clear layout, sticky table header, large KPIs, obvious labels
+ */
+
+// ===== Firebase Config =====
 const firebaseConfig = {
   apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
   authDomain: "hormez-inv.firebaseapp.com",
@@ -27,83 +28,77 @@ const firebaseConfig = {
   messagingSenderId: "747519941805",
   appId: "1:747519941805:web:468fada2492700e9da3a24",
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// --- i18n (en/ar) ---
+// ===== i18n =====
 const STR = {
   en: {
-    title: "Hormez Dashboard",
-    subtitle: "Live attendance & invite status",
-    event: "Event",
+    brand: "HORMEZ SECURITY",
+    title: "Customer Dashboard",
+    subtitle: "Live attendance and invite status",
     language: "Language",
+    event: "Event",
+    all: "All events",
+    search: "Search code…",
     total: "Total",
     used: "Checked-in",
     left: "Remaining",
     rate: "Attendance",
-    refresh: "Refresh",
     export: "Export CSV",
-    search: "Search code…",
-    lastScans: "Recent scans",
+    recent: "Recent scans (latest 100)",
     code: "Code",
     status: "Status",
     time: "Time",
+    empty: "No scans yet",
     yes: "yes",
     no: "no",
-    all: "All events",
+    refreshed: "Refreshed",
   },
   ar: {
-    title: "لوحة هورميز",
+    brand: "HORMEZ SECURITY",
+    title: "لوحة العميل",
     subtitle: "الحضور المباشر وحالة الدعوات",
-    event: "الحدث",
     language: "اللغة",
+    event: "الحدث",
+    all: "كل الفعاليات",
+    search: "ابحث عن كود…",
     total: "الإجمالي",
     used: "المستخدم",
     left: "المتبقي",
     rate: "نسبة الحضور",
-    refresh: "تحديث",
     export: "تصدير CSV",
-    search: "ابحث عن كود…",
-    lastScans: "أحدث المسحات",
+    recent: "أحدث المسحات (آخر 100)",
     code: "الكود",
     status: "الحالة",
     time: "الوقت",
+    empty: "لا توجد مسحات حتى الآن",
     yes: "yes",
     no: "no",
-    all: "كل الفعاليات",
+    refreshed: "تم التحديث",
   },
 };
 
 function useLocalState(key, initial) {
   const [v, setV] = useState(() => {
-    try {
-      const s = localStorage.getItem(key);
-      return s ? JSON.parse(s) : initial;
-    } catch {
-      return initial;
-    }
+    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : initial; } catch { return initial; }
   });
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(v));
-    } catch {}
-  }, [key, v]);
+  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }, [key, v]);
   return [v, setV];
 }
 
-export default function Dashboard() {
+export default function Dashboard(){
+  // Language + direction
   const [lang, setLang] = useLocalState("hs:dash:lang", "ar");
-  const T = STR[lang] || STR.en;
-  const isAr = lang === "ar";
+  const T = STR[lang] || STR.en; const isAr = lang === "ar";
 
-  // Events list
+  // Events list & selection
   const [events, setEvents] = useState([]);
-  const [event, setEvent] = useLocalState("hs:dash:event", "زفاف خالد");
+  const [event, setEvent]   = useLocalState("hs:dash:event", "");
 
   // KPIs
   const [total, setTotal] = useState(0);
-  const [used, setUsed] = useState(0);
+  const [used, setUsed]   = useState(0);
   const left = Math.max(total - used, 0);
   const rate = total > 0 ? Math.round((used / total) * 100) : 0;
 
@@ -111,200 +106,162 @@ export default function Dashboard() {
   const [rows, setRows] = useState([]);
   const [qStr, setQStr] = useState("");
 
-  // Load events (distinct EventName)
-  useEffect(() => {
+  // Load distinct events (light scan up to 500)
+  useEffect(()=>{
     let mounted = true;
-    (async () => {
-      const ref = collection(db, "invites");
-      // Pull a sample to build a set of events (lightweight scan)
+    (async()=>{
+      const ref = collection(db, 'invites');
       const snap = await getDocs(query(ref, limit(500)));
       const setE = new Set();
-      snap.forEach((d) => {
-        const ev = d.data().EventName || "";
-        if (ev) setE.add(ev);
-      });
-      const list = Array.from(setE).sort((a, b) => a.localeCompare(b));
-      if (mounted) setEvents(list);
-      if (mounted && list.length && !event) setEvent(list[0]);
+      snap.forEach(d=>{ const ev = d.data().EventName || ""; if(ev) setE.add(ev); });
+      const list = Array.from(setE).sort((a,b)=>a.localeCompare(b));
+      if(mounted) setEvents(list);
+      if(mounted && !event) setEvent(list[0] || "");
     })();
-    return () => (mounted = false);
+    return ()=>{ mounted = false; };
   }, []);
 
-  // Realtime KPIs for selected event
-  useEffect(() => {
-    const ref = collection(db, "invites");
-    const qAll = event && event !== "__ALL__" ? query(ref, where("EventName", "==", event)) : query(ref);
-
-    const unsub = onSnapshot(qAll, (snap) => {
-      let t = 0;
-      let u = 0;
-      const recent = [];
-      snap.forEach((d) => {
-        const data = d.data();
-        t += 1;
-        if ((data.Status || "").toLowerCase() === "yes") u += 1;
-        // collect last scans
-        if (data.scannedAt?.toDate?.()) {
-          recent.push({
-            id: d.id,
-            Code: data.Code || d.id,
-            Status: data.Status || "no",
-            scannedAt: data.scannedAt.toDate(),
-            EventName: data.EventName || "",
-          });
+  // Realtime stream for KPIs + recent scans
+  useEffect(()=>{
+    const ref = collection(db, 'invites');
+    const qAll = event && event !== '__ALL__' ? query(ref, where('EventName', '==', event)) : query(ref);
+    const unsub = onSnapshot(qAll, (snap)=>{
+      let t=0, u=0; const recent=[];
+      snap.forEach(d=>{
+        const x = d.data(); t += 1; if((x.Status||'').toLowerCase()==='yes') u += 1;
+        if(x.scannedAt?.toDate?.()){
+          recent.push({ id:d.id, Code: x.Code || d.id, Status: x.Status || 'no', scannedAt: x.scannedAt.toDate() });
         }
       });
-      // sort desc by time
-      recent.sort((a, b) => (b.scannedAt?.getTime?.() || 0) - (a.scannedAt?.getTime?.() || 0));
-      setRows(recent.slice(0, 100));
-      setTotal(t);
-      setUsed(u);
+      recent.sort((a,b)=>(b.scannedAt?.getTime?.()||0)-(a.scannedAt?.getTime?.()||0));
+      setRows(recent.slice(0,100)); setTotal(t); setUsed(u);
     });
-    return () => unsub();
+    return ()=>unsub();
   }, [event]);
 
-  // Filtered rows by search
-  const filtered = useMemo(() => {
-    const s = qStr.trim().toLowerCase();
-    if (!s) return rows;
-    return rows.filter((r) => (r.Code || "").toLowerCase().includes(s));
+  // Search filter
+  const filtered = useMemo(()=>{
+    const s = qStr.trim().toLowerCase(); if(!s) return rows;
+    return rows.filter(r => (r.Code||'').toLowerCase().includes(s));
   }, [rows, qStr]);
 
   // Export CSV
-  function exportCSV() {
-    const header = ["Code", "Status", "EventName", "scannedAt"].join(",");
-    const lines = rows.map((r) => {
-      const t = r.scannedAt ? new Date(r.scannedAt).toISOString() : "";
-      return [r.Code, r.Status, r.EventName, t].join(",");
+  function exportCSV(){
+    const header = [T.code, T.status, 'EventName', T.time].join(',');
+    const lines = rows.map(r=>{
+      const t = r.scannedAt ? new Date(r.scannedAt).toISOString() : '';
+      return [r.Code, r.Status, event || '—', t].join(',');
     });
-    const csv = [header, ...lines].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `hormez-${event || "all"}-scans.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const csv = [header, ...lines].join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob); const a = document.createElement('a');
+    a.href = url; a.download = `hormez-${event||'all'}-scans.csv`; a.click(); URL.revokeObjectURL(url);
   }
 
   return (
-    <div className={`min-h-screen bg-[#0b1020] text-slate-200 ${isAr ? "rtl" : "ltr"}`} dir={isAr ? "rtl" : "ltr"}>
-      <div className="max-w-6xl mx-auto p-4 space-y-4">
-        {/* Header */}
-        <div className="flex items-center gap-3">
+    <div className={`min-h-screen bg-[#0b1020] text-slate-200 ${isAr?'rtl':'ltr'}`} dir={isAr?'rtl':'ltr'}>
+      {/* Top bar */}
+      <header className="sticky top-0 z-10 backdrop-blur bg-[#0b1020]/80 border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-black/60 border border-white/10 grid place-items-center">
             <span className="font-extrabold text-yellow-400">HS</span>
           </div>
           <div className="leading-tight">
-            <div className="text-xs text-slate-400">HORMEZ SECURITY</div>
-            <h1 className="text-xl font-bold">{T.title}</h1>
-            <div className="text-xs text-slate-400">{T.subtitle}</div>
+            <div className="text-[11px] text-slate-400">{T.brand}</div>
+            <div className="text-xl font-bold">{T.title}</div>
+            <div className="text-[12px] text-slate-400">{T.subtitle}</div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <Button variant="ghost" onClick={() => setLang(lang === "ar" ? "en" : "ar")}> <Globe className="w-4 h-4 mr-2"/> {T.language}: {lang.toUpperCase()}</Button>
-            <Button variant="outline" onClick={() => location.reload()}><RefreshCw className="w-4 h-4 mr-2"/>{T.refresh}</Button>
+            <button className="px-3 py-2 rounded-lg border border-white/10 bg-black/40 hover:bg-black/60" onClick={()=>setLang(lang==='ar'?'en':'ar')}>
+              {T.language}: <span className="font-bold ml-1">{lang.toUpperCase()}</span>
+            </button>
+            <button className="px-3 py-2 rounded-lg border border-white/10 bg-black/40 hover:bg-black/60" onClick={()=>location.reload()}>
+              ↻ {T.refreshed}
+            </button>
           </div>
         </div>
+      </header>
 
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Card className="bg-white/5 border-white/10">
-            <CardContent className="p-3">
-              <div className="text-xs text-slate-400 mb-1">{T.event}</div>
-              <Select value={event} onValueChange={setEvent}>
-                <SelectTrigger className="bg-black/40 border-white/10">
-                  <SelectValue placeholder={T.all} />
-                </SelectTrigger>
-                <SelectContent className="bg-[#0b1220] border-white/10 text-slate-200">
-                  <SelectItem value="__ALL__">{T.all}</SelectItem>
-                  {events.map((e) => (
-                    <SelectItem key={e} value={e}>{e}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/5 border-white/10">
-            <CardContent className="p-3">
-              <div className="text-xs text-slate-400 mb-1">{T.search}</div>
-              <Input value={qStr} onChange={(e) => setQStr(e.target.value)} className="bg-black/40 border-white/10"/>
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-3">
-            <Card className="flex-1 bg-white/5 border-white/10">
-              <CardContent className="p-3 h-full flex flex-col justify-between">
-                <div className="text-xs text-slate-400">{T.export}</div>
-                <Button onClick={exportCSV} className="mt-2"><Download className="w-4 h-4 mr-2"/>{T.export}</Button>
-              </CardContent>
-            </Card>
+      <main className="max-w-6xl mx-auto p-4 space-y-4">
+        {/* Controls */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="p-3 rounded-xl border border-white/10 bg-white/5">
+            <label className="block text-[12px] text-slate-400 mb-1">{T.event}</label>
+            <select value={event||''} onChange={(e)=>setEvent(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5">
+              <option value="__ALL__">{T.all}</option>
+              {events.map(ev=> <option key={ev} value={ev}>{ev}</option>)}
+            </select>
           </div>
-        </div>
+          <div className="p-3 rounded-xl border border-white/10 bg-white/5">
+            <label className="block text-[12px] text-slate-400 mb-1">{T.search}</label>
+            <input value={qStr} onChange={(e)=>setQStr(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5" placeholder={T.search} />
+          </div>
+          <div className="p-3 rounded-xl border border-white/10 bg-white/5 flex items-end">
+            <button onClick={exportCSV} className="w-full px-3 py-2 rounded-lg border border-white/10 bg-black/40 hover:bg-black/60 font-semibold">⤓ {T.export}</button>
+          </div>
+        </section>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KPI icon={<ClipboardList/>} label={T.total} value={total} />
-          <KPI icon={<Users/>} label={T.used} value={used} />
-          <KPI icon={<Users/>} label={T.left} value={left} />
-          <KPI icon={<Percent/>} label={T.rate} value={`${rate}%`} />
-        </div>
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPI label={T.total} value={total} />
+          <KPI label={T.used}  value={used} />
+          <KPI label={T.left}  value={left} />
+          <KPI label={T.rate}  value={`${rate}%`} />
+        </section>
 
         {/* Table */}
-        <Card className="bg-white/5 border-white/10">
-          <CardContent className="p-0 overflow-x-auto">
-            <div className="p-3 text-xs text-slate-400">{T.lastScans}</div>
+        <section className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+          <div className="px-3 py-2 text-[12px] text-slate-400 border-b border-white/10">{T.recent}</div>
+          <div className="max-h-[60vh] overflow-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-white/5">
+              <thead className="sticky top-0 bg-[#12182a] text-slate-300">
                 <tr>
-                  <Th>{T.code}</Th>
-                  <Th>{T.status}</Th>
-                  <Th>{T.time}</Th>
+                  <TH>{T.code}</TH>
+                  <TH>{T.status}</TH>
+                  <TH>{T.time}</TH>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => (
-                  <tr key={r.id} className="border-t border-white/5">
-                    <Td mono>{r.Code}</Td>
-                    <Td>{(r.Status || "no").toLowerCase()}</Td>
-                    <Td>{r.scannedAt ? new Date(r.scannedAt).toLocaleString(lang === "ar" ? "ar-EG" : "en-GB") : "—"}</Td>
+                {filtered.map(r=> (
+                  <tr key={r.id} className="border-t border-white/10 hover:bg-white/[.03]">
+                    <TD mono>{r.Code}</TD>
+                    <TD>
+                      <span className={`px-2 py-1 rounded-md text-xs font-semibold border ${ (r.Status||'no').toLowerCase()==='yes' ? 'bg-green-500/15 border-green-500/30 text-green-400' : 'bg-red-500/15 border-red-500/30 text-red-400' }`}>
+                        {(r.Status||'no').toLowerCase()==='yes' ? T.yes : T.no}
+                      </span>
+                    </TD>
+                    <TD>{r.scannedAt ? new Date(r.scannedAt).toLocaleString(isAr? 'ar-EG' : 'en-GB') : '—'}</TD>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <Td colSpan={3} className="text-center text-slate-400 py-6">—</Td>
-                  </tr>
+                {filtered.length===0 && (
+                  <tr><TD colSpan={3} className="text-center text-slate-400 py-8">{T.empty}</TD></tr>
                 )}
               </tbody>
             </table>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function KPI({label, value}){
+  return (
+    <div className="p-4 rounded-xl border border-white/10 bg-white/5 flex items-center gap-3">
+      <div className="w-10 h-10 rounded-xl bg-black/40 border border-white/10 grid place-items-center">
+        <div className="text-lg opacity-80">●</div>
+      </div>
+      <div>
+        <div className="text-[12px] text-slate-400">{label}</div>
+        <div className="text-2xl font-extrabold tracking-tight">{value}</div>
       </div>
     </div>
   );
 }
 
-function KPI({ icon, label, value }) {
-  return (
-    <Card className="bg-white/5 border-white/10">
-      <CardContent className="p-4 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-black/40 border border-white/10 grid place-items-center">
-          <div className="opacity-80">{icon}</div>
-        </div>
-        <div>
-          <div className="text-xs text-slate-400">{label}</div>
-          <div className="text-xl font-extrabold">{value}</div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+function TH({children}){
+  return <th className="text-left font-semibold px-3 py-2 text-slate-300 whitespace-nowrap">{children}</th>;
 }
-
-function Th({ children }) {
-  return <th className="text-left font-semibold px-3 py-2 text-slate-300">{children}</th>;
-}
-function Td({ children, mono=false, colSpan, className="" }) {
-  return (
-    <td colSpan={colSpan} className={`px-3 py-2 ${mono? "font-mono" : ""} ${className}`}>{children}</td>
-  );
+function TD({children, mono=false, colSpan, className=''}){
+  return <td colSpan={colSpan} className={`px-3 py-2 ${mono?'font-mono tracking-tight':''} ${className}`}>{children}</td>;
 }
