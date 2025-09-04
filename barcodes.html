@@ -58,7 +58,7 @@
   </style>
 </head>
 <body>
-  <h1>🎉 توليد 20 باركود - زفاف خالد</h1>
+  <h1>🎉 توليد 30 باركود - زفاف خالد</h1>
   <div class="toolbar">
     <button id="genBtn" class="btn" onclick="generateAll()">🔄 توليد + حفظ بمعرّف = الكود</button>
     <button id="downloadAllBtn" onclick="downloadAll()">⬇️ تحميل كل الباركود دفعة واحدة</button>
@@ -158,7 +158,7 @@
       cardsDiv.innerHTML = "";
       generatedCanvases.length = 0;
 
-      for (let i = 1; i <= 20; i++) {
+      for (let i = 1; i <= 30; i++) {
         const code = `KH_${String(i).padStart(3, '0')}`;
         const card = createCard(code);
         cardsDiv.appendChild(card);
