@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>رفع الباركود — Hormez</title>
+  <style>
+    body { background:#0b1020; color:#e5e7eb; font-family:system-ui; padding:20px; }
+    .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:20px; max-width:600px; margin:auto; }
+    .btn { display:inline-block; padding:10px 16px; border:1px solid #374151; border-radius:8px; background:#1f2937; color:#e5e7eb; cursor:pointer; margin-top:10px; }
+    .btn:hover { background:#273045; }
+    .log { font-size:14px; margin-top:12px; white-space:pre-wrap; background:#0f172a; padding:10px; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>📤 رفع ملف الأكواد</h2>
+    <p>اختر ملف CSV يحتوي على الأعمدة: <b>Code, Status, EventName</b></p>
+    <input type="file" id="fileInput" accept=".csv,.xlsx" />
+    <button class="btn" id="uploadBtn">رفع إلى Firebase</button>
+    <div id="log" class="log"></div>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.firebasestorage.app",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    const logBox = document.getElementById("log");
+    function log(msg){ logBox.textContent += msg + "\\n"; }
+
+    document.getElementById("uploadBtn").addEventListener("click", async ()=>{
+      const file = document.getElementById("fileInput").files[0];
+      if(!file){ alert("اختر ملف أولاً"); return; }
+
+      const reader = new FileReader();
+      reader.onload = async (e)=>{
+        const text = e.target.result;
+        const rows = text.split(/\\r?\\n/).filter(r=>r.trim().length);
+        const header = rows[0].split(',');
+        const codeIdx = header.indexOf("Code");
+        const statusIdx = header.indexOf("Status");
+        const eventIdx = header.indexOf("EventName");
+
+        if(codeIdx === -1 || eventIdx === -1){
+          alert("الملف يجب أن يحتوي على الأعمدة: Code, EventName (و Status اختياري)");
+          return;
+        }
+
+        for(let i=1;i<rows.length;i++){
+          const cols = rows[i].split(',');
+          const code = cols[codeIdx]?.trim();
+          const status = cols[statusIdx]?.trim() || "no";
+          const ev = cols[eventIdx]?.trim() || "حدث غير معروف";
+          if(!code) continue;
+
+          try{
+            await setDoc(doc(db, "invites", code), {
+              Code: code,
+              Status: status,
+              EventName: ev
+            });
+            log(`✅ تم رفع ${code}`);
+          }catch(err){
+            log(`❌ خطأ في ${code}: ${err.message}`);
+          }
+        }
+      };
+      reader.readAsText(file, "UTF-8");
+    });
+  </script>
+</body>
+</html>
