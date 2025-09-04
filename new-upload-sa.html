@@ -1,85 +1,200 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>رفع الباركود — Hormez</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>توليد الأكواد وربطها — Hormez</title>
   <style>
-    body { background:#0b1020; color:#e5e7eb; font-family:system-ui; padding:20px; }
-    .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:20px; max-width:600px; margin:auto; }
-    .btn { display:inline-block; padding:10px 16px; border:1px solid #374151; border-radius:8px; background:#1f2937; color:#e5e7eb; cursor:pointer; margin-top:10px; }
-    .btn:hover { background:#273045; }
-    .log { font-size:14px; margin-top:12px; white-space:pre-wrap; background:#0f172a; padding:10px; border-radius:8px; }
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#9aa4b2;--card:#0e172a;--b:#233047;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:40px;height:40px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center}
+    .logo span{font-weight:900;color:#ffd700}
+    .muted{color:var(--muted)}
+    .input, .select, .ta{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
+    .btn{appearance:none;border:1px solid #334155;background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn:hover{background:#0d1528}
+    .pill{display:inline-flex;gap:8px;align-items:center;border:1px solid #243047;background:#0b1220;border-radius:10px;padding:8px 10px}
+    .kpi{display:flex;gap:12px;align-items:center}
+    .kpi .n{font-size:22px;font-weight:900}
+    .grid{display:grid;gap:12px}
+    .grid-3{grid-template-columns:1fr 1fr 1fr}
+    .grid-2{grid-template-columns:1fr 1fr}
+    @media(max-width:900px){.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+    .qr{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+    .qr .box{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:10px;text-align:center}
+    .qr canvas{display:block;margin:0 auto}
+    .log{white-space:pre-wrap;background:#0b1220;border:1px solid #334155;border-radius:12px;padding:10px;font-size:12px}
+    .ok{color:#86efac} .err{color:#fca5a5}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>📤 رفع ملف الأكواد</h2>
-    <p>اختر ملف CSV يحتوي على الأعمدة: <b>Code, Status, EventName</b></p>
-    <input type="file" id="fileInput" accept=".csv,.xlsx" />
-    <button class="btn" id="uploadBtn">رفع إلى Firebase</button>
-    <div id="log" class="log"></div>
+  <div class="container">
+    <!-- Header -->
+    <div class="row" style="align-items:center">
+      <div class="brand">
+        <div class="logo"><span>HS</span></div>
+        <div>
+          <div class="muted" style="font-size:12px">HORMEZ SECURITY</div>
+          <div style="font-weight:800">توليد الأكواد وربطها بالفايربيس</div>
+          <div class="muted" style="font-size:12px">نفس النظام السابق: توليد تسلسلي + إدخال يدوي + QR</div>
+        </div>
+      </div>
+      <div style="margin-inline-start:auto" class="row">
+        <button id="langBtn" class="btn">AR</button>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="grid grid-3" style="margin-top:12px">
+      <div class="card">
+        <div class="muted" id="lblEvent" style="font-size:12px">الحدث</div>
+        <input id="eventName" class="input" placeholder="مثال: زفاف سعيد" />
+      </div>
+      <div class="card">
+        <div class="muted" id="lblPrefix" style="font-size:12px">بادئة الكود (Prefix)</div>
+        <input id="prefix" class="input" placeholder="مثال: SA" />
+      </div>
+      <div class="card">
+        <div class="muted" id="lblPad" style="font-size:12px">عدد الأرقام (Padding)</div>
+        <input id="pad" class="input" type="number" value="3" min="1" max="6" />
+      </div>
+      <div class="card">
+        <div class="muted" id="lblStart" style="font-size:12px">من (Start)</div>
+        <input id="start" class="input" type="number" placeholder="1" />
+      </div>
+      <div class="card">
+        <div class="muted" id="lblEnd" style="font-size:12px">إلى (End)</div>
+        <input id="end" class="input" type="number" placeholder="200" />
+      </div>
+      <div class="card" style="display:flex;align-items:flex-end;gap:8px">
+        <button id="btnGenerate" class="btn" style="width:100%">توليد → حفظ في Firebase</button>
+      </div>
+    </div>
+
+    <!-- Manual list -->
+    <div class="card" style="margin-top:12px">
+      <div class="muted" id="lblList" style="font-size:12px">قائمة أكواد مخصصة (سطر لكل كود)، اختياري</div>
+      <textarea id="list" class="ta" rows="4" placeholder="SA_001\nSA_002\nSA_003"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="btnSaveList" class="btn">حفظ القائمة في Firebase</button>
+        <button id="btnRenderQR" class="btn">توليد QR للأكواد</button>
+      </div>
+    </div>
+
+    <!-- KPIs & Log -->
+    <div class="grid grid-2" style="margin-top:12px">
+      <div class="card">
+        <div class="muted" style="font-size:12px">النتيجة</div>
+        <div class="kpi"><div>تم الإنشاء:</div><div class="n" id="kpiCreated">0</div></div>
+        <div class="kpi"><div>محدّث/متجاوز:</div><div class="n" id="kpiUpdated">0</div></div>
+        <div class="kpi"><div>أخطاء:</div><div class="n" id="kpiErrors">0</div></div>
+      </div>
+      <div class="card">
+        <div class="muted" style="font-size:12px">السجل</div>
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+
+    <!-- QR Grid -->
+    <div class="card" style="margin-top:12px">
+      <div class="row" style="align-items:center">
+        <div class="muted" id="lblQR" style="font-size:12px">أكواد QR المُولَّدة</div>
+        <div class="pill" style="margin-inline-start:auto">تلميح: اضغط على صورة QR للتنزيل</div>
+      </div>
+      <div id="qrGrid" class="qr" style="margin-top:10px"></div>
+    </div>
   </div>
 
-  <!-- Firebase -->
+  <!-- QRCode lib -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-    // Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-      authDomain: "hormez-inv.firebaseapp.com",
-      projectId: "hormez-inv",
-      storageBucket: "hormez-inv.firebasestorage.app",
-      messagingSenderId: "747519941805",
-      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    // ===== i18n =====
+    const STR = {
+      ar: { langBtn:'EN', title:'توليد الأكواد وربطها', event:'الحدث', prefix:'بادئة الكود', pad:'عدد الأرقام', start:'من', end:'إلى', genSave:'توليد → حفظ في Firebase', listLbl:'قائمة أكواد مخصصة (اختياري)', saveList:'حفظ القائمة في Firebase', renderQR:'توليد QR للأكواد', result:'النتيجة', created:'تم الإنشاء', updated:'محدّث/متجاوز', errors:'أخطاء', log:'السجل', qrHint:'تلميح: اضغط على صورة QR للتنزيل' },
+      en: { langBtn:'AR', title:'Generate & Link Codes', event:'Event', prefix:'Code Prefix', pad:'Digits', start:'Start', end:'End', genSave:'Generate → Save to Firebase', listLbl:'Custom code list (optional)', saveList:'Save list to Firebase', renderQR:'Render QR for codes', result:'Result', created:'Created', updated:'Updated/Overwritten', errors:'Errors', log:'Log', qrHint:'Hint: click a QR to download' }
     };
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
 
-    const logBox = document.getElementById("log");
-    function log(msg){ logBox.textContent += msg + "\\n"; }
+    const $ = (s,root=document)=>root.querySelector(s);
+    const logBox = $('#log');
+    function log(m, cls=''){ const d = document.createElement('div'); d.textContent = m; if(cls) d.className = cls; logBox.appendChild(d); logBox.scrollTop = logBox.scrollHeight; }
 
-    document.getElementById("uploadBtn").addEventListener("click", async ()=>{
-      const file = document.getElementById("fileInput").files[0];
-      if(!file){ alert("اختر ملف أولاً"); return; }
+    // Language toggle
+    let LANG = localStorage.getItem('hs:upload:lang') || 'ar';
+    function applyLang(){ document.getElementById('langBtn').textContent = STR[LANG].langBtn; document.documentElement.lang = LANG; document.documentElement.dir = (LANG==='ar')?'rtl':'ltr'; }
+    document.getElementById('langBtn').addEventListener('click', ()=>{ LANG = (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:upload:lang', LANG); applyLang(); });
+    applyLang();
 
-      const reader = new FileReader();
-      reader.onload = async (e)=>{
-        const text = e.target.result;
-        const rows = text.split(/\\r?\\n/).filter(r=>r.trim().length);
-        const header = rows[0].split(',');
-        const codeIdx = header.indexOf("Code");
-        const statusIdx = header.indexOf("Status");
-        const eventIdx = header.indexOf("EventName");
+    // Firebase
+    const firebaseConfig = { apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv", storageBucket:"hormez-inv.firebasestorage.app", messagingSenderId:"747519941805", appId:"1:747519941805:web:468fada2492700e9da3a24" };
+    const app = initializeApp(firebaseConfig); const db = getFirestore(app);
 
-        if(codeIdx === -1 || eventIdx === -1){
-          alert("الملف يجب أن يحتوي على الأعمدة: Code, EventName (و Status اختياري)");
-          return;
-        }
+    function pad(n, w){ n = String(n); return n.length>=w ? n : '0'.repeat(w-n.length) + n; }
 
-        for(let i=1;i<rows.length;i++){
-          const cols = rows[i].split(',');
-          const code = cols[codeIdx]?.trim();
-          const status = cols[statusIdx]?.trim() || "no";
-          const ev = cols[eventIdx]?.trim() || "حدث غير معروف";
-          if(!code) continue;
+    async function upsertCode(code, eventName){
+      if(!code) return {ok:false, msg:'empty code'};
+      try{
+        await setDoc(doc(db,'invites', code), { Code: code, Status: 'no', EventName: eventName }, { merge:true });
+        return {ok:true};
+      }catch(err){ return {ok:false, msg: err.message}; }
+    }
 
-          try{
-            await setDoc(doc(db, "invites", code), {
-              Code: code,
-              Status: status,
-              EventName: ev
-            });
-            log(`✅ تم رفع ${code}`);
-          }catch(err){
-            log(`❌ خطأ في ${code}: ${err.message}`);
-          }
-        }
-      };
-      reader.readAsText(file, "UTF-8");
-    });
+    async function handleGenerate(){
+      const eventName = $('#eventName').value.trim();
+      const prefix = ($('#prefix').value||'').trim().toUpperCase();
+      const start = parseInt($('#start').value,10);
+      const end   = parseInt($('#end').value,10);
+      const digits= Math.max(1, Math.min(6, parseInt($('#pad').value,10)||3));
+      if(!eventName||!prefix||!start||!end){ alert('أدخل: الحدث + البادئة + البداية + النهاية'); return; }
+      if(end < start){ alert('النهاية يجب أن تكون ≥ البداية'); return; }
+      let created=0, updated=0, errors=0;
+      for(let i=start;i<=end;i++){
+        const code = `${prefix}_${pad(i,digits)}`;
+        const r = await upsertCode(code, eventName);
+        if(r.ok){ created++; log(`✅ ${code}`, 'ok'); } else { errors++; log(`❌ ${code} — ${r.msg}`, 'err'); }
+      }
+      $('#kpiCreated').textContent = created; $('#kpiUpdated').textContent = updated; $('#kpiErrors').textContent = errors;
+    }
+
+    function parseList(){
+      return ($('#list').value||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    }
+
+    async function handleSaveList(){
+      const eventName = $('#eventName').value.trim(); if(!eventName){ alert('أدخل اسم الحدث'); return; }
+      const list = parseList(); if(!list.length){ alert('أدخل أكواد في القائمة'); return; }
+      let created=0, errors=0;
+      for(const code of list){ const r= await upsertCode(code.toUpperCase(), eventName); if(r.ok){ created++; log(`✅ ${code}`, 'ok'); } else { errors++; log(`❌ ${code} — ${r.msg}`, 'err'); } }
+      $('#kpiCreated').textContent = created; $('#kpiUpdated').textContent = 0; $('#kpiErrors').textContent = errors;
+    }
+
+    function downloadCanvasAsPng(canvas, filename){ const link=document.createElement('a'); link.download=filename; link.href=canvas.toDataURL('image/png'); link.click(); }
+
+    function renderQR(){
+      const grid = document.getElementById('qrGrid'); grid.innerHTML='';
+      const list = parseList(); if(!list.length){ alert('أدخل أكواد في القائمة (سطر لكل كود)'); return; }
+      list.forEach(code=>{
+        const box = document.createElement('div'); box.className='box'; box.classList.add('box');
+        const title = document.createElement('div'); title.textContent = code; title.className='mono'; title.style.marginBottom='6px';
+        const holder = document.createElement('div'); holder.style.width='120px'; holder.style.height='120px'; holder.style.margin='0 auto';
+        box.appendChild(title); box.appendChild(holder); grid.appendChild(box);
+        const q = new QRCode(holder, { text: code, width:120, height:120, correctLevel: QRCode.CorrectLevel.M });
+        // click to download
+        setTimeout(()=>{ const canvas = holder.querySelector('canvas'); if(canvas){ canvas.style.cursor='pointer'; canvas.title='اضغط للتنزيل'; canvas.addEventListener('click',()=>downloadCanvasAsPng(canvas, `${code}.png`)); } }, 50);
+      });
+    }
+
+    document.getElementById('btnGenerate').addEventListener('click', handleGenerate);
+    document.getElementById('btnSaveList').addEventListener('click', handleSaveList);
+    document.getElementById('btnRenderQR').addEventListener('click', renderQR);
   </script>
 </body>
 </html>
