@@ -20,7 +20,7 @@
     const db = getFirestore(app);
 
     async function uploadInvites() {
-      const total = 10;
+      const total = 15;
       for (let i = 1; i <= total; i++) {
         const code = `KH_${String(i).padStart(3, '0')}`;
         await setDoc(doc(db, "invites", code), {
@@ -30,14 +30,14 @@
         });
         console.log(`✅ Uploaded: ${code}`);
       }
-      alert("✅ All 10 invites uploaded successfully.");
+      alert("✅ All 15 invites uploaded successfully.");
     }
 
     window.uploadInvites = uploadInvites;
   </script>
 </head>
 <body style="text-align: center; padding: 40px; font-family: Arial;">
-  <h2>Upload 10 Invites for Khaled Wedding</h2>
+  <h2>Upload 15 Invites for Khaled Wedding</h2>
   <button onclick="uploadInvites()" style="padding: 12px 24px; font-size: 18px;">Upload Now</button>
 </body>
 </html>
