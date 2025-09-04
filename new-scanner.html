@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ماسح باركود الدعوات — Hormez Security</title>
+  <style>
+    :root{--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--ink:#0f172a;--muted:#64748b;--bg:#0b1020;--card:#0e172a}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial; color:#e5e7eb}
+    .wrap{max-width:960px;margin:0 auto;padding:20px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:38px;height:38px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center}
+    .logo span{font-weight:800;color:#ffd700}
+    .card{background:rgba(255,255,255,0.04);backdrop-filter: blur(6px);border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px}
+    .grid{display:grid;gap:16px}
+    .grid.cols{grid-template-columns: 1fr 1fr}
+    @media(max-width:900px){.grid.cols{grid-template-columns:1fr}}
+    h1{font-size:clamp(18px,3vw,22px); margin:6px 0 0}
+    .muted{color:#a3a3a3}
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px dashed #334155;border-radius:999px;padding:6px 10px;font-size:12px}
+    .status{border-radius:14px;padding:10px 12px;font-weight:700;display:inline-flex;align-items:center;gap:8px}
+    .status.ok{background:rgba(22,163,74,.1); color:var(--ok); border:1px solid rgba(22,163,74,.3)}
+    .status.warn{background:rgba(245,158,11,.1); color:var(--warn); border:1px solid rgba(245,158,11,.3)}
+    .status.bad{background:rgba(220,38,38,.1); color:var(--bad); border:1px solid rgba(220,38,38,.3)}
+    .status.neutral{background:rgba(148,163,184,.08); color:#e5e7eb; border:1px solid rgba(148,163,184,.2)}
+    .kpi{display:flex;gap:12px;flex-wrap:wrap}
+    .kpi .box{flex:1 1 160px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px}
+    .kpi .n{font-weight:800;font-size:22px}
+    .btn{appearance:none;border:1px solid #334155;background:#0b1220;color:#e5e7eb;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+    .btn:hover{background:#0d1528}
+    .btn.ghost{background:transparent}
+    .btn.ok{border-color:rgba(22,163,74,.3)}
+    .btn.warn{border-color:rgba(245,158,11,.3)}
+    .btn.bad{border-color:rgba(220,38,38,.3)}
+    #reader{width:100%;min-height:360px;border-radius:12px;overflow:hidden;background:#000}
+    input[type="text"], select{width:100%;padding:12px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1}
+    .small{font-size:12px}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+  </style>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    // =========================
+    // 1) Firebase App Init
+    // =========================
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.firebasestorage.app",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // =========================
+    // 2) Helpers & URL Params
+    // =========================
+    const $ = (s, root=document) => root.querySelector(s);
+    const $$ = (s, root=document) => [...root.querySelectorAll(s)];
+    const params = new URLSearchParams(location.search);
+    const EVENT_NAME = params.get('event') || 'زفاف خالد';
+    const SCANNER_TITLE = `ماسح ${EVENT_NAME}`;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      $('#eventName').textContent = EVENT_NAME;
+      $('#scannerTitle').textContent = SCANNER_TITLE;
+      $('#manualEvent').value = EVENT_NAME;
+      refreshKPIs().catch(console.error);
+    });
+
+    // =========================
+    // 3) KPIs (counts)
+    // =========================
+    async function refreshKPIs(){
+      const qAll = query(collection(db,'invites'), where('EventName','==', EVENT_NAME));
+      const snapAll = await getDocs(qAll);
+      const total = snapAll.size;
+      let used = 0;
+      snapAll.forEach(d => { if((d.data().Status||'').toLowerCase()==='yes') used++; });
+      const left = Math.max(total - used, 0);
+      $('#kpiTotal').textContent = total;
+      $('#kpiUsed').textContent  = used;
+      $('#kpiLeft').textContent  = left;
+    }
+
+    // =========================
+    // 4) html5-qrcode setup
+    // =========================
+    let lastDecoded = '';
+    let lastAt = 0;
+
+    async function onScan(decodedText){
+      const now = Date.now();
+      if(decodedText === lastDecoded && now - lastAt < 2000){ return; } // Debounce
+      lastDecoded = decodedText; lastAt = now;
+      $('#lastCode').textContent = decodedText;
+      await handleCode(decodedText.trim());
+    }
+
+    async function handleCode(raw){
+      const code = normalizeCode(raw);
+      if(!code){ return showStatus('bad','كود غير صالح'); }
+      showStatus('neutral','جارِ التحقق...');
+      try{
+        const res = await lookupInviteByCode(code);
+        if(!res){
+          beep('bad');
+          return showStatus('bad','الكود غير موجود');
+        }
+        const { ref, data } = res;
+
+        if(data.EventName && data.EventName !== EVENT_NAME){
+          beep('warn');
+          showStatus('warn', `كود صحيح لكن لحدث مختلف: ${data.EventName}`);
+          $('#details').textContent = `Code: ${code} — Event: ${data.EventName}`;
+          return; // لا تحدّث الحالة
+        }
+
+        if((data.Status||'').toLowerCase()==='yes'){
+          beep('warn');
+          showStatus('warn','تم استخدام هذا الكود مسبقًا');
+          $('#details').textContent = formatDetails(code, data);
+          $('#undoBtn').dataset.id = ref.id;
+          $('#undoWrap').style.display = 'inline-block';
+          return;
+        }
+
+        // أول استخدام -> حدّث الحالة
+        await updateDoc(ref, {
+          Status: 'yes',
+          scannedAt: serverTimestamp(),
+          scannedBy: 'SEC-Device',
+          EventName: data.EventName || EVENT_NAME
+        });
+        beep('ok');
+        showStatus('ok','تم السماح بالدخول ✅');
+        $('#details').textContent = formatDetails(code, {...data, Status:'yes'});
+        $('#undoBtn').dataset.id = ref.id;
+        $('#undoWrap').style.display = 'inline-block';
+        refreshKPIs().catch(console.error);
+      }catch(err){
+        console.error(err);
+        beep('bad');
+        showStatus('bad','خطأ في الاتصال — حاول مجددًا');
+      }
+    }
+
+    function normalizeCode(s){
+      if(!s) return '';
+      s = s.trim();
+      // السماح بصيغ QR تحتوي على JSON {code:"KH_001"}
+      try{ const obj = JSON.parse(s); if(obj.code) return String(obj.code).trim(); }catch(_){/* ignore */}
+      // التقاط الأكواد مثل KH-001 أو kh_001
+      s = s.replace(/[-\s]/g,'_').toUpperCase();
+      // حذف أي بادئات نصية محتملة
+      const m = s.match(/[A-Z]{2,}_[0-9]{3,}/);
+      return m ? m[0] : s;
+    }
+
+    async function lookupInviteByCode(code){
+      // المحاولة 1: مستند باسم الكود
+      const d = doc(db,'invites', code);
+      const ds = await getDoc(d);
+      if(ds.exists()) return { ref: d, data: ds.data() };
+      // المحاولة 2: البحث بالحقل Code == code
+      const q = query(collection(db,'invites'), where('Code','==', code));
+      const snap = await getDocs(q);
+      if(snap.empty) return null;
+      const first = snap.docs[0];
+      return { ref: first.ref, data: first.data() };
+    }
+
+    function showStatus(kind, text){
+      const box = $('#statusBox');
+      box.className = `status ${kind}`;
+      box.textContent = text;
+    }
+
+    function formatDetails(code, data){
+      const when = data.scannedAt?.toDate?.() ? data.scannedAt.toDate().toLocaleString('ar-EG') : '—';
+      return `الكود: ${code} • الحالة: ${(data.Status||'no').toUpperCase()} • آخر مسح: ${when}`;
+    }
+
+    function beep(kind='ok'){
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = kind==='ok' ? 880 : kind==='warn' ? 520 : 220;
+      o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.20);
+      o.start(); o.stop(ctx.currentTime+0.21);
+    }
+
+    // زر التراجع (إلغاء الاستخدام)
+    $('#undoBtn')?.addEventListener('click', async (e)=>{
+      const id = e.currentTarget.dataset.id;
+      if(!id) return;
+      try{
+        await updateDoc(doc(db,'invites', id), { Status: 'no' });
+        showStatus('neutral','تم إرجاع الحالة إلى غير مستخدم');
+        refreshKPIs().catch(console.error);
+      }catch(err){
+        console.error(err); showStatus('bad','تعذّر الإرجاع');
+      }
+    });
+
+    // البحث اليدوي
+    $('#manualForm')?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const code = normalizeCode($('#manualCode').value);
+      $('#lastCode').textContent = code || '—';
+      if(code) await handleCode(code);
+    });
+
+    // تبديل الكاميرا
+    let html5QrcodeScanner = null;
+    async function startScanner(){
+      const { Html5QrcodeScanner } = await import('https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js');
+      if(html5QrcodeScanner){ html5QrcodeScanner.clear().catch(()=>{}); html5QrcodeScanner = null; }
+      html5QrcodeScanner = new Html5QrcodeScanner(
+        'reader',
+        { fps: 12, qrbox: 240, rememberLastUsedCamera: true, aspectRatio: 1.0 },
+        /* verbose= */ false
+      );
+      html5QrcodeScanner.render((txt)=>onScan(txt), (err)=>{ /* silent */ });
+    }
+
+    window.startScanner = startScanner;
+  </script>
+  <!-- html5-qrcode script loads dynamically inside module -->
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo"><span>HS</span></div>
+      <div>
+        <div class="muted small">HORMEZ SECURITY</div>
+        <h1 id="scannerTitle">ماسح الدعوات</h1>
+      </div>
+      <div style="margin-inline-start:auto" class="pill mono">الحدث: <span id="eventName" style="margin-inline-start:6px">—</span></div>
+    </div>
+
+    <div class="grid cols" style="margin-top:14px">
+      <div class="card">
+        <div class="row" style="align-items:center">
+          <button class="btn ok" onclick="startScanner()">تشغيل الكاميرا</button>
+          <button class="btn ghost" onclick="document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()">وضع ملء الشاشة</button>
+        </div>
+        <div id="reader" style="margin-top:12px"></div>
+      </div>
+
+      <div class="grid" style="gap:14px">
+        <div class="card">
+          <div class="muted small">آخر كود مقروء</div>
+          <div class="mono" style="font-size:26px;font-weight:800" id="lastCode">—</div>
+          <div style="margin-top:10px">
+            <span id="statusBox" class="status neutral">جاهز للمسح</span>
+            <span id="undoWrap" style="display:none;margin-inline-start:8px">
+              <button id="undoBtn" class="btn warn small">إلغاء الاستخدام</button>
+            </span>
+          </div>
+          <div id="details" class="muted small" style="margin-top:8px">—</div>
+        </div>
+
+        <div class="card">
+          <div class="muted small">بحث/إدخال يدوي</div>
+          <form id="manualForm" class="row" autocomplete="off">
+            <input id="manualCode" dir="ltr" class="mono" placeholder="مثال: KH_001" type="text" />
+            <button class="btn" type="submit">تحقق</button>
+          </form>
+          <div class="row small" style="margin-top:8px">
+            <div class="muted">يمكن تمرير اسم الحدث عبر رابط الصفحة: <span class="mono">?event=زفاف خالد</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="muted small">إحصائيات</div>
+          <div class="kpi">
+            <div class="box"><div class="muted small">إجمالي الدعوات</div><div id="kpiTotal" class="n">—</div></div>
+            <div class="box"><div class="muted small">المستخدمة</div><div id="kpiUsed" class="n">—</div></div>
+            <div class="box"><div class="muted small">المتبقية</div><div id="kpiLeft" class="n">—</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="muted small" style="margin-top:10px">
+      ملاحظات: تعمل الصفحة على قراءة QR يحتوي نص الكود مباشرة (مثل <span class="mono">KH_001</span>) أو يحتوي JSON بالشكل <span class="mono">{"code":"KH_001"}</span>.
+    </div>
+  </div>
+</body>
+</html>
