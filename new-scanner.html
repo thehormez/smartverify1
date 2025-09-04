@@ -38,24 +38,52 @@
     .row{display:flex;gap:10px;flex-wrap:wrap}
     .row > *{flex:1}
     .small{font-size:12px}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
     .tests li{margin:4px 0}
     .pass{color:#16a34a}
     .fail{color:#dc2626}
   </style>
-  <!-- مكتبة الكاميرا: يجب تحميلها قبل تشغيل الماسح -->
-  <script src="https://unpkg.com/html5-qrcode@2.3.10/dist/html5-qrcode.min.js"></script>
 
-  <!-- من أجل توافق زر onclick القديم، نعرّف غلافًا عالميًا مبكرًا -->
+  <!-- مُحمّل ديناميكي لمكتبة الكاميرا مع مسارات بديلة -->
   <script>
-    window.hs = window.hs || {};
-    window.startScanner = function(){
-      if (window.hs && typeof window.hs.startScanner === 'function') {
-        window.hs.startScanner();
-      } else {
-        alert('جارِ تحميل الماسح، أعد المحاولة خلال ثوانٍ...');
+    (function(){
+      const CDN_CANDIDATES = [
+        'https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js',
+        'https://unpkg.com/html5-qrcode@2/html5-qrcode.min.js',
+        'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.10/html5-qrcode.min.js',
+        'https://cdn.jsdelivr.net/npm/html5-qrcode@2/html5-qrcode.min.js'
+      ];
+
+      function loadScript(src){
+        return new Promise((resolve, reject)=>{
+          const s = document.createElement('script');
+          s.src = src; s.async = true; s.onload = ()=>resolve(src); s.onerror = ()=>reject(src);
+          document.head.appendChild(s);
+        });
       }
-    };
+
+      async function ensureHtml5Qrcode(){
+        if(window.Html5Qrcode || window.Html5QrcodeScanner){ return true; }
+        for(const url of CDN_CANDIDATES){
+          try{ await loadScript(url); if(window.Html5Qrcode || window.Html5QrcodeScanner){ return true; } }catch(_){ /* try next */ }
+        }
+        return !!(window.Html5Qrcode || window.Html5QrcodeScanner);
+      }
+
+      // تعريف startScanner عالميًا قبل تحميل الموديول لضمان عمل onclick
+      window.hs = window.hs || {};
+      window.startScanner = async function(){
+        const ok = await ensureHtml5Qrcode();
+        if (ok && window.hs && typeof window.hs.startScanner === 'function') {
+          window.hs.startScanner();
+        } else {
+          alert('مكتبة الكاميرا لم تُحمّل. تحقق من الإنترنت/HTTPS وصلاحية الكاميرا، ثم أعد المحاولة.');
+        }
+      };
+
+      // نجعل فحص التحميل متاحًا لباقي الكود
+      window.__ensureHtml5Qrcode = ensureHtml5Qrcode;
+    })();
   </script>
 
   <!-- الكود الرئيسي (Module) -->
@@ -258,13 +286,18 @@
     }
 
     // بدء تشغيل الكاميرا
-    function startScannerImpl(){
-      const Html5QrcodeScanner = window.Html5QrcodeScanner;
-      if(!Html5QrcodeScanner){
-        alert('مكتبة الكاميرا لم تُحمّل. تحقق من الإنترنت أو أعد التحميل.');
+    async function startScannerImpl(){
+      const ok = await window.__ensureHtml5Qrcode?.();
+      if(!ok){
+        showStatus('bad','تعذر تحميل مكتبة الكاميرا — تأكد من الإنترنت وHTTPS');
         return;
       }
-      if(html5QrcodeScanner){ html5QrcodeScanner.clear().catch(()=>{}); html5QrcodeScanner = null; }
+      const Html5QrcodeScanner = window.Html5QrcodeScanner;
+      if(!Html5QrcodeScanner){
+        showStatus('bad','لم يتم العثور على Html5QrcodeScanner');
+        return;
+      }
+      if(html5QrcodeScanner){ await html5QrcodeScanner.clear().catch(()=>{}); html5QrcodeScanner = null; }
       try{
         html5QrcodeScanner = new Html5QrcodeScanner(
           'reader',
@@ -278,20 +311,23 @@
       }
     }
 
-    // نعرّف دوالًا عامة داخل نافذة hs ثم نربط الغلاف العالمي الذي أضفناه قبل قليل
+    // نعرّف دوالًا عامة داخل نافذة hs ثم نربط الغلاف العالمي
     window.hs.startScanner = startScannerImpl;
 
     // =========================
     // 5) DOM Ready
     // =========================
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       $('#eventName').textContent = EVENT_NAME;
       $('#scannerTitle').textContent = SCANNER_TITLE;
       restoreUI();
       refreshKPIs().catch(console.error);
 
-      // ربط الأزرار (حتى لو فشل onclick القديم)
+      // تحميل المكتبة مبكرًا وتحضير الزر
+      await window.__ensureHtml5Qrcode?.();
       $('#startBtn')?.addEventListener('click', ()=> window.startScanner());
+
+      // إدخال يدوي
       $('#manualForm')?.addEventListener('submit', async (e)=>{
         e.preventDefault();
         const code = normalizeCode($('#manualCode').value);
@@ -299,6 +335,8 @@
         persistUI({code});
         if(code) await handleCode(code);
       });
+
+      // إلغاء الاستخدام
       $('#undoBtn')?.addEventListener('click', async (e)=>{
         const id = e.currentTarget.dataset.id;
         if(!id) return;
@@ -332,7 +370,7 @@
     async function runTests(){
       $('#tests').innerHTML = '';
       addTestResult(typeof window.startScanner === 'function', 'startScanner متوفر عالميًا');
-      addTestResult(!!window.Html5QrcodeScanner, 'مكتبة Html5QrcodeScanner محمّلة');
+      addTestResult(!!window.Html5Qrcode || !!window.Html5QrcodeScanner, 'مكتبة Html5Qrcode محمّلة');
 
       try{
         await refreshKPIs();
