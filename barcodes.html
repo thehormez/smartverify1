@@ -48,22 +48,22 @@
   </script>
 
   <style>
-    body { font-family: 'Tahoma', sans-serif; background: #111; color: gold; text-align: center; padding: 20px; }
-    .card { display: inline-block; margin: 15px; padding: 15px; background: #222; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-    .card canvas { display: block; margin: auto; }
-    .download-btn { margin-top: 8px; padding: 6px 12px; border: none; border-radius: 6px; background: gold; color: #000; font-weight: bold; cursor: pointer; }
-    #downloadAllBtn { margin:20px; padding:10px 20px; background:gold; color:black; border:none; border-radius:8px; font-weight:bold; cursor:pointer; display:none; }
-    .toolbar { margin-bottom: 10px; }
-    .log { margin:16px auto; max-width:820px; text-align:start; background:#1e1e1e; color:#eaeaea; padding:12px 14px; border-radius:10px; line-height:1.6; direction:ltr; white-space:pre-wrap; }
+    body { font-family: 'Tahoma', sans-serif; background:#fff; color:#000; text-align:center; padding:20px; }
+    .card { display:inline-block; margin:15px; padding:15px; background:#f3f3f3; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.2); }
+    .card canvas { display:block; margin:auto; }
+    .download-btn { margin-top:8px; padding:6px 12px; border:none; border-radius:6px; background:#000; color:#fff; font-weight:bold; cursor:pointer; }
+    #downloadAllBtn { margin:20px; padding:10px 20px; background:#000; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; display:none; }
+    .toolbar { margin-bottom:10px; }
+    .log { margin:16px auto; max-width:820px; text-align:start; background:#f5f5f5; color:#000; padding:12px 14px; border-radius:10px; line-height:1.6; direction:ltr; white-space:pre-wrap; }
   </style>
 </head>
 <body>
   <h1>🎉 توليد 20 باركود - زفاف خالد</h1>
   <div class="toolbar">
-    <button id="genBtn" onclick="generateAll()" style="padding:10px 20px; background:gold; color:black; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">🔄 توليد + حفظ بمعرّف = الكود</button>
+    <button id="genBtn" class="btn" onclick="generateAll()">🔄 توليد + حفظ بمعرّف = الكود</button>
     <button id="downloadAllBtn" onclick="downloadAll()">⬇️ تحميل كل الباركود دفعة واحدة</button>
   </div>
-  <div id="cards"></div>
+  <div id="cards" class="grid"></div>
   <pre id="log" class="log"></pre>
 
   <script>
@@ -76,27 +76,27 @@
 
     function generateQRCode(code) {
       const qr = qrcode(0, 'L');
-      qr.addData(code); // نضع نص الكود فقط داخل QR
+      qr.addData(code);
       qr.make();
 
       const size = 250;
       const canvas = document.createElement("canvas");
       canvas.width = size;
-      canvas.height = size + 40; // مساحة لكتابة الكود تحت الباركود
+      canvas.height = size + 40;
       const ctx = canvas.getContext("2d");
 
       const qrCanvas = document.createElement("canvas");
       qrCanvas.width = size;
       qrCanvas.height = size;
-      const qrCtx = qrCanvas.getContext("2d");
+      const ictx = qrCanvas.getContext("2d");
       const count = qr.getModuleCount();
       const tileW = size / count;
       const tileH = size / count;
 
       for (let r = 0; r < count; r++) {
         for (let c = 0; c < count; c++) {
-          qrCtx.fillStyle = qr.isDark(r, c) ? "black" : "white";
-          qrCtx.fillRect(c * tileW, r * tileH, tileW, tileH);
+          ictx.fillStyle = qr.isDark(r, c) ? "#000000" : "#FFFFFF";
+          ictx.fillRect(c * tileW, r * tileH, tileW, tileH);
         }
       }
 
@@ -104,8 +104,8 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(qrCanvas, 0, 0, size, size);
 
-      ctx.fillStyle = "#FFD700";
-      ctx.font = "20px Tahoma";
+      ctx.fillStyle = "#000";
+      ctx.font = "bold 18px Tahoma";
       ctx.textAlign = "center";
       ctx.fillText(code, size / 2, size + 25);
 
@@ -134,10 +134,21 @@
       };
       container.appendChild(downloadBtn);
 
+      if (window.saveToFirestore) {
+        window.saveToFirestore(code).then(result => {
+          if (result?.ok) {
+            if (result.existed) logLine(`⏭️ موجود مسبقًا: ${code}`);
+            else logLine(`✅ تم الحفظ: ${code}`);
+          } else {
+            logLine(`❌ فشل حفظ ${code} → ${result?.error || 'Unknown error'}`);
+          }
+        });
+      }
+
       return container;
     }
 
-    async function generateAll() {
+    function generateAll() {
       const cardsDiv = document.getElementById("cards");
       const dlAllBtn = document.getElementById("downloadAllBtn");
       const genBtn = document.getElementById("genBtn");
@@ -151,23 +162,11 @@
         const code = `KH_${String(i).padStart(3, '0')}`;
         const card = createCard(code);
         cardsDiv.appendChild(card);
-
-        if (window.saveToFirestore) {
-          const result = await window.saveToFirestore(code);
-          if (result?.ok) {
-            if (result.existed) logLine(`⏭️ موجود مسبقًا: ${code}`);
-            else logLine(`✅ تم الحفظ: ${code}`);
-          } else {
-            logLine(`❌ فشل حفظ ${code} → ${result?.error || 'Unknown error'}`);
-          }
-        } else {
-          logLine(`⚠️ لم يتم تحميل Firebase بعد. (saveToFirestore غير معرف)`);
-        }
       }
 
       dlAllBtn.style.display = "inline-block";
       genBtn.disabled = false;
-      logLine("\nانتهى التوليد والحفظ. افحص Firestore مجموعة invites.");
+      logLine("\nانتهى التوليد والحفظ. افحص مجموعة invites في Firestore.");
     }
 
     function downloadAll() {
