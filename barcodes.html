@@ -1,23 +1,15 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Upload KH Invites</title>
-  <style>
-    body { font-family: Tahoma, Arial, sans-serif; background:#111; color:#ffd700; text-align:center; padding:24px; }
-    .btn { background:#ffd700; color:#000; border:none; border-radius:10px; padding:10px 18px; font-weight:bold; cursor:pointer; }
-    .muted { color:#ccc; font-size:14px; margin-top:8px; }
-    .log { margin:18px auto; max-width:720px; text-align:start; background:#1e1e1e; color:#eaeaea; padding:12px 14px; border-radius:10px; line-height:1.6; direction:ltr; }
-    progress { width: 320px; height: 12px; border-radius: 6px; margin-top: 10px; }
-  </style>
-
-  <!-- Firebase SDK (Modules) -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>توليد باركود - زفاف خالد مع Firebase</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // ضع إعدادات مشروعك (كما زودتني بها سابقاً)
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
       authDomain: "hormez-inv.firebaseapp.com",
@@ -28,70 +20,149 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+    const db = getFirestore(app);
 
-    // مولد الأكواد KH_001 → KH_020
-    function generateCodes(n = 20) {
-      const arr = [];
-      for (let i = 1; i <= n; i++) arr.push(`KH_${String(i).padStart(3, "0")}`);
-      return arr;
-    }
-
-    async function codeExists(code) {
-      const q = query(collection(db, "invites"), where("code", "==", code));
-      const snap = await getDocs(q);
-      return !snap.empty;
-    }
-
-    async function uploadInvites() {
-      const log  = document.getElementById("log");
-      const bar  = document.getElementById("bar");
-      const btn  = document.getElementById("btn");
-      log.textContent = "";
-      btn.disabled = true;
-
-      const codes = generateCodes(20);
-      let created = 0, skipped = 0;
-
-      for (let i = 0; i < codes.length; i++) {
-        const code = codes[i];
-        try {
-          // منع التكرار
-          if (await codeExists(code)) {
-            skipped++;
-            log.textContent += `⏭️ Skipped (exists): ${code}\n`;
-          } else {
-            await addDoc(collection(db, "invites"), {
-              code,
-              eventName: "زفاف خالد",
-              status: "pending",
-              createdAt: new Date().toISOString()
-            });
-            created++;
-            log.textContent += `✅ Created: ${code}\n`;
-          }
-        } catch (e) {
-          log.textContent += `❌ Error: ${code} -> ${e.message}\n`;
-        }
-
-        // تحديث الشريط
-        bar.value = ((i + 1) / codes.length) * 100;
+    window.saveToFirestore = async function(code) {
+      try {
+        // حفظ المستند بالمعرّف نفسه = الكود، ليظهر في Firestore بهذا الشكل تمامًا KH_001
+        await setDoc(doc(db, "invites", code), {
+          code, // يبقى نصًا كما هو
+          eventName: "زفاف خالد",
+          status: "pending",
+          createdAt: new Date().toISOString()
+        });
+        console.log("✔ تم حفظ الدعوة في Firestore بالمعرّف:", code);
+      } catch (e) {
+        console.error("❌ خطأ في حفظ الدعوة:", e);
       }
-
-      log.textContent += `\n— Summary —\nCreated: ${created}\nSkipped (exists): ${skipped}\nTotal: ${codes.length}\n`;
-      btn.disabled = false;
+    });
+        console.log("✔ تم حفظ الدعوة في Firestore:", code);
+      } catch (e) {
+        console.error("❌ خطأ في حفظ الدعوة:", e);
+      }
     }
-
-    // إتاحة الدالة للزر
-    window.uploadInvites = uploadInvites;
   </script>
+  <style>
+    body {
+      font-family: 'Tahoma', sans-serif;
+      background: #111;
+      color: gold;
+      text-align: center;
+      padding: 20px;
+    }
+    .card {
+      display: inline-block;
+      margin: 15px;
+      padding: 15px;
+      background: #222;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .card canvas {
+      display: block;
+      margin: auto;
+    }
+    .code {
+      margin-top: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #FFD700;
+    }
+    .download-btn {
+      margin-top: 8px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      background: gold;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <h2>Upload 20 Invites for Khaled Wedding</h2>
-  <button id="btn" class="btn" onclick="uploadInvites()">Upload Now</button>
+  <h1>🎉 توليد 20 باركود - زفاف خالد</h1>
+  <button onclick="generateAll()" style="padding:10px 20px; background:gold; color:black; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">🔄 توليد + حفظ في Firebase</button>
+  <div id="cards"></div>
 
-  <div class="muted">سيتم إنشاء الأكواد KH_001 إلى KH_020 وحفظها داخل مجموعة <code>invites</code> في Firestore.</div>
-  <progress id="bar" max="100" value="0"></progress>
-  <pre id="log" class="log"></pre>
+  <script>
+    const baseURL = "https://thehormez1.github.io/smartverify1/?code=";
+
+    function generateQRCode(code) {
+      const qr = qrcode(0, 'L');
+      qr.addData(baseURL + code);
+      qr.make();
+
+      const size = 250;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size + 40; // مساحة لكتابة الكود تحت الباركود
+      const ctx = canvas.getContext("2d");
+
+      const qrCanvas = document.createElement("canvas");
+      qrCanvas.width = size;
+      qrCanvas.height = size;
+      const qrCtx = qrCanvas.getContext("2d");
+      const count = qr.getModuleCount();
+      const tileW = size / count;
+      const tileH = size / count;
+
+      for (let r = 0; r < count; r++) {
+        for (let c = 0; c < count; c++) {
+          qrCtx.fillStyle = qr.isDark(r, c) ? "black" : "white";
+          qrCtx.fillRect(c * tileW, r * tileH, tileW, tileH);
+        }
+      }
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(qrCanvas, 0, 0, size, size);
+
+      ctx.fillStyle = "#FFD700";
+      ctx.font = "20px Tahoma";
+      ctx.textAlign = "center";
+      ctx.fillText(code, size / 2, size + 25);
+
+      return canvas;
+    }
+
+    function createCard(code) {
+      const container = document.createElement("div");
+      container.className = "card";
+
+      const qrCanvas = generateQRCode(code);
+      container.appendChild(qrCanvas);
+
+      const downloadBtn = document.createElement("button");
+      downloadBtn.textContent = "⬇️ تحميل الباركود";
+      downloadBtn.className = "download-btn";
+      downloadBtn.onclick = () => {
+        qrCanvas.toBlob(blob => {
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = `${code}.png`;
+          link.click();
+        });
+      };
+      container.appendChild(downloadBtn);
+
+      // حفظ في Firebase
+      if (window.saveToFirestore) {
+        window.saveToFirestore(code);
+      }
+
+      return container;
+    }
+
+    function generateAll() {
+      const cardsDiv = document.getElementById("cards");
+      cardsDiv.innerHTML = "";
+      for (let i = 1; i <= 20; i++) {
+        const code = `KH_${String(i).padStart(3, '0')}`;
+        const card = createCard(code);
+        cardsDiv.appendChild(card);
+      }
+    }
+  </script>
 </body>
 </html>
