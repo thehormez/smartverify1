@@ -1,129 +1,128 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>توليد باركود - زفاف خالد</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>توليد 20 باركود (KH_001 → KH_020)</title>
+
+  <!-- مكتبة توليد QR -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+
   <style>
-    body {
-      font-family: 'Tahoma', sans-serif;
-      background: #111;
-      color: gold;
-      text-align: center;
-      padding: 20px;
-    }
-    .card {
-      display: inline-block;
-      margin: 15px;
-      padding: 15px;
-      background: #222;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    }
-    .card canvas {
-      display: block;
-      margin: auto;
-    }
-    .code {
-      margin-top: 8px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #FFD700;
-    }
-    .download-btn {
-      margin-top: 8px;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 6px;
-      background: gold;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    body { background:#111; color:gold; font-family:Tahoma, Arial, sans-serif; text-align:center; padding:24px; }
+    .actions { margin-bottom:16px; }
+    button { background:gold; color:#000; border:none; border-radius:10px; padding:10px 16px; font-weight:bold; cursor:pointer; }
+    button.secondary { background:#444; color:#fff; }
+    #status { margin-top:10px; color:#ccc; font-size:14px; }
+    .grid { display:flex; flex-wrap:wrap; justify-content:center; gap:16px; margin-top:20px; }
+    .card { background:#222; border-radius:12px; padding:14px; width:280px; box-shadow:0 6px 16px rgba(0,0,0,0.4); }
+    .card canvas { display:block; margin:0 auto; }
+    .code { margin-top:8px; font-size:18px; font-weight:bold; color:#FFD700; letter-spacing:0.5px; }
+    .download-btn { margin-top:8px; background:gold; color:#000; border:none; border-radius:8px; padding:6px 12px; font-weight:bold; cursor:pointer; }
   </style>
 </head>
 <body>
-  <h1>🎉 توليد 20 باركود - زفاف خالد</h1>
-  <div id="cards"></div>
+  <h1>🎉 توليد باركود زفاف خالد</h1>
+  <div class="actions">
+    <button id="genBtn">توليد الباركود</button>
+    <button id="clearBtn" class="secondary">مسح النتائج</button>
+    <div id="status"></div>
+  </div>
+
+  <div id="cards" class="grid"></div>
 
   <script>
-    const baseURL = "https://thehormez1.github.io/smartverify1/?code=";
+    // توليد QR لِلقيمة نفسها (بدون رابط)، والكتابة أسفله
+    function makeQrCanvas(value) {
+      const size = 250;               // حجم الباركود
+      const padForText = 42;          // مساحة النص تحت الباركود
+      const outer = document.createElement('canvas');
+      outer.width = size;
+      outer.height = size + padForText;
+      const ctx = outer.getContext('2d');
 
-    function generateQRCode(code) {
+      // إنشاء QR
       const qr = qrcode(0, 'L');
-      qr.addData(baseURL + code);
+      qr.addData(value);
       qr.make();
 
-      const size = 250;
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size + 40; // مساحة للنص تحت الباركود
-      const ctx = canvas.getContext("2d");
+      // رسم QR على كانفاس وسيط بحجم مضبوط
+      const inner = document.createElement('canvas');
+      inner.width = size;
+      inner.height = size;
+      const ictx = inner.getContext('2d');
 
-      const qrCanvas = document.createElement("canvas");
-      qrCanvas.width = size;
-      qrCanvas.height = size;
-      const qrCtx = qrCanvas.getContext("2d");
       const count = qr.getModuleCount();
       const tileW = size / count;
       const tileH = size / count;
 
       for (let r = 0; r < count; r++) {
         for (let c = 0; c < count; c++) {
-          qrCtx.fillStyle = qr.isDark(r, c) ? "#000000" : "#FFFFFF";
-          qrCtx.fillRect(c * tileW, r * tileH, tileW, tileH);
+          ictx.fillStyle = qr.isDark(r, c) ? '#000000' : '#FFFFFF';
+          ictx.fillRect(Math.round(c * tileW), Math.round(r * tileH), Math.ceil(tileW), Math.ceil(tileH));
         }
       }
 
-      // رسم الباركود على الكانفاس الأساسي
-      ctx.fillStyle = \"#FFFFFF\";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(qrCanvas, 0, 0, size, size);
+      // خلفية بيضاء للكل + رسم QR
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, outer.width, outer.height);
+      ctx.drawImage(inner, 0, 0);
 
-      // كتابة الكود تحت الباركود
-      ctx.fillStyle = \"#FFD700\";
-      ctx.font = \"20px Tahoma\";
-      ctx.textAlign = \"center\";
-      ctx.fillText(code, size / 2, size + 25);
+      // كتابة الكود أسفل الباركود
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 18px Tahoma';
+      ctx.textAlign = 'center';
+      ctx.fillText(value, size / 2, size + 28);
 
-      return canvas;
+      return outer;
     }
 
-    function createCard(code) {
-      const container = document.createElement(\"div\");
-      container.className = \"card\";
+    function cardElement(code) {
+      const wrap = document.createElement('div');
+      wrap.className = 'card';
 
-      const qrCanvas = generateQRCode(code);
-      container.appendChild(qrCanvas);
+      const cnv = makeQrCanvas(code);
+      wrap.appendChild(cnv);
 
-      const downloadBtn = document.createElement(\"button\");
-      downloadBtn.textContent = \"⬇️ تحميل الباركود\";
-      downloadBtn.className = \"download-btn\";
-      downloadBtn.onclick = () => {
-        qrCanvas.toBlob(blob => {
-          const link = document.createElement(\"a\");
-          link.href = URL.createObjectURL(blob);
-          link.download = `${code}.png`;
-          link.click();
+      const codeDiv = document.createElement('div');
+      codeDiv.className = 'code';
+      codeDiv.textContent = code;
+      wrap.appendChild(codeDiv);
+
+      const btn = document.createElement('button');
+      btn.className = 'download-btn';
+      btn.textContent = '⬇️ تحميل الباركود';
+      btn.onclick = () => {
+        cnv.toBlob((blob) => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = code + '.png';
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1500);
         });
       };
-      container.appendChild(downloadBtn);
+      wrap.appendChild(btn);
 
-      return container;
+      return wrap;
     }
 
     function generateAll() {
-      const cardsDiv = document.getElementById(\"cards\");
-      cardsDiv.innerHTML = \"\";
+      const container = document.getElementById('cards');
+      container.innerHTML = '';
+      const t0 = performance.now();
       for (let i = 1; i <= 20; i++) {
-        const code = `KH_${String(i).padStart(3, '0')}`;
-        const card = createCard(code);
-        cardsDiv.appendChild(card);
+        const code = 'KH_' + String(i).padStart(3, '0');
+        container.appendChild(cardElement(code));
       }
+      const ms = Math.round(performance.now() - t0);
+      document.getElementById('status').textContent = `✅ تم توليد 20 باركود في ~${ms}ms`;
     }
 
-    window.onload = generateAll;
+    document.getElementById('genBtn').addEventListener('click', generateAll);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      document.getElementById('cards').innerHTML = '';
+      document.getElementById('status').textContent = '';
+    });
   </script>
 </body>
 </html>
