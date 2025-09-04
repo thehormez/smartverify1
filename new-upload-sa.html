@@ -41,7 +41,7 @@
         <div>
           <div class="muted" style="font-size:12px">HORMEZ SECURITY</div>
           <div style="font-weight:800">توليد الأكواد وربطها بالفايربيس</div>
-          <div class="muted" style="font-size:12px">نفس النظام السابق: توليد تسلسلي + إدخال يدوي + QR</div>
+          <div class="muted" style="font-size:12px">صيغة الأكواد: PREFIX_001 (مثال: SA_001) + توليد صور QR بعد التأكيد</div>
         </div>
       </div>
       <div style="margin-inline-start:auto" class="row">
@@ -72,17 +72,20 @@
         <input id="end" class="input" type="number" placeholder="200" />
       </div>
       <div class="card" style="display:flex;align-items:flex-end;gap:8px">
-        <button id="btnGenerate" class="btn" style="width:100%">توليد → حفظ في Firebase</button>
+        <button id="btnGenerate" class="btn" style="width:100%">توليد → تأكيد → حفظ & QR</button>
       </div>
     </div>
 
     <!-- Manual list -->
     <div class="card" style="margin-top:12px">
       <div class="muted" id="lblList" style="font-size:12px">قائمة أكواد مخصصة (سطر لكل كود)، اختياري</div>
-      <textarea id="list" class="ta" rows="4" placeholder="SA_001\nSA_002\nSA_003"></textarea>
+      <textarea id="list" class="ta" rows="4" placeholder="SA_001
+SA_002
+SA_003"></textarea>
       <div class="row" style="margin-top:8px">
-        <button id="btnSaveList" class="btn">حفظ القائمة في Firebase</button>
+        <button id="btnSaveList" class="btn">حفظ القائمة في Firebase (ثم توليد QR)</button>
         <button id="btnRenderQR" class="btn">توليد QR للأكواد</button>
+        <button id="btnZip" class="btn">تحميل كل صور QR كملف ZIP</button>
       </div>
     </div>
 
@@ -91,7 +94,6 @@
       <div class="card">
         <div class="muted" style="font-size:12px">النتيجة</div>
         <div class="kpi"><div>تم الإنشاء:</div><div class="n" id="kpiCreated">0</div></div>
-        <div class="kpi"><div>محدّث/متجاوز:</div><div class="n" id="kpiUpdated">0</div></div>
         <div class="kpi"><div>أخطاء:</div><div class="n" id="kpiErrors">0</div></div>
       </div>
       <div class="card">
@@ -112,6 +114,18 @@
 
   <!-- QRCode lib -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- JSZip (on demand for ZIP download) -->
+  <script>
+    let JSZipRef = null;
+    async function ensureZip(){
+      if(JSZipRef) return JSZipRef;
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(); s.onerror=rej; document.head.appendChild(s);
+      });
+      JSZipRef = window.JSZip; return JSZipRef;
+    }
+  </script>
+
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
@@ -119,8 +133,8 @@
 
     // ===== i18n =====
     const STR = {
-      ar: { langBtn:'EN', title:'توليد الأكواد وربطها', event:'الحدث', prefix:'بادئة الكود', pad:'عدد الأرقام', start:'من', end:'إلى', genSave:'توليد → حفظ في Firebase', listLbl:'قائمة أكواد مخصصة (اختياري)', saveList:'حفظ القائمة في Firebase', renderQR:'توليد QR للأكواد', result:'النتيجة', created:'تم الإنشاء', updated:'محدّث/متجاوز', errors:'أخطاء', log:'السجل', qrHint:'تلميح: اضغط على صورة QR للتنزيل' },
-      en: { langBtn:'AR', title:'Generate & Link Codes', event:'Event', prefix:'Code Prefix', pad:'Digits', start:'Start', end:'End', genSave:'Generate → Save to Firebase', listLbl:'Custom code list (optional)', saveList:'Save list to Firebase', renderQR:'Render QR for codes', result:'Result', created:'Created', updated:'Updated/Overwritten', errors:'Errors', log:'Log', qrHint:'Hint: click a QR to download' }
+      ar: { langBtn:'EN', genFlow:'سيتم إنشاء {n} دعوة للحدث "{ev}" بصيغة {px}_XXX. هل توافق؟', done:'تم', saving:'جاري الحفظ...', qrHint:'جاري توليد QR...' },
+      en: { langBtn:'AR', genFlow:'{n} invites will be created for "{ev}" in format {px}_XXX. Proceed?', done:'Done', saving:'Saving...', qrHint:'Rendering QR...' }
     };
 
     const $ = (s,root=document)=>root.querySelector(s);
@@ -129,7 +143,7 @@
 
     // Language toggle
     let LANG = localStorage.getItem('hs:upload:lang') || 'ar';
-    function applyLang(){ document.getElementById('langBtn').textContent = STR[LANG].langBtn; document.documentElement.lang = LANG; document.documentElement.dir = (LANG==='ar')?'rtl':'ltr'; }
+    function applyLang(){ document.getElementById('langBtn').textContent = (LANG==='ar'? 'EN':'AR'); document.documentElement.lang = LANG; document.documentElement.dir = (LANG==='ar')?'rtl':'ltr'; }
     document.getElementById('langBtn').addEventListener('click', ()=>{ LANG = (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:upload:lang', LANG); applyLang(); });
     applyLang();
 
@@ -138,6 +152,7 @@
     const app = initializeApp(firebaseConfig); const db = getFirestore(app);
 
     function pad(n, w){ n = String(n); return n.length>=w ? n : '0'.repeat(w-n.length) + n; }
+    function makeCode(prefix, num, digits){ return `${prefix.toUpperCase()}_${pad(num, digits)}`; }
 
     async function upsertCode(code, eventName){
       if(!code) return {ok:false, msg:'empty code'};
@@ -147,42 +162,24 @@
       }catch(err){ return {ok:false, msg: err.message}; }
     }
 
-    async function handleGenerate(){
-      const eventName = $('#eventName').value.trim();
-      const prefix = ($('#prefix').value||'').trim().toUpperCase();
-      const start = parseInt($('#start').value,10);
-      const end   = parseInt($('#end').value,10);
-      const digits= Math.max(1, Math.min(6, parseInt($('#pad').value,10)||3));
-      if(!eventName||!prefix||!start||!end){ alert('أدخل: الحدث + البادئة + البداية + النهاية'); return; }
-      if(end < start){ alert('النهاية يجب أن تكون ≥ البداية'); return; }
-      let created=0, updated=0, errors=0;
-      for(let i=start;i<=end;i++){
-        const code = `${prefix}_${pad(i,digits)}`;
-        const r = await upsertCode(code, eventName);
-        if(r.ok){ created++; log(`✅ ${code}`, 'ok'); } else { errors++; log(`❌ ${code} — ${r.msg}`, 'err'); }
-      }
-      $('#kpiCreated').textContent = created; $('#kpiUpdated').textContent = updated; $('#kpiErrors').textContent = errors;
-    }
-
     function parseList(){
-      return ($('#list').value||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      return ($('#list').value||'').split(/
+?
+/).map(s=>s.trim()).filter(Boolean);
     }
 
-    async function handleSaveList(){
-      const eventName = $('#eventName').value.trim(); if(!eventName){ alert('أدخل اسم الحدث'); return; }
-      const list = parseList(); if(!list.length){ alert('أدخل أكواد في القائمة'); return; }
-      let created=0, errors=0;
-      for(const code of list){ const r= await upsertCode(code.toUpperCase(), eventName); if(r.ok){ created++; log(`✅ ${code}`, 'ok'); } else { errors++; log(`❌ ${code} — ${r.msg}`, 'err'); } }
-      $('#kpiCreated').textContent = created; $('#kpiUpdated').textContent = 0; $('#kpiErrors').textContent = errors;
-    }
+    function setKPIs({created=0,errors=0}){ $('#kpiCreated').textContent = created; $('#kpiErrors').textContent = errors; }
 
+    function clearQR(){ $('#qrGrid').innerHTML=''; }
     function downloadCanvasAsPng(canvas, filename){ const link=document.createElement('a'); link.download=filename; link.href=canvas.toDataURL('image/png'); link.click(); }
 
-    function renderQR(){
+    async function renderQR(codes){
       const grid = document.getElementById('qrGrid'); grid.innerHTML='';
-      const list = parseList(); if(!list.length){ alert('أدخل أكواد في القائمة (سطر لكل كود)'); return; }
+      const note = document.createElement('div'); note.className='muted'; note.textContent = STR[LANG].qrHint; grid.appendChild(note);
+      await new Promise(r=>setTimeout(r,10)); grid.innerHTML='';
+      const list = codes && codes.length ? codes : parseList(); if(!list.length){ alert('أدخل أكواد في القائمة (سطر لكل كود)'); return; }
       list.forEach(code=>{
-        const box = document.createElement('div'); box.className='box'; box.classList.add('box');
+        const box = document.createElement('div'); box.className='box';
         const title = document.createElement('div'); title.textContent = code; title.className='mono'; title.style.marginBottom='6px';
         const holder = document.createElement('div'); holder.style.width='120px'; holder.style.height='120px'; holder.style.margin='0 auto';
         box.appendChild(title); box.appendChild(holder); grid.appendChild(box);
@@ -192,9 +189,53 @@
       });
     }
 
-    document.getElementById('btnGenerate').addEventListener('click', handleGenerate);
-    document.getElementById('btnSaveList').addEventListener('click', handleSaveList);
-    document.getElementById('btnRenderQR').addEventListener('click', renderQR);
+    // ===== Handlers =====
+    document.getElementById('btnGenerate').addEventListener('click', async ()=>{
+      const eventName = $('#eventName').value.trim();
+      const prefix = ($('#prefix').value||'').trim().toUpperCase();
+      const start = parseInt($('#start').value,10);
+      const end   = parseInt($('#end').value,10);
+      const digits= Math.max(1, Math.min(6, parseInt($('#pad').value,10)||3));
+      if(!eventName||!prefix||!start||!end){ alert('أدخل: الحدث + البادئة + البداية + النهاية'); return; }
+      if(end < start){ alert('النهاية يجب أن تكون ≥ البداية'); return; }
+
+      // Build codes first (SA_001 format)
+      const codes = []; for(let i=start;i<=end;i++){ codes.push(makeCode(prefix, i, digits)); }
+
+      // Confirm count before write
+      const msg = STR[LANG].genFlow.replace('{n}', codes.length).replace('{ev}', eventName).replace('{px}', prefix);
+      if(!confirm(msg)) return;
+
+      log(STR[LANG].saving);
+      let created=0, errors=0;
+      for(const code of codes){ const r = await upsertCode(code, eventName); if(r.ok){ created++; log(`✅ ${code}`, 'ok'); } else { errors++; log(`❌ ${code} — ${r.msg}`, 'err'); } }
+      setKPIs({created, errors});
+
+      // Put the codes into textarea for visibility, then auto render QR
+      $('#list').value = codes.join('
+');
+      await renderQR(codes);
+      log(STR[LANG].done, 'ok');
+    });
+
+    document.getElementById('btnSaveList').addEventListener('click', async ()=>{
+      const eventName = $('#eventName').value.trim(); if(!eventName){ alert('أدخل اسم الحدث'); return; }
+      const list = parseList(); if(!list.length){ alert('أدخل أكواد في القائمة'); return; }
+      if(!confirm(`سيتم حفظ ${list.length} كود للحدث \"${eventName}\". متابعة؟`)) return;
+      let created=0, errors=0; for(const code of list){ const r= await upsertCode(code.toUpperCase(), eventName); if(r.ok){ created++; log(`✅ ${code}`, 'ok'); } else { errors++; log(`❌ ${code} — ${r.msg}`, 'err'); } }
+      setKPIs({created, errors});
+      await renderQR(list);
+    });
+
+    document.getElementById('btnRenderQR').addEventListener('click', ()=> renderQR());
+
+    document.getElementById('btnZip').addEventListener('click', async ()=>{
+      const canvases = Array.from(document.querySelectorAll('#qrGrid canvas')); if(!canvases.length){ alert('لا توجد صور QR معروضة'); return; }
+      await window.ensureZip?.();
+      const zip = await (window.JSZip ? Promise.resolve(new window.JSZip()) : (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'), new window.JSZip()));
+      let i=1; for(const cv of canvases){ const data = cv.toDataURL('image/png').split(',')[1]; const title = cv.parentElement?.previousSibling?.textContent || `code_${i}`; zip.file(`${title}.png`, data, {base64:true}); i++; }
+      const blob = await zip.generateAsync({type:'blob'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='qr-codes.zip'; a.click(); URL.revokeObjectURL(url);
+    });
   </script>
 </body>
 </html>
