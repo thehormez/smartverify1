@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>توليد باركود - زفاف خالد مع Firebase</title>
+  <title>توليد باركود - زفاف خالد مع Firestore ID = الكود</title>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-  <!-- Firebase -->
+
+  <!-- Firebase (Modules) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
@@ -20,77 +22,49 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const db  = getFirestore(app);
 
-    window.saveToFirestore = async function(code) {
+    // حفظ مع معرف المستند = الكود نفسه (مثال: KH_001)
+    window.saveToFirestore = async function saveToFirestore(code) {
       try {
-        // حفظ المستند بالمعرّف نفسه = الكود، ليظهر في Firestore بهذا الشكل تمامًا KH_001
-        await setDoc(doc(db, "invites", code), {
-          code, // يبقى نصًا كما هو
+        // اختياري: عدم الكتابة فوق كود موجود
+        const ref = doc(db, "invites", code);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          console.log("⏭️ موجود مسبقًا:", code);
+          return;
+        }
+
+        await setDoc(ref, {
+          code,
           eventName: "زفاف خالد",
           status: "pending",
           createdAt: new Date().toISOString()
-        });
-        console.log("✔ تم حفظ الدعوة في Firestore بالمعرّف:", code);
-      } catch (e) {
-        console.error("❌ خطأ في حفظ الدعوة:", e);
-      }
-    });
-        console.log("✔ تم حفظ الدعوة في Firestore:", code);
+        }, { merge: false });
+
+        console.log("✔ تم الحفظ بمعرّف:", code);
       } catch (e) {
         console.error("❌ خطأ في حفظ الدعوة:", e);
       }
     }
   </script>
+
   <style>
-    body {
-      font-family: 'Tahoma', sans-serif;
-      background: #111;
-      color: gold;
-      text-align: center;
-      padding: 20px;
-    }
-    .card {
-      display: inline-block;
-      margin: 15px;
-      padding: 15px;
-      background: #222;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    }
-    .card canvas {
-      display: block;
-      margin: auto;
-    }
-    .code {
-      margin-top: 8px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #FFD700;
-    }
-    .download-btn {
-      margin-top: 8px;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 6px;
-      background: gold;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    body { font-family: 'Tahoma', sans-serif; background: #111; color: gold; text-align: center; padding: 20px; }
+    .card { display: inline-block; margin: 15px; padding: 15px; background: #222; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    .card canvas { display: block; margin: auto; }
+    .download-btn { margin-top: 8px; padding: 6px 12px; border: none; border-radius: 6px; background: gold; color: #000; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
   <h1>🎉 توليد 20 باركود - زفاف خالد</h1>
-  <button onclick="generateAll()" style="padding:10px 20px; background:gold; color:black; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">🔄 توليد + حفظ في Firebase</button>
+  <button onclick="generateAll()" style="padding:10px 20px; background:gold; color:black; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">🔄 توليد + حفظ بمعرّف = الكود</button>
   <div id="cards"></div>
 
   <script>
-    const baseURL = "https://thehormez1.github.io/smartverify1/?code=";
-
     function generateQRCode(code) {
       const qr = qrcode(0, 'L');
-      qr.addData(baseURL + code);
+      qr.addData(code); // فقط نص الكود داخل الـ QR (بدون رابط)
       qr.make();
 
       const size = 250;
@@ -114,10 +88,12 @@
         }
       }
 
+      // خلفية بيضاء + رسم الـ QR
       ctx.fillStyle = "#FFFFFF";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(qrCanvas, 0, 0, size, size);
 
+      // كتابة الكود أسفل الباركود
       ctx.fillStyle = "#FFD700";
       ctx.font = "20px Tahoma";
       ctx.textAlign = "center";
@@ -146,10 +122,8 @@
       };
       container.appendChild(downloadBtn);
 
-      // حفظ في Firebase
-      if (window.saveToFirestore) {
-        window.saveToFirestore(code);
-      }
+      // حفظ في Firestore بمعرف = الكود
+      if (window.saveToFirestore) window.saveToFirestore(code);
 
       return container;
     }
@@ -158,7 +132,7 @@
       const cardsDiv = document.getElementById("cards");
       cardsDiv.innerHTML = "";
       for (let i = 1; i <= 20; i++) {
-        const code = `KH_${String(i).padStart(3, '0')}`;
+        const code = `KH_${String(i).padStart(3, '0')}`; // KH_001 ... KH_020
         const card = createCard(code);
         cardsDiv.appendChild(card);
       }
