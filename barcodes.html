@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>توليد باركود زفاف خالد</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <style>
+    body {
+      background: #111;
+      color: gold;
+      font-family: 'Tahoma', sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .card {
+      display: inline-block;
+      margin: 15px;
+      padding: 15px;
+      background: #222;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .card canvas {
+      display: block;
+      margin: auto;
+    }
+    .code {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #FFD700;
+    }
+    .download-btn {
+      margin-top: 8px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      background: gold;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎉 بطاقات باركود زفاف خالد</h1>
+  <div id="cards"></div>
+
+  <script>
+    const baseURL = "https://thehormez1.github.io/smartverify1/?code=";
+
+    function generateQRCode(code) {
+      const qr = qrcode(0, 'L');
+      qr.addData(baseURL + code);
+      qr.make();
+      const qrCanvas = document.createElement("canvas");
+      const tileW = 250, tileH = 250;
+      qrCanvas.width = tileW;
+      qrCanvas.height = tileH;
+      const qrCtx = qrCanvas.getContext("2d");
+      const count = qr.getModuleCount();
+      for (let r = 0; r < count; r++) {
+        for (let c = 0; c < count; c++) {
+          qrCtx.fillStyle = qr.isDark(r, c) ? \"black\" : \"white\";
+          qrCtx.fillRect(c * tileW / count, r * tileH / count, tileW / count, tileH / count);
+        }\n      }\n      return qrCanvas;\n    }\n\n    function createCard(code) {\n      const container = document.createElement(\"div\");\n      container.className = \"card\";\n\n      const qrCanvas = generateQRCode(code);\n      container.appendChild(qrCanvas);\n\n      const codeText = document.createElement(\"div\");\n      codeText.className = \"code\";\n      codeText.textContent = code;\n      container.appendChild(codeText);\n\n      const downloadBtn = document.createElement(\"button\");\n      downloadBtn.textContent = \"⬇️ تحميل\";\n      downloadBtn.className = \"download-btn\";\n      downloadBtn.onclick = () => {\n        qrCanvas.toBlob(blob => {\n          const link = document.createElement(\"a\");\n          link.href = URL.createObjectURL(blob);\n          link.download = `${code}.png`;\n          link.click();\n        });\n      };\n      container.appendChild(downloadBtn);\n\n      return container;\n    }\n\n    function generateAll() {\n      const cardsDiv = document.getElementById(\"cards\");\n      cardsDiv.innerHTML = \"\";\n      for (let i = 1; i <= 20; i++) {\n        const code = `KH_${String(i).padStart(3, '0')}`;\n        const card = createCard(code);\n        cardsDiv.appendChild(card);\n      }\n    }\n\n    window.onload = generateAll;\n  </script>\n</body>\n</html>\n```\n\n---\n📌 الآن: افتح هذا الملف في المتصفح ➝ سترى **20 باركود** (مع الأكواد أسفلها) + **زر تحميل لكل باركود** حتى تحفظهم كصور PNG على جهازك.\n\nهل تحب أجهز لك نسخة **جاهزة مضغوطة (ZIP) فيها العشرين باركود بصيغة PNG** مباشرة وأرسل لك رابط التحميل؟
