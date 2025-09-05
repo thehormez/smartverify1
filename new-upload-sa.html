@@ -46,6 +46,7 @@
       </div>
       <div style="margin-inline-start:auto" class="row">
         <button id="langBtn" class="btn">AR</button>
+        <button id="selfTest" class="btn">تشغيل اختبار</button>
       </div>
     </div>
 
@@ -53,11 +54,11 @@
     <div class="grid grid-3" style="margin-top:12px">
       <div class="card">
         <div class="muted" id="lblEvent" style="font-size:12px">الحدث</div>
-        <input id="eventName" class="input" placeholder="مثال: زفاف سعيد" />
+        <input id="eventName" class="input" placeholder="مثال: زفاف سعيد" value="زفاف سعيد" />
       </div>
       <div class="card">
         <div class="muted" id="lblPrefix" style="font-size:12px">بادئة الكود (Prefix)</div>
-        <input id="prefix" class="input" placeholder="مثال: SA" />
+        <input id="prefix" class="input" placeholder="مثال: SA" value="SA" />
       </div>
       <div class="card">
         <div class="muted" id="lblPad" style="font-size:12px">عدد الأرقام (Padding)</div>
@@ -65,11 +66,11 @@
       </div>
       <div class="card">
         <div class="muted" id="lblStart" style="font-size:12px">من (Start)</div>
-        <input id="start" class="input" type="number" placeholder="1" />
+        <input id="start" class="input" type="number" value="1" />
       </div>
       <div class="card">
         <div class="muted" id="lblEnd" style="font-size:12px">إلى (End)</div>
-        <input id="end" class="input" type="number" placeholder="200" />
+        <input id="end" class="input" type="number" value="200" />
       </div>
       <div class="card" style="display:flex;align-items:flex-end;gap:8px">
         <button id="btnGenerate" class="btn" style="width:100%">توليد → تأكيد → حفظ & QR</button>
@@ -112,17 +113,31 @@ SA_003"></textarea>
     </div>
   </div>
 
-  <!-- QRCode lib -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- Robust QRCode loader with CDNs fallback -->
+  <script>
+    (function(){
+      const CANDIDATES = [
+        'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+        'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
+        'https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js'
+      ];
+      function loadScript(src){
+        return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=()=>res(src); s.onerror=()=>rej(src); document.head.appendChild(s); });
+      }
+      window.__ensureQRCode = async function(){
+        if(window.QRCode && window.QRCode.CorrectLevel) return true;
+        for(const url of CANDIDATES){ try{ await loadScript(url); if(window.QRCode && window.QRCode.CorrectLevel) return true; }catch(_){} }
+        return !!(window.QRCode && window.QRCode.CorrectLevel);
+      };
+    })();
+  </script>
+
   <!-- JSZip (on demand for ZIP download) -->
   <script>
-    let JSZipRef = null;
     async function ensureZip(){
-      if(JSZipRef) return JSZipRef;
-      await new Promise((res,rej)=>{
-        const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(); s.onerror=rej; document.head.appendChild(s);
-      });
-      JSZipRef = window.JSZip; return JSZipRef;
+      if(window.JSZip) return window.JSZip;
+      await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(); s.onerror=rej; document.head.appendChild(s); });
+      return window.JSZip;
     }
   </script>
 
@@ -131,20 +146,14 @@ SA_003"></textarea>
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-    // ===== i18n =====
-    const STR = {
-      ar: { langBtn:'EN', genFlow:'سيتم إنشاء {n} دعوة للحدث "{ev}" بصيغة {px}_XXX. هل توافق؟', done:'تم', saving:'جاري الحفظ...', qrHint:'جاري توليد QR...' },
-      en: { langBtn:'AR', genFlow:'{n} invites will be created for "{ev}" in format {px}_XXX. Proceed?', done:'Done', saving:'Saving...', qrHint:'Rendering QR...' }
-    };
-
     const $ = (s,root=document)=>root.querySelector(s);
     const logBox = $('#log');
     function log(m, cls=''){ const d = document.createElement('div'); d.textContent = m; if(cls) d.className = cls; logBox.appendChild(d); logBox.scrollTop = logBox.scrollHeight; }
 
     // Language toggle
     let LANG = localStorage.getItem('hs:upload:lang') || 'ar';
-    function applyLang(){ document.getElementById('langBtn').textContent = (LANG==='ar'? 'EN':'AR'); document.documentElement.lang = LANG; document.documentElement.dir = (LANG==='ar')?'rtl':'ltr'; }
-    document.getElementById('langBtn').addEventListener('click', ()=>{ LANG = (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:upload:lang', LANG); applyLang(); });
+    function applyLang(){ $('#langBtn').textContent = (LANG==='ar'? 'EN':'AR'); document.documentElement.lang = LANG; document.documentElement.dir = (LANG==='ar')?'rtl':'ltr'; }
+    $('#langBtn').addEventListener('click', ()=>{ LANG = (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:upload:lang', LANG); applyLang(); });
     applyLang();
 
     // Firebase
@@ -156,41 +165,38 @@ SA_003"></textarea>
 
     async function upsertCode(code, eventName){
       if(!code) return {ok:false, msg:'empty code'};
-      try{
-        await setDoc(doc(db,'invites', code), { Code: code, Status: 'no', EventName: eventName }, { merge:true });
-        return {ok:true};
-      }catch(err){ return {ok:false, msg: err.message}; }
+      try{ await setDoc(doc(db,'invites', code), { Code: code, Status: 'no', EventName: eventName }, { merge:true }); return {ok:true}; }
+      catch(err){ return {ok:false, msg: err.message}; }
     }
 
-    function parseList(){
-      return ($('#list').value||'').split(/
+    function parseList(){ return ($('#list').value||'').split(/
 ?
-/).map(s=>s.trim()).filter(Boolean);
-    }
-
+/).map(s=>s.trim()).filter(Boolean); }
     function setKPIs({created=0,errors=0}){ $('#kpiCreated').textContent = created; $('#kpiErrors').textContent = errors; }
-
-    function clearQR(){ $('#qrGrid').innerHTML=''; }
-    function downloadCanvasAsPng(canvas, filename){ const link=document.createElement('a'); link.download=filename; link.href=canvas.toDataURL('image/png'); link.click(); }
+    function downloadCanvasAsPng(canvas, filename){ const a=document.createElement('a'); a.download=filename; a.href=canvas.toDataURL('image/png'); a.click(); }
 
     async function renderQR(codes){
-      const grid = document.getElementById('qrGrid'); grid.innerHTML='';
-      const note = document.createElement('div'); note.className='muted'; note.textContent = STR[LANG].qrHint; grid.appendChild(note);
-      await new Promise(r=>setTimeout(r,10)); grid.innerHTML='';
-      const list = codes && codes.length ? codes : parseList(); if(!list.length){ alert('أدخل أكواد في القائمة (سطر لكل كود)'); return; }
-      list.forEach(code=>{
+      const ok = await window.__ensureQRCode?.();
+      if(!ok){ alert('تعذر تحميل مكتبة QR. تحقق من الإنترنت أو جرب مرة أخرى.'); return; }
+      const grid = $('#qrGrid'); grid.innerHTML='';
+      const list = (codes && codes.length) ? codes : parseList(); if(!list.length){ alert('أدخل أكواد في القائمة (سطر لكل كود)'); return; }
+      for(const code of list){
         const box = document.createElement('div'); box.className='box';
         const title = document.createElement('div'); title.textContent = code; title.className='mono'; title.style.marginBottom='6px';
         const holder = document.createElement('div'); holder.style.width='120px'; holder.style.height='120px'; holder.style.margin='0 auto';
         box.appendChild(title); box.appendChild(holder); grid.appendChild(box);
-        const q = new QRCode(holder, { text: code, width:120, height:120, correctLevel: QRCode.CorrectLevel.M });
-        // click to download
-        setTimeout(()=>{ const canvas = holder.querySelector('canvas'); if(canvas){ canvas.style.cursor='pointer'; canvas.title='اضغط للتنزيل'; canvas.addEventListener('click',()=>downloadCanvasAsPng(canvas, `${code}.png`)); } }, 50);
-      });
+        try{
+          new window.QRCode(holder, { text: code, width:120, height:120, correctLevel: window.QRCode.CorrectLevel.M });
+          // click to download
+          const canvasReady = ()=> new Promise(r=> setTimeout(r, 30));
+          await canvasReady();
+          const cv = holder.querySelector('canvas'); if(cv){ cv.style.cursor='pointer'; cv.title='اضغط للتنزيل'; cv.addEventListener('click',()=>downloadCanvasAsPng(cv, `${code}.png`)); }
+        }catch(e){ log(`❌ QR فشل: ${code}`, 'err'); }
+      }
     }
 
     // ===== Handlers =====
-    document.getElementById('btnGenerate').addEventListener('click', async ()=>{
+    $('#btnGenerate').addEventListener('click', async ()=>{
       const eventName = $('#eventName').value.trim();
       const prefix = ($('#prefix').value||'').trim().toUpperCase();
       const start = parseInt($('#start').value,10);
@@ -203,10 +209,9 @@ SA_003"></textarea>
       const codes = []; for(let i=start;i<=end;i++){ codes.push(makeCode(prefix, i, digits)); }
 
       // Confirm count before write
-      const msg = STR[LANG].genFlow.replace('{n}', codes.length).replace('{ev}', eventName).replace('{px}', prefix);
-      if(!confirm(msg)) return;
+      if(!confirm(`سيتم إنشاء ${codes.length} دعوة للحدث "${eventName}" بصيغة ${prefix}_XXX. متابعة؟`)) return;
 
-      log(STR[LANG].saving);
+      log('جاري الحفظ...');
       let created=0, errors=0;
       for(const code of codes){ const r = await upsertCode(code, eventName); if(r.ok){ created++; log(`✅ ${code}`, 'ok'); } else { errors++; log(`❌ ${code} — ${r.msg}`, 'err'); } }
       setKPIs({created, errors});
@@ -215,26 +220,38 @@ SA_003"></textarea>
       $('#list').value = codes.join('
 ');
       await renderQR(codes);
-      log(STR[LANG].done, 'ok');
+      log('تم', 'ok');
     });
 
-    document.getElementById('btnSaveList').addEventListener('click', async ()=>{
+    $('#btnSaveList').addEventListener('click', async ()=>{
       const eventName = $('#eventName').value.trim(); if(!eventName){ alert('أدخل اسم الحدث'); return; }
       const list = parseList(); if(!list.length){ alert('أدخل أكواد في القائمة'); return; }
-      if(!confirm(`سيتم حفظ ${list.length} كود للحدث \"${eventName}\". متابعة؟`)) return;
+      if(!confirm(`سيتم حفظ ${list.length} كود للحدث "${eventName}". متابعة؟`)) return;
       let created=0, errors=0; for(const code of list){ const r= await upsertCode(code.toUpperCase(), eventName); if(r.ok){ created++; log(`✅ ${code}`, 'ok'); } else { errors++; log(`❌ ${code} — ${r.msg}`, 'err'); } }
       setKPIs({created, errors});
       await renderQR(list);
     });
 
-    document.getElementById('btnRenderQR').addEventListener('click', ()=> renderQR());
+    $('#btnRenderQR').addEventListener('click', ()=> renderQR());
 
-    document.getElementById('btnZip').addEventListener('click', async ()=>{
+    $('#btnZip').addEventListener('click', async ()=>{
       const canvases = Array.from(document.querySelectorAll('#qrGrid canvas')); if(!canvases.length){ alert('لا توجد صور QR معروضة'); return; }
-      await window.ensureZip?.();
-      const zip = await (window.JSZip ? Promise.resolve(new window.JSZip()) : (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'), new window.JSZip()));
+      await ensureZip();
+      const zip = new window.JSZip();
       let i=1; for(const cv of canvases){ const data = cv.toDataURL('image/png').split(',')[1]; const title = cv.parentElement?.previousSibling?.textContent || `code_${i}`; zip.file(`${title}.png`, data, {base64:true}); i++; }
       const blob = await zip.generateAsync({type:'blob'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='qr-codes.zip'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // ===== Self test =====
+    $('#selfTest').addEventListener('click', async ()=>{
+      const ok = await window.__ensureQRCode?.();
+      log(ok? '✔ مكتبة QR جاهزة' : '✘ فشل تحميل مكتبة QR', ok? 'ok':'err');
+      if(ok){
+        const tmp = document.createElement('div'); tmp.style.width='120px'; tmp.style.height='120px'; document.body.appendChild(tmp);
+        try{ new window.QRCode(tmp, { text:'TEST_001', width:120, height:120 }); log('✔ توليد QR تجريبي نجح','ok'); }
+        catch{ log('✘ فشل توليد QR التجريبي','err'); }
+        setTimeout(()=> tmp.remove(), 1000);
+      }
     });
   </script>
 </body>
