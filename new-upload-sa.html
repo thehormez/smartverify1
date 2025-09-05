@@ -5,149 +5,288 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>توليد الأكواد وربطها — Hormez</title>
   <style>
-    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#9aa4b2}
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#9aa4b2;--card:#0e172a;--b:#233047}
+    html,body{height:100%}
     body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
     .container{max-width:1100px;margin:0 auto;padding:16px}
     .row{display:flex;gap:10px;flex-wrap:wrap}
     .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .brand{display:flex;align-items:center;gap:10px}
     .logo{width:40px;height:40px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center}
     .logo span{font-weight:900;color:#ffd700}
-    .input{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
-    .btn{border:1px solid #334155;background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
-    .btn:hover{background:#0d1528}
-    .grid{display:grid;gap:12px}
-    .grid-3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
-    .qr{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-    .qr .box{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:10px;text-align:center;color:#e5e7eb}
-    .log{white-space:pre-wrap;background:#0b1220;border:1px solid #334155;border-radius:12px;padding:10px;font-size:12px;max-height:200px;overflow:auto}
     .muted{color:var(--muted)}
+    .input, .select, .ta{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
+    .btn{appearance:none;border:1px solid #334155;background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn:hover{background:#0d1528}
+    .pill{display:inline-flex;gap:8px;align-items:center;border:1px solid #243047;background:#0b1220;border-radius:10px;padding:8px 10px}
+    .kpi{display:flex;gap:12px;align-items:center}
+    .kpi .n{font-size:22px;font-weight:900}
+    .grid{display:grid;gap:12px}
+    .grid-3{grid-template-columns:1fr 1fr 1fr}
+    .grid-2{grid-template-columns:1fr 1fr}
+    @media(max-width:900px){.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+    .qr{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+    .qr .box{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:10px;text-align:center}
+    .qr canvas{display:block;margin:0 auto}
+    .log{white-space:pre-wrap;background:#0b1220;border:1px solid #334155;border-radius:12px;padding:10px;font-size:12px}
     .ok{color:#86efac} .err{color:#fca5a5}
+    .banner{display:none;margin:10px 0;padding:10px;border-radius:10px;border:1px solid #7f1d1d;background:#450a0a;color:#fecaca}
+    .banner.show{display:block}
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- Header -->
     <div class="row" style="align-items:center">
-      <div class="logo"><span>HS</span></div>
-      <div style="font-weight:800;margin-inline-start:10px">توليد الأكواد وربطها بالفايربيس</div>
+      <div class="brand">
+        <div class="logo"><span>HS</span></div>
+        <div>
+          <div class="muted" style="font-size:12px">HORMEZ SECURITY</div>
+          <div style="font-weight:800">توليد الأكواد وربطها بالفايربيس</div>
+          <div class="muted" style="font-size:12px">صيغة الأكواد: PREFIX_001 (مثال: SA_001) + توليد صور QR بعد التأكيد</div>
+        </div>
+      </div>
+      <div style="margin-inline-start:auto" class="row">
+        <button id="langBtn" class="btn" type="button">AR</button>
+        <button id="selfTest" class="btn" type="button">تشغيل اختبار</button>
+      </div>
     </div>
 
+    <div id="fatalBanner" class="banner">⚠️ حدث خطأ منع تشغيل الأزرار. جرّب فتح الصفحة عبر HTTPS أو تعطيل إضافات الحظر. تفاصيل الخطأ ستظهر في السجل.</div>
+
+    <!-- Controls -->
     <div class="grid grid-3" style="margin-top:12px">
       <div class="card">
-        <div class="muted">الحدث</div>
-        <input id="eventName" class="input" placeholder="زفاف سعيد" value="زفاف سعيد" />
+        <div class="muted" id="lblEvent" style="font-size:12px">الحدث</div>
+        <input id="eventName" class="input" placeholder="مثال: زفاف سعيد" value="زفاف سعيد" />
       </div>
       <div class="card">
-        <div class="muted">البادئة</div>
-        <input id="prefix" class="input" placeholder="SA" value="SA" />
+        <div class="muted" id="lblPrefix" style="font-size:12px">بادئة الكود (Prefix)</div>
+        <input id="prefix" class="input" placeholder="مثال: SA" value="SA" />
       </div>
       <div class="card">
-        <div class="muted">من</div>
+        <div class="muted" id="lblPad" style="font-size:12px">عدد الأرقام (Padding)</div>
+        <input id="pad" class="input" type="number" value="3" min="1" max="6" />
+      </div>
+      <div class="card">
+        <div class="muted" id="lblStart" style="font-size:12px">من (Start)</div>
         <input id="start" class="input" type="number" value="1" />
       </div>
       <div class="card">
-        <div class="muted">إلى</div>
-        <input id="end" class="input" type="number" value="10" />
+        <div class="muted" id="lblEnd" style="font-size:12px">إلى (End)</div>
+        <input id="end" class="input" type="number" value="200" />
       </div>
-      <div class="card" style="display:flex;align-items:flex-end">
-        <button id="btnGenerate" class="btn" style="width:100%">توليد وحفظ & QR</button>
+      <div class="card" style="display:flex;align-items:flex-end;gap:8px">
+        <button id="btnGenerate" class="btn" style="width:100%" type="button">توليد → تأكيد → حفظ & QR</button>
       </div>
     </div>
 
+    <!-- Manual list -->
     <div class="card" style="margin-top:12px">
-      <div class="muted">الأكواد المولدة (QR)</div>
+      <div class="muted" id="lblList" style="font-size:12px">قائمة أكواد مخصصة (سطر لكل كود)، اختياري</div>
+      <textarea id="list" class="ta" rows="4" placeholder="SA_001\nSA_002\nSA_003"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="btnSaveList" class="btn" type="button">حفظ القائمة في Firebase (ثم توليد QR)</button>
+        <button id="btnRenderQR" class="btn" type="button">توليد QR للأكواد</button>
+        <button id="btnZip" class="btn" type="button">تحميل كل صور QR كملف ZIP</button>
+      </div>
+    </div>
+
+    <!-- KPIs & Log -->
+    <div class="grid grid-2" style="margin-top:12px">
+      <div class="card">
+        <div class="muted" style="font-size:12px">النتيجة</div>
+        <div class="kpi"><div>تم الإنشاء:</div><div class="n" id="kpiCreated">0</div></div>
+        <div class="kpi"><div>أخطاء:</div><div class="n" id="kpiErrors">0</div></div>
+      </div>
+      <div class="card">
+        <div class="muted" style="font-size:12px">السجل</div>
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+
+    <!-- QR Grid -->
+    <div class="card" style="margin-top:12px">
+      <div class="row" style="align-items:center">
+        <div class="muted" id="lblQR" style="font-size:12px">أكواد QR المُولَّدة</div>
+        <div class="pill" style="margin-inline-start:auto">تلميح: اضغط على صورة QR للتنزيل</div>
+      </div>
       <div id="qrGrid" class="qr" style="margin-top:10px"></div>
-    </div>
-
-    <div class="card" style="margin-top:12px">
-      <div class="muted">السجل</div>
-      <div id="log" class="log"></div>
     </div>
   </div>
 
-  <!-- QR Code lib -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- Firebase compat -->
+  <!-- 1) Robust QRCode loader with CDN fallbacks (non-module) -->
+  <script>
+    (function(){
+      const CANDIDATES = [
+        'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+        'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
+        'https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js'
+      ];
+      function loadScript(src){
+        return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=()=>res(src); s.onerror=()=>rej(src); document.head.appendChild(s); });
+      }
+      window.__ensureQRCode = async function(){
+        if(window.QRCode && window.QRCode.CorrectLevel) return true;
+        for(const url of CANDIDATES){ try{ await loadScript(url); if(window.QRCode && window.QRCode.CorrectLevel) return true; }catch(_){} }
+        return !!(window.QRCode && window.QRCode.CorrectLevel);
+      };
+    })();
+  </script>
+
+  <!-- 2) JSZip on demand -->
+  <script>
+    async function ensureZip(){
+      if(window.JSZip) return window.JSZip;
+      await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(); s.onerror=rej; document.head.appendChild(s); });
+      return window.JSZip;
+    }
+  </script>
+
+  <!-- 3) Firebase compat SDKs (non-module to avoid CORS/ESM issues) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
 
+  <!-- 4) Main logic: previous UI you liked + only change is label INSIDE QR image -->
   <script>
-    // ===== Firebase =====
-    const firebaseConfig={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
-    if(!firebase.apps.length){firebase.initializeApp(firebaseConfig);} 
-    const db=firebase.firestore();
+    (function(){
+      const $ = (s,root=document)=>root.querySelector(s);
+      const logBox = ()=> $('#log');
+      function log(m, cls){ const box=logBox(); if(!box) return; const d=document.createElement('div'); d.textContent=m; if(cls) d.className=cls; box.appendChild(d); box.scrollTop=box.scrollHeight; }
 
-    // ===== Helpers =====
-    function pad(n,w){n=String(n);return n.length>=w?n:'0'.repeat(w-n.length)+n;}
-    function makeCode(prefix,num,digits){return `${prefix}_${pad(num,digits)}`;}
-    function log(msg,cls=''){const box=document.getElementById('log');const d=document.createElement('div');d.textContent=msg;if(cls)d.className=cls;box.appendChild(d);box.scrollTop=box.scrollHeight;}
-
-    // توليد كانفس يحتوي الـ QR + التسمية أسفل نفس الصورة
-    function makeLabeledCanvas(qrCanvas, label){
-      const qrW = qrCanvas.width, qrH = qrCanvas.height;
-      const pad = 14;  // حواف خارجية
-      const gap = 8;   // فراغ بين الـ QR والنص
-      const textH = 28; // ارتفاع مساحة النص
-      const W = qrW + pad*2;
-      const H = qrH + pad*2 + gap + textH;
-      const out = document.createElement('canvas'); out.width = W; out.height = H;
-      const ctx = out.getContext('2d');
-      // خلفية بيضاء لكونتراست ممتاز في الطباعة
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0,0,W,H);
-      // رسم الـ QR في الوسط
-      const qrX = Math.floor((W - qrW)/2), qrY = pad;
-      ctx.drawImage(qrCanvas, qrX, qrY);
-      // كتابة الكود أسفل الصورة
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const textY = qrY + qrH + gap + Math.floor(textH/2);
-      ctx.fillText(label, Math.floor(W/2), textY);
-      return out;
-    }
-
-    function downloadCanvasAsPng(canvas, filename){
-      const a=document.createElement('a'); a.download=filename; a.href=canvas.toDataURL('image/png'); a.click();
-    }
-
-    async function upsertCode(code,eventName){
-      try{await db.collection('invites').doc(code).set({Code:code,Status:'no',EventName:eventName},{merge:true});return true;}catch(e){log('⚠️ '+e.message,'err');return false;}
-    }
-
-    async function renderQR(codes){
-      const grid=document.getElementById('qrGrid');grid.innerHTML='';
-      for(const code of codes){
-        const box=document.createElement('div');box.className='box';
-        const holder=document.createElement('div');holder.style.width='160px';holder.style.height='160px';holder.style.margin='0 auto';
-        box.appendChild(holder);
-        // ارسم الـ QR أولًا على كانفس داخلي
-        new QRCode(holder,{text:code,width:160,height:160,correctLevel:QRCode.CorrectLevel.M});
-        await new Promise(r=>setTimeout(r,25));
-        const raw = holder.querySelector('canvas');
-        if(raw){
-          const labeled = makeLabeledCanvas(raw, code);
-          holder.innerHTML='';
-          holder.appendChild(labeled);
-          labeled.style.cursor='pointer'; labeled.title='اضغط للتنزيل';
-          labeled.addEventListener('click',()=>downloadCanvasAsPng(labeled, `${code}.png`));
-        }
-        grid.appendChild(box);
+      function pad(n, w){ n=String(n); return n.length>=w ? n : '0'.repeat(w-n.length)+n; }
+      function makeCode(prefix, num, digits){ return `${String(prefix||'').toUpperCase()}_${pad(num, digits)}`; }
+      async function upsertCode(db, code, eventName){
+        try{ await db.collection('invites').doc(code).set({ Code: code, Status:'no', EventName: eventName }, { merge:true }); return {ok:true}; }
+        catch(err){ return {ok:false, msg: err.message}; }
       }
-    }
+      function parseList(){ return (($('#list')?.value)||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean); }
+      function setKPIs({created=0,errors=0}){ const c=$('#kpiCreated'); const e=$('#kpiErrors'); if(c) c.textContent=created; if(e) e.textContent=errors; }
+      function downloadCanvasAsPng(canvas, filename){ const a=document.createElement('a'); a.download=filename; a.href=canvas.toDataURL('image/png'); a.click(); }
 
-    // ===== Actions =====
-    document.getElementById('btnGenerate').addEventListener('click',async()=>{
-      const eventName=document.getElementById('eventName').value.trim();
-      const prefix=(document.getElementById('prefix').value.trim()||'').toUpperCase();
-      const start=parseInt(document.getElementById('start').value,10);
-      const end=parseInt(document.getElementById('end').value,10);
-      if(!eventName||!prefix||!start||!end){alert('أدخل البيانات');return;}
-      if(end<start){alert('النهاية يجب أن تكون ≥ البداية');return;}
-      const codes=[];for(let i=start;i<=end;i++){codes.push(makeCode(prefix,i,3));}
-      for(const code of codes){const ok=await upsertCode(code,eventName);log(ok?`✅ ${code}`:`❌ ${code}`, ok?'ok':'err');}
-      renderQR(codes);
-    });
+      // === NEW: compose QR + bottom label into one image ===
+      function makeLabeledCanvas(qrCanvas, label){
+        const qrW = qrCanvas.width, qrH = qrCanvas.height;
+        const pad = 14;   // outer padding
+        const gap = 8;    // space between QR and text
+        const textH = 28; // text area height
+        const W = qrW + pad*2;
+        const H = qrH + pad*2 + gap + textH;
+        const out = document.createElement('canvas'); out.width = W; out.height = H;
+        const ctx = out.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0,0,W,H);
+        const qrX = Math.floor((W - qrW)/2), qrY = pad;
+        ctx.drawImage(qrCanvas, qrX, qrY);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const textY = qrY + qrH + gap + Math.floor(textH/2);
+        ctx.fillText(label, Math.floor(W/2), textY);
+        return out;
+      }
+
+      async function renderQR(codes){
+        const ok = await (window.__ensureQRCode ? window.__ensureQRCode() : false);
+        if(!ok){ alert('تعذر تحميل مكتبة QR. تحقق من الإنترنت أو جرب مرة أخرى.'); return; }
+        const grid = $('#qrGrid'); if(!grid) return; grid.innerHTML='';
+        for(const code of codes){
+          const box=document.createElement('div'); box.className='box';
+          const holder=document.createElement('div'); holder.style.width='160px'; holder.style.height='200px'; holder.style.margin='0 auto';
+          box.appendChild(holder); grid.appendChild(box);
+
+          // 1) render raw QR
+          const inner = document.createElement('div'); holder.appendChild(inner);
+          new window.QRCode(inner, { text: code, width:160, height:160, correctLevel: window.QRCode.CorrectLevel.M });
+          await new Promise(r=>setTimeout(r,30));
+          const raw = inner.querySelector('canvas');
+          if(raw){
+            // 2) compose labeled image and replace
+            const labeled = makeLabeledCanvas(raw, code);
+            holder.innerHTML='';
+            holder.appendChild(labeled);
+            labeled.style.cursor='pointer'; labeled.title='اضغط للتنزيل';
+            labeled.addEventListener('click',()=>downloadCanvasAsPng(labeled, `${code}.png`));
+          } else {
+            log(`❌ لم يتم العثور على كانفس QR لـ ${code}`,'err');
+          }
+        }
+      }
+
+      function wire(db){
+        // Language toggle
+        let LANG = localStorage.getItem('hs:upload:lang') || 'ar';
+        function applyLang(){ const btn=$('#langBtn'); if(btn){ btn.textContent = (LANG==='ar'? 'EN':'AR'); } document.documentElement.lang = LANG; document.documentElement.dir = (LANG==='ar')?'rtl':'ltr'; }
+        $('#langBtn')?.addEventListener('click', ()=>{ LANG = (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:upload:lang', LANG); applyLang(); });
+        applyLang();
+
+        // Self test
+        $('#selfTest')?.addEventListener('click', async ()=>{
+          try{
+            const ok = await (window.__ensureQRCode ? window.__ensureQRCode() : false);
+            log(ok? '✔ مكتبة QR جاهزة' : '✘ فشل تحميل مكتبة QR', ok? 'ok':'err');
+            if(ok){ const tmp=document.createElement('div'); tmp.style.width='120px'; tmp.style.height='120px'; document.body.appendChild(tmp); new window.QRCode(tmp,{text:'TEST_001',width:120,height:120}); log('✔ توليد QR تجريبي نجح','ok'); setTimeout(()=>tmp.remove(),800); }
+          }catch(e){ log('✘ فشل الاختبار: '+e.message,'err'); }
+        });
+
+        // Generate → Confirm → Save & QR
+        $('#btnGenerate')?.addEventListener('click', async ()=>{
+          try{
+            const eventName=$('#eventName')?.value.trim(); const prefix=String($('#prefix')?.value||'').trim().toUpperCase();
+            const start=parseInt($('#start')?.value,10); const end=parseInt($('#end')?.value,10); const digits=Math.max(1, Math.min(6, parseInt($('#pad')?.value,10)||3));
+            if(!eventName||!prefix||!start||!end){ alert('أدخل: الحدث + البادئة + البداية + النهاية'); return; }
+            if(end < start){ alert('النهاية يجب أن تكون ≥ البداية'); return; }
+            const codes=[]; for(let i=start;i<=end;i++){ codes.push(`${prefix}_${pad(i,digits)}`); }
+            if(!confirm(`سيتم إنشاء ${codes.length} دعوة للحدث "${eventName}" بصيغة ${prefix}_XXX. متابعة؟`)) return;
+            log('جاري الحفظ...'); let created=0, errors=0;
+            for(const code of codes){ const r= await upsertCode(db, code, eventName); if(r.ok){ created++; log(`✅ ${code}`,'ok'); } else { errors++; log(`❌ ${code} — ${r.msg}`,'err'); } }
+            setKPIs({created, errors}); $('#list') && ($('#list').value = codes.join('\n')); await renderQR(codes); log('تم','ok');
+          }catch(e){ log('✘ خطأ: '+e.message,'err'); }
+        });
+
+        // Save list
+        $('#btnSaveList')?.addEventListener('click', async ()=>{
+          try{
+            const eventName=$('#eventName')?.value.trim(); if(!eventName){ alert('أدخل اسم الحدث'); return; }
+            const list=parseList(); if(!list.length){ alert('أدخل أكواد في القائمة'); return; }
+            if(!confirm(`سيتم حفظ ${list.length} كود للحدث "${eventName}". متابعة؟`)) return;
+            let created=0, errors=0; for(const code of list){ const r= await upsertCode(db, String(code).toUpperCase(), eventName); if(r.ok){ created++; log(`✅ ${code}`,'ok'); } else { errors++; log(`❌ ${code} — ${r.msg}`,'err'); } }
+            setKPIs({created, errors}); await renderQR(list);
+          }catch(e){ log('✘ خطأ: '+e.message,'err'); }
+        });
+
+        // Render QR only
+        $('#btnRenderQR')?.addEventListener('click', ()=>{ renderQR().catch(e=>log('✘ QR: '+e.message,'err')); });
+
+        // ZIP download
+        $('#btnZip')?.addEventListener('click', async ()=>{
+          try{
+            const cvs=Array.from(document.querySelectorAll('#qrGrid canvas')); if(!cvs.length){ alert('لا توجد صور QR معروضة'); return; }
+            await ensureZip(); const zip=new window.JSZip(); let i=1; for(const cv of cvs){ const data=cv.toDataURL('image/png').split(',')[1]; const title=cv.parentElement?.previousSibling?.textContent||`code_${i}`; zip.file(`${title}.png`, data, {base64:true}); i++; }
+            const blob=await zip.generateAsync({type:'blob'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='qr-codes.zip'; a.click(); URL.revokeObjectURL(url);
+          }catch(e){ log('✘ ZIP: '+e.message,'err'); }
+        });
+      }
+
+      function init(){
+        try{
+          // Initialize Firebase compat (works on file:// and http/https)
+          const config={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv", storageBucket:"hormez-inv.firebasestorage.app", messagingSenderId:"747519941805", appId:"1:747519941805:web:468fada2492700e9da3a24" };
+          if(!window.firebase?.apps?.length){ window.firebase.initializeApp(config); }
+          const db = window.firebase.firestore();
+          wire(db);
+        }catch(e){
+          document.getElementById('fatalBanner')?.classList.add('show');
+          log('✘ فشل تهيئة Firebase/الصفحة: '+e.message,'err');
+        }
+      }
+
+      // Attach after DOM is ready
+      if(document.readyState === 'loading'){
+        document.addEventListener('DOMContentLoaded', init);
+      }else{ init(); }
+    })();
   </script>
 </body>
 </html>
