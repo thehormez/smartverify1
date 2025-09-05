@@ -21,7 +21,7 @@
     .kpi{display:flex;gap:8px;align-items:center}
     .kpi .dot{width:10px;height:10px;border-radius:50%}
     .ok{color:#86efac} .err{color:#fca5a5}
-    .toast{position:fixed;inset-inline:0;top:10px;display:flex;justify-content:center;pointer-events:none}
+    .toast{position:fixed;inset-inline:0;top:10px;display:flex;justify-content:center;pointer-events:none;z-index:20}
     .toast > div{pointer-events:auto}
     .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid #334155;background:#0b1220}
     .history{max-height:220px;overflow:auto}
@@ -35,8 +35,6 @@
       <div style="font-weight:800;margin-inline-start:10px">ماسح الباركود للمناسبات</div>
       <div style="margin-inline-start:auto" class="row">
         <button id="langBtn" class="btn" type="button">AR</button>
-        <a class="btn" href="new-dashboard.html">لوحة التحكم</a>
-        <a class="btn" href="new-uploadqr.html">توليد الأكواد</a>
       </div>
     </div>
 
@@ -56,7 +54,7 @@
             <button id="torchBtn" class="btn" type="button">💡 فلاش</button>
           </div>
         </div>
-        <video id="video" playsinline muted></video>
+        <video id="video" playsinline muted autoplay></video>
         <div class="row" style="margin-top:10px">
           <div style="flex:1">
             <div class="muted" id="lblEvent">الحدث</div>
@@ -100,15 +98,19 @@
 
   <div class="toast" id="toast" style="display:none"><div class="tag" id="toastInner">—</div></div>
 
-  <!-- ZXing loader with fallbacks -->
+  <!-- ZXing loader with multiple fallbacks + native BarcodeDetector fallback -->
   <script>
     (function(){
       const CANDS=[
         'https://unpkg.com/@zxing/browser@0.1.3/umd/index.min.js',
-        'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.3/umd/index.min.js'
+        'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.3/umd/index.min.js',
+        // try the library UMD too
+        'https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js',
+        'https://cdn.jsdelivr.net/npm/@zxing/library@0.18.6/umd/index.min.js'
       ];
       function load(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
-      window.ensureZXing=async()=>{if(window.ZXing&&window.ZXing.BrowserMultiFormatReader)return true;for(const u of CANDS){try{await load(u);if(window.ZXing&&window.ZXing.BrowserMultiFormatReader)return true;}catch(_){} }return !!(window.ZXing&&window.ZXing.BrowserMultiFormatReader)};
+      window.ensureZXing=async()=>{if(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))return true;for(const u of CANDS){try{await load(u);if(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))return true;}catch(_){} }return !!(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))};
+      window.hasNativeDetector = 'BarcodeDetector' in window;
     })();
   </script>
 
@@ -120,8 +122,8 @@
     (function(){
       const $=(s,root=document)=>root.querySelector(s);
       const T={
-        ar:{ready:'جاهز',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل الكاميرا',flash:'💡 فلاش',event:'الحدث',camera:'الكاميرا',manual:'إدخال يدوي',checking:'جاري التحقق…',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',notfound:'❌ الكود غير موجود',mismatch:'❌ هذا الكود لا يخص هذا الحدث',saved:'تم الحفظ',needHttps:'⚠️ يجب HTTPS للكاميرا',scanPaused:'⏸️ إيقاف مؤقت بعد القراءة',lang:'EN'},
-        en:{ready:'Ready',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch Camera',flash:'💡 Torch',event:'Event',camera:'Camera',manual:'Manual input',checking:'Checking…',ok:'✅ Accepted',dupe:'⚠️ Already used',notfound:'❌ Code not found',mismatch:'❌ Code does not belong to this event',saved:'Saved',needHttps:'⚠️ Camera requires HTTPS',scanPaused:'⏸️ Paused after read',lang:'AR'}
+        ar:{ready:'جاهز',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل الكاميرا',flash:'💡 فلاش',event:'الحدث',camera:'الكاميرا',manual:'إدخال يدوي',checking:'جاري التحقق…',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',notfound:'❌ الكود غير موجود',mismatch:'❌ هذا الكود لا يخص هذا الحدث',saved:'تم الحفظ',needHttps:'⚠️ يجب HTTPS للكاميرا',scanPaused:'⏸️ إيقاف مؤقت بعد القراءة',lang:'EN',camlib:'مكتبة الكاميرا لم تُحمّل'},
+        en:{ready:'Ready',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch Camera',flash:'💡 Torch',event:'Event',camera:'Camera',manual:'Manual input',checking:'Checking…',ok:'✅ Accepted',dupe:'⚠️ Already used',notfound:'❌ Code not found',mismatch:'❌ Code does not belong to this event',saved:'Saved',needHttps:'⚠️ Camera requires HTTPS',scanPaused:'⏸️ Paused after read',lang:'AR',camlib:'Camera library not loaded'}
       };
       let LANG=localStorage.getItem('hs:scan:lang')||'ar';
       function setLang(l){LANG=l;localStorage.setItem('hs:scan:lang',l);document.documentElement.lang=l;document.documentElement.dir=(l==='ar')?'rtl':'ltr';$('#langBtn').textContent=T[l].lang;$('#lblEvent').textContent=T[l].event;$('#lblCam').textContent=T[l].camera;$('#lblManual').textContent=T[l].manual;$('#startBtn').textContent=T[l].start;$('#stopBtn').textContent=T[l].stop;$('#switchBtn').textContent=T[l].switch;$('#torchBtn').textContent=T[l].flash;}
@@ -134,7 +136,7 @@
       if(!firebase.apps.length){firebase.initializeApp(cfg);} const db=firebase.firestore(); const Field=firebase.firestore.FieldValue;
 
       // State
-      let currentDeviceId=null; let devices=[]; let reader=null; let scanning=false; let torchOn=false; let currentTrack=null; let pauseAfterMs=1200; let lastCodeAt=0;
+      let currentDeviceId=null; let devices=[]; let reader=null; let scanning=false; let torchOn=false; let currentTrack=null; let pauseAfterMs=1200; let lastCodeAt=0; let rafId=null; let nativeDetector=null;
 
       // History (persist by event)
       function histKey(){const ev=getEvent();return `hs:scan:hist:${ev||'__ALL__'}`}
@@ -148,7 +150,7 @@
       function reflectEventTag(){ $('#eventTagText').textContent=getEvent()||'—'; }
 
       // Toast
-      function toast(msg){const t=$('#toast');const inner=$('#toastInner');inner.textContent=msg;t.style.display='flex';setTimeout(()=>t.style.display='none',1500);}      
+      function toast(msg){const t=$('#toast');const inner=$('#toastInner');inner.textContent=msg;t.style.display='flex';setTimeout(()=>t.style.display='none',1800);}      
 
       // Camera helpers
       function preferBack(list){
@@ -158,8 +160,7 @@
 
       async function ensurePermission(){
         try{
-          // Request a minimal stream to unlock labels on iOS/Safari
-          const tmp=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+          const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
           tmp.getTracks().forEach(t=>t.stop());
         }catch{/* ignore */}
       }
@@ -173,33 +174,54 @@
       function setStatus(ok,color){ $('#statusText').textContent=ok; $('#statusDot').style.background=color; }
       function showLast(code,msg,good){ $('#lastResult').textContent=code||'—'; $('#lastResult').style.color= good? '#86efac' : '#fca5a5'; $('#lastSub').textContent=msg||''; }
 
-      // ZXing start/stop with strong fallbacks
+      // ZXing start/stop with native fallback
       async function startScanner(){ try{
           if(!checkHttps()) { toast(T[LANG].needHttps); return; }
-          await ensureZXing();
           await ensurePermission();
           await listCameras();
           const video=$('#video');
           setStatus(T[LANG].ready,'#22c55e');
           scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false;
-          reader = new ZXing.BrowserMultiFormatReader();
 
-          const deviceId=$('#cameraSelect').value||currentDeviceId;
-          currentDeviceId=deviceId;
+          const deviceId=$('#cameraSelect').value||currentDeviceId; currentDeviceId=deviceId;
+          const constraints = deviceId ? { video: { deviceId: { exact: deviceId } , focusMode:'continuous'} } : { video: { facingMode: { ideal: 'environment' }, focusMode:'continuous' } };
 
-          // Prefer exact deviceId; if not available, fall back to facingMode environment
-          const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: { facingMode: { ideal: 'environment' } } };
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          video.srcObject = stream;
+          await video.play().catch(()=>{});
+          currentTrack = stream.getVideoTracks()[0] || null;
 
-          await reader.decodeFromConstraints(constraints, video, (result, err, controlsObj)=>{
-            if(result){ const now=Date.now(); if(now-lastCodeAt < pauseAfterMs) return; lastCodeAt=now; onCode(result.getText?.()||String(result.text||'').trim()); }
-          });
-
-          // grab MediaStream track to control torch once stream attaches
-          setTimeout(()=>{ try{ currentTrack = video.srcObject ? video.srcObject.getVideoTracks()[0] : null; }catch{} }, 200);
-        }catch(e){ setStatus(e.message||'خطأ','tomato'); toast('مكتبة الكاميرا لم تُحمّل.'); }
+          // Try ZXing first
+          const zxingOk = await window.ensureZXing();
+          if(zxingOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){
+            const reader = new window.ZXing.BrowserMultiFormatReader();
+            reader.decodeFromVideoDevice(deviceId||null, video, (result)=>{
+              if(result){ const now=Date.now(); if(now-lastCodeAt < pauseAfterMs) return; lastCodeAt=now; onCode(result.getText?.()||String(result.text||'').trim()); }
+            });
+            // keep reference by closing over 'reader' in stop
+            startScanner._reader = reader;
+          } else if ('BarcodeDetector' in window) {
+            // Native fallback
+            nativeDetector = new window.BarcodeDetector({ formats:['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']});
+            const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d');
+            const loop=async()=>{
+              if(!scanning) return; try{
+                canvas.width=video.videoWidth||640; canvas.height=video.videoHeight||480;
+                ctx.drawImage(video,0,0,canvas.width,canvas.height);
+                const bitmap = await createImageBitmap(canvas);
+                const codes = await nativeDetector.detect(bitmap);
+                if(codes && codes.length){ const now=Date.now(); if(now-lastCodeAt >= pauseAfterMs){ lastCodeAt=now; onCode((codes[0].rawValue||codes[0].rawValue?.toString()||'').trim()); } }
+              }catch{}
+              rafId=requestAnimationFrame(loop);
+            };
+            rafId=requestAnimationFrame(loop);
+          } else {
+            toast(T[LANG].camlib); setStatus(T[LANG].camlib,'tomato');
+          }
+        }catch(e){ setStatus(e.message||'خطأ','tomato'); toast(T[LANG].camlib); }
       }
 
-      async function stopScanner(){ try{ scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; if(reader){ await reader.reset(); } const v=$('#video'); if(v && v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} }
+      async function stopScanner(){ try{ scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; if(startScanner._reader){ try{ await startScanner._reader.reset(); }catch{} startScanner._reader=null; } if(rafId){ cancelAnimationFrame(rafId); rafId=null; } const v=$('#video'); if(v && v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} }
 
       // On code read or manual check (STRICT EVENT MATCH)
       async function onCode(raw){ const code=(raw||'').trim().toUpperCase(); if(!code) return; reflectEventTag(); const ev=getEvent(); if(!ev){ showLast(code, T[LANG].event+': ؟', false); toast(T[LANG].event); return; } showLast(code, T[LANG].checking, true);
