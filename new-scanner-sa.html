@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ماسح الباركود — Hormez</title>
+  <style>
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    .container{max-width:900px;margin:0 auto;padding:16px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .logo{width:40px;height:40px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center}
+    .logo span{font-weight:900;color:#ffd700}
+    .muted{color:var(--muted)}
+    .btn{appearance:none;border:1px solid #334155;background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn:hover{background:#0d1528}
+    .input,.select{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
+    #video{width:100%;aspect-ratio:3/4;background:#000;border-radius:12px}
+    .kpi{display:flex;gap:8px;align-items:center}
+    .kpi .dot{width:10px;height:10px;border-radius:50%}
+    .ok{color:#86efac} .err{color:#fca5a5}
+    .toast{position:fixed;inset-inline:0;top:10px;display:flex;justify-content:center;pointer-events:none}
+    .toast > div{pointer-events:auto}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid #334155;background:#0b1220}
+    .history{max-height:220px;overflow:auto}
+    .rtl{direction:rtl} .ltr{direction:ltr}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row" style="align-items:center">
+      <div class="logo"><span>HS</span></div>
+      <div style="font-weight:800;margin-inline-start:10px">ماسح الباركود للمناسبات</div>
+      <div style="margin-inline-start:auto" class="row">
+        <button id="langBtn" class="btn" type="button">AR</button>
+        <a class="btn" href="new-dashboard.html">لوحة التحكم</a>
+        <a class="btn" href="new-uploadqr.html">توليد الأكواد</a>
+      </div>
+    </div>
+
+    <div id="httpsWarn" class="card" style="display:none; margin-top:10px; border-color:#7f1d1d; background:#450a0a; color:#fecaca">
+      ⚠️ يجب فتح الصفحة عبر HTTPS كي تعمل الكاميرا (أو من localhost).
+    </div>
+
+    <div class="grid" style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-top:12px">
+      <!-- Scanner panel -->
+      <div class="card">
+        <div class="row" style="align-items:center; margin-bottom:8px">
+          <div class="kpi"><div id="statusDot" class="dot" style="background:#9ca3af"></div><div id="statusText" class="muted">جاهز</div></div>
+          <div style="margin-inline-start:auto" class="row">
+            <button id="startBtn" class="btn" type="button">▶️ تشغيل</button>
+            <button id="stopBtn" class="btn" type="button" disabled>⏹️ إيقاف</button>
+            <button id="switchBtn" class="btn" type="button">🔄 تبديل الكاميرا</button>
+            <button id="torchBtn" class="btn" type="button">💡 فلاش</button>
+          </div>
+        </div>
+        <video id="video" playsinline muted></video>
+        <div class="row" style="margin-top:10px">
+          <div style="flex:1">
+            <div class="muted" id="lblEvent">الحدث</div>
+            <input id="eventName" class="input" placeholder="اكتب اسم الحدث" />
+          </div>
+          <div style="flex:1">
+            <div class="muted" id="lblCam">الكاميرا</div>
+            <select id="cameraSelect" class="select"></select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div style="flex:1">
+            <div class="muted" id="lblManual">إدخال يدوي (لو تعطل المسح)</div>
+            <div class="row">
+              <input id="manualCode" class="input" placeholder="SA_001" style="flex:1" />
+              <button id="manualBtn" class="btn" type="button">تحقق</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="card">
+        <div class="row" style="align-items:center; margin-bottom:8px">
+          <div class="muted">آخر النتائج</div>
+          <div style="margin-inline-start:auto" class="row">
+            <span id="eventTag" class="tag">Event: <b id="eventTagText">—</b></span>
+            <button id="clearHist" class="btn" type="button">مسح السجل</button>
+          </div>
+        </div>
+        <div id="lastBox" class="card" style="background:#0b1220; border-color:#334155; margin-bottom:10px">
+          <div class="muted" style="font-size:12px">النتيجة الأخيرة</div>
+          <div id="lastResult" style="font-size:22px; font-weight:800; margin-top:6px">—</div>
+          <div id="lastSub" class="muted" style="font-size:12px; margin-top:4px">—</div>
+        </div>
+        <div class="muted" style="font-size:12px">السجل (محفوظ بعد التحديث)</div>
+        <div id="history" class="history"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" style="display:none"><div class="tag" id="toastInner">—</div></div>
+
+  <!-- ZXing loader with fallbacks -->
+  <script>
+    (function(){
+      const CANDS=[
+        'https://unpkg.com/@zxing/browser@0.1.3/umd/index.min.js',
+        'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.3/umd/index.min.js'
+      ];
+      function load(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
+      window.ensureZXing=async()=>{if(window.ZXing&&window.ZXing.BrowserMultiFormatReader)return true;for(const u of CANDS){try{await load(u);if(window.ZXing&&window.ZXing.BrowserMultiFormatReader)return true;}catch(_){} }return !!(window.ZXing&&window.ZXing.BrowserMultiFormatReader)};
+    })();
+  </script>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+  <script>
+    (function(){
+      const $=(s,root=document)=>root.querySelector(s);
+      const T={
+        ar:{ready:'جاهز',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل الكاميرا',flash:'💡 فلاش',event:'الحدث',camera:'الكاميرا',manual:'إدخال يدوي',checking:'جاري التحقق…',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',notfound:'❌ الكود غير موجود',saved:'تم الحفظ',needHttps:'⚠️ يجب HTTPS للكاميرا',scanPaused:'⏸️ إيقاف مؤقت بعد القراءة',lang:'EN'},
+        en:{ready:'Ready',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch Camera',flash:'💡 Torch',event:'Event',camera:'Camera',manual:'Manual input',checking:'Checking…',ok:'✅ Accepted',dupe:'⚠️ Already used',notfound:'❌ Code not found',saved:'Saved',needHttps:'⚠️ Camera requires HTTPS',scanPaused:'⏸️ Paused after read',lang:'AR'}
+      };
+      let LANG=localStorage.getItem('hs:scan:lang')||'ar';
+      function setLang(l){LANG=l;localStorage.setItem('hs:scan:lang',l);document.documentElement.lang=l;document.documentElement.dir=(l==='ar')?'rtl':'ltr';$('#langBtn').textContent=T[l].lang;$('#lblEvent').textContent=T[l].event;$('#lblCam').textContent=T[l].camera;$('#lblManual').textContent=T[l].manual;$('#startBtn').textContent=T[l].start;$('#stopBtn').textContent=T[l].stop;$('#switchBtn').textContent=T[l].switch;$('#torchBtn').textContent=T[l].flash;}
+
+      // HTTPS notice
+      function checkHttps(){const isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';const ok=location.protocol==='https:'||isLocal;$('#httpsWarn').style.display= ok? 'none':'block';}
+
+      // Firebase
+      const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
+      if(!firebase.apps.length){firebase.initializeApp(cfg);} const db=firebase.firestore(); const Field=firebase.firestore.FieldValue;
+
+      // State
+      let currentDeviceId=null; let devices=[]; let reader=null; let scanning=false; let torchOn=false; let currentTrack=null; let pauseAfterMs=1200; let lastCodeAt=0;
+
+      // History (persist by event)
+      function histKey(){const ev=getEvent();return `hs:scan:hist:${ev||'__ALL__'}`}
+      function getHist(){try{return JSON.parse(localStorage.getItem(histKey())||'[]')}catch{return[]} }
+      function pushHist(entry){const h=getHist();h.unshift(entry);localStorage.setItem(histKey(),JSON.stringify(h.slice(0,50)));renderHist();}
+      function renderHist(){ const box=$('#history'); const h=getHist(); box.innerHTML=''; h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='8px'; d.style.borderTop='1px solid #334155'; d.innerHTML=`<div style="font-family:ui-monospace">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); }); }
+
+      // Event name handling
+      function getEvent(){return $('#eventName').value.trim();}
+      function setEventFromQuery(){const p=new URLSearchParams(location.search);const ev=p.get('event');if(ev){$('#eventName').value=ev;}}
+      function reflectEventTag(){ $('#eventTagText').textContent=getEvent()||'—'; }
+
+      // Toast
+      function toast(msg){const t=$('#toast');const inner=$('#toastInner');inner.textContent=msg;t.style.display='flex';setTimeout(()=>t.style.display='none',1500);}      
+
+      // Camera devices
+      async function listCameras(){ const all=await navigator.mediaDevices.enumerateDevices(); devices=all.filter(d=>d.kind==='videoinput'); const sel=$('#cameraSelect'); sel.innerHTML=''; devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label || `Camera ${i+1}`; sel.appendChild(o); }); if(devices.length){ if(!currentDeviceId){ currentDeviceId= devices[0].deviceId; } sel.value=currentDeviceId; } }
+
+      async function switchCamera(){ if(!devices.length) return; const idx=devices.findIndex(d=>d.deviceId===currentDeviceId); const next=devices[(idx+1)%devices.length]; currentDeviceId=next.deviceId; $('#cameraSelect').value=currentDeviceId; if(scanning){ await stopScanner(); await startScanner(); } }
+
+      async function toggleTorch(){ try{ if(!currentTrack) return toast('No torch'); const caps=currentTrack.getCapabilities?.(); if(!caps?.torch){ return toast('Torch not supported'); } torchOn=!torchOn; await currentTrack.applyConstraints({ advanced:[{torch: torchOn}]}); toast(torchOn? 'Torch ON':'Torch OFF'); }catch(e){ toast('Torch error'); } }
+
+      function setStatus(ok,color){ $('#statusText').textContent=ok; $('#statusDot').style.background=color; }
+      function showLast(code,msg,good){ $('#lastResult').textContent=code||'—'; $('#lastResult').style.color= good? '#86efac' : '#fca5a5'; $('#lastSub').textContent=msg||''; }
+
+      // ZXing start/stop
+      async function startScanner(){ try{
+          await ensureZXing();
+          await listCameras();
+          reader = new ZXing.BrowserMultiFormatReader();
+          const video=$('#video');
+          setStatus(T[LANG].ready,'#22c55e');
+          scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false;
+          // prefer selected camera
+          const deviceId=$('#cameraSelect').value||currentDeviceId; currentDeviceId=deviceId;
+          const controls = await reader.decodeFromVideoDevice(deviceId, video, (result, err, controlsObj)=>{
+            if(result){ const now=Date.now(); if(now-lastCodeAt < pauseAfterMs) return; lastCodeAt=now; onCode(result.getText?.()||String(result.text||'').trim()); }
+          });
+          // grab MediaStream track to control torch
+          currentTrack = video.srcObject ? video.srcObject.getVideoTracks()[0] : null;
+        }catch(e){ setStatus(e.message||'خطأ','tomato'); toast('مكتبة الكاميرا لم تُحمّل.'); }
+      }
+
+      async function stopScanner(){ try{ scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; if(reader){ await reader.reset(); } const v=$('#video'); if(v && v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} }
+
+      // On code read or manual check
+      async function onCode(raw){ const code=(raw||'').trim().toUpperCase(); if(!code) return; reflectEventTag(); const ev=getEvent(); showLast(code, T[LANG].checking, true);
+        try{
+          const ref=db.collection('invites').doc(code);
+          const snap=await ref.get();
+          if(!snap.exists){ showLast(code, T[LANG].notfound, false); pushHist({code, at:Date.now(), msg:T[LANG].notfound}); return; }
+          const data=snap.data()||{};
+          if(String(data.EventName||'') && ev && data.EventName!==ev){ // optional soft-check by event
+            // allow, but note mismatch
+          }
+          if(String(data.Status||'').toLowerCase()==='yes'){
+            showLast(code, T[LANG].dupe, false);
+            pushHist({code, at:Date.now(), msg:T[LANG].dupe});
+            return;
+          }
+          await ref.set({ Status:'yes', scannedAt: Field.serverTimestamp() }, { merge:true });
+          showLast(code, T[LANG].ok, true);
+          pushHist({code, at:Date.now(), msg:T[LANG].ok});
+          // brief pause visual
+          toast(T[LANG].scanPaused);
+        }catch(e){ showLast(code, e.message||'خطأ', false); pushHist({code, at:Date.now(), msg:e.message||'error'}); }
+      }
+
+      // Manual input
+      async function handleManual(){ const v=$('#manualCode').value; if(!v) return; await onCode(v); $('#manualCode').value=''; }
+
+      // Wire UI
+      function wire(){
+        setLang(LANG);
+        checkHttps();
+        setEventFromQuery();
+        reflectEventTag();
+        renderHist();
+        $('#langBtn').addEventListener('click',()=>{ setLang(LANG==='ar'?'en':'ar'); reflectEventTag(); renderHist(); });
+        $('#startBtn').addEventListener('click', startScanner);
+        $('#stopBtn').addEventListener('click', stopScanner);
+        $('#switchBtn').addEventListener('click', switchCamera);
+        $('#torchBtn').addEventListener('click', toggleTorch);
+        $('#cameraSelect').addEventListener('change', async(e)=>{ currentDeviceId=e.target.value; if(scanning){ await stopScanner(); await startScanner(); } });
+        $('#manualBtn').addEventListener('click', handleManual);
+        $('#manualCode').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); handleManual(); }});
+        $('#eventName').addEventListener('input', ()=>{ reflectEventTag(); renderHist(); });
+        $('#clearHist').addEventListener('click', ()=>{ localStorage.removeItem(histKey()); renderHist(); });
+      }
+
+      // Init
+      function init(){ wire(); }
+      if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
+    })();
+  </script>
+</body>
+</html>
