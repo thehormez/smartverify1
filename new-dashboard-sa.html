@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>لوحة التحكم — Hormez</title>
+  <style>
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .logo{width:40px;height:40px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center}
+    .logo span{font-weight:900;color:#ffd700}
+    .muted{color:var(--muted)}
+    .btn{appearance:none;border:1px solid #334155;background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn:hover{background:#0d1528}
+    .input,.select{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
+    .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .kpi .box{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:14px}
+    .kpi .n{font-size:26px;font-weight:900}
+    .table{width:100%;border-collapse:collapse}
+    .table th,.table td{border-bottom:1px solid #334155;padding:10px;text-align:start}
+    .table th{color:#9fb1c7;font-size:12px;font-weight:600}
+    .center{display:grid;place-items:center}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row" style="align-items:center">
+      <div class="logo"><span>HS</span></div>
+      <div style="font-weight:800;margin-inline-start:10px">لوحة التحكم للمناسبات</div>
+      <div style="margin-inline-start:auto" class="row">
+        <button id="langBtn" class="btn" type="button">AR</button>
+        <button id="logoutBtn" class="btn" type="button" style="display:none">تسجيل الخروج</button>
+      </div>
+    </div>
+
+    <!-- Gate (Password for each event) -->
+    <div id="gate" class="card" style="margin-top:12px">
+      <div class="row">
+        <div style="flex:1">
+          <div class="muted" id="lblEvent">الحدث</div>
+          <input id="eventName" class="input" placeholder="اكتب اسم الحدث" />
+        </div>
+        <div style="flex:1">
+          <div class="muted" id="lblPass">كلمة المرور للحدث</div>
+          <input id="eventPass" class="input" placeholder="••••" type="password" />
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button id="enterBtn" class="btn" type="button" style="height:42px">دخول</button>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:8px;font-size:12px" id="gateHint">يمكن تمرير اسم الحدث في الرابط ?event=...</div>
+      <div id="gateMsg" class="muted" style="margin-top:8px;color:#fca5a5"></div>
+    </div>
+
+    <!-- Dashboard content -->
+    <div id="dash" class="hidden">
+      <div class="card" style="margin-top:12px">
+        <div class="row" style="align-items:center">
+          <div class="muted">الحدث:</div>
+          <div id="evTag" style="font-weight:800; margin-inline-start:6px">—</div>
+          <div style="margin-inline-start:auto" id="lastUpdated" class="muted" style="font-size:12px">—</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="kpi">
+          <div class="box"><div class="muted">إجمالي الدعوات</div><div class="n" id="kTotal">0</div></div>
+          <div class="box"><div class="muted">تم الدخول</div><div class="n" id="kYes">0</div></div>
+          <div class="box"><div class="muted">لم يدخل</div><div class="n" id="kNo">0</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="row" style="align-items:center">
+          <div class="muted">الأكواد</div>
+          <div style="margin-inline-start:auto" class="row">
+            <select id="filterSel" class="select">
+              <option value="all">الكل</option>
+              <option value="yes">تم الدخول (yes)</option>
+              <option value="no">لم يدخل (no)</option>
+            </select>
+          </div>
+        </div>
+        <table class="table" id="codesTbl" style="margin-top:10px">
+          <thead>
+            <tr><th>الكود</th><th>الحالة</th><th>آخر تحديث</th></tr>
+          </thead>
+          <tbody id="codesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+  <script>
+    (function(){
+      const $=(s,root=document)=>root.querySelector(s);
+      const STR={
+        ar:{lang:'EN', event:'الحدث', pass:'كلمة المرور للحدث', enter:'دخول', badpass:'كلمة المرور غير صحيحة', missing:'أدخل اسم الحدث وكلمة المرور', total:'إجمالي الدعوات', yes:'تم الدخول', no:'لم يدخل', all:'الكل', yesf:'تم الدخول (yes)', nof:'لم يدخل (no)', logout:'تسجيل الخروج'},
+        en:{lang:'AR', event:'Event', pass:'Event Password', enter:'Enter', badpass:'Wrong password', missing:'Enter event & password', total:'Total', yes:'Checked-in', no:'Not yet', all:'All', yesf:'Checked-in (yes)', nof:'Not yet (no)', logout:'Log out'}
+      };
+      let LANG=localStorage.getItem('hs:dash:lang')||'ar';
+      function applyLang(){const t=STR[LANG];$('#langBtn').textContent=t.lang;$('#lblEvent').textContent=t.event;$('#lblPass').textContent=t.pass;$('#enterBtn').textContent=t.enter;$('#logoutBtn').textContent=t.logout;$('#filterSel').options[0].text=t.all;$('#filterSel').options[1].text=t.yesf;$('#filterSel').options[2].text=t.nof;document.documentElement.lang=LANG;document.documentElement.dir=(LANG==='ar')?'rtl':'ltr';}
+
+      // Firebase
+      const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
+      if(!firebase.apps.length){firebase.initializeApp(cfg);} const db=firebase.firestore();
+
+      // URL param
+      function getParamEvent(){const p=new URLSearchParams(location.search);return p.get('event')||'';}
+
+      // Session key per event
+      function sessionKey(ev){return `hs:dash:session:${ev}`}
+
+      async function checkPassword(ev, pass){
+        try{
+          const snap=await db.collection('events').doc(ev).get();
+          if(!snap.exists) return {ok:false, msg:'no-event'};
+          const data=snap.data()||{}; if(!data.Password) return {ok:false, msg:'no-pass'};
+          return {ok: String(pass)===String(data.Password)};
+        }catch(e){return {ok:false, msg:e.message}};
+      }
+
+      // Load metrics & list
+      let unsubCodes=null; // for live updates
+      function tsToStr(ts){ try{ const d=ts?.toDate? ts.toDate() : (ts instanceof Date? ts : null); return d? d.toLocaleString(LANG==='ar'?'ar-EG':'en-GB') : '—'; }catch{return '—'} }
+      function renderRows(list){ const body=$('#codesBody'); body.innerHTML=''; const f=$('#filterSel').value; list.forEach(x=>{ if(f!=='all' && (String(x.Status||'').toLowerCase()!==f)) return; const tr=document.createElement('tr'); tr.innerHTML=`<td style="font-family:ui-monospace">${x.Code}</td><td>${x.Status||'no'}</td><td class="muted">${tsToStr(x.updatedAt||x.scannedAt)}</td>`; body.appendChild(tr); }); }
+
+      async function startDash(ev){
+        $('#gate').classList.add('hidden'); $('#dash').classList.remove('hidden'); $('#evTag').textContent=ev; $('#logoutBtn').style.display='inline-flex';
+        // live query for this event
+        const q=db.collection('invites').where('EventName','==',ev);
+        if(unsubCodes) try{unsubCodes();}catch{};
+        unsubCodes = q.onSnapshot(snap=>{
+          const arr=[]; let total=0, yes=0, no=0; const now=new Date(); $('#lastUpdated').textContent = now.toLocaleString(LANG==='ar'?'ar-EG':'en-GB');
+          snap.forEach(doc=>{ const d=doc.data(); total++; const st=String(d.Status||'no').toLowerCase(); if(st==='yes') yes++; else no++; arr.push({Code:d.Code, Status:st, updatedAt:d.updatedAt, scannedAt:d.scannedAt}); });
+          $('#kTotal').textContent=total; $('#kYes').textContent=yes; $('#kNo').textContent=no; renderRows(arr.sort((a,b)=>a.Code.localeCompare(b.Code)));
+        });
+      }
+
+      async function tryAutoLogin(){
+        const ev=getParamEvent(); if(ev){ $('#eventName').value=ev; const ok=!!localStorage.getItem(sessionKey(ev)); if(ok){ startDash(ev); } }
+      }
+
+      async function handleEnter(){
+        const ev=$('#eventName').value.trim(); const pw=$('#eventPass').value.trim(); const msg=$('#gateMsg'); msg.textContent=''; if(!ev||!pw){ msg.textContent = STR[LANG].missing; return; }
+        const r=await checkPassword(ev, pw); if(r.ok){ localStorage.setItem(sessionKey(ev),'ok'); startDash(ev); } else { msg.textContent = STR[LANG].badpass; }
+      }
+
+      function logout(){ const ev=$('#evTag').textContent; if(ev){ localStorage.removeItem(sessionKey(ev)); } if(unsubCodes) try{unsubCodes();}catch{}; $('#dash').classList.add('hidden'); $('#gate').classList.remove('hidden'); $('#logoutBtn').style.display='none'; }
+
+      function wire(){
+        $('#langBtn').addEventListener('click', ()=>{ LANG= (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:dash:lang',LANG); applyLang(); });
+        $('#enterBtn').addEventListener('click', handleEnter);
+        $('#eventPass').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleEnter(); }});
+        $('#filterSel').addEventListener('change', ()=>{
+          // re-render based on last snapshot rows in DOM
+          const rows=[...$('#codesBody').querySelectorAll('tr')].map(tr=>({Code:tr.children[0].textContent, Status:tr.children[1].textContent.toLowerCase(), updatedAt:null}));
+          renderRows(rows);
+        });
+        $('#logoutBtn').addEventListener('click', logout);
+      }
+
+      function init(){
+        const ev=getParamEvent(); if(ev) $('#eventName').value=ev;
+        applyLang();
+        tryAutoLogin();
+        wire();
+      }
+
+      if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
+    })();
+  </script>
+</body>
+</html>
