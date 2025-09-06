@@ -1,134 +1,196 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة التحكم — Hormez</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>لوحة التحكم — حدث محدد</title>
   <style>
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;background:#0b1020;color:#e5e7eb}
     .container{max-width:1100px;margin:0 auto;padding:16px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
     .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px;margin-bottom:16px}
     .btn{border:1px solid #334155;background:#0b1220;color:#e5e7eb;border-radius:10px;padding:10px 14px;cursor:pointer}
     .btn:hover{background:#0d1528}
-    .input{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}
-    #loginScreen{text-align:center;margin-top:100px}
-    #dashboard{display:none}
-    .error{color:#f87171;margin-top:10px}
+    .input,.select{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}
+    .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .kpi .box{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:14px}
+    .kpi .n{font-size:26px;font-weight:900}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #334155;padding:10px;text-align:start}
+    th{color:#9fb1c7;font-size:12px;font-weight:600}
+    .hidden{display:none}
+    .error{color:#f87171}
   </style>
 </head>
 <body>
-  <div id="loginScreen" class="container">
-    <div class="card">
-      <h2>🔒 حماية لوحة التحكم</h2>
-      <p>الرجاء إدخال كلمة المرور الخاصة بالحدث</p>
-      <input type="password" id="passwordInput" class="input" placeholder="كلمة المرور"/>
-      <button id="loginBtn" class="btn" style="margin-top:10px">دخول</button>
-      <div id="errorMsg" class="error"></div>
+  <div class="container">
+    <div class="row" style="align-items:center">
+      <div style="font-weight:800">لوحة التحكم — <span id="evTitle">—</span></div>
+      <div style="margin-inline-start:auto" class="row">
+        <button id="logoutBtn" class="btn hidden">🚪 خروج</button>
+      </div>
+    </div>
+
+    <!-- شاشة الدخول الخاصة بالحدث نفسه (محلية) -->
+    <div id="gate" class="card">
+      <div style="font-weight:700;margin-bottom:6px">🔒 حماية الحدث</div>
+      <div class="row">
+        <div style="flex:1;min-width:260px">
+          <div class="input" style="background:#0b1220;opacity:.7" id="evNameBox"></div>
+        </div>
+        <div style="flex:1;min-width:260px">
+          <input id="passInput" class="input" type="password" placeholder="كلمة المرور" />
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button id="enterBtn" class="btn" style="height:42px">دخول</button>
+        </div>
+      </div>
+      <div id="gateMsg" class="error" style="margin-top:8px"></div>
+      <div class="row" style="margin-top:8px">
+        <div class="input" style="opacity:.6">تلميح: يمكنك تمرير كلمة المرور في الرابط هكذا: <span id="hintUrl" style="font-family:ui-monospace"></span></div>
+      </div>
+    </div>
+
+    <!-- محتوى لوحة التحكم -->
+    <div id="dash" class="hidden">
+      <div class="card">
+        <div class="row" style="align-items:center">
+          <div class="kpi" style="flex:1">
+            <div class="box"><div>إجمالي الدعوات</div><div class="n" id="kTotal">0</div></div>
+            <div class="box"><div>تم الدخول</div><div class="n" id="kYes">0</div></div>
+            <div class="box"><div>لم يدخل</div><div class="n" id="kNo">0</div></div>
+          </div>
+          <div class="row" style="margin-inline-start:auto;min-width:260px">
+            <select id="filterSel" class="select">
+              <option value="all">الكل</option>
+              <option value="yes">تم الدخول (yes)</option>
+              <option value="no">لم يدخل (no)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <table id="codesTbl">
+          <thead>
+            <tr><th>الكود</th><th>الحالة</th><th>آخر تحديث</th></tr>
+          </thead>
+          <tbody id="codesBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <div id="dashboard" class="container">
-    <div class="card">
-      <h2>📊 لوحة التحكم للحدث: <span id="eventNameTitle">—</span></h2>
-      <button id="logoutBtn" class="btn" style="float:left">🚪 خروج</button>
-    </div>
-    <div class="card">
-      <div id="stats">جاري التحميل...</div>
-    </div>
-  </div>
-
-  <!-- Firebase -->
+  <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
 
   <script>
+    // ================== إعداد ثابت لكل صفحة/حدث ==================
+    // انسخ هذا الملف لكل حدث وغيّر القيم أدناه فقط.
+    const EVENT_NAME = 'زفاف سعيد';      // 👈 اسم الحدث لهذه الصفحة فقط
+    const EVENT_PASSWORD = '5678';        // 👈 كلمة المرور الخاصة بهذا الحدث
+    // ملاحظة: ترك كلمة المرور فارغة '' يجعل الصفحة بدون حماية (غير موصى به).
+
+    // ================== Firebase ==================
     const firebaseConfig={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
     if(!firebase.apps.length){firebase.initializeApp(firebaseConfig);} 
     const db=firebase.firestore();
 
-    const loginScreen=document.getElementById('loginScreen');
-    const dashboard=document.getElementById('dashboard');
-    const errorMsg=document.getElementById('errorMsg');
-    const eventNameTitle=document.getElementById('eventNameTitle');
+    // ================== عناصر DOM ==================
+    const gate=document.getElementById('gate');
+    const dash=document.getElementById('dash');
+    const evTitle=document.getElementById('evTitle');
+    const evNameBox=document.getElementById('evNameBox');
+    const passInput=document.getElementById('passInput');
+    const enterBtn=document.getElementById('enterBtn');
+    const gateMsg=document.getElementById('gateMsg');
+    const hintUrl=document.getElementById('hintUrl');
+    const logoutBtn=document.getElementById('logoutBtn');
 
-    function getEventName(){
-      const p=new URLSearchParams(location.search);
-      return p.get('event')||'';
+    const kTotal=document.getElementById('kTotal');
+    const kYes=document.getElementById('kYes');
+    const kNo=document.getElementById('kNo');
+    const filterSel=document.getElementById('filterSel');
+    const codesBody=document.getElementById('codesBody');
+
+    // ================== Helpers ==================
+    const mapDigits={"٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9"};
+    const toAsciiDigits=s=>String(s||'').replace(/[٠-٩]/g,ch=>mapDigits[ch]||ch);
+    const clean=s=>toAsciiDigits(String(s||'').replace(/\u00A0/g,' ').trim());
+    const sessKey=()=>`hs:dash:event:${EVENT_NAME}`;
+
+    function tsToStr(ts){ try{ const d=ts?.toDate? ts.toDate() : (ts instanceof Date? ts : null); return d? d.toLocaleString('ar-EG') : '—'; }catch{return '—'} }
+
+    function renderRows(list){
+      codesBody.innerHTML='';
+      const f=filterSel.value;
+      list.forEach(x=>{
+        if(f!=='all' && (String(x.Status||'').toLowerCase()!==f)) return;
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td style="font-family:ui-monospace">${x.Code}</td><td>${x.Status||'no'}</td><td style="color:#9fb1c7">${tsToStr(x.updatedAt||x.scannedAt)}</td>`;
+        codesBody.appendChild(tr);
+      });
     }
 
-    async function checkPassword(){
-      const eventName=getEventName();
-      const pwdEl=document.getElementById('passwordInput');
-      const pwdRaw=pwdEl ? pwdEl.value : '';
-      // Normalize: trim + convert Arabic-Indic digits to ASCII
-      const mapDigits = {"٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9"};
-      const toAsciiDigits = (s)=> String(s||'').replace(/[٠١٢٣٤٥٦٧٨٩]/g, ch => mapDigits[ch]||ch);
-      const clean = (s)=> toAsciiDigits(String(s||'').trim());
-      const pwd = clean(pwdRaw);
-      if(!eventName){errorMsg.textContent='⚠️ لم يتم تحديد الحدث في الرابط';return;}
-      try{
-        const ref=db.collection('events').doc(eventName.trim());
-        const snap=await ref.get();
-        if(!snap.exists){errorMsg.textContent='⚠️ الحدث غير موجود: '+eventName;return;}
-        const data=snap.data()||{};
-        const stored = clean((data.Password!==undefined?data.Password:(data.password!==undefined?data.password:data.pass))||'');
-        if(!stored){ errorMsg.textContent='⚠️ لا توجد كلمة مرور محفوظة لهذا الحدث (حقل Password)'; return; }
-        if(stored===pwd){ localStorage.setItem('hs:dashboard:auth:'+eventName,'ok'); openDashboard(eventName); }
-        else { errorMsg.textContent='❌ كلمة المرور غير صحيحة'; }
-      }catch(e){ errorMsg.textContent='❌ خطأ: '+e.message; }
-    }
-      try{
-        const ref=db.collection('events').doc(eventName);
-        const snap=await ref.get();
-        if(!snap.exists){errorMsg.textContent='⚠️ الحدث غير موجود';return;}
-        const data=snap.data();
-        if(data.Password===pwd){
-          localStorage.setItem('hs:dashboard:auth:'+eventName,'ok');
-          openDashboard(eventName);
-        } else {
-          errorMsg.textContent='❌ كلمة المرور غير صحيحة';
-        }
-      }catch(e){errorMsg.textContent='❌ خطأ: '+e.message;}
-    }
+    // ================== بوابة الدخول ==================
+    function openDash(){ gate.classList.add('hidden'); dash.classList.remove('hidden'); logoutBtn.classList.remove('hidden'); startLive(); }
 
-    function openDashboard(eventName){
-      loginScreen.style.display='none';
-      dashboard.style.display='block';
-      eventNameTitle.textContent=eventName;
-      loadStats(eventName);
-    }
-
-    function logout(){
-      const ev=getEventName();
-      localStorage.removeItem('hs:dashboard:auth:'+ev);
-      location.reload();
-    }
-
-    async function loadStats(eventName){
-      try{
-        const snap=await db.collection('invites').where('EventName','==',eventName).get();
-        let total=0, used=0;
-        snap.forEach(doc=>{ total++; if((doc.data().Status||'').toLowerCase()==='yes'){used++;} });
-        const remain=total-used;
-        document.getElementById('stats').innerHTML=`
-          <div>📨 عدد الدعوات: <b>${total}</b></div>
-          <div>✅ المستخدمة: <b>${used}</b></div>
-          <div>📭 المتبقية: <b>${remain}</b></div>
-        `;
-      }catch(e){
-        document.getElementById('stats').textContent='❌ خطأ: '+e.message;
+    function tryAutoLogin(){
+      const url=new URL(location.href);
+      const passParam=clean(url.searchParams.get('pass'));
+      if((EVENT_PASSWORD && passParam && passParam===clean(EVENT_PASSWORD)) || localStorage.getItem(sessKey())==='ok' || !EVENT_PASSWORD){
+        // لو الباسورد فارغ تعتبر الصفحة مفتوحة بدون حماية
+        openDash();
       }
     }
 
-    document.getElementById('loginBtn').addEventListener('click',checkPassword);
-    document.getElementById('logoutBtn').addEventListener('click',logout);
+    function handleEnter(){
+      const v=clean(passInput.value);
+      if(!EVENT_PASSWORD){ openDash(); return; }
+      if(v===clean(EVENT_PASSWORD)){
+        localStorage.setItem(sessKey(),'ok');
+        openDash();
+      }else{
+        gateMsg.textContent='❌ كلمة المرور غير صحيحة';
+      }
+    }
 
-    // Auto check session
+    function logout(){ localStorage.removeItem(sessKey()); location.href=location.pathname; }
+
+    // ================== تحميل البيانات المباشرة ==================
+    let unsub=null;
+    function startLive(){
+      evTitle.textContent=EVENT_NAME; evNameBox.textContent=EVENT_NAME; hintUrl.textContent=`?pass=كلمة-المرور`;
+      if(unsub) try{unsub();}catch{}
+      const q=db.collection('invites').where('EventName','==',EVENT_NAME);
+      unsub=q.onSnapshot(snap=>{
+        const arr=[]; let total=0, yes=0, no=0;
+        snap.forEach(doc=>{ const d=doc.data(); total++; const st=String(d.Status||'no').toLowerCase(); if(st==='yes') yes++; else no++; arr.push({Code:d.Code, Status:st, updatedAt:d.updatedAt, scannedAt:d.scannedAt}); });
+        kTotal.textContent=total; kYes.textContent=yes; kNo.textContent=no;
+        arr.sort((a,b)=>a.Code.localeCompare(b.Code));
+        renderRows(arr);
+      }, err=>{ gateMsg.textContent='⚠️ خطأ تحميل البيانات: '+err.message; });
+    }
+
+    // ================== ربط الأحداث ==================
+    enterBtn.addEventListener('click', handleEnter);
+    passInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleEnter(); } });
+    logoutBtn.addEventListener('click', logout);
+    filterSel.addEventListener('change', ()=>{
+      // إعادة تصفية الصفوف الحالية دون إعادة طلب
+      const rows=[...codesBody.querySelectorAll('tr')].map(tr=>({
+        Code: tr.children[0].textContent,
+        Status: tr.children[1].textContent.toLowerCase(),
+        updatedAt: null
+      }));
+      renderRows(rows);
+    });
+
+    // ================== إقلاع ==================
     window.addEventListener('DOMContentLoaded',()=>{
-      const ev=getEventName();
-      if(!ev){errorMsg.textContent='⚠️ أضف ?event=اسم_الحدث في الرابط';return;}
-      const auth=localStorage.getItem('hs:dashboard:auth:'+ev);
-      if(auth==='ok') openDashboard(ev);
+      evTitle.textContent=EVENT_NAME; evNameBox.textContent=EVENT_NAME; hintUrl.textContent=`?pass=كلمة-المرور`;
+      tryAutoLogin();
     });
   </script>
 </body>
