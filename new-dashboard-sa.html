@@ -3,194 +3,248 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>لوحة التحكم — حدث محدد</title>
+  <title>Hormez — لوحة التحكم / Dashboard</title>
   <style>
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;background:#0b1020;color:#e5e7eb}
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--card:#0e172a;--b:#1f2937;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
     .container{max-width:1100px;margin:0 auto;padding:16px}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
     .row{display:flex;gap:10px;flex-wrap:wrap}
-    .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px;margin-bottom:16px}
-    .btn{border:1px solid #334155;background:#0b1220;color:#e5e7eb;border-radius:10px;padding:10px 14px;cursor:pointer}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:40px;height:40px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center}
+    .logo span{font-weight:900;color:#ffd700}
+    .pill{display:inline-flex;gap:8px;align-items:center;border:1px solid #243047;background:#0b1220;border-radius:10px;padding:8px 10px}
+    .btn{appearance:none;border:1px solid #334155;background:#0b1220;color:var(--ink);border-radius:10px;padding:8px 12px;cursor:pointer}
     .btn:hover{background:#0d1528}
-    .input,.select{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}
-    .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-    .kpi .box{background:#0b1220;border:1px solid #334155;border-radius:12px;padding:14px}
+    .select,.input{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .grid{display:grid;gap:12px}
+    .grid-3{grid-template-columns:1fr 1fr 1fr}
+    .grid-4{grid-template-columns:repeat(4,1fr)}
+    @media(max-width:900px){.grid-3{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}}
+    .kpi{display:flex;gap:12px;align-items:center}
     .kpi .n{font-size:26px;font-weight:900}
+    .badge{padding:4px 8px;border-radius:8px;border:1px solid transparent;font-weight:700;font-size:12px}
+    .badge.ok{background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.35);color:#86efac}
+    .badge.no{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.35);color:#fca5a5}
     table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid #334155;padding:10px;text-align:start}
-    th{color:#9fb1c7;font-size:12px;font-weight:600}
-    .hidden{display:none}
-    .error{color:#f87171}
+    th,td{padding:10px;border-top:1px solid rgba(255,255,255,.08)}
+    thead th{position:sticky;top:0;background:#0e162c}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .muted{color:var(--muted)}
+
+    /* Print styles */
+    @media print {
+      body{background:#fff;color:#000}
+      .topbar,.grid.grid-3 .card:last-child{display:none!important} /* hide header & export block */
+      .card{border:1px solid #ccc}
+      .badge{border:1px solid #333}
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="row" style="align-items:center">
-      <div style="font-weight:800">لوحة التحكم — <span id="evTitle">—</span></div>
+  <!-- Header -->
+  <div class="topbar">
+    <div class="container row" style="align-items:center">
+      <div class="brand">
+        <div class="logo"><span>HS</span></div>
+        <div>
+          <div class="muted" style="font-size:12px">HORMEZ SECURITY</div>
+          <div style="font-weight:800">لوحة العميل / Customer Dashboard</div>
+          <div class="muted" style="font-size:12px">الحضور المباشر وحالة الدعوات • Live attendance & status</div>
+        </div>
+      </div>
       <div style="margin-inline-start:auto" class="row">
-        <button id="logoutBtn" class="btn hidden">🚪 خروج</button>
+        <button id="langBtn" class="btn">AR</button>
+        <button id="refreshBtn" class="btn">↻ تحديث / Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Filters -->
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="muted" id="lblEvent" style="font-size:12px">الحدث</div>
+        <select id="eventSelect" class="select"></select>
+      </div>
+      <div class="card">
+        <div class="muted" id="lblSearch" style="font-size:12px">ابحث عن كود…</div>
+        <input id="searchInput" class="input" placeholder="KH_001" />
+      </div>
+      <div class="card" style="display:flex;align-items:flex-end;gap:8px">
+        <button id="exportBtn" class="btn" style="flex:1">⤓ تصدير CSV</button>
+        <button id="printBtn" class="btn" style="flex:1">🖨️ طباعة</button>
       </div>
     </div>
 
-    <!-- شاشة الدخول الخاصة بالحدث نفسه (محلية) -->
-    <div id="gate" class="card">
-      <div style="font-weight:700;margin-bottom:6px">🔒 حماية الحدث</div>
-      <div class="row">
-        <div style="flex:1;min-width:260px">
-          <div class="input" style="background:#0b1220;opacity:.7" id="evNameBox"></div>
+    <!-- Date Filter -->
+    <div class="card" style="margin-top:12px">
+      <div class="row" style="align-items:end">
+        <div style="flex:1;min-width:200px">
+          <div class="muted" id="lblFrom" style="font-size:12px">من تاريخ</div>
+          <input id="dateFrom" type="date" class="input" />
         </div>
-        <div style="flex:1;min-width:260px">
-          <input id="passInput" class="input" type="password" placeholder="كلمة المرور" />
+        <div style="flex:1;min-width:200px">
+          <div class="muted" id="lblTo" style="font-size:12px">إلى تاريخ</div>
+          <input id="dateTo" type="date" class="input" />
         </div>
-        <div style="display:flex;align-items:flex-end">
-          <button id="enterBtn" class="btn" style="height:42px">دخول</button>
+        <div style="display:flex;gap:8px;align-items:end">
+          <button id="applyDate" class="btn">تطبيق</button>
+          <button id="clearDate" class="btn">مسح</button>
         </div>
-      </div>
-      <div id="gateMsg" class="error" style="margin-top:8px"></div>
-      <div class="row" style="margin-top:8px">
-        <div class="input" style="opacity:.6">تلميح: يمكنك تمرير كلمة المرور في الرابط هكذا: <span id="hintUrl" style="font-family:ui-monospace"></span></div>
+        <div id="activeFilter" class="muted" style="margin-inline-start:auto"></div>
       </div>
     </div>
 
-    <!-- محتوى لوحة التحكم -->
-    <div id="dash" class="hidden">
-      <div class="card">
-        <div class="row" style="align-items:center">
-          <div class="kpi" style="flex:1">
-            <div class="box"><div>إجمالي الدعوات</div><div class="n" id="kTotal">0</div></div>
-            <div class="box"><div>تم الدخول</div><div class="n" id="kYes">0</div></div>
-            <div class="box"><div>لم يدخل</div><div class="n" id="kNo">0</div></div>
-          </div>
-          <div class="row" style="margin-inline-start:auto;min-width:260px">
-            <select id="filterSel" class="select">
-              <option value="all">الكل</option>
-              <option value="yes">تم الدخول (yes)</option>
-              <option value="no">لم يدخل (no)</option>
-            </select>
-          </div>
-        </div>
-      </div>
+    <!-- KPIs -->
+    <div class="grid grid-4" style="margin-top:12px">
+      <div class="card kpi"><div class="muted" id="kpiTotalLbl">الإجمالي</div><div id="kpiTotal" class="n">—</div></div>
+      <div class="card kpi"><div class="muted" id="kpiUsedLbl">المستخدم</div><div id="kpiUsed" class="n">—</div></div>
+      <div class="card kpi"><div class="muted" id="kpiLeftLbl">المتبقي</div><div id="kpiLeft" class="n">—</div></div>
+      <div class="card kpi"><div class="muted" id="kpiRateLbl">نسبة الحضور</div><div id="kpiRate" class="n">—%</div></div>
+    </div>
 
-      <div class="card">
-        <table id="codesTbl">
+    <!-- Table -->
+    <div class="card" style="margin-top:12px">
+      <div class="muted" id="recentLbl" style="font-size:12px">أحدث المسحات (آخر 100)</div>
+      <div id="printArea" style="max-height:60vh;overflow:auto;margin-top:8px">
+        <table>
           <thead>
-            <tr><th>الكود</th><th>الحالة</th><th>آخر تحديث</th></tr>
+            <tr>
+              <th id="thCode">الكود</th>
+              <th id="thStatus">الحالة</th>
+              <th id="thTime">الوقت</th>
+            </tr>
           </thead>
-          <tbody id="codesBody"></tbody>
+          <tbody id="rowsBody"></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- Firebase compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getFirestore, collection, query, where, onSnapshot, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-  <script>
-    // ================== إعداد ثابت لكل صفحة/حدث ==================
-    // انسخ هذا الملف لكل حدث وغيّر القيم أدناه فقط.
-    const EVENT_NAME = 'زفاف سعيد';      // 👈 اسم الحدث لهذه الصفحة فقط
-    const EVENT_PASSWORD = '5678';        // 👈 كلمة المرور الخاصة بهذا الحدث
-    // ملاحظة: ترك كلمة المرور فارغة '' يجعل الصفحة بدون حماية (غير موصى به).
+    // ===== i18n =====
+    const STR = {
+      en: {
+        event:"Event", search:"Search code…", export:"Export CSV", print:"Print", total:"Total", used:"Checked-in", left:"Remaining", rate:"Attendance", recent:"Recent scans (latest 100)", code:"Code", status:"Status", time:"Time", all:"All events", refreshed:"Refreshed", from:"From", to:"To", apply:"Apply", clear:"Clear", filterActive:(f,t)=>`Filter: ${f} → ${t}` },
+      ar: {
+        event:"الحدث", search:"ابحث عن كود…", export:"تصدير CSV", print:"طباعة", total:"الإجمالي", used:"المستخدم", left:"المتبقي", rate:"نسبة الحضور", recent:"أحدث المسحات (آخر 100)", code:"الكود", status:"الحالة", time:"الوقت", all:"كل الفعاليات", refreshed:"تم التحديث", from:"من تاريخ", to:"إلى تاريخ", apply:"تطبيق", clear:"مسح", filterActive:(f,t)=>`تفعيل الفلتر: ${f} → ${t}` }
+    };
 
-    // ================== Firebase ==================
-    const firebaseConfig={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
-    if(!firebase.apps.length){firebase.initializeApp(firebaseConfig);} 
-    const db=firebase.firestore();
+    const $ = (s,root=document)=>root.querySelector(s);
+    const state = { lang: localStorage.getItem('hs:dash:lang')||'ar', event: localStorage.getItem('hs:dash:event')||'', from:'', to:'' };
 
-    // ================== عناصر DOM ==================
-    const gate=document.getElementById('gate');
-    const dash=document.getElementById('dash');
-    const evTitle=document.getElementById('evTitle');
-    const evNameBox=document.getElementById('evNameBox');
-    const passInput=document.getElementById('passInput');
-    const enterBtn=document.getElementById('enterBtn');
-    const gateMsg=document.getElementById('gateMsg');
-    const hintUrl=document.getElementById('hintUrl');
-    const logoutBtn=document.getElementById('logoutBtn');
+    function applyLang(){
+      const L = STR[state.lang] || STR.en; const isAr = state.lang==='ar';
+      document.documentElement.lang = state.lang; document.documentElement.dir = isAr?'rtl':'ltr';
+      $('#langBtn').textContent = isAr? 'EN' : 'AR';
+      $('#lblEvent').textContent = L.event; $('#lblSearch').textContent = L.search; $('#exportBtn').textContent = (isAr? '⤓ ' : '') + L.export; $('#printBtn').textContent = '🖨️ ' + L.print;
+      $('#kpiTotalLbl').textContent = L.total; $('#kpiUsedLbl').textContent = L.used; $('#kpiLeftLbl').textContent = L.left; $('#kpiRateLbl').textContent = L.rate;
+      $('#recentLbl').textContent = L.recent; $('#thCode').textContent = L.code; $('#thStatus').textContent = L.status; $('#thTime').textContent = L.time;
+      $('#lblFrom').textContent = L.from; $('#lblTo').textContent = L.to; $('#applyDate').textContent = L.apply; $('#clearDate').textContent = L.clear;
+      renderActiveFilter();
+    }
 
-    const kTotal=document.getElementById('kTotal');
-    const kYes=document.getElementById('kYes');
-    const kNo=document.getElementById('kNo');
-    const filterSel=document.getElementById('filterSel');
-    const codesBody=document.getElementById('codesBody');
+    // ===== Firebase =====
+    const firebaseConfig = { apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv", storageBucket:"hormez-inv.firebasestorage.app", messagingSenderId:"747519941805", appId:"1:747519941805:web:468fada2492700e9da3a24" };
+    const app = initializeApp(firebaseConfig); const db = getFirestore(app);
 
-    // ================== Helpers ==================
-    const mapDigits={"٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9"};
-    const toAsciiDigits=s=>String(s||'').replace(/[٠-٩]/g,ch=>mapDigits[ch]||ch);
-    const clean=s=>toAsciiDigits(String(s||'').replace(/\u00A0/g,' ').trim());
-    const sessKey=()=>`hs:dash:event:${EVENT_NAME}`;
+    // ===== Populate events =====
+    async function loadEvents(){
+      const ref = collection(db,'invites'); const snap = await getDocs(query(ref, limit(500)));
+      const setE = new Set(); snap.forEach(d=>{ const ev=d.data().EventName||''; if(ev) setE.add(ev); });
+      const list = ['__ALL__', ...Array.from(setE).sort((a,b)=>a.localeCompare(b))];
+      const sel = $('#eventSelect'); sel.innerHTML = '';
+      for(const ev of list){ const opt = document.createElement('option'); opt.value = ev; opt.textContent = ev==='__ALL__' ? STR[state.lang].all : ev; sel.appendChild(opt); }
+      sel.value = state.event && list.includes(state.event) ? state.event : '__ALL__';
+      state.event = sel.value; localStorage.setItem('hs:dash:event', state.event);
+    }
 
-    function tsToStr(ts){ try{ const d=ts?.toDate? ts.toDate() : (ts instanceof Date? ts : null); return d? d.toLocaleString('ar-EG') : '—'; }catch{return '—'} }
-
-    function renderRows(list){
-      codesBody.innerHTML='';
-      const f=filterSel.value;
-      list.forEach(x=>{
-        if(f!=='all' && (String(x.Status||'').toLowerCase()!==f)) return;
-        const tr=document.createElement('tr');
-        tr.innerHTML=`<td style="font-family:ui-monospace">${x.Code}</td><td>${x.Status||'no'}</td><td style="color:#9fb1c7">${tsToStr(x.updatedAt||x.scannedAt)}</td>`;
-        codesBody.appendChild(tr);
+    // ===== Live KPIs & table =====
+    let unsub = null, rowsAll = [], rows = [];
+    function startStream(){
+      if(unsub) unsub();
+      const ref = collection(db,'invites');
+      const qAll = state.event && state.event!=='__ALL__' ? query(ref, where('EventName','==', state.event)) : query(ref);
+      unsub = onSnapshot(qAll, snap=>{
+        let t=0,u=0; const rec=[];
+        snap.forEach(d=>{ const x=d.data(); t++; if((x.Status||'').toLowerCase()==='yes') u++; if(x.scannedAt?.toDate?.()) rec.push({id:d.id,Code:x.Code||d.id,Status:x.Status||'no',scannedAt:x.scannedAt.toDate()}); });
+        // KPIs (overall for event selection)
+        renderKPIs(t,u);
+        rowsAll = rec.sort((a,b)=>(b.scannedAt?.getTime?.()||0)-(a.scannedAt?.getTime?.()||0));
+        applyFilters();
       });
     }
 
-    // ================== بوابة الدخول ==================
-    function openDash(){ gate.classList.add('hidden'); dash.classList.remove('hidden'); logoutBtn.classList.remove('hidden'); startLive(); }
+    function withinDateRange(d){
+      if(!d) return false; const ts = d.getTime();
+      if(state.from){ const fromTs = new Date(state.from+"T00:00:00").getTime(); if(ts < fromTs) return false; }
+      if(state.to){ const toTs = new Date(state.to+"T23:59:59").getTime(); if(ts > toTs) return false; }
+      return true;
+    }
 
-    function tryAutoLogin(){
-      const url=new URL(location.href);
-      const passParam=clean(url.searchParams.get('pass'));
-      if((EVENT_PASSWORD && passParam && passParam===clean(EVENT_PASSWORD)) || localStorage.getItem(sessKey())==='ok' || !EVENT_PASSWORD){
-        // لو الباسورد فارغ تعتبر الصفحة مفتوحة بدون حماية
-        openDash();
+    function applyFilters(){
+      const s = ($('#searchInput').value||'').trim().toLowerCase();
+      let list = rowsAll;
+      if(state.from || state.to) list = list.filter(r=> withinDateRange(r.scannedAt));
+      if(s) list = list.filter(r=> (r.Code||'').toLowerCase().includes(s));
+      rows = list.slice(0,100); // keep UI fast
+      renderRows(); renderActiveFilter();
+    }
+
+    function renderActiveFilter(){
+      const L = STR[state.lang] || STR.en; const box=$('#activeFilter');
+      if(state.from || state.to){ box.textContent = L.filterActive(state.from||'—', state.to||'—'); }
+      else { box.textContent=''; }
+    }
+
+    function renderKPIs(total, used){
+      const left = Math.max(total-used,0); const rate = total>0 ? Math.round((used/total)*100) : 0;
+      $('#kpiTotal').textContent = total; $('#kpiUsed').textContent = used; $('#kpiLeft').textContent = left; $('#kpiRate').textContent = rate + '%';
+    }
+
+    function renderRows(){
+      const L = STR[state.lang]||STR.en; const isAr = state.lang==='ar';
+      const tb = $('#rowsBody'); tb.innerHTML='';
+      if(rows.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=3; td.className='muted'; td.style.textAlign='center'; td.style.padding='18px'; td.textContent= isAr? 'لا توجد مسحات' : 'No scans yet'; tr.appendChild(td); tb.appendChild(tr); return; }
+      for(const r of rows){
+        const tr=document.createElement('tr');
+        const td1=document.createElement('td'); td1.className='mono'; td1.textContent=r.Code; tr.appendChild(td1);
+        const td2=document.createElement('td'); const b=document.createElement('span'); const ok=(r.Status||'no').toLowerCase()==='yes'; b.className='badge ' + (ok? 'ok':'no'); b.textContent= ok ? (isAr?'yes':'yes') : (isAr?'no':'no'); td2.appendChild(b); tr.appendChild(td2);
+        const td3=document.createElement('td'); td3.textContent= r.scannedAt ? r.scannedAt.toLocaleString(isAr?'ar-EG':'en-GB') : '—'; tr.appendChild(td3);
+        tb.appendChild(tr);
       }
     }
 
-    function handleEnter(){
-      const v=clean(passInput.value);
-      if(!EVENT_PASSWORD){ openDash(); return; }
-      if(v===clean(EVENT_PASSWORD)){
-        localStorage.setItem(sessKey(),'ok');
-        openDash();
-      }else{
-        gateMsg.textContent='❌ كلمة المرور غير صحيحة';
-      }
+    function exportCSV(){
+      const L = STR[state.lang]||STR.en; const header=[L.code,L.status,'EventName',L.time].join(',');
+      const lines = rows.map(r=> [r.Code, r.Status, state.event==='__ALL__'?'ALL':state.event, r.scannedAt? new Date(r.scannedAt).toISOString():'' ].join(','));
+      const csv=[header,...lines].join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=`hormez-${state.event||'all'}-scans.csv`; a.click(); URL.revokeObjectURL(url);
     }
 
-    function logout(){ localStorage.removeItem(sessKey()); location.href=location.pathname; }
-
-    // ================== تحميل البيانات المباشرة ==================
-    let unsub=null;
-    function startLive(){
-      evTitle.textContent=EVENT_NAME; evNameBox.textContent=EVENT_NAME; hintUrl.textContent=`?pass=كلمة-المرور`;
-      if(unsub) try{unsub();}catch{}
-      const q=db.collection('invites').where('EventName','==',EVENT_NAME);
-      unsub=q.onSnapshot(snap=>{
-        const arr=[]; let total=0, yes=0, no=0;
-        snap.forEach(doc=>{ const d=doc.data(); total++; const st=String(d.Status||'no').toLowerCase(); if(st==='yes') yes++; else no++; arr.push({Code:d.Code, Status:st, updatedAt:d.updatedAt, scannedAt:d.scannedAt}); });
-        kTotal.textContent=total; kYes.textContent=yes; kNo.textContent=no;
-        arr.sort((a,b)=>a.Code.localeCompare(b.Code));
-        renderRows(arr);
-      }, err=>{ gateMsg.textContent='⚠️ خطأ تحميل البيانات: '+err.message; });
+    function printTable(){
+      // Simple: use native print; CSS hides header, keeps table
+      window.print();
     }
 
-    // ================== ربط الأحداث ==================
-    enterBtn.addEventListener('click', handleEnter);
-    passInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleEnter(); } });
-    logoutBtn.addEventListener('click', logout);
-    filterSel.addEventListener('change', ()=>{
-      // إعادة تصفية الصفوف الحالية دون إعادة طلب
-      const rows=[...codesBody.querySelectorAll('tr')].map(tr=>({
-        Code: tr.children[0].textContent,
-        Status: tr.children[1].textContent.toLowerCase(),
-        updatedAt: null
-      }));
-      renderRows(rows);
-    });
-
-    // ================== إقلاع ==================
-    window.addEventListener('DOMContentLoaded',()=>{
-      evTitle.textContent=EVENT_NAME; evNameBox.textContent=EVENT_NAME; hintUrl.textContent=`?pass=كلمة-المرور`;
-      tryAutoLogin();
+    // ===== Wire UI =====
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      applyLang(); await loadEvents(); startStream();
+      $('#langBtn').addEventListener('click', ()=>{ state.lang = state.lang==='ar'?'en':'ar'; localStorage.setItem('hs:dash:lang', state.lang); applyLang(); loadEvents().then(()=>startStream()); applyFilters(); });
+      $('#refreshBtn').addEventListener('click', ()=> location.reload());
+      $('#eventSelect').addEventListener('change', (e)=>{ state.event = e.target.value; localStorage.setItem('hs:dash:event', state.event); startStream(); });
+      $('#searchInput').addEventListener('input', ()=> applyFilters());
+      $('#exportBtn').addEventListener('click', exportCSV);
+      $('#printBtn').addEventListener('click', printTable);
+      $('#applyDate').addEventListener('click', ()=>{ state.from=$('#dateFrom').value||''; state.to=$('#dateTo').value||''; applyFilters(); });
+      $('#clearDate').addEventListener('click', ()=>{ state.from=''; state.to=''; $('#dateFrom').value=''; $('#dateTo').value=''; applyFilters(); });
     });
   </script>
 </body>
