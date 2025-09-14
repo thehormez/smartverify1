@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hormez — لوحة تحكم الحدث ALKENDI</title>
+  <style>
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--card:#0e172a;--b:#1f2937;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:40px;height:40px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center}
+    .logo span{font-weight:900;color:#ffd700}
+    .btn{appearance:none;border:1px solid #334155;background:#0b1220;color:var(--ink);border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn:hover{background:#0d1528}
+    .select,.input{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .grid{display:grid;gap:12px}
+    .grid-2{grid-template-columns:1fr 1fr}
+    .grid-4{grid-template-columns:repeat(4,1fr)}
+    @media(max-width:900px){.grid-2{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}}
+    .kpi{display:flex;gap:12px;align-items:center}
+    .kpi .n{font-size:26px;font-weight:900}
+    .badge{padding:4px 8px;border-radius:8px;border:1px solid transparent;font-weight:700;font-size:12px}
+    .badge.ok{background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.35);color:#86efac}
+    .badge.no{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.35);color:#fca5a5}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-top:1px solid rgba(255,255,255,.08)}
+    thead th{position:sticky;top:0;background:#0e162c}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .muted{color:var(--muted)}
+    .error{color:#fda4af}
+    @media print { body{background:#fff;color:#000} .topbar,.gate{display:none!important} .card{border:1px solid #ccc} .badge{border:1px solid #333} }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="container row" style="align-items:center">
+      <div class="brand">
+        <div class="logo"><span>HS</span></div>
+        <div>
+          <div class="muted" style="font-size:12px">HORMEZ SECURITY</div>
+          <div style="font-weight:800">لوحة تحكم الحدث — <span id="evNameTitle">ALKENDI</span></div>
+          <div class="muted" style="font-size:12px">الحضور المباشر وحالة الدعوات</div>
+        </div>
+      </div>
+      <div style="margin-inline-start:auto" class="row">
+        <button id="langBtn" class="btn">AR</button>
+        <button id="refreshBtn" class="btn">↻ تحديث</button>
+        <button id="logoutBtn" class="btn" style="display:none">🚪 خروج</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card gate" id="gate">
+      <div class="row" style="align-items:end">
+        <div style="flex:1;min-width:200px">
+          <div class="muted">الحدث</div>
+          <input id="eventInput" class="input" value="ALKENDI" disabled />
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div class="muted">كلمة المرور</div>
+          <input id="passInput" type="password" class="input" />
+        </div>
+        <div style="display:flex;gap:8px;align-items:end">
+          <button id="enterBtn" class="btn">دخول</button>
+        </div>
+      </div>
+      <div id="gateMsg" class="error" style="margin-top:8px"></div>
+    </div>
+
+    <div id="content" style="display:none">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="muted">ابحث عن كود…</div>
+          <input id="searchInput" class="input" placeholder="SA_001" />
+        </div>
+        <div class="card" style="display:flex;gap:8px;align-items:end">
+          <div style="flex:1">
+            <div class="muted">من تاريخ</div>
+            <input id="dateFrom" type="date" class="input" />
+          </div>
+          <div style="flex:1">
+            <div class="muted">إلى تاريخ</div>
+            <input id="dateTo" type="date" class="input" />
+          </div>
+          <button id="applyDate" class="btn">تطبيق</button>
+          <button id="clearDate" class="btn">مسح</button>
+          <button id="exportBtn" class="btn">⤓ CSV</button>
+          <button id="printBtn" class="btn">🖨️ طباعة</button>
+        </div>
+      </div>
+
+      <div class="grid grid-4" style="margin-top:12px">
+        <div class="card kpi"><div class="muted">الإجمالي</div><div id="kpiTotal" class="n">—</div></div>
+        <div class="card kpi"><div class="muted">المستخدم</div><div id="kpiUsed" class="n">—</div></div>
+        <div class="card kpi"><div class="muted">المتبقي</div><div id="kpiLeft" class="n">—</div></div>
+        <div class="card kpi"><div class="muted">نسبة الحضور</div><div id="kpiRate" class="n">—%</div></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="muted">أحدث المسحات (آخر 100)</div>
+        <div id="printArea" style="max-height:60vh;overflow:auto;margin-top:8px">
+          <table>
+            <thead>
+              <tr>
+                <th>الكود</th>
+                <th>الحالة</th>
+                <th>الوقت</th>
+              </tr>
+            </thead>
+            <tbody id="rowsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const firebaseConfig = { apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
+    const app = initializeApp(firebaseConfig); const db = getFirestore(app);
+
+    const PAGE_EVENT = 'ALKENDI';
+    const PAGE_PASSWORD = '6666';
+
+    const sessKey = ()=> `hs:dash:event:${PAGE_EVENT}`;
+
+    function openContent(){
+      document.getElementById('gate').style.display='none';
+      document.getElementById('content').style.display='block';
+      document.getElementById('logoutBtn').style.display='inline-block';
+      startStream();
+    }
+
+    function handleEnter(){
+      const pw = (document.getElementById('passInput').value||'').trim();
+      if(PAGE_PASSWORD && pw!==PAGE_PASSWORD){ document.getElementById('gateMsg').textContent = '❌ كلمة المرور غير صحيحة'; return; }
+      localStorage.setItem(sessKey(),'ok'); openContent();
+    }
+
+    function logout(){ localStorage.removeItem(sessKey()); location.reload(); }
+
+    let unsub=null; let allRows=[];
+    function startStream(){
+      if(unsub) unsub();
+      const ref = collection(db,'invites');
+      const qEv = query(ref, where('EventName','==', PAGE_EVENT));
+      unsub = onSnapshot(qEv, snap=>{
+        let t=0,u=0; const rec=[];
+        snap.forEach(d=>{ const x=d.data(); t++; if((x.Status||'').toLowerCase()==='yes') u++; if(x.scannedAt?.toDate?.()) rec.push({Code:x.Code||'',Status:x.Status||'no',scannedAt:x.scannedAt.toDate()}); });
+        document.getElementById('kpiTotal').textContent=t;
+        document.getElementById('kpiUsed').textContent=u;
+        document.getElementById('kpiLeft').textContent=t-u;
+        document.getElementById('kpiRate').textContent=t?Math.round((u/t)*100)+'%':'0%';
+        allRows=rec.sort((a,b)=>(b.scannedAt?.getTime?.()||0)-(a.scannedAt?.getTime?.()||0));
+        renderRows();
+      });
+    }
+
+    function renderRows(){
+      const tb=document.getElementById('rowsBody'); tb.innerHTML='';
+      if(allRows.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=3; td.textContent='لا توجد مسحات'; tr.appendChild(td); tb.appendChild(tr); return; }
+      for(const r of allRows.slice(0,100)){
+        const tr=document.createElement('tr');
+        const td1=document.createElement('td'); td1.textContent=r.Code; tr.appendChild(td1);
+        const td2=document.createElement('td'); const b=document.createElement('span'); b.className='badge '+((r.Status||'no').toLowerCase()==='yes'?'ok':'no'); b.textContent=(r.Status||'no'); td2.appendChild(b); tr.appendChild(td2);
+        const td3=document.createElement('td'); td3.textContent=r.scannedAt? r.scannedAt.toLocaleString('ar-EG'):'—'; tr.appendChild(td3);
+        tb.appendChild(tr);
+      }
+    }
+
+    document.getElementById('enterBtn').addEventListener('click',handleEnter);
+    document.getElementById('logoutBtn').addEventListener('click',logout);
+    window.addEventListener('DOMContentLoaded',()=>{ if(localStorage.getItem(sessKey())==='ok') openContent(); });
+  </script>
+</body>
+</html>
