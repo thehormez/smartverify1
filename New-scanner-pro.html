@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — ماسح باركود احترافي</title>
+  <title>Hormez — ماسح باركود (تثبيت الحدث)</title>
   <style>
     :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--ok:#22c55e;--bad:#ef4444;--warn:#f59e0b}
     html,body{height:100%}
@@ -34,7 +34,7 @@
   <div class="container">
     <div class="row" style="margin-bottom:8px">
       <div class="logo"><span>HS</span></div>
-      <div style="font-weight:800;margin-inline-start:10px">ماسح الباركود الاحترافي</div>
+      <div style="font-weight:800;margin-inline-start:10px">ماسح الباركود — تثبيت الحدث أولًا</div>
       <div style="margin-inline-start:auto" class="row">
         <button id="langBtn" class="btn">AR</button>
       </div>
@@ -60,7 +60,10 @@
         <div class="row" style="margin-top:10px">
           <div style="flex:1">
             <div class="muted" id="lblEvent">الحدث</div>
-            <input id="eventName" class="input" placeholder="اكتب اسم الحدث" />
+            <div class="row">
+              <input id="eventName" class="input" placeholder="اكتب اسم الحدث" style="flex:1" />
+              <button id="lockEventBtn" class="btn">🔒 تثبيت الحدث</button>
+            </div>
           </div>
           <div style="flex:1">
             <div class="muted" id="lblCam">الكاميرا</div>
@@ -101,7 +104,6 @@
   <div class="toast" id="toast" style="display:none"><div class="tag" id="toastInner">—</div></div>
   <audio id="beep" preload="auto"><source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA..." type="audio/mpeg"></audio>
 
-  <!-- ZXing fallback loaders + native detector flag -->
   <script>
     (function(){
       const CANDS=[
@@ -116,7 +118,6 @@
     })();
   </script>
 
-  <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
 
@@ -124,53 +125,44 @@
   (function(){
     const $=(s,root=document)=>root.querySelector(s);
     const T={
-      ar:{ready:'جاهز',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',event:'الحدث',camera:'الكاميرا',manual:'إدخال يدوي',checking:'جاري التحقق…',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',notfound:'❌ الكود غير موجود',mismatch:'❌ هذا الكود لا يخص هذا الحدث',saved:'تم الحفظ',needHttps:'⚠️ يجب HTTPS للكاميرا',scanPaused:'⏸️ إيقاف مؤقت بعد القراءة',lang:'EN',camlib:'مكتبة الكاميرا لم تُحمّل'},
-      en:{ready:'Ready',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',event:'Event',camera:'Camera',manual:'Manual input',checking:'Checking…',ok:'✅ Accepted',dupe:'⚠️ Already used',notfound:'❌ Code not found',mismatch:'❌ Code does not belong to this event',saved:'Saved',needHttps:'⚠️ Camera requires HTTPS',scanPaused:'⏸️ Paused after read',lang:'AR',camlib:'Camera library not loaded'}
+      ar:{ready:'جاهز',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',event:'الحدث',camera:'الكاميرا',manual:'إدخال يدوي',checking:'جاري التحقق…',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',notfound:'❌ الكود غير موجود',mismatch:'❌ هذا الكود لا يخص هذا الحدث',saved:'تم الحفظ',needHttps:'⚠️ يجب HTTPS للكاميرا',scanPaused:'⏸️ إيقاف مؤقت بعد القراءة',lang:'EN',camlib:'مكتبة الكاميرا لم تُحمّل',lock:'🔒 تثبيت الحدث',unlock:'🔓 تغيير الحدث',needEvent:'⚠️ حدّد الحدث أولاً'},
+      en:{ready:'Ready',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',event:'Event',camera:'Camera',manual:'Manual input',checking:'Checking…',ok:'✅ Accepted',dupe:'⚠️ Already used',notfound:'❌ Code not found',mismatch:'❌ Code does not belong to this event',saved:'Saved',needHttps:'⚠️ Camera requires HTTPS',scanPaused:'⏸️ Paused after read',lang:'AR',camlib:'Camera library not loaded',lock:'🔒 Lock event',unlock:'🔓 Change event',needEvent:'⚠️ Select event first'}
     };
     let LANG=localStorage.getItem('hs:scan:lang')||'ar';
-    function setLang(l){LANG=l;localStorage.setItem('hs:scan:lang',l);document.documentElement.lang=l;document.documentElement.dir=(l==='ar')?'rtl':'ltr';$('#langBtn').textContent=T[l].lang;$('#lblEvent').textContent=T[l].event;$('#lblCam').textContent=T[l].camera;$('#lblManual').textContent=T[l].manual;$('#startBtn').textContent=T[l].start;$('#stopBtn').textContent=T[l].stop;$('#switchBtn').textContent=T[l].switch;$('#torchBtn').textContent=T[l].flash;}
+    function setLang(l){LANG=l;localStorage.setItem('hs:scan:lang',l);document.documentElement.lang=l;document.documentElement.dir=(l==='ar')?'rtl':'ltr';$('#langBtn').textContent=T[l].lang;$('#lblEvent').textContent=T[l].event;$('#lblCam').textContent=T[l].camera;$('#lblManual').textContent=T[l].manual;$('#startBtn').textContent=T[l].start;$('#stopBtn').textContent=T[l].stop;$('#switchBtn').textContent=T[l].switch;$('#torchBtn').textContent=T[l].flash;$('#lockEventBtn').textContent= lockedEvent? T[l].unlock : T[l].lock; }
 
-    // HTTPS guard
     function checkHttps(){const isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';const ok=location.protocol==='https:'||isLocal;$('#httpsWarn').style.display= ok? 'none':'block';$('#startBtn').disabled = !ok;return ok;}
 
-    // Firebase
     const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
     if(!firebase.apps.length){firebase.initializeApp(cfg);} const db=firebase.firestore(); const Field=firebase.firestore.FieldValue;
 
-    // URL event
     function setEventFromQuery(){const p=new URLSearchParams(location.search);const ev=p.get('event');if(ev){$('#eventName').value=ev;}}
-    function getEvent(){return $('#eventName').value.trim();}
-    function reflectEventTag(){ $('#eventTagText').textContent=getEvent()||'—'; }
 
-    // History per event
+    let lockedEvent=null;
+    function getEvent(){ return (lockedEvent||'').trim() || $('#eventName').value.trim(); }
+    function reflectEventTag(){ const ev=getEvent(); $('#eventTagText').textContent=ev||'—'; }
+
     function histKey(){const ev=getEvent();return `hs:scan:hist:${ev||'__ALL__'}`}
     function getHist(){try{return JSON.parse(localStorage.getItem(histKey())||'[]')}catch{return[]} }
     function pushHist(entry){const h=getHist();h.unshift(entry);localStorage.setItem(histKey(),JSON.stringify(h.slice(0,80)));renderHist();}
     function renderHist(){ const box=$('#history'); const h=getHist(); box.innerHTML=''; h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='8px'; d.style.borderTop='1px solid var(--line)'; d.innerHTML=`<div style="font-family:ui-monospace">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); }); }
 
-    // Toast
     function toast(msg){const t=$('#toast');const inner=$('#toastInner');inner.textContent=msg;t.style.display='flex';setTimeout(()=>t.style.display='none',1800);} 
-
-    // Beep+vibrate
     function feedback(success=true){ try{ $('#beep').currentTime=0; $('#beep').play().catch(()=>{}); navigator.vibrate?.(success? 60: 120); }catch{} }
 
-    // Camera state
     let currentDeviceId=null; let devices=[]; let scanning=false; let torchOn=false; let currentTrack=null; let rafId=null; let lastCodeAt=0; const cooldown=1200; let nativeDetector=null; let zxingReader=null;
 
     function preferBack(list){ const byLabel=list.find(d=>/back|rear|environment|خلف/i.test(d.label||'')); return byLabel? byLabel.deviceId : (list[0]? list[0].deviceId : null); }
-
     async function ensurePermission(){ try{ const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); tmp.getTracks().forEach(t=>t.stop()); }catch{} }
-
     async function listCameras(){ const all=await navigator.mediaDevices.enumerateDevices(); devices=all.filter(d=>d.kind==='videoinput'); const sel=$('#cameraSelect'); sel.innerHTML=''; devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label || `Camera ${i+1}`; sel.appendChild(o); }); if(devices.length){ if(!currentDeviceId){ currentDeviceId= preferBack(devices); } sel.value=currentDeviceId; } }
-
     async function switchCamera(){ if(!devices.length) return; const idx=devices.findIndex(d=>d.deviceId===currentDeviceId); const next=devices[(idx+1)%devices.length]; currentDeviceId=next.deviceId; $('#cameraSelect').value=currentDeviceId; if(scanning){ await stopScanner(); await startScanner(); } }
-
     async function toggleTorch(){ try{ if(!currentTrack) return toast('No torch'); const caps=currentTrack.getCapabilities?.(); if(!caps?.torch){ return toast('Torch not supported'); } torchOn=!torchOn; await currentTrack.applyConstraints({ advanced:[{torch: torchOn}]}); toast(torchOn? 'Torch ON':'Torch OFF'); }catch(e){ toast('Torch error'); } }
 
     function setStatus(text,color){ $('#statusText').textContent=text; $('#statusDot').style.background=color; }
     function showLast(code,msg,good){ $('#lastResult').textContent=code||'—'; $('#lastResult').style.color= good? '#86efac' : '#fca5a5'; $('#lastSub').textContent=msg||''; }
 
-    async function startScanner(){ try{
+    async function startScanner(){ try{ if(!getEvent()){ toast(T[LANG].needEvent); return; } if(!lockedEvent){ // auto-lock if not already
+        lockedEvent=$('#eventName').value.trim(); $('#eventName').disabled=true; $('#lockEventBtn').textContent=T[LANG].unlock; toast(T[LANG].lock); reflectEventTag(); }
       if(!checkHttps()) { toast(T[LANG].needHttps); return; }
       await ensurePermission(); await listCameras();
       const video=$('#video');
@@ -200,7 +192,7 @@
 
     async function stopScanner(){ try{ scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; if(zxingReader){ try{ await zxingReader.reset(); }catch{} zxingReader=null; } if(rafId){ cancelAnimationFrame(rafId); rafId=null; } const v=$('#video'); if(v && v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} }
 
-    async function onCode(raw){ const code=(raw||'').trim().toUpperCase(); if(!code) return; reflectEventTag(); const ev=getEvent(); if(!ev){ showLast(code, T[LANG].event+': ؟', false); toast(T[LANG].event); return; } showLast(code, T[LANG].checking, true);
+    async function onCode(raw){ const code=(raw||'').trim().toUpperCase(); if(!code) return; reflectEventTag(); const ev=getEvent(); if(!ev){ showLast(code, T[LANG].needEvent, false); toast(T[LANG].needEvent); return; } showLast(code, T[LANG].checking, true);
       try{
         const ref=db.collection('invites').doc(code);
         const snap=await ref.get();
@@ -212,7 +204,7 @@
           showLast(code, T[LANG].dupe, false); feedback(false); pushHist({code, at:Date.now(), msg:T[LANG].dupe}); return;
         }
         await ref.set({ Status:'yes', scannedAt: Field.serverTimestamp() }, { merge:true });
-        showLast(code, T[LANG].ok, true); feedback(true); pushHist({code, at:Date.Now?Date.Now():Date.now(), msg:T[LANG].ok}); toast(T[LANG].scanPaused);
+        showLast(code, T[LANG].ok, true); feedback(true); pushHist({code, at:Date.now(), msg:T[LANG].ok}); toast(T[LANG].scanPaused);
       }catch(e){ showLast(code, e.message||'خطأ', false); feedback(false); pushHist({code, at:Date.now(), msg:e.message||'error'}); }
     }
 
@@ -222,14 +214,18 @@
       setLang(LANG); checkHttps(); setEventFromQuery(); reflectEventTag(); renderHist();
       $('#langBtn').addEventListener('click',()=>{ setLang(LANG==='ar'?'en':'ar'); reflectEventTag(); renderHist(); });
       $('#startBtn').addEventListener('click', startScanner);
-      $('#stopBtn').addEventListener('click', stopScanner);
+      $('#stopBtn').addEventListener('click', ()=>{ stopScanner(); /* بعد الإيقاف يمكن تغيير الحدث */ $('#eventName').disabled=false; $('#lockEventBtn').textContent=T[LANG].lock; lockedEvent=null; reflectEventTag(); });
       $('#switchBtn').addEventListener('click', switchCamera);
       $('#torchBtn').addEventListener('click', toggleTorch);
       $('#cameraSelect').addEventListener('change', async(e)=>{ currentDeviceId=e.target.value; if(scanning){ await stopScanner(); await startScanner(); } });
       $('#manualBtn').addEventListener('click', handleManual);
       $('#manualCode').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); handleManual(); }});
-      $('#eventName').addEventListener('input', ()=>{ reflectEventTag(); renderHist(); });
+      $('#eventName').addEventListener('input', ()=>{ if(!lockedEvent){ reflectEventTag(); renderHist(); }});
       $('#clearHist').addEventListener('click', ()=>{ localStorage.removeItem(histKey()); renderHist(); });
+      $('#lockEventBtn').addEventListener('click', ()=>{
+        if(!lockedEvent){ const ev=$('#eventName').value.trim(); if(!ev){ toast(T[LANG].needEvent); return; } lockedEvent=ev; $('#eventName').disabled=true; $('#lockEventBtn').textContent=T[LANG].unlock; toast(T[LANG].lock); reflectEventTag(); }
+        else { if(scanning){ toast(T[LANG].scanPaused); return; } lockedEvent=null; $('#eventName').disabled=false; $('#lockEventBtn').textContent=T[LANG].lock; reflectEventTag(); }
+      });
     }
 
     if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', wire); else wire();
