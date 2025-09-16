@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — إرسال الدعوات + تنزيل البطاقات/QR</title>
+  <title>Hormez — إرسال الدعوات + تنزيل/رفع البطاقات</title>
   <style>
     :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--card:#0e172a}
     html,body{height:100%}
@@ -26,12 +26,13 @@
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace}
     .muted{color:var(--muted)}
     #preview{width:100%;background:#0b1220;border-radius:12px;display:block;max-height:55vh}
+    .tiny{font-size:11px;color:var(--muted)}
   </style>
 </head>
 <body>
   <div class="container">
     <div class="row" style="margin-bottom:8px">
-      <div style="font-weight:800">📨 إرسال الدعوات للضيوف + تنزيل البطاقات/QR</div>
+      <div style="font-weight:800">📨 إرسال الدعوات للضيوف + تنزيل/رفع البطاقات</div>
       <div style="margin-inline-start:auto" class="row">
         <button id="langBtn" class="btn">AR</button>
       </div>
@@ -75,7 +76,8 @@
         <div class="row">
           <div style="flex:1">
             <label id="lblTemplate">قالب الرسالة</label>
-            <textarea id="msgTemplate" rows="6" class="input" placeholder="{name}، يسعدنا دعوتك لحضور {event}. كودك: {code}\nالرابط: {link}"></textarea>
+            <textarea id="msgTemplate" rows="6" class="input" placeholder="{name}، يسعدنا دعوتك لحضور {event}. كودك: {code}\nالرابط: {link}\nالصورة: {image}"></textarea>
+            <div class="tiny">المتغيرات: {name} {event} {code} {link} {image}</div>
           </div>
         </div>
         <div class="row">
@@ -92,8 +94,9 @@
         <hr style="border-color:rgba(255,255,255,.1)" />
         <div class="row">
           <div style="flex:1">
-            <label>صورة كرت الدعوة (اختياري)</label>
+            <label>صورة كرت الدعوة (هذه هي البطاقة التي سترسل)</label>
             <input id="cardImage" type="file" accept="image/png,image/jpeg" class="input" />
+            <div class="tiny">سنولّد نسخة شخصية (QR + الكود) لكل ضيف.</div>
           </div>
         </div>
         <div class="row">
@@ -136,12 +139,17 @@
             <input id="textColor" type="color" class="input" value="#ffffff" />
           </div>
         </div>
+        <div class="row" style="align-items:center">
+          <input id="attachImageLink" type="checkbox" />
+          <label for="attachImageLink">إرفاق <b>رابط البطاقة</b> داخل الرسالة (يرفع الصور تلقائيًا إلى Firebase Storage)</label>
+        </div>
+        <div class="tiny">تنبيه: واتساب/SMS عبر المتصفح لا يرسلان ملف الصورة تلقائيًا، لذلك نرفع البطاقة ونضع رابطها في الرسالة.</div>
         <div class="row">
           <button id="btnPreviewCard" class="btn">معاينة بطاقة</button>
           <button id="btnZipCards" class="btn">تنزيل كل البطاقات (ZIP)</button>
           <button id="btnZipQrs" class="btn">تنزيل كل أكواد QR (ZIP)</button>
+          <button id="btnSendAll" class="btn">إرسال للكل (على دفعات)</button>
         </div>
-        <div class="muted">ملحوظة: إرسال الصور تلقائيًا عبر WhatsApp/SMS من المتصفح **غير مدعوم**. نولّد الصور لتقوم بتنزيلها ثم إرسالها يدويًا، بينما الرسالة النصية والرابط تُرسل تلقائيًا من الأزرار.</div>
       </div>
 
       <!-- Right table -->
@@ -175,21 +183,20 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-storage-compat.js"></script>
 
   <script>
     (function(){
       const $=(s,root=document)=>root.querySelector(s);
-      const STR={
-        ar:{title:'إرسال الدعوات للضيوف',pending:'جاهز',sent:'تم الإرسال',failed:'فشل',download:'بطاقة',downloadQR:'QR'},
-        en:{title:'Send invites',pending:'Ready',sent:'Sent',failed:'Failed',download:'Card',downloadQR:'QR'}
-      };
-      let LANG=localStorage.getItem('hs:send:lang')||'ar';
-      function L(k){return (STR[LANG]||STR.ar)[k]||k}
+      const STR={ ar:{title:'إرسال الدعوات للضيوف',pending:'جاهز',sent:'تم الإرسال',failed:'فشل',download:'بطاقة',downloadQR:'QR'}, en:{title:'Send invites',pending:'Ready',sent:'Sent',failed:'Failed',download:'Card',downloadQR:'QR'} };
+      let LANG=localStorage.getItem('hs:send:lang')||'ar'; function L(k){return (STR[LANG]||STR.ar)[k]||k}
       document.title = `Hormez — ${L('title')}`;
 
-      const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
+      // ===== Firebase =====
+      const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv", storageBucket:"hormez-inv.firebasestorage.app" };
       try{ if(!firebase.apps.length){firebase.initializeApp(cfg);} }catch{}
       const db=(()=>{ try{return firebase.firestore();}catch{return null} })();
+      const storage=(()=>{ try{return firebase.storage();}catch{return null} })();
 
       const state={ rows:[], cardImg:null };
 
@@ -208,37 +215,44 @@
                          <td><button class="btn" data-send="${i}">إرسال</button> <button class="btn" data-del="${i}">حذف</button></td>`;
           tb.appendChild(tr);
         });
-        // actions
         tb.querySelectorAll('button[data-send]').forEach(b=> b.addEventListener('click', ()=> sendOne(parseInt(b.getAttribute('data-send'),10))));
         tb.querySelectorAll('button[data-del]').forEach(b=> b.addEventListener('click', ()=> { const j=parseInt(b.getAttribute('data-del'),10); state.rows.splice(j,1); render(); }));
         tb.querySelectorAll('button[data-dlqr]').forEach(b=> b.addEventListener('click', ()=> downloadQR(parseInt(b.getAttribute('data-dlqr'),10))));
         tb.querySelectorAll('button[data-dlcard]').forEach(b=> b.addEventListener('click', ()=> downloadCard(parseInt(b.getAttribute('data-dlcard'),10))));
-        // sync edits
-        tb.querySelectorAll('td[contenteditable]').forEach((cell)=>{
-          cell.addEventListener('blur', ()=>{ const rowIndex = [...cell.parentElement.parentElement.children].indexOf(cell.parentElement); const colIndex = [...cell.parentElement.children].indexOf(cell); const cols=['name','phone','code']; if(colIndex<3){ state.rows[rowIndex][cols[colIndex]] = cell.textContent.trim(); render(); } });
-        });
+        tb.querySelectorAll('td[contenteditable]').forEach((cell)=>{ cell.addEventListener('blur', ()=>{ const rowIndex = [...cell.parentElement.parentElement.children].indexOf(cell.parentElement); const colIndex = [...cell.parentElement.children].indexOf(cell); const cols=['name','phone','code']; if(colIndex<3){ state.rows[rowIndex][cols[colIndex]] = cell.textContent.trim(); render(); } }); });
       }
 
-      function tmpl(){
-        const ar = `{name}، يسعدنا دعوتك لحضور {event}.\nكودك: {code}\nالرابط: {link}`;
-        const en = `Dear {name}, you're invited to {event}.\nYour code: {code}\nLink: {link}`;
-        const cur = ($('#msgTemplate').value||'').trim();
-        const lang=$('#msgLang').value; return cur || (lang==='ar'? ar: en);
-      }
-      function previewMsg(r){ const link=buildLink(r.code); const t=tmpl(); return t.replaceAll('{name}', r.name||'').replaceAll('{event}', $('#eventName').value||'').replaceAll('{code}', r.code||'').replaceAll('{link}', link); }
+      function tmpl(extra){ const ar = `{name}، يسعدنا دعوتك لحضور {event}.\nكودك: {code}\nالرابط: {link}\nالصورة: {image}`; const en = `Dear {name}, you're invited to {event}.\nYour code: {code}\nLink: {link}\nImage: {image}`; const cur = ($('#msgTemplate').value||'').trim(); const lang=$('#msgLang').value; const base = cur || (lang==='ar'? ar: en); return base.replaceAll('{image}', extra?.image||''); }
+      function previewMsg(r, extra){ const link=buildLink(r.code); const t=tmpl(extra); return t.replaceAll('{name}', r.name||'').replaceAll('{event}', $('#eventName').value||'').replaceAll('{code}', r.code||'').replaceAll('{link}', link); }
 
       function openWhatsApp(phone, text){ const url = `https://wa.me/${phone.replace(/[^\d]/g,'')}?text=${encodeURIComponent(text)}`; window.open(url, '_blank'); }
       function openSMS(phone, text){ const url = `sms:${encodeURIComponent(phone)}?&body=${encodeURIComponent(text)}`; window.open(url, '_blank'); }
 
-      async function sendOne(idx){ const r=state.rows[idx]; if(!r) return; const phone = normalizePhone(r.phone, $('#countryCode').value); const text = previewMsg(r); try{
+      function makeQRCanvas(text, size, colorDark, colorLight){ const holder=document.createElement('div'); new QRCode(holder,{text,width:size,height:size,colorDark,colorLight,correctLevel:QRCode.CorrectLevel.M}); return holder.querySelector('canvas'); }
+      function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+      async function drawCard(canvas, code){ const ctx=canvas.getContext('2d'); const img=state.cardImg; if(!img){ const size=parseInt($('#qrSize').value||'300',10); const qr=makeQRCanvas(code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); canvas.width=size; canvas.height=size; ctx.clearRect(0,0,size,size); ctx.drawImage(qr,0,0,size,size); return; }
+        const w=img.naturalWidth, h=img.naturalHeight; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+        const size=parseInt($('#qrSize').value||'300',10); let x=parseInt($('#posX').value||'0',10); let y=parseInt($('#posY').value||'0',10); x=clamp(x,0,Math.max(0,w-size)); y=clamp(y,0,Math.max(0,h-size));
+        const qr=makeQRCanvas(code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); ctx.drawImage(qr, x, y, size, size);
+        const fontSize=parseInt($('#fontSize').value||'36',10); const toff=parseInt($('#textOffset').value||'20',10); ctx.fillStyle=$('#textColor').value||'#fff'; ctx.font=`bold ${fontSize}px ui-monospace,Menlo,Consolas,'Courier New',monospace`; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(code, x+size/2, y+size+toff);
+      }
+
+      async function downloadQR(idx){ const r=state.rows[idx]; if(!r) return; const size=parseInt($('#qrSize').value||'300',10); const qr=makeQRCanvas(r.code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); const url=qr.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=`${r.code}.png`; a.click(); }
+      async function downloadCard(idx){ const r=state.rows[idx]; if(!r) return; const canvas=$('#preview'); await drawCard(canvas, r.code); const url=canvas.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=`card-${r.code}.png`; a.click(); }
+
+      async function uploadCardAndGetURL(code){ if(!storage){ throw new Error('Firebase Storage غير مفعّل'); } const canvas=$('#preview'); await drawCard(canvas, code); const blob = await (await fetch(canvas.toDataURL('image/png'))).blob(); const ev=($('#eventName').value||'event').replace(/\s+/g,'_'); const ref = storage.ref().child(`invites/${ev}/${code}.png`); await ref.put(blob, { contentType: 'image/png', cacheControl:'public,max-age=31536000' }); const url = await ref.getDownloadURL(); return url; }
+
+      async function sendOne(idx){ const r=state.rows[idx]; if(!r) return; const phone = normalizePhone(r.phone, $('#countryCode').value); let extra={}; try{
+          if($('#attachImageLink').checked){ if(!state.cardImg){ alert('ارفع صورة البطاقة أولاً لاستخدام رابط الصورة.'); throw new Error('no-card'); } const url = await uploadCardAndGetURL(r.code); extra.image = url; }
+          const text = previewMsg(r, extra);
           if(($('#channel').value)==='whatsapp'){ openWhatsApp(phone, text); } else { openSMS(phone, text); }
           state.rows[idx].status='sent';
-          try{ if(db){ await db.collection('invites').doc(r.code).set({ sentAt: firebase.firestore.FieldValue.serverTimestamp(), sentTo: phone }, { merge:true }); } }catch{}
+          try{ if(db){ await db.collection('invites').doc(r.code).set({ sentAt: firebase.firestore.FieldValue.serverTimestamp(), sentTo: phone, sentImage: extra.image||null }, { merge:true }); } }catch{}
         }catch(e){ state.rows[idx].status='failed'; }
         render();
       }
 
-      async function sendAll(){ let i=0; const batch=5; const delay=1200; async function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+      async function sendAll(){ let i=0; const batch=3; const delay=1600; async function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
         while(i < state.rows.length){ const end=Math.min(i+batch, state.rows.length); for(let j=i;j<end;j++){ await sendOne(j); } i=end; await sleep(delay); }
       }
 
@@ -249,20 +263,7 @@
 
       function exportCSV(){ const lines=['name,phone,code,status']; state.rows.forEach(r=>{ lines.push([r.name,r.phone,r.code,r.status||''].join(',')); }); const blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='invite-send-status.csv'; a.click(); URL.revokeObjectURL(url); }
 
-      // ===== Image generation (QR / Card) =====
-      function makeQRCanvas(text, size, colorDark, colorLight){ const holder=document.createElement('div'); new QRCode(holder,{text,width:size,height:size,colorDark,colorLight,correctLevel:QRCode.CorrectLevel.M}); const c=holder.querySelector('canvas'); return c; }
-      async function downloadQR(idx){ const r=state.rows[idx]; if(!r) return; const size=parseInt($('#qrSize').value||'300',10); const qr=makeQRCanvas(r.code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); const url=qr.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=`${r.code}.png`; a.click(); }
-
-      function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-      async function drawCard(canvas, code){ const ctx=canvas.getContext('2d'); const img=state.cardImg; if(!img){ // no card image => return QR-only
-          const size=parseInt($('#qrSize').value||'300',10); const qr=makeQRCanvas(code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); canvas.width=size; canvas.height=size; ctx.clearRect(0,0,size,size); ctx.drawImage(qr,0,0,size,size); return; }
-        const w=img.naturalWidth, h=img.naturalHeight; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
-        const size=parseInt($('#qrSize').value||'300',10); let x=parseInt($('#posX').value||'0',10); let y=parseInt($('#posY').value||'0',10); x=clamp(x,0,Math.max(0,w-size)); y=clamp(y,0,Math.max(0,h-size));
-        const qr=makeQRCanvas(code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); ctx.drawImage(qr, x, y, size, size);
-        const fontSize=parseInt($('#fontSize').value||'36',10); const toff=parseInt($('#textOffset').value||'20',10); ctx.fillStyle=$('#textColor').value||'#fff'; ctx.font=`bold ${fontSize}px ui-monospace,Menlo,Consolas,'Courier New',monospace`; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(code, x+size/2, y+size+toff);
-      }
-      async function downloadCard(idx){ const r=state.rows[idx]; if(!r) return; const canvas=$('#preview'); await drawCard(canvas, r.code); const url=canvas.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=`card-${r.code}.png`; a.click(); }
-
+      // ===== ZIP all =====
       async function zipAll(type){ if(!state.rows.length){ alert('القائمة فارغة'); return; } const zip=new JSZip(); const canvas=$('#preview'); if(type==='cards' && !state.cardImg){ if(!confirm('لا توجد صورة كرت مرفوعة، سيتم إنشاء ملفات QR فقط. المتابعة؟')) return; }
         for(const r of state.rows){ if(type==='cards'){ await drawCard(canvas, r.code); const url=canvas.toDataURL('image/png'); const data=await (await fetch(url)).blob(); zip.file(`card-${r.code}.png`, data);} else { const size=parseInt($('#qrSize').value||'300',10); const qr=makeQRCanvas(r.code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); const url=qr.toDataURL('image/png'); const data=await (await fetch(url)).blob(); zip.file(`${r.code}.png`, data);} }
         const blob=await zip.generateAsync({type:'blob'}); saveAs(blob, type==='cards'? 'cards.zip':'qrs.zip'); }
@@ -278,7 +279,7 @@
         $('#btnExportCsv').addEventListener('click', exportCSV);
         ['eventName','countryCode','baseUrl','channel','msgLang','msgTemplate'].forEach(id=>{ $('#'+id).addEventListener('input', ()=> render()); });
         // card
-        $('#cardImage').addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(f){ const img=new Image(); img.onload=()=>{ state.cardImg=img; alert('تم تحميل صورة الكرت'); }; img.src=URL.createObjectURL(f); } });
+        $('#cardImage').addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(f){ const img=new Image(); img.onload=()=>{ state.cardImg=img; alert('تم تحميل صورة الكرت — سيتم استخدامها للكل'); }; img.src=URL.createObjectURL(f); } });
         $('#btnPreviewCard').addEventListener('click', async()=>{ const sample=(state.rows[0]?.code||'SAMPLE_001'); await drawCard($('#preview'), sample); const url=$('#preview').toDataURL('image/png'); window.open(url,'_blank'); });
         $('#btnZipCards').addEventListener('click', ()=> zipAll('cards'));
         $('#btnZipQrs').addEventListener('click', ()=> zipAll('qrs'));
