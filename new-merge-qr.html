@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — دمج الباركود مع كرت الدعوة</title>
+  <title>Hormez — دمج الباركود مع كرت الدعوة (Drag & Drop)</title>
   <style>
     :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155}
     html,body{height:100%}
@@ -17,7 +17,7 @@
     .btn:disabled{opacity:.5;cursor:not-allowed}
     .input,.select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
     label{font-size:12px;color:var(--muted)}
-    #preview{width:100%;background:#0b1220;border-radius:12px;display:block;max-height:70vh;cursor:grab;touch-action:none}
+    #preview{width:100%;background:#0b1220;border-radius:12px;display:block;max-height:75vh;cursor:grab;touch-action:none}
     #preview.dragging{cursor:grabbing}
     .muted{color:var(--muted)}
   </style>
@@ -25,7 +25,7 @@
 <body>
   <div class="container">
     <div class="row" style="align-items:center;margin-bottom:8px">
-      <div style="font-weight:800">🧩 دمج الباركود مع كرت الدعوة</div>
+      <div style="font-weight:800">🧩 دمج الباركود مع كرت الدعوة — سحب لتحديد الموضع</div>
       <button id="langBtn" class="btn" style="margin-inline-start:auto">AR</button>
     </div>
 
@@ -40,7 +40,7 @@
         </div>
         <div class="row">
           <div style="flex:1">
-            <label id="lblEvent">اسم الحدث (لجلب الأكواد من Firestore اختياري)</label>
+            <label id="lblEvent">اسم الحدث (اختياري — Firestore)</label>
             <input id="eventName" class="input" placeholder="مثال: زفاف سعيد" />
           </div>
         </div>
@@ -102,7 +102,7 @@
           <button id="btnTest" class="btn">تجربة على معاينة</button>
           <button id="btnDownload" class="btn">إنشاء و تنزيل ZIP</button>
         </div>
-        <div class="muted" id="hint">نصيحة: اسحب مربع QR مباشرة على المعاينة لتحديد المكان (يمكن أيضاً تعديل X/Y). بالتصدير تُستخدم نفس القيم.</div>
+        <div class="muted" id="hint">اسحب مربع الـQR مباشرة فوق المعاينة لتحديد المكان (X/Y تتحدّث تلقائيًا). بالتصدير تُستخدم نفس القيم.</div>
       </div>
 
       <!-- Preview -->
@@ -125,8 +125,8 @@
     (function(){
       const $=(s,root=document)=>root.querySelector(s);
       const STR={
-        ar:{tpl:'ملف الكرت (PNG/JPG)',event:'اسم الحدث',prefix:'بادئة الكود',start:'بداية',count:'عدد الأكواد',pad:'أرقام',list:'قائمة أكواد (اختياري — كل كود بسطر)',load:'جلب من Firestore',useGen:'استخدام التسلسل',size:'حجم QR',posx:'موضع X',posy:'موضع Y',font:'حجم الخط',toff:'ازاحة النص',test:'تجربة على معاينة',zip:'إنشاء و تنزيل ZIP',hint:'Tip: drag the QR on preview.',needTpl:'حمّل صورة الكرت أولاً',fetched:'تم جلب الأكواد',noCodes:'لا توجد أكواد',AR:'AR',EN:'EN'},
-        en:{tpl:'Card file (PNG/JPG)',event:'Event name',prefix:'Code prefix',start:'Start',count:'Count',pad:'Digits',list:'Codes list (optional — one per line)',load:'Load from Firestore',useGen:'Use sequential',size:'QR size',posx:'Pos X',posy:'Pos Y',font:'Font size',toff:'Text offset',test:'Test on preview',zip:'Generate & download ZIP',hint:'Tip: drag the QR on preview.',needTpl:'Upload card image first',fetched:'Codes fetched',noCodes:'No codes found',AR:'AR',EN:'EN'}
+        ar:{tpl:'ملف الكرت (PNG/JPG)',event:'اسم الحدث',prefix:'بادئة الكود',start:'بداية',count:'عدد الأكواد',pad:'أرقام',list:'قائمة أكواد (اختياري — كل كود بسطر)',load:'جلب من Firestore',useGen:'استخدام التسلسل',size:'حجم QR',posx:'موضع X',posy:'موضع Y',font:'حجم الخط',toff:'ازاحة النص',test:'تجربة على معاينة',zip:'إنشاء و تنزيل ZIP',hint:'اسحب الـQR على المعاينة',needTpl:'حمّل صورة الكرت أولاً',fetched:'تم جلب الأكواد',noCodes:'لا توجد أكواد',AR:'AR',EN:'EN'},
+        en:{tpl:'Card file (PNG/JPG)',event:'Event name',prefix:'Code prefix',start:'Start',count:'Count',pad:'Digits',list:'Codes list (optional — one per line)',load:'Load from Firestore',useGen:'Use sequential',size:'QR size',posx:'Pos X',posy:'Pos Y',font:'Font size',toff:'Text offset',test:'Test on preview',zip:'Generate & download ZIP',hint:'Drag QR on preview',needTpl:'Upload card image first',fetched:'Codes fetched',noCodes:'No codes found',AR:'AR',EN:'EN'}
       };
       let LANG=localStorage.getItem('hs:merge:lang')||'ar';
       function L(k){return (STR[LANG]||STR.ar)[k]||k}
@@ -155,19 +155,18 @@
 
       async function drawOneToCanvas(canvas, img, code, highlight=true){ const ctx=canvas.getContext('2d'); const w=img.naturalWidth, h=img.naturalHeight; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
         const size=parseInt($('#qrSize').value||'300',10); let x=parseInt($('#posX').value||'0',10); let y=parseInt($('#posY').value||'0',10);
-        // bounds
+        // bounds and reflect
         x = clamp(x, 0, Math.max(0,w-size)); y = clamp(y, 0, Math.max(0,h-size)); $('#posX').value = x; $('#posY').value = y;
-        // Make QR onto temp div then draw
+        // Generate QR to temp canvas
         const holder=document.createElement('div'); holder.style.position='fixed'; holder.style.left='-9999px'; document.body.appendChild(holder);
         const qr=new QRCode(holder,{text: code, width:size, height:size, correctLevel: QRCode.CorrectLevel.M});
         await new Promise(r=>setTimeout(r,16));
         const qrCanvas = holder.querySelector('canvas'); if(qrCanvas){ ctx.drawImage(qrCanvas, x, y, size, size); }
         document.body.removeChild(holder);
-        // Text below QR (centered)
+        // Text under QR
         const fontSize=parseInt($('#fontSize').value||'36',10); const toff=parseInt($('#textOffset').value||'20',10);
         ctx.fillStyle='#ffffff'; ctx.font=`bold ${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace`; ctx.textAlign='center'; ctx.textBaseline='top';
         ctx.fillText(code, x + size/2, y + size + toff);
-        // Highlight rectangle for drag UX
         if(highlight){ ctx.save(); ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.setLineDash([10,6]); ctx.lineWidth=2; ctx.strokeRect(x-2, y-2, size+4, size+4); ctx.restore(); }
       }
 
@@ -185,7 +184,7 @@
       // ========= Dragging =========
       const drag={active:false, dx:0, dy:0};
       function startDrag(evt){ if(!templateImg) return; const canvas=$('#preview'); const pt=getCanvasPoint(evt, canvas); const x=parseInt($('#posX').value||'0',10); const y=parseInt($('#posY').value||'0',10); drag.active=true; drag.dx = pt.x - x; drag.dy = pt.y - y; canvas.classList.add('dragging'); evt.preventDefault(); }
-      function moveDrag(evt){ if(!drag.active) return; const canvas=$('#preview'); const pt=getCanvasPoint(evt, canvas); const size=parseInt($('#qrSize').value||'300',10); let newX = Math.round(pt.x - drag.dx); let newY = Math.round(pt.y - drag.dy); newX = clamp(newX, 0, Math.max(0, canvas.width - size)); newY = clamp(newY, 0, Math.max(0, canvas.height - size)); $('#posX').value=newX; $('#posY').value=newY; drawOneToCanvas(canvas, templateImg, (codes[0]||genSeq()[0]), true); }
+      function moveDrag(evt){ if(!drag.active) return; const canvas=$('#preview'); const pt=getCanvasPoint(evt, canvas); const size=parseInt($('#qrSize').value||'300',10); let newX = Math.round(pt.x - drag.dx); let newY = Math.round(pt.y - drag.dy); newX = clamp(newX, 0, Math.max(0, canvas.width - size)); newY = clamp(newY, 0, Math.max(0, canvas.height - size)); $('#posX').value=newX; $('#posY').value=newY; drawOneToCanvas(canvas, templateImg, (codes[0]||genSeq()[0]), true); evt.preventDefault(); }
       function endDrag(){ if(!drag.active) return; drag.active=false; $('#preview').classList.remove('dragging'); }
 
       // WIRE
@@ -194,7 +193,7 @@
         $('#langBtn').addEventListener('click', ()=>{ LANG = (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:merge:lang',LANG); applyLang(); });
         $('#templateFile').addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(f){ templateImg = await loadTemplate(f); await doPreview(); } });
         $('#btnLoadFirestore').addEventListener('click', fetchFromFirestore);
-        $('#btnUseGenerated').addEventListener('click', ()=>{ codes = genSeq(); alert(`${codes.length} codes ready`); });
+        $('#btnUseGenerated').addEventListener('click', ()=>{ codes = genSeq(); alert(`${codes.length} codes ready`); doPreview(); });
         $('#btnTest').addEventListener('click', doPreview);
         $('#btnDownload').addEventListener('click', buildZip);
         // react to numeric inputs too
