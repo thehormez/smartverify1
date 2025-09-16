@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hormez — إرسال الدعوات عبر واتساب/SMS</title>
+  <style>
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--card:#0e172a}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    .container{max-width:1200px;margin:0 auto;padding:16px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .grid{display:grid;gap:12px}
+    @media(min-width:980px){.grid-2{grid-template-columns:380px 1fr}}
+    .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn:hover{background:#0d1528}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .select,.input,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
+    label{font-size:12px;color:var(--muted)}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-top:1px solid rgba(255,255,255,.08)}
+    thead th{position:sticky;top:0;background:#0e162c}
+    .status-badge{padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:12px}
+    .ok{color:#86efac;border-color:#16a34a} .warn{color:#fbbf24;border-color:#f59e0b} .err{color:#fca5a5;border-color:#ef4444}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row" style="margin-bottom:8px">
+      <div style="font-weight:800">📨 إرسال الدعوات للضيوف</div>
+      <div style="margin-inline-start:auto" class="row">
+        <button id="langBtn" class="btn">AR</button>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <!-- Left controls -->
+      <div class="card">
+        <div class="row">
+          <div style="flex:1">
+            <label id="lblEvent">اسم الحدث</label>
+            <input id="eventName" class="input" placeholder="مثال: زفاف سعيد" />
+          </div>
+          <div style="width:130px">
+            <label id="lblCountry">رمز الدولة</label>
+            <input id="countryCode" class="input" value="+966" />
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label id="lblBaseUrl">رابط الدعوة (يُضاف له الكود)</label>
+            <input id="baseUrl" class="input" placeholder="https://example.com/invite?code=" />
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label id="lblChannel">قناة الإرسال</label>
+            <select id="channel" class="select">
+              <option value="whatsapp">WhatsApp</option>
+              <option value="sms">SMS</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <label id="lblLang">لغة الرسالة</label>
+            <select id="msgLang" class="select">
+              <option value="ar">العربية</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label id="lblTemplate">قالب الرسالة</label>
+            <textarea id="msgTemplate" rows="6" class="input" placeholder="{name}، يسعدنا دعوتك لحضور {event}. كودك: {code}\nالرابط: {link}"></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label id="lblCsv">قائمة الضيوف (CSV: name, phone, code)</label>
+            <input id="csvFile" type="file" accept=".csv" class="input" />
+          </div>
+        </div>
+        <div class="row">
+          <button id="btnFetch" class="btn">جلب من Firestore</button>
+          <button id="btnAddRow" class="btn">إضافة ضيف</button>
+          <button id="btnClear" class="btn">مسح القائمة</button>
+        </div>
+        <div class="row">
+          <button id="btnSendAll" class="btn">إرسال للكل (على دفعات)</button>
+          <button id="btnExportCsv" class="btn">تصدير CSV بالحالات</button>
+        </div>
+        <div class="muted" id="hint">ملاحظة: الإرسال يتم عبر فتح روابط WhatsApp/SMS بجهازك. المتصفحات قد تمنع فتح نوافذ كثيرة، لذلك نرسل على دفعات صغيرة.</div>
+      </div>
+
+      <!-- Right table -->
+      <div class="card">
+        <div class="row" style="margin-bottom:6px"><span class="muted">القائمة</span><span id="countBadge" class="muted" style="margin-inline-start:auto">0 ضيف</span></div>
+        <div style="max-height:65vh;overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>الجوال</th>
+                <th>الكود</th>
+                <th>المعاينة</th>
+                <th>الحالة</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+  <script>
+    (function(){
+      const $=(s,root=document)=>root.querySelector(s);
+      const STR={
+        ar:{title:'إرسال الدعوات للضيوف',event:'اسم الحدث',cc:'رمز الدولة',base:'رابط الدعوة',channel:'قناة الإرسال',lang:'لغة الرسالة',tpl:'قالب الرسالة',csv:'قائمة الضيوف (CSV: name, phone, code)',fetch:'جلب من Firestore',add:'إضافة ضيف',clear:'مسح القائمة',sendAll:'إرسال للكل (دفعات)',export:'تصدير CSV بالحالات',whatsapp:'واتساب',sms:'SMS',hint:'الإرسال يتم عبر روابط واتساب/SMS، وقد يقيّد المتصفح فتح نوافذ كثيرة.',sent:'تم الإرسال',failed:'فشل',pending:'جاهز',preview:'المعاينة',send:'إرسال',remove:'حذف'},
+        en:{title:'Send invites to guests',event:'Event name',cc:'Country code',base:'Invite link',channel:'Channel',lang:'Message language',tpl:'Message template',csv:'Guests CSV (name, phone, code)',fetch:'Fetch from Firestore',add:'Add guest',clear:'Clear list',sendAll:'Send to all (batches)',export:'Export CSV with status',whatsapp:'WhatsApp',sms:'SMS',hint:'Sending via WhatsApp/SMS links. Browser may block too many popups.',sent:'Sent',failed:'Failed',pending:'Ready',preview:'Preview',send:'Send',remove:'Delete'}
+      };
+      let LANG=localStorage.getItem('hs:send:lang')||'ar';
+      function L(k){return (STR[LANG]||STR.ar)[k]||k}
+      function applyLang(){ document.documentElement.lang=LANG; document.documentElement.dir=(LANG==='ar')?'rtl':'ltr'; $('#langBtn').textContent=(LANG==='ar')?'EN':'AR'; $('#lblEvent').textContent=L('event'); $('#lblCountry').textContent=L('cc'); $('#lblBaseUrl').textContent=L('base'); $('#lblChannel').textContent=L('channel'); $('#lblLang').textContent=L('lang'); $('#lblTemplate').textContent=L('tpl'); $('#lblCsv').textContent=L('csv'); $('#btnFetch').textContent=L('fetch'); $('#btnAddRow').textContent=L('add'); $('#btnClear').textContent=L('clear'); $('#btnSendAll').textContent=L('sendAll'); $('#btnExportCsv').textContent=L('export'); $('#hint').textContent=L('hint'); document.title = `Hormez — ${L('title')}`; }
+
+      const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
+      try{ if(!firebase.apps.length){firebase.initializeApp(cfg);} }catch{}
+      const db=(()=>{ try{return firebase.firestore();}catch{return null} })();
+
+      const state={ rows:[] };
+      function normalizePhone(p, cc){ p = String(p||'').replace(/[^\d+]/g,''); if(p.startsWith('0')) p = p.replace(/^0+/, ''); if(!p.startsWith('+')) p = (cc||'') + p; return p; }
+      function buildLink(code){ const base = ($('#baseUrl').value||'').trim(); const u = base.includes('?')? base + '&code=' + encodeURIComponent(code) : base + (base.endsWith('=')? '' : '?code=') + encodeURIComponent(code); return u; }
+      function render(){ const tb=$('#rows'); tb.innerHTML=''; $('#countBadge').textContent= state.rows.length + (LANG==='ar'? ' ضيف':' guests'); state.rows.forEach((r,i)=>{
+          const tr=document.createElement('tr');
+          tr.innerHTML=`<td contenteditable="true">${r.name||''}</td>
+                         <td contenteditable="true" class="mono">${r.phone||''}</td>
+                         <td contenteditable="true" class="mono">${r.code||''}</td>
+                         <td class="mono">${previewMsg(r).replace(/</g,'&lt;')}</td>
+                         <td><span class="status-badge ${r.status==='sent'?'ok':(r.status==='failed'?'err':'warn')}">${r.status||L('pending')}</span></td>
+                         <td><button class="btn" data-idx="${i}">${L('send')}</button> <button class="btn" data-del="${i}">${L('remove')}</button></td>`;
+          tb.appendChild(tr);
+        });
+        // actions
+        tb.querySelectorAll('button[data-idx]').forEach(b=> b.addEventListener('click', ()=> sendOne(parseInt(b.getAttribute('data-idx'),10))));
+        tb.querySelectorAll('button[data-del]').forEach(b=> b.addEventListener('click', ()=> { const j=parseInt(b.getAttribute('data-del'),10); state.rows.splice(j,1); render(); }));
+        // sync edits
+        tb.querySelectorAll('td[contenteditable]').forEach((cell,ci)=>{
+          cell.addEventListener('blur', ()=>{ const rowIndex = [...cell.parentElement.parentElement.children].indexOf(cell.parentElement); const cols=[ 'name','phone','code' ]; const colIndex = [...cell.parentElement.children].indexOf(cell); if(colIndex<3){ state.rows[rowIndex][cols[colIndex]] = cell.textContent.trim(); render(); } });
+        });
+      }
+
+      function tmpl(lang){
+        const ar = `{name}، يسعدنا دعوتك لحضور {event}.\nكودك: {code}\nالرابط: {link}`;
+        const en = `Dear {name}, you're invited to {event}.\nYour code: {code}\nLink: {link}`;
+        const cur = ($('#msgTemplate').value||'').trim();
+        if(cur) return cur; return lang==='ar'? ar: en;
+      }
+      function previewMsg(r){ const link=buildLink(r.code); const t=tmpl($('#msgLang').value); return t.replaceAll('{name}', r.name||'').replaceAll('{event}', $('#eventName').value||'').replaceAll('{code}', r.code||'').replaceAll('{link}', link); }
+
+      function openWhatsApp(phone, text){ const url = `https://wa.me/${phone.replace(/[^\d]/g,'')}?text=${encodeURIComponent(text)}`; window.open(url, '_blank'); }
+      function openSMS(phone, text){ const url = `sms:${encodeURIComponent(phone)}?&body=${encodeURIComponent(text)}`; window.open(url, '_blank'); }
+
+      async function sendOne(idx){ const r=state.rows[idx]; if(!r) return; const phone = normalizePhone(r.phone, $('#countryCode').value); const text = previewMsg(r); try{
+          if(($('#channel').value)==='whatsapp'){ openWhatsApp(phone, text); } else { openSMS(phone, text); }
+          state.rows[idx].status='sent';
+          // Optional Firestore log
+          try{ if(db){ await db.collection('invites').doc(r.code).set({ sentAt: firebase.firestore.FieldValue.serverTimestamp(), sentTo: phone }, { merge:true }); } }catch{}
+        }catch(e){ state.rows[idx].status='failed'; }
+        render();
+      }
+
+      async function sendAll(){ let i=0; const batch=5; const delay=1200; async function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+        while(i < state.rows.length){ const end=Math.min(i+batch, state.rows.length); for(let j=i;j<end;j++){ await sendOne(j); } i=end; await sleep(delay); }
+      }
+
+      function loadCSVFile(file){ Papa.parse(file,{header:true,skipEmptyLines:true,complete: (res)=>{ const rows=[]; res.data.forEach(x=>{ rows.push({ name: x.name||x.Name||'', phone: x.phone||x.Phone||'', code: x.code||x.Code||'' , status:'ready' }); }); state.rows=rows; render(); }}); }
+
+      async function fetchFromFirestore(){ if(!db){ alert('Firestore غير متاح'); return; } const ev=$('#eventName').value.trim(); if(!ev){ alert('اكتب اسم الحدث'); return; } try{ const snap=await db.collection('invites').where('EventName','==',ev).get(); const arr=[]; snap.forEach(d=>{ const x=d.data()||{}; arr.push({ name: x.Name||'', phone: x.Phone||'', code: x.Code||d.id, status:'ready' }); }); state.rows=arr; render(); }catch(e){ alert(e.message); }
+      }
+
+      function exportCSV(){ const lines=['name,phone,code,status']; state.rows.forEach(r=>{ lines.push([r.name,r.phone,r.code,r.status||''].join(',')); }); const blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='invite-send-status.csv'; a.click(); URL.revokeObjectURL(url); }
+
+      // Wire
+      document.addEventListener('DOMContentLoaded', ()=>{
+        applyLang();
+        $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:send:lang',LANG); applyLang(); render(); });
+        $('#csvFile').addEventListener('change', (e)=>{ const f=e.target.files?.[0]; if(f) loadCSVFile(f); });
+        $('#btnFetch').addEventListener('click', fetchFromFirestore);
+        $('#btnAddRow').addEventListener('click', ()=>{ state.rows.unshift({name:'',phone:'',code:'',status:'ready'}); render(); });
+        $('#btnClear').addEventListener('click', ()=>{ state.rows=[]; render(); });
+        $('#btnSendAll').addEventListener('click', sendAll);
+        $('#btnExportCsv').addEventListener('click', exportCSV);
+        ['eventName','countryCode','baseUrl','channel','msgLang','msgTemplate'].forEach(id=>{ $('#'+id).addEventListener('input', ()=> render()); });
+      });
+    })();
+  </script>
+</body>
+</html>
