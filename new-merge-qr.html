@@ -17,7 +17,8 @@
     .btn:disabled{opacity:.5;cursor:not-allowed}
     .input,.select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
     label{font-size:12px;color:var(--muted)}
-    #preview{width:100%;background:#0b1220;border-radius:12px;display:block;max-height:70vh}
+    #preview{width:100%;background:#0b1220;border-radius:12px;display:block;max-height:70vh;cursor:grab;touch-action:none}
+    #preview.dragging{cursor:grabbing}
     .muted{color:var(--muted)}
   </style>
 </head>
@@ -101,7 +102,7 @@
           <button id="btnTest" class="btn">تجربة على معاينة</button>
           <button id="btnDownload" class="btn">إنشاء و تنزيل ZIP</button>
         </div>
-        <div class="muted" id="hint">نصيحة: عدّل الموضع والحجم حتى تتناسق مع تصميم الكرت.</div>
+        <div class="muted" id="hint">نصيحة: اسحب مربع QR مباشرة على المعاينة لتحديد المكان (يمكن أيضاً تعديل X/Y). بالتصدير تُستخدم نفس القيم.</div>
       </div>
 
       <!-- Preview -->
@@ -124,8 +125,8 @@
     (function(){
       const $=(s,root=document)=>root.querySelector(s);
       const STR={
-        ar:{tpl:'ملف الكرت (PNG/JPG)',event:'اسم الحدث',prefix:'بادئة الكود',start:'بداية',count:'عدد الأكواد',pad:'أرقام',list:'قائمة أكواد (اختياري — كل كود بسطر)',load:'جلب من Firestore',useGen:'استخدام التسلسل',size:'حجم QR',posx:'موضع X',posy:'موضع Y',font:'حجم الخط',toff:'ازاحة النص',test:'تجربة على معاينة',zip:'إنشاء و تنزيل ZIP',hint:'نصيحة: عدّل الموضع والحجم حتى تتناسق مع تصميم الكرت.',needTpl:'حمّل صورة الكرت أولاً',fetched:'تم جلب الأكواد',noCodes:'لا توجد أكواد',AR:'AR',EN:'EN'},
-        en:{tpl:'Card file (PNG/JPG)',event:'Event name',prefix:'Code prefix',start:'Start',count:'Count',pad:'Digits',list:'Codes list (optional — one per line)',load:'Load from Firestore',useGen:'Use sequential',size:'QR size',posx:'Pos X',posy:'Pos Y',font:'Font size',toff:'Text offset',test:'Test on preview',zip:'Generate & download ZIP',hint:'Tip: adjust size/position to fit your card design.',needTpl:'Upload card image first',fetched:'Codes fetched',noCodes:'No codes found',AR:'AR',EN:'EN'}
+        ar:{tpl:'ملف الكرت (PNG/JPG)',event:'اسم الحدث',prefix:'بادئة الكود',start:'بداية',count:'عدد الأكواد',pad:'أرقام',list:'قائمة أكواد (اختياري — كل كود بسطر)',load:'جلب من Firestore',useGen:'استخدام التسلسل',size:'حجم QR',posx:'موضع X',posy:'موضع Y',font:'حجم الخط',toff:'ازاحة النص',test:'تجربة على معاينة',zip:'إنشاء و تنزيل ZIP',hint:'Tip: drag the QR on preview.',needTpl:'حمّل صورة الكرت أولاً',fetched:'تم جلب الأكواد',noCodes:'لا توجد أكواد',AR:'AR',EN:'EN'},
+        en:{tpl:'Card file (PNG/JPG)',event:'Event name',prefix:'Code prefix',start:'Start',count:'Count',pad:'Digits',list:'Codes list (optional — one per line)',load:'Load from Firestore',useGen:'Use sequential',size:'QR size',posx:'Pos X',posy:'Pos Y',font:'Font size',toff:'Text offset',test:'Test on preview',zip:'Generate & download ZIP',hint:'Tip: drag the QR on preview.',needTpl:'Upload card image first',fetched:'Codes fetched',noCodes:'No codes found',AR:'AR',EN:'EN'}
       };
       let LANG=localStorage.getItem('hs:merge:lang')||'ar';
       function L(k){return (STR[LANG]||STR.ar)[k]||k}
@@ -148,33 +149,44 @@
 
       function useManualOrSeq(){ const t=($('#manualList').value||'').split(/\n+/).map(s=>s.trim()).filter(Boolean); codes = t.length? t : genSeq(); alert(`${codes.length} codes ready`); }
 
-      // Draw one
-      async function drawOneToCanvas(canvas, img, code){ const ctx=canvas.getContext('2d'); const w=img.naturalWidth, h=img.naturalHeight; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
-        const size=parseInt($('#qrSize').value||'300',10); const x=parseInt($('#posX').value||'0',10); const y=parseInt($('#posY').value||'0',10);
+      // ========= Drawing =========
+      function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+      function getCanvasPoint(evt, canvas){ const rect=canvas.getBoundingClientRect(); const isTouch=evt.touches&&evt.touches.length; const cx=isTouch? evt.touches[0].clientX : (evt.clientX??0); const cy=isTouch? evt.touches[0].clientY : (evt.clientY??0); const x = (cx - rect.left) * (canvas.width / rect.width); const y = (cy - rect.top) * (canvas.height / rect.height); return {x,y}; }
+
+      async function drawOneToCanvas(canvas, img, code, highlight=true){ const ctx=canvas.getContext('2d'); const w=img.naturalWidth, h=img.naturalHeight; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+        const size=parseInt($('#qrSize').value||'300',10); let x=parseInt($('#posX').value||'0',10); let y=parseInt($('#posY').value||'0',10);
+        // bounds
+        x = clamp(x, 0, Math.max(0,w-size)); y = clamp(y, 0, Math.max(0,h-size)); $('#posX').value = x; $('#posY').value = y;
         // Make QR onto temp div then draw
         const holder=document.createElement('div'); holder.style.position='fixed'; holder.style.left='-9999px'; document.body.appendChild(holder);
         const qr=new QRCode(holder,{text: code, width:size, height:size, correctLevel: QRCode.CorrectLevel.M});
-        await new Promise(r=>setTimeout(r,20)); // allow render
-        const qrCanvas = holder.querySelector('canvas');
-        if(qrCanvas){ ctx.drawImage(qrCanvas, x, y, size, size); }
+        await new Promise(r=>setTimeout(r,16));
+        const qrCanvas = holder.querySelector('canvas'); if(qrCanvas){ ctx.drawImage(qrCanvas, x, y, size, size); }
         document.body.removeChild(holder);
-        // Text below QR (centered under QR)
+        // Text below QR (centered)
         const fontSize=parseInt($('#fontSize').value||'36',10); const toff=parseInt($('#textOffset').value||'20',10);
         ctx.fillStyle='#ffffff'; ctx.font=`bold ${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace`; ctx.textAlign='center'; ctx.textBaseline='top';
         ctx.fillText(code, x + size/2, y + size + toff);
+        // Highlight rectangle for drag UX
+        if(highlight){ ctx.save(); ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.setLineDash([10,6]); ctx.lineWidth=2; ctx.strokeRect(x-2, y-2, size+4, size+4); ctx.restore(); }
       }
 
-      // Preview
-      async function doPreview(){ if(!templateImg){ alert(L('needTpl')); return; } await drawOneToCanvas($('#preview'), templateImg, (codes[0]||genSeq()[0])); }
+      async function doPreview(){ if(!templateImg){ alert(L('needTpl')); return; } const sample=(codes[0]||genSeq()[0]); await drawOneToCanvas($('#preview'), templateImg, sample, true); }
 
       function dataURLToBlob(dataURL){ const parts=dataURL.split(','); const bstr=atob(parts[1]); let n=bstr.length; const u8=new Uint8Array(n); while(n--){ u8[n]=bstr.charCodeAt(n); } return new Blob([u8],{type:'image/png'}); }
 
       async function buildZip(){ if(!templateImg){ alert(L('needTpl')); return; } if(!codes.length){ useManualOrSeq(); }
         const zip=new JSZip(); const canvas=document.createElement('canvas'); const folder=zip.folder('cards');
         for(let i=0;i<codes.length;i++){
-          const c=codes[i]; await drawOneToCanvas(canvas, templateImg, c); const url=canvas.toDataURL('image/png'); const blob=dataURLToBlob(url); folder.file(`${c}.png`, blob);
+          const c=codes[i]; await drawOneToCanvas(canvas, templateImg, c, false); const url=canvas.toDataURL('image/png'); const blob=dataURLToBlob(url); folder.file(`${c}.png`, blob);
         }
         const content=await zip.generateAsync({type:'blob'}); saveAs(content, 'cards-with-qr.zip'); }
+
+      // ========= Dragging =========
+      const drag={active:false, dx:0, dy:0};
+      function startDrag(evt){ if(!templateImg) return; const canvas=$('#preview'); const pt=getCanvasPoint(evt, canvas); const x=parseInt($('#posX').value||'0',10); const y=parseInt($('#posY').value||'0',10); drag.active=true; drag.dx = pt.x - x; drag.dy = pt.y - y; canvas.classList.add('dragging'); evt.preventDefault(); }
+      function moveDrag(evt){ if(!drag.active) return; const canvas=$('#preview'); const pt=getCanvasPoint(evt, canvas); const size=parseInt($('#qrSize').value||'300',10); let newX = Math.round(pt.x - drag.dx); let newY = Math.round(pt.y - drag.dy); newX = clamp(newX, 0, Math.max(0, canvas.width - size)); newY = clamp(newY, 0, Math.max(0, canvas.height - size)); $('#posX').value=newX; $('#posY').value=newY; drawOneToCanvas(canvas, templateImg, (codes[0]||genSeq()[0]), true); }
+      function endDrag(){ if(!drag.active) return; drag.active=false; $('#preview').classList.remove('dragging'); }
 
       // WIRE
       document.addEventListener('DOMContentLoaded', ()=>{
@@ -185,6 +197,18 @@
         $('#btnUseGenerated').addEventListener('click', ()=>{ codes = genSeq(); alert(`${codes.length} codes ready`); });
         $('#btnTest').addEventListener('click', doPreview);
         $('#btnDownload').addEventListener('click', buildZip);
+        // react to numeric inputs too
+        ['qrSize','posX','posY','fontSize','textOffset'].forEach(id=>{ $('#'+id).addEventListener('input', ()=>{ if(templateImg) doPreview(); }); });
+        // Drag handlers (mouse + touch)
+        const c=$('#preview');
+        c.addEventListener('mousedown', startDrag);
+        c.addEventListener('mousemove', moveDrag);
+        c.addEventListener('mouseup', endDrag);
+        c.addEventListener('mouseleave', endDrag);
+        c.addEventListener('touchstart', startDrag, {passive:false});
+        c.addEventListener('touchmove', moveDrag, {passive:false});
+        c.addEventListener('touchend', endDrag);
+        c.addEventListener('touchcancel', endDrag);
       });
     })();
   </script>
