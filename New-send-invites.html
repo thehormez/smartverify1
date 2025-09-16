@@ -92,11 +92,13 @@
           <button id="btnClear" class="btn">مسح القائمة</button>
         </div>
         <hr style="border-color:rgba(255,255,255,.1)" />
+
+        <!-- صورة البطاقة للتوليد (اختياري للمعاينة/التوليد) -->
         <div class="row">
           <div style="flex:1">
-            <label>صورة كرت الدعوة (هذه هي البطاقة التي سترسل)</label>
+            <label>صورة كرت الدعوة (هذه تُستخدم فقط إذا أردت توليد بطاقة لكل ضيف)</label>
             <input id="cardImage" type="file" accept="image/png,image/jpeg" class="input" />
-            <div class="tiny">سنولّد نسخة شخصية (QR + الكود) لكل ضيف.</div>
+            <div class="tiny">عند عدم استخدامها، سنعتمد على الصور الجاهزة المرفوعة بالأسفل كما هي.</div>
           </div>
         </div>
         <div class="row">
@@ -139,11 +141,29 @@
             <input id="textColor" type="color" class="input" value="#ffffff" />
           </div>
         </div>
-        <div class="row" style="align-items:center">
-          <input id="attachImageLink" type="checkbox" />
-          <label for="attachImageLink">إرفاق <b>رابط البطاقة</b> داخل الرسالة (يرفع الصور تلقائيًا إلى Firebase Storage)</label>
+
+        <!-- اختيار صورة البطاقة المُرسلة كما هي -->
+        <div class="row" style="align-items:center"><b>اختيار صورة البطاقة المرسلة</b></div>
+        <div class="row" style="gap:12px">
+          <div style="flex:1">
+            <label>🔹 كرت الدعوة الأصلي (بدون أي تعديل)</label>
+            <input id="plainCardImage" type="file" accept="image/png,image/jpeg" class="input" />
+            <div class="row"><button id="btnUploadPlain" class="btn">رفع إلى التخزين</button><span id="plainStatus" class="tiny"></span></div>
+          </div>
+          <div style="flex:1">
+            <label>🔸 كرت مدمج بالـQR (من new-merge-qr.html)</label>
+            <input id="qrCardImage" type="file" accept="image/png,image/jpeg" class="input" />
+            <div class="row"><button id="btnUploadQRCard" class="btn">رفع إلى التخزين</button><span id="qrCardStatus" class="tiny"></span></div>
+          </div>
         </div>
-        <div class="tiny">تنبيه: واتساب/SMS عبر المتصفح لا يرسلان ملف الصورة تلقائيًا، لذلك نرفع البطاقة ونضع رابطها في الرسالة.</div>
+        <div class="row" style="align-items:center;gap:10px">
+          <label>سيتم إرسال: </label>
+          <label class="row"><input type="radio" name="imgMode" value="none" checked /> بدون صورة</label>
+          <label class="row"><input type="radio" name="imgMode" value="plain" /> رابط كرت الدعوة الأصلي</label>
+          <label class="row"><input type="radio" name="imgMode" value="qr" /> رابط كرت الـQR الجاهز</label>
+        </div>
+        <div class="tiny">ملاحظة: واتساب/SMS عبر المتصفح لا يرفقان الصورة مباشرة؛ لذلك نرفعها إلى Firebase Storage ونضيف <b>الرابط</b> داخل نص الرسالة.</div>
+
         <div class="row">
           <button id="btnPreviewCard" class="btn">معاينة بطاقة</button>
           <button id="btnZipCards" class="btn">تنزيل كل البطاقات (ZIP)</button>
@@ -198,6 +218,9 @@
       const db=(()=>{ try{return firebase.firestore();}catch{return null} })();
       const storage=(()=>{ try{return firebase.storage();}catch{return null} })();
 
+      // ملفات ورابط الصور المرفوعة كما هي
+      const uploaded = { plain: { file:null, url:'' }, qr: { file:null, url:'' } };
+
       const state={ rows:[], cardImg:null };
 
       function normalizePhone(p, cc){ p = String(p||'').replace(/[^\d+]/g,''); if(p.startsWith('0')) p = p.replace(/^0+/, ''); if(!p.startsWith('+')) p = (cc||'') + p; return p; }
@@ -222,7 +245,13 @@
         tb.querySelectorAll('td[contenteditable]').forEach((cell)=>{ cell.addEventListener('blur', ()=>{ const rowIndex = [...cell.parentElement.parentElement.children].indexOf(cell.parentElement); const colIndex = [...cell.parentElement.children].indexOf(cell); const cols=['name','phone','code']; if(colIndex<3){ state.rows[rowIndex][cols[colIndex]] = cell.textContent.trim(); render(); } }); });
       }
 
-      function tmpl(extra){ const ar = `{name}، يسعدنا دعوتك لحضور {event}.\nكودك: {code}\nالرابط: {link}\nالصورة: {image}`; const en = `Dear {name}, you're invited to {event}.\nYour code: {code}\nLink: {link}\nImage: {image}`; const cur = ($('#msgTemplate').value||'').trim(); const lang=$('#msgLang').value; const base = cur || (lang==='ar'? ar: en); return base.replaceAll('{image}', extra?.image||''); }
+      function tmpl(extra){
+        const ar = `{name}، يسعدنا دعوتك لحضور {event}.\nكودك: {code}\nالرابط: {link}\nالصورة: {image}`;
+        const en = `Dear {name}, you're invited to {event}.\nYour code: {code}\nLink: {link}\nImage: {image}`;
+        const cur = ($('#msgTemplate').value||'').trim();
+        const lang=$('#msgLang').value; const base = cur || (lang==='ar'? ar: en);
+        return base.replaceAll('{image}', (extra?.image)||'');
+      }
       function previewMsg(r, extra){ const link=buildLink(r.code); const t=tmpl(extra); return t.replaceAll('{name}', r.name||'').replaceAll('{event}', $('#eventName').value||'').replaceAll('{code}', r.code||'').replaceAll('{link}', link); }
 
       function openWhatsApp(phone, text){ const url = `https://wa.me/${phone.replace(/[^\d]/g,'')}?text=${encodeURIComponent(text)}`; window.open(url, '_blank'); }
@@ -240,15 +269,60 @@
       async function downloadQR(idx){ const r=state.rows[idx]; if(!r) return; const size=parseInt($('#qrSize').value||'300',10); const qr=makeQRCanvas(r.code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); const url=qr.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=`${r.code}.png`; a.click(); }
       async function downloadCard(idx){ const r=state.rows[idx]; if(!r) return; const canvas=$('#preview'); await drawCard(canvas, r.code); const url=canvas.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=`card-${r.code}.png`; a.click(); }
 
-      async function uploadCardAndGetURL(code){ if(!storage){ throw new Error('Firebase Storage غير مفعّل'); } const canvas=$('#preview'); await drawCard(canvas, code); const blob = await (await fetch(canvas.toDataURL('image/png'))).blob(); const ev=($('#eventName').value||'event').replace(/\s+/g,'_'); const ref = storage.ref().child(`invites/${ev}/${code}.png`); await ref.put(blob, { contentType: 'image/png', cacheControl:'public,max-age=31536000' }); const url = await ref.getDownloadURL(); return url; }
+      // رفع Blob وإرجاع URL
+      async function uploadBlobAndGetURL(path, blob){
+        if(!storage) throw new Error('Firebase Storage غير مفعّل');
+        const ref = storage.ref().child(path);
+        await ref.put(blob, { contentType: 'image/png', cacheControl:'public,max-age=31536000' });
+        return await ref.getDownloadURL();
+      }
+      // رفع ملف input كما هو
+      async function uploadFileInput(inputEl, which){
+        const f=inputEl.files?.[0];
+        if(!f){ alert('اختر ملفًا أولًا'); return ''; }
+        const ev=($('#eventName').value||'event').replace(/\s+/g,'_');
+        const path=`invites/${ev}/${which}.png`;
+        const url=await uploadBlobAndGetURL(path, f);
+        uploaded[which].file=f; uploaded[which].url=url;
+        return url;
+      }
 
-      async function sendOne(idx){ const r=state.rows[idx]; if(!r) return; const phone = normalizePhone(r.phone, $('#countryCode').value); let extra={}; try{
-          if($('#attachImageLink').checked){ if(!state.cardImg){ alert('ارفع صورة البطاقة أولاً لاستخدام رابط الصورة.'); throw new Error('no-card'); } const url = await uploadCardAndGetURL(r.code); extra.image = url; }
+      async function sendOne(idx){
+        const r=state.rows[idx]; if(!r) return;
+        const phone = normalizePhone(r.phone, $('#countryCode').value);
+        let extra={};
+        try{
+          const mode = (document.querySelector('input[name="imgMode"]:checked')||{}).value;
+          if(mode==='plain'){
+            if(!uploaded.plain.url){
+              if(!uploaded.plain.file){ alert('ارفع كرت الدعوة الأصلي أولًا'); throw new Error('no-plain'); }
+              const url=await uploadFileInput($('#plainCardImage'),'plain'); uploaded.plain.url=url;
+            }
+            extra.image = uploaded.plain.url;
+          } else if(mode==='qr'){
+            if(!uploaded.qr.url){
+              if(!uploaded.qr.file){ alert('ارفع كرت الـQR أولًا'); throw new Error('no-qr'); }
+              const url=await uploadFileInput($('#qrCardImage'),'qr'); uploaded.qr.url=url;
+            }
+            extra.image = uploaded.qr.url;
+          } else { extra.image=''; }
+
           const text = previewMsg(r, extra);
           if(($('#channel').value)==='whatsapp'){ openWhatsApp(phone, text); } else { openSMS(phone, text); }
           state.rows[idx].status='sent';
-          try{ if(db){ await db.collection('invites').doc(r.code).set({ sentAt: firebase.firestore.FieldValue.serverTimestamp(), sentTo: phone, sentImage: extra.image||null }, { merge:true }); } }catch{}
-        }catch(e){ state.rows[idx].status='failed'; }
+          try{
+            if(db){
+              await db.collection('invites').doc(r.code).set({
+                sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+                sentTo: phone,
+                imageMode: mode,
+                sentImage: extra.image||null
+              }, { merge:true });
+            }
+          }catch{}
+        }catch(e){
+          state.rows[idx].status='failed';
+        }
         render();
       }
 
@@ -278,11 +352,27 @@
         $('#btnSendAll').addEventListener('click', sendAll);
         $('#btnExportCsv').addEventListener('click', exportCSV);
         ['eventName','countryCode','baseUrl','channel','msgLang','msgTemplate'].forEach(id=>{ $('#'+id).addEventListener('input', ()=> render()); });
-        // card
-        $('#cardImage').addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(f){ const img=new Image(); img.onload=()=>{ state.cardImg=img; alert('تم تحميل صورة الكرت — سيتم استخدامها للكل'); }; img.src=URL.createObjectURL(f); } });
+
+        // توليد/معاينة عند الحاجة
+        $('#cardImage').addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(f){ const img=new Image(); img.onload=()=>{ state.cardImg=img; alert('تم تحميل صورة الكرت — للمعاينة/الجيل'); }; img.src=URL.createObjectURL(f); } });
         $('#btnPreviewCard').addEventListener('click', async()=>{ const sample=(state.rows[0]?.code||'SAMPLE_001'); await drawCard($('#preview'), sample); const url=$('#preview').toDataURL('image/png'); window.open(url,'_blank'); });
         $('#btnZipCards').addEventListener('click', ()=> zipAll('cards'));
         $('#btnZipQrs').addEventListener('click', ()=> zipAll('qrs'));
+
+        // رفع الكروت الجاهزة كما هي
+        $('#btnUploadPlain').addEventListener('click', async ()=>{
+          try{ $('#plainStatus').textContent='جارٍ الرفع...';
+               const url=await uploadFileInput($('#plainCardImage'),'plain');
+               $('#plainStatus').textContent='تم الرفع'; console.log('plain url',url);
+          }catch(e){ $('#plainStatus').textContent='خطأ'; }
+        });
+        $('#btnUploadQRCard').addEventListener('click', async ()=>{
+          try{ $('#qrCardStatus').textContent='جارٍ الرفع...';
+               const url=await uploadFileInput($('#qrCardImage'),'qr');
+               $('#qrCardStatus').textContent='تم الرفع'; console.log('qr url',url);
+          }catch(e){ $('#qrCardStatus').textContent='خطأ'; }
+        });
+
         render();
       });
     })();
