@@ -99,6 +99,22 @@
           </div>
         </div>
         <div class="row">
+          <div style="flex:1">
+            <label>لون الباركود</label>
+            <input id="qrColor" type="color" class="input" value="#000000" />
+          </div>
+          <div style="flex:1">
+            <label>لون الكتابة</label>
+            <input id="textColor" type="color" class="input" value="#ffffff" />
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label>لون الخلفية</label>
+            <input id="bgColor" type="color" class="input" value="#ffffff" />
+          </div>
+        </div>
+        <div class="row">
           <button id="btnTest" class="btn">تجربة على معاينة</button>
           <button id="btnDownload" class="btn">إنشاء و تنزيل ZIP</button>
         </div>
@@ -117,97 +133,39 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-  <!-- Firebase (optional for pulling codes) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
-
   <script>
     (function(){
       const $=(s,root=document)=>root.querySelector(s);
-      const STR={
-        ar:{tpl:'ملف الكرت (PNG/JPG)',event:'اسم الحدث',prefix:'بادئة الكود',start:'بداية',count:'عدد الأكواد',pad:'أرقام',list:'قائمة أكواد (اختياري — كل كود بسطر)',load:'جلب من Firestore',useGen:'استخدام التسلسل',size:'حجم QR',posx:'موضع X',posy:'موضع Y',font:'حجم الخط',toff:'ازاحة النص',test:'تجربة على معاينة',zip:'إنشاء و تنزيل ZIP',hint:'اسحب الـQR على المعاينة',needTpl:'حمّل صورة الكرت أولاً',fetched:'تم جلب الأكواد',noCodes:'لا توجد أكواد',AR:'AR',EN:'EN'},
-        en:{tpl:'Card file (PNG/JPG)',event:'Event name',prefix:'Code prefix',start:'Start',count:'Count',pad:'Digits',list:'Codes list (optional — one per line)',load:'Load from Firestore',useGen:'Use sequential',size:'QR size',posx:'Pos X',posy:'Pos Y',font:'Font size',toff:'Text offset',test:'Test on preview',zip:'Generate & download ZIP',hint:'Drag QR on preview',needTpl:'Upload card image first',fetched:'Codes fetched',noCodes:'No codes found',AR:'AR',EN:'EN'}
-      };
-      let LANG=localStorage.getItem('hs:merge:lang')||'ar';
-      function L(k){return (STR[LANG]||STR.ar)[k]||k}
-      function applyLang(){ document.documentElement.lang=LANG; document.documentElement.dir=(LANG==='ar')?'rtl':'ltr'; $('#langBtn').textContent=(LANG==='ar')?'EN':'AR'; $('#lblTemplate').textContent=L('tpl'); $('#lblEvent').textContent=L('event')+' (Firestore)'; $('#lblPrefix').textContent=L('prefix'); $('#lblStart').textContent=L('start'); $('#lblCount').textContent=L('count'); $('#lblPad').textContent=L('pad'); $('#lblManualList').textContent=L('list'); $('#btnLoadFirestore').textContent=L('load'); $('#btnUseGenerated').textContent=L('useGen'); $('#lblQrSize').textContent=L('size'); $('#lblPosX').textContent=L('posx'); $('#lblPosY').textContent=L('posy'); $('#lblFont').textContent=L('font'); $('#lblTextOffset').textContent=L('toff'); $('#btnTest').textContent=L('test'); $('#btnDownload').textContent=L('zip'); $('#hint').textContent=L('hint'); }
-
-      // Firebase (optional)
-      const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
-      try{ if(!firebase.apps.length){firebase.initializeApp(cfg);} }catch{}
-      const db=(()=>{ try{return firebase.firestore();}catch{return null} })();
-
-      // State
       let templateImg=null; let codes=[];
 
       function loadTemplate(file){ return new Promise((res,rej)=>{ const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=URL.createObjectURL(file); }); }
-
       function pad(n,width){ const s=String(n); return s.length>=width?s:('0'.repeat(width-s.length)+s); }
       function genSeq(){ const prefix=$('#codePrefix').value||'SA_'; const start=parseInt($('#startNum').value||'1',10); const count=parseInt($('#count').value||'1',10); const p=parseInt($('#pad').value||'3',10); const arr=[]; for(let i=0;i<count;i++){ arr.push(prefix+pad(start+i,p)); } return arr; }
 
-      async function fetchFromFirestore(){ if(!db){ alert('Firestore غير متاح في هذه الصفحة'); return; } const ev=$('#eventName').value.trim(); if(!ev){ alert('اكتب اسم الحدث'); return; } try{ const snap=await db.collection('invites').where('EventName','==',ev).get(); const arr=[]; snap.forEach(d=>{ const x=d.data()||{}; if(x.Code) arr.push(String(x.Code)); else arr.push(d.id); }); codes=arr; alert(arr.length? L('fetched')+` (${arr.length})` : L('noCodes')); }catch(e){ alert(e.message); } }
-
-      function useManualOrSeq(){ const t=($('#manualList').value||'').split(/\n+/).map(s=>s.trim()).filter(Boolean); codes = t.length? t : genSeq(); alert(`${codes.length} codes ready`); }
-
-      // ========= Drawing =========
-      function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-      function getCanvasPoint(evt, canvas){ const rect=canvas.getBoundingClientRect(); const isTouch=evt.touches&&evt.touches.length; const cx=isTouch? evt.touches[0].clientX : (evt.clientX??0); const cy=isTouch? evt.touches[0].clientY : (evt.clientY??0); const x = (cx - rect.left) * (canvas.width / rect.width); const y = (cy - rect.top) * (canvas.height / rect.height); return {x,y}; }
-
-      async function drawOneToCanvas(canvas, img, code, highlight=true){ const ctx=canvas.getContext('2d'); const w=img.naturalWidth, h=img.naturalHeight; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+      async function drawOneToCanvas(canvas, img, code, highlight=true){
+        const ctx=canvas.getContext('2d'); const w=img.naturalWidth, h=img.naturalHeight;
+        canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
         const size=parseInt($('#qrSize').value||'300',10); let x=parseInt($('#posX').value||'0',10); let y=parseInt($('#posY').value||'0',10);
-        // bounds and reflect
-        x = clamp(x, 0, Math.max(0,w-size)); y = clamp(y, 0, Math.max(0,h-size)); $('#posX').value = x; $('#posY').value = y;
-        // Generate QR to temp canvas
-        const holder=document.createElement('div'); holder.style.position='fixed'; holder.style.left='-9999px'; document.body.appendChild(holder);
-        const qr=new QRCode(holder,{text: code, width:size, height:size, correctLevel: QRCode.CorrectLevel.M});
-        await new Promise(r=>setTimeout(r,16));
-        const qrCanvas = holder.querySelector('canvas'); if(qrCanvas){ ctx.drawImage(qrCanvas, x, y, size, size); }
-        document.body.removeChild(holder);
-        // Text under QR
+        const qrColor=$('#qrColor').value||'#000000'; const textColor=$('#textColor').value||'#ffffff'; const bgColor=$('#bgColor').value||'#ffffff';
+        // generate QR
+        const qrCanvas=document.createElement('div');
+        new QRCode(qrCanvas,{text: code,width:size,height:size,colorDark:qrColor,colorLight:bgColor,correctLevel:QRCode.CorrectLevel.M});
+        await new Promise(r=>setTimeout(r,20));
+        const qrc=qrCanvas.querySelector('canvas')||qrCanvas;
+        ctx.drawImage(qrc,x,y,size,size);
+        // text
         const fontSize=parseInt($('#fontSize').value||'36',10); const toff=parseInt($('#textOffset').value||'20',10);
-        ctx.fillStyle='#ffffff'; ctx.font=`bold ${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace`; ctx.textAlign='center'; ctx.textBaseline='top';
-        ctx.fillText(code, x + size/2, y + size + toff);
-        if(highlight){ ctx.save(); ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.setLineDash([10,6]); ctx.lineWidth=2; ctx.strokeRect(x-2, y-2, size+4, size+4); ctx.restore(); }
-      }
+        ctx.fillStyle=textColor; ctx.font=`bold ${fontSize}px ui-monospace, monospace`; ctx.textAlign='center'; ctx.textBaseline='top';
+        ctx.fillText(code,x+size/2,y+size+toff);
+        if(highlight){ ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.setLineDash([10,6]); ctx.lineWidth=2; ctx.strokeRect(x-2,y-2,size+4,size+4);} }
 
-      async function doPreview(){ if(!templateImg){ alert(L('needTpl')); return; } const sample=(codes[0]||genSeq()[0]); await drawOneToCanvas($('#preview'), templateImg, sample, true); }
+      async function doPreview(){ if(!templateImg){alert('حمّل صورة الكرت أولاً');return;} const sample=(codes[0]||genSeq()[0]); await drawOneToCanvas($('#preview'),templateImg,sample,true);} 
 
-      function dataURLToBlob(dataURL){ const parts=dataURL.split(','); const bstr=atob(parts[1]); let n=bstr.length; const u8=new Uint8Array(n); while(n--){ u8[n]=bstr.charCodeAt(n); } return new Blob([u8],{type:'image/png'}); }
-
-      async function buildZip(){ if(!templateImg){ alert(L('needTpl')); return; } if(!codes.length){ useManualOrSeq(); }
-        const zip=new JSZip(); const canvas=document.createElement('canvas'); const folder=zip.folder('cards');
-        for(let i=0;i<codes.length;i++){
-          const c=codes[i]; await drawOneToCanvas(canvas, templateImg, c, false); const url=canvas.toDataURL('image/png'); const blob=dataURLToBlob(url); folder.file(`${c}.png`, blob);
-        }
-        const content=await zip.generateAsync({type:'blob'}); saveAs(content, 'cards-with-qr.zip'); }
-
-      // ========= Dragging =========
-      const drag={active:false, dx:0, dy:0};
-      function startDrag(evt){ if(!templateImg) return; const canvas=$('#preview'); const pt=getCanvasPoint(evt, canvas); const x=parseInt($('#posX').value||'0',10); const y=parseInt($('#posY').value||'0',10); drag.active=true; drag.dx = pt.x - x; drag.dy = pt.y - y; canvas.classList.add('dragging'); evt.preventDefault(); }
-      function moveDrag(evt){ if(!drag.active) return; const canvas=$('#preview'); const pt=getCanvasPoint(evt, canvas); const size=parseInt($('#qrSize').value||'300',10); let newX = Math.round(pt.x - drag.dx); let newY = Math.round(pt.y - drag.dy); newX = clamp(newX, 0, Math.max(0, canvas.width - size)); newY = clamp(newY, 0, Math.max(0, canvas.height - size)); $('#posX').value=newX; $('#posY').value=newY; drawOneToCanvas(canvas, templateImg, (codes[0]||genSeq()[0]), true); evt.preventDefault(); }
-      function endDrag(){ if(!drag.active) return; drag.active=false; $('#preview').classList.remove('dragging'); }
-
-      // WIRE
-      document.addEventListener('DOMContentLoaded', ()=>{
-        applyLang();
-        $('#langBtn').addEventListener('click', ()=>{ LANG = (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:merge:lang',LANG); applyLang(); });
-        $('#templateFile').addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(f){ templateImg = await loadTemplate(f); await doPreview(); } });
-        $('#btnLoadFirestore').addEventListener('click', fetchFromFirestore);
-        $('#btnUseGenerated').addEventListener('click', ()=>{ codes = genSeq(); alert(`${codes.length} codes ready`); doPreview(); });
-        $('#btnTest').addEventListener('click', doPreview);
-        $('#btnDownload').addEventListener('click', buildZip);
-        // react to numeric inputs too
-        ['qrSize','posX','posY','fontSize','textOffset'].forEach(id=>{ $('#'+id).addEventListener('input', ()=>{ if(templateImg) doPreview(); }); });
-        // Drag handlers (mouse + touch)
-        const c=$('#preview');
-        c.addEventListener('mousedown', startDrag);
-        c.addEventListener('mousemove', moveDrag);
-        c.addEventListener('mouseup', endDrag);
-        c.addEventListener('mouseleave', endDrag);
-        c.addEventListener('touchstart', startDrag, {passive:false});
-        c.addEventListener('touchmove', moveDrag, {passive:false});
-        c.addEventListener('touchend', endDrag);
-        c.addEventListener('touchcancel', endDrag);
+      document.addEventListener('DOMContentLoaded',()=>{
+        $('#templateFile').addEventListener('change',async e=>{const f=e.target.files?.[0]; if(f){templateImg=await loadTemplate(f); await doPreview();}});
+        $('#btnUseGenerated').addEventListener('click',()=>{codes=genSeq();alert(`${codes.length} codes ready`); doPreview();});
+        $('#btnTest').addEventListener('click',doPreview);
+        ['qrSize','posX','posY','fontSize','textOffset','qrColor','textColor','bgColor'].forEach(id=>{$('#'+id).addEventListener('input',()=>{if(templateImg)doPreview();});});
       });
     })();
   </script>
