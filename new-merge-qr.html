@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hormez — دمج الباركود مع كرت الدعوة</title>
+  <style>
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    .grid{display:grid;gap:12px}
+    @media(min-width:980px){.grid-2{grid-template-columns:360px 1fr}}
+    .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .input,.select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
+    label{font-size:12px;color:var(--muted)}
+    #preview{width:100%;background:#0b1220;border-radius:12px;display:block;max-height:70vh}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row" style="align-items:center;margin-bottom:8px">
+      <div style="font-weight:800">🧩 دمج الباركود مع كرت الدعوة</div>
+      <button id="langBtn" class="btn" style="margin-inline-start:auto">AR</button>
+    </div>
+
+    <div class="grid grid-2">
+      <!-- Controls -->
+      <div class="card">
+        <div class="row">
+          <div style="flex:1">
+            <label id="lblTemplate">ملف الكرت (PNG/JPG)</label>
+            <input id="templateFile" type="file" accept="image/png,image/jpeg" class="input" />
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label id="lblEvent">اسم الحدث (لجلب الأكواد من Firestore اختياري)</label>
+            <input id="eventName" class="input" placeholder="مثال: زفاف سعيد" />
+          </div>
+        </div>
+        <hr style="border-color:rgba(255,255,255,.08)"/>
+        <div class="row">
+          <div style="flex:1">
+            <label id="lblPrefix">بادئة الكود</label>
+            <input id="codePrefix" class="input" value="SA_" />
+          </div>
+          <div style="width:90px">
+            <label id="lblStart">بداية</label>
+            <input id="startNum" type="number" class="input" value="1" />
+          </div>
+          <div style="width:110px">
+            <label id="lblCount">عدد الأكواد</label>
+            <input id="count" type="number" class="input" value="50" />
+          </div>
+          <div style="width:90px">
+            <label id="lblPad">أرقام</label>
+            <input id="pad" type="number" class="input" value="3" />
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label id="lblManualList">قائمة أكواد (اختياري — كل كود بسطر)</label>
+            <textarea id="manualList" rows="5" class="input" placeholder="SA_001\nSA_002\nSA_003"></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <button id="btnLoadFirestore" class="btn">جلب من Firestore</button>
+          <button id="btnUseGenerated" class="btn">استخدام التسلسل</button>
+        </div>
+        <hr style="border-color:rgba(255,255,255,.08)"/>
+        <div class="row">
+          <div style="width:120px">
+            <label id="lblQrSize">حجم QR</label>
+            <input id="qrSize" type="number" class="input" value="300" />
+          </div>
+          <div style="width:120px">
+            <label id="lblPosX">موضع X</label>
+            <input id="posX" type="number" class="input" value="100" />
+          </div>
+          <div style="width:120px">
+            <label id="lblPosY">موضع Y</label>
+            <input id="posY" type="number" class="input" value="100" />
+          </div>
+        </div>
+        <div class="row">
+          <div style="width:120px">
+            <label id="lblFont">حجم الخط</label>
+            <input id="fontSize" type="number" class="input" value="36" />
+          </div>
+          <div style="width:160px">
+            <label id="lblTextOffset">ازاحة النص (أسفل QR)</label>
+            <input id="textOffset" type="number" class="input" value="20" />
+          </div>
+        </div>
+        <div class="row">
+          <button id="btnTest" class="btn">تجربة على معاينة</button>
+          <button id="btnDownload" class="btn">إنشاء و تنزيل ZIP</button>
+        </div>
+        <div class="muted" id="hint">نصيحة: عدّل الموضع والحجم حتى تتناسق مع تصميم الكرت.</div>
+      </div>
+
+      <!-- Preview -->
+      <div class="card">
+        <canvas id="preview"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <!-- Firebase (optional for pulling codes) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+  <script>
+    (function(){
+      const $=(s,root=document)=>root.querySelector(s);
+      const STR={
+        ar:{tpl:'ملف الكرت (PNG/JPG)',event:'اسم الحدث',prefix:'بادئة الكود',start:'بداية',count:'عدد الأكواد',pad:'أرقام',list:'قائمة أكواد (اختياري — كل كود بسطر)',load:'جلب من Firestore',useGen:'استخدام التسلسل',size:'حجم QR',posx:'موضع X',posy:'موضع Y',font:'حجم الخط',toff:'ازاحة النص',test:'تجربة على معاينة',zip:'إنشاء و تنزيل ZIP',hint:'نصيحة: عدّل الموضع والحجم حتى تتناسق مع تصميم الكرت.',needTpl:'حمّل صورة الكرت أولاً',fetched:'تم جلب الأكواد',noCodes:'لا توجد أكواد',AR:'AR',EN:'EN'},
+        en:{tpl:'Card file (PNG/JPG)',event:'Event name',prefix:'Code prefix',start:'Start',count:'Count',pad:'Digits',list:'Codes list (optional — one per line)',load:'Load from Firestore',useGen:'Use sequential',size:'QR size',posx:'Pos X',posy:'Pos Y',font:'Font size',toff:'Text offset',test:'Test on preview',zip:'Generate & download ZIP',hint:'Tip: adjust size/position to fit your card design.',needTpl:'Upload card image first',fetched:'Codes fetched',noCodes:'No codes found',AR:'AR',EN:'EN'}
+      };
+      let LANG=localStorage.getItem('hs:merge:lang')||'ar';
+      function L(k){return (STR[LANG]||STR.ar)[k]||k}
+      function applyLang(){ document.documentElement.lang=LANG; document.documentElement.dir=(LANG==='ar')?'rtl':'ltr'; $('#langBtn').textContent=(LANG==='ar')?'EN':'AR'; $('#lblTemplate').textContent=L('tpl'); $('#lblEvent').textContent=L('event')+' (Firestore)'; $('#lblPrefix').textContent=L('prefix'); $('#lblStart').textContent=L('start'); $('#lblCount').textContent=L('count'); $('#lblPad').textContent=L('pad'); $('#lblManualList').textContent=L('list'); $('#btnLoadFirestore').textContent=L('load'); $('#btnUseGenerated').textContent=L('useGen'); $('#lblQrSize').textContent=L('size'); $('#lblPosX').textContent=L('posx'); $('#lblPosY').textContent=L('posy'); $('#lblFont').textContent=L('font'); $('#lblTextOffset').textContent=L('toff'); $('#btnTest').textContent=L('test'); $('#btnDownload').textContent=L('zip'); $('#hint').textContent=L('hint'); }
+
+      // Firebase (optional)
+      const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
+      try{ if(!firebase.apps.length){firebase.initializeApp(cfg);} }catch{}
+      const db=(()=>{ try{return firebase.firestore();}catch{return null} })();
+
+      // State
+      let templateImg=null; let codes=[];
+
+      function loadTemplate(file){ return new Promise((res,rej)=>{ const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=URL.createObjectURL(file); }); }
+
+      function pad(n,width){ const s=String(n); return s.length>=width?s:('0'.repeat(width-s.length)+s); }
+      function genSeq(){ const prefix=$('#codePrefix').value||'SA_'; const start=parseInt($('#startNum').value||'1',10); const count=parseInt($('#count').value||'1',10); const p=parseInt($('#pad').value||'3',10); const arr=[]; for(let i=0;i<count;i++){ arr.push(prefix+pad(start+i,p)); } return arr; }
+
+      async function fetchFromFirestore(){ if(!db){ alert('Firestore غير متاح في هذه الصفحة'); return; } const ev=$('#eventName').value.trim(); if(!ev){ alert('اكتب اسم الحدث'); return; } try{ const snap=await db.collection('invites').where('EventName','==',ev).get(); const arr=[]; snap.forEach(d=>{ const x=d.data()||{}; if(x.Code) arr.push(String(x.Code)); else arr.push(d.id); }); codes=arr; alert(arr.length? L('fetched')+` (${arr.length})` : L('noCodes')); }catch(e){ alert(e.message); } }
+
+      function useManualOrSeq(){ const t=($('#manualList').value||'').split(/\n+/).map(s=>s.trim()).filter(Boolean); codes = t.length? t : genSeq(); alert(`${codes.length} codes ready`); }
+
+      // Draw one
+      async function drawOneToCanvas(canvas, img, code){ const ctx=canvas.getContext('2d'); const w=img.naturalWidth, h=img.naturalHeight; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+        const size=parseInt($('#qrSize').value||'300',10); const x=parseInt($('#posX').value||'0',10); const y=parseInt($('#posY').value||'0',10);
+        // Make QR onto temp div then draw
+        const holder=document.createElement('div'); holder.style.position='fixed'; holder.style.left='-9999px'; document.body.appendChild(holder);
+        const qr=new QRCode(holder,{text: code, width:size, height:size, correctLevel: QRCode.CorrectLevel.M});
+        await new Promise(r=>setTimeout(r,20)); // allow render
+        const qrCanvas = holder.querySelector('canvas');
+        if(qrCanvas){ ctx.drawImage(qrCanvas, x, y, size, size); }
+        document.body.removeChild(holder);
+        // Text below QR (centered under QR)
+        const fontSize=parseInt($('#fontSize').value||'36',10); const toff=parseInt($('#textOffset').value||'20',10);
+        ctx.fillStyle='#ffffff'; ctx.font=`bold ${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace`; ctx.textAlign='center'; ctx.textBaseline='top';
+        ctx.fillText(code, x + size/2, y + size + toff);
+      }
+
+      // Preview
+      async function doPreview(){ if(!templateImg){ alert(L('needTpl')); return; } await drawOneToCanvas($('#preview'), templateImg, (codes[0]||genSeq()[0])); }
+
+      function dataURLToBlob(dataURL){ const parts=dataURL.split(','); const bstr=atob(parts[1]); let n=bstr.length; const u8=new Uint8Array(n); while(n--){ u8[n]=bstr.charCodeAt(n); } return new Blob([u8],{type:'image/png'}); }
+
+      async function buildZip(){ if(!templateImg){ alert(L('needTpl')); return; } if(!codes.length){ useManualOrSeq(); }
+        const zip=new JSZip(); const canvas=document.createElement('canvas'); const folder=zip.folder('cards');
+        for(let i=0;i<codes.length;i++){
+          const c=codes[i]; await drawOneToCanvas(canvas, templateImg, c); const url=canvas.toDataURL('image/png'); const blob=dataURLToBlob(url); folder.file(`${c}.png`, blob);
+        }
+        const content=await zip.generateAsync({type:'blob'}); saveAs(content, 'cards-with-qr.zip'); }
+
+      // WIRE
+      document.addEventListener('DOMContentLoaded', ()=>{
+        applyLang();
+        $('#langBtn').addEventListener('click', ()=>{ LANG = (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:merge:lang',LANG); applyLang(); });
+        $('#templateFile').addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(f){ templateImg = await loadTemplate(f); await doPreview(); } });
+        $('#btnLoadFirestore').addEventListener('click', fetchFromFirestore);
+        $('#btnUseGenerated').addEventListener('click', ()=>{ codes = genSeq(); alert(`${codes.length} codes ready`); });
+        $('#btnTest').addEventListener('click', doPreview);
+        $('#btnDownload').addEventListener('click', buildZip);
+      });
+    })();
+  </script>
+</body>
+</html>
