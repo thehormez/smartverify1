@@ -142,30 +142,67 @@
       function pad(n,width){ const s=String(n); return s.length>=width?s:('0'.repeat(width-s.length)+s); }
       function genSeq(){ const prefix=$('#codePrefix').value||'SA_'; const start=parseInt($('#startNum').value||'1',10); const count=parseInt($('#count').value||'1',10); const p=parseInt($('#pad').value||'3',10); const arr=[]; for(let i=0;i<count;i++){ arr.push(prefix+pad(start+i,p)); } return arr; }
 
+      // ===== Helpers for drag =====
+      function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+      function getCanvasPoint(evt, canvas){ const rect=canvas.getBoundingClientRect(); const isTouch=evt.touches&&evt.touches.length; const clientX=isTouch? evt.touches[0].clientX : evt.clientX; const clientY=isTouch? evt.touches[0].clientY : evt.clientY; const x=(clientX-rect.left)*(canvas.width/rect.width); const y=(clientY-rect.top)*(canvas.height/rect.height); return {x,y}; }
+
       async function drawOneToCanvas(canvas, img, code, highlight=true){
         const ctx=canvas.getContext('2d'); const w=img.naturalWidth, h=img.naturalHeight;
         canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
         const size=parseInt($('#qrSize').value||'300',10); let x=parseInt($('#posX').value||'0',10); let y=parseInt($('#posY').value||'0',10);
+        // clamp & reflect
+        x = clamp(x, 0, Math.max(0,w-size)); y = clamp(y, 0, Math.max(0,h-size)); $('#posX').value=x; $('#posY').value=y;
         const qrColor=$('#qrColor').value||'#000000'; const textColor=$('#textColor').value||'#ffffff'; const bgColor=$('#bgColor').value||'#ffffff';
-        // generate QR
-        const qrCanvas=document.createElement('div');
-        new QRCode(qrCanvas,{text: code,width:size,height:size,colorDark:qrColor,colorLight:bgColor,correctLevel:QRCode.CorrectLevel.M});
-        await new Promise(r=>setTimeout(r,20));
-        const qrc=qrCanvas.querySelector('canvas')||qrCanvas;
-        ctx.drawImage(qrc,x,y,size,size);
-        // text
+        // generate QR off-DOM
+        const holder=document.createElement('div'); holder.style.position='fixed'; holder.style.left='-9999px'; document.body.appendChild(holder);
+        new QRCode(holder,{text: code,width:size,height:size,colorDark:qrColor,colorLight:bgColor,correctLevel:QRCode.CorrectLevel.M});
+        await new Promise(r=>setTimeout(r,16));
+        const qrc=holder.querySelector('canvas'); if(qrc) ctx.drawImage(qrc,x,y,size,size);
+        document.body.removeChild(holder);
+        // text under QR
         const fontSize=parseInt($('#fontSize').value||'36',10); const toff=parseInt($('#textOffset').value||'20',10);
-        ctx.fillStyle=textColor; ctx.font=`bold ${fontSize}px ui-monospace, monospace`; ctx.textAlign='center'; ctx.textBaseline='top';
-        ctx.fillText(code,x+size/2,y+size+toff);
-        if(highlight){ ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.setLineDash([10,6]); ctx.lineWidth=2; ctx.strokeRect(x-2,y-2,size+4,size+4);} }
+        ctx.fillStyle=textColor; ctx.font=`bold ${fontSize}px ui-monospace, Menlo, Consolas, 'Courier New', monospace`; ctx.textAlign='center'; ctx.textBaseline='top';
+        ctx.fillText(code, x + size/2, y + size + toff);
+        if(highlight){ ctx.save(); ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.setLineDash([10,6]); ctx.lineWidth=2; ctx.strokeRect(x-2, y-2, size+4, size+4); ctx.restore(); }
+      }
 
-      async function doPreview(){ if(!templateImg){alert('حمّل صورة الكرت أولاً');return;} const sample=(codes[0]||genSeq()[0]); await drawOneToCanvas($('#preview'),templateImg,sample,true);} 
+      async function doPreview(){ if(!templateImg){ alert('حمّل صورة الكرت أولاً'); return; } const sample=(codes[0]||genSeq()[0]); await drawOneToCanvas($('#preview'), templateImg, sample, true); }
 
-      document.addEventListener('DOMContentLoaded',()=>{
-        $('#templateFile').addEventListener('change',async e=>{const f=e.target.files?.[0]; if(f){templateImg=await loadTemplate(f); await doPreview();}});
-        $('#btnUseGenerated').addEventListener('click',()=>{codes=genSeq();alert(`${codes.length} codes ready`); doPreview();});
-        $('#btnTest').addEventListener('click',doPreview);
-        ['qrSize','posX','posY','fontSize','textOffset','qrColor','textColor','bgColor'].forEach(id=>{$('#'+id).addEventListener('input',()=>{if(templateImg)doPreview();});});
+      function dataURLToBlob(dataURL){ const parts=dataURL.split(','); const bstr=atob(parts[1]); let n=bstr.length; const u8=new Uint8Array(n); while(n--){ u8[n]=bstr.charCodeAt(n); } return new Blob([u8],{type:'image/png'}); }
+
+      async function buildZip(){ if(!templateImg){ alert('حمّل صورة الكرت أولاً'); return; } if(!codes.length){ codes = genSeq(); }
+        const zip=new JSZip(); const canvas=document.createElement('canvas'); const folder=zip.folder('cards');
+        for(let i=0;i<codes.length;i++){
+          const c=codes[i]; await drawOneToCanvas(canvas, templateImg, c, false); const url=canvas.toDataURL('image/png'); const blob=dataURLToBlob(url); folder.file(`${c}.png`, blob);
+        }
+        const content=await zip.generateAsync({type:'blob'}); saveAs(content, 'cards-with-qr.zip'); }
+
+      // ===== Drag state & handlers =====
+      const drag={active:false, dx:0, dy:0};
+      function startDrag(evt){ if(!templateImg) return; const canvas=$('#preview'); const pt=getCanvasPoint(evt, canvas); const x=parseInt($('#posX').value||'0',10); const y=parseInt($('#posY').value||'0',10); drag.active=true; drag.dx=pt.x-x; drag.dy=pt.y-y; canvas.classList.add('dragging'); evt.preventDefault(); }
+      function moveDrag(evt){ if(!drag.active) return; const canvas=$('#preview'); const pt=getCanvasPoint(evt, canvas); const size=parseInt($('#qrSize').value||'300',10); let nx=Math.round(pt.x-drag.dx); let ny=Math.round(pt.y-drag.dy); nx = clamp(nx, 0, Math.max(0, canvas.width - size)); ny = clamp(ny, 0, Math.max(0, canvas.height - size)); $('#posX').value=nx; $('#posY').value=ny; drawOneToCanvas(canvas, templateImg, (codes[0]||genSeq()[0]), true); evt.preventDefault(); }
+      function endDrag(){ if(!drag.active) return; drag.active=false; $('#preview').classList.remove('dragging'); }
+
+      // ===== Wire =====
+      document.addEventListener('DOMContentLoaded', ()=>{
+        $('#templateFile').addEventListener('change', async e=>{ const f=e.target.files?.[0]; if(f){ templateImg=await loadTemplate(f); await doPreview(); } });
+        $('#btnUseGenerated').addEventListener('click', ()=>{ codes = genSeq(); alert(`${codes.length} codes ready`); doPreview(); });
+        $('#btnTest').addEventListener('click', doPreview);
+        $('#btnDownload').addEventListener('click', buildZip);
+        // react to inputs
+        ['qrSize','posX','posY','fontSize','textOffset','qrColor','textColor','bgColor'].forEach(id=>{
+          const el=$('#'+id); if(el) el.addEventListener('input', ()=>{ if(templateImg) doPreview(); });
+        });
+        // drag listeners
+        const c=$('#preview');
+        c.addEventListener('mousedown', startDrag);
+        c.addEventListener('mousemove', moveDrag);
+        c.addEventListener('mouseup', endDrag);
+        c.addEventListener('mouseleave', endDrag);
+        c.addEventListener('touchstart', startDrag, {passive:false});
+        c.addEventListener('touchmove', moveDrag, {passive:false});
+        c.addEventListener('touchend', endDrag);
+        c.addEventListener('touchcancel', endDrag);
       });
     })();
   </script>
