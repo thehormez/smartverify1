@@ -3,377 +3,105 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — إرسال الدعوات + تنزيل/رفع البطاقات</title>
+  <title>Hormez — تنزيل كروت الدعوة الجاهزة فقط</title>
   <style>
-    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--card:#0e172a}
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155}
     html,body{height:100%}
     body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
-    .container{max-width:1200px;margin:0 auto;padding:16px}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .grid{display:grid;gap:12px}
-    @media(min-width:1120px){.grid-2{grid-template-columns:430px 1fr}}
     .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
     .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
     .btn:hover{background:#0d1528}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    .select,.input,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
-    label{font-size:12px;color:var(--muted)}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-top:1px solid rgba(255,255,255,.08)}
-    thead th{position:sticky;top:0;background:#0e162c}
-    .status-badge{padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:12px}
-    .ok{color:#86efac;border-color:#16a34a} .warn{color:#fbbf24;border-color:#f59e0b} .err{color:#fca5a5;border-color:#ef4444}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace}
+    .input,.select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
     .muted{color:var(--muted)}
-    #preview{width:100%;background:#0b1220;border-radius:12px;display:block;max-height:55vh}
-    .tiny{font-size:11px;color:var(--muted)}
+    .grid{display:grid;gap:10px}
+    .grid-4{grid-template-columns:repeat(4,1fr)}
+    @media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}}
+    .thumb{width:100%;aspect-ratio:4/3;background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:10px;object-fit:cover}
+    .item{display:flex;flex-direction:column;gap:8px}
+    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="row" style="margin-bottom:8px">
-      <div style="font-weight:800">📨 إرسال الدعوات للضيوف + تنزيل/رفع البطاقات</div>
-      <div style="margin-inline-start:auto" class="row">
-        <button id="langBtn" class="btn">AR</button>
-      </div>
+    <div class="row" style="margin-bottom:10px">
+      <div style="font-weight:800">🗂️ تنزيل الكروت الجاهزة (بدون أي إرسال)</div>
+      <div style="margin-inline-start:auto" class="row"><button id="langBtn" class="btn">AR</button></div>
     </div>
 
-    <div class="grid grid-2">
-      <!-- Left controls -->
-      <div class="card">
-        <div class="row">
-          <div style="flex:1">
-            <label id="lblEvent">اسم الحدث</label>
-            <input id="eventName" class="input" placeholder="مثال: زفاف سعيد" />
-          </div>
-          <div style="width:130px">
-            <label id="lblCountry">رمز الدولة</label>
-            <input id="countryCode" class="input" value="+966" />
-          </div>
+    <div class="card">
+      <div class="row">
+        <div style="flex:1">
+          <div class="muted" id="lblEvent">اسم الحدث</div>
+          <input id="eventName" class="input" placeholder="مثال: زفاف سعيد" />
         </div>
-        <div class="row">
-          <div style="flex:1">
-            <label id="lblBaseUrl">رابط الدعوة (يُضاف له الكود)</label>
-            <input id="baseUrl" class="input" placeholder="https://example.com/invite?code=" />
-          </div>
-        </div>
-        <div class="row">
-          <div style="flex:1">
-            <label id="lblChannel">قناة الإرسال</label>
-            <select id="channel" class="select">
-              <option value="whatsapp">WhatsApp</option>
-              <option value="sms">SMS</option>
-            </select>
-          </div>
-          <div style="flex:1">
-            <label id="lblLang">لغة الرسالة</label>
-            <select id="msgLang" class="select">
-              <option value="ar">العربية</option>
-              <option value="en">English</option>
-            </select>
-          </div>
-        </div>
-        <div class="row">
-          <div style="flex:1">
-            <label id="lblTemplate">قالب الرسالة</label>
-            <textarea id="msgTemplate" rows="6" class="input" placeholder="{name}، يسعدنا دعوتك لحضور {event}. كودك: {code}\nالرابط: {link}\nالصورة: {image}"></textarea>
-            <div class="tiny">المتغيرات: {name} {event} {code} {link} {image}</div>
-          </div>
-        </div>
-        <div class="row">
-          <div style="flex:1">
-            <label id="lblCsv">قائمة الضيوف (CSV: name, phone, code)</label>
-            <input id="csvFile" type="file" accept=".csv" class="input" />
-          </div>
-        </div>
-        <div class="row">
-          <button id="btnFetch" class="btn">جلب من Firestore</button>
-          <button id="btnAddRow" class="btn">إضافة ضيف</button>
-          <button id="btnClear" class="btn">مسح القائمة</button>
-        </div>
-        <hr style="border-color:rgba(255,255,255,.1)" />
-
-        <!-- صورة البطاقة للتوليد (اختياري للمعاينة/التوليد) -->
-        <div class="row">
-          <div style="flex:1">
-            <label>صورة كرت الدعوة (هذه تُستخدم فقط إذا أردت توليد بطاقة لكل ضيف)</label>
-            <input id="cardImage" type="file" accept="image/png,image/jpeg" class="input" />
-            <div class="tiny">عند عدم استخدامها، سنعتمد على الصور الجاهزة المرفوعة بالأسفل كما هي.</div>
-          </div>
-        </div>
-        <div class="row">
-          <div style="width:120px">
-            <label>حجم QR</label>
-            <input id="qrSize" type="number" class="input" value="300" />
-          </div>
-          <div style="width:120px">
-            <label>موضع X</label>
-            <input id="posX" type="number" class="input" value="100" />
-          </div>
-          <div style="width:120px">
-            <label>موضع Y</label>
-            <input id="posY" type="number" class="input" value="100" />
-          </div>
-        </div>
-        <div class="row">
-          <div style="width:120px">
-            <label>حجم خط الكود</label>
-            <input id="fontSize" type="number" class="input" value="36" />
-          </div>
-          <div style="width:160px">
-            <label>إزاحة النص أسفل الـQR</label>
-            <input id="textOffset" type="number" class="input" value="20" />
-          </div>
-        </div>
-        <div class="row">
-          <div style="flex:1">
-            <label>لون الباركود</label>
-            <input id="qrColor" type="color" class="input" value="#000000" />
-          </div>
-          <div style="flex:1">
-            <label>لون الخلفية</label>
-            <input id="bgColor" type="color" class="input" value="#ffffff" />
-          </div>
-        </div>
-        <div class="row">
-          <div style="flex:1">
-            <label>لون الكتابة</label>
-            <input id="textColor" type="color" class="input" value="#ffffff" />
-          </div>
-        </div>
-
-        <!-- اختيار صورة البطاقة المُرسلة كما هي -->
-        <div class="row" style="align-items:center"><b>اختيار صورة البطاقة المرسلة</b></div>
-        <div class="row" style="gap:12px">
-          <div style="flex:1">
-            <label>🔹 كرت الدعوة الأصلي (بدون أي تعديل)</label>
-            <input id="plainCardImage" type="file" accept="image/png,image/jpeg" class="input" />
-            <div class="row"><button id="btnUploadPlain" class="btn">رفع إلى التخزين</button><span id="plainStatus" class="tiny"></span></div>
-          </div>
-          <div style="flex:1">
-            <label>🔸 كرت مدمج بالـQR (من new-merge-qr.html)</label>
-            <input id="qrCardImage" type="file" accept="image/png,image/jpeg" class="input" />
-            <div class="row"><button id="btnUploadQRCard" class="btn">رفع إلى التخزين</button><span id="qrCardStatus" class="tiny"></span></div>
-          </div>
-        </div>
-        <div class="row" style="align-items:center;gap:10px">
-          <label>سيتم إرسال: </label>
-          <label class="row"><input type="radio" name="imgMode" value="none" checked /> بدون صورة</label>
-          <label class="row"><input type="radio" name="imgMode" value="plain" /> رابط كرت الدعوة الأصلي</label>
-          <label class="row"><input type="radio" name="imgMode" value="qr" /> رابط كرت الـQR الجاهز</label>
-        </div>
-        <div class="tiny">ملاحظة: واتساب/SMS عبر المتصفح لا يرفقان الصورة مباشرة؛ لذلك نرفعها إلى Firebase Storage ونضيف <b>الرابط</b> داخل نص الرسالة.</div>
-
-        <div class="row">
-          <button id="btnPreviewCard" class="btn">معاينة بطاقة</button>
-          <button id="btnZipCards" class="btn">تنزيل كل البطاقات (ZIP)</button>
-          <button id="btnZipQrs" class="btn">تنزيل كل أكواد QR (ZIP)</button>
-          <button id="btnSendAll" class="btn">إرسال للكل (على دفعات)</button>
+        <div style="flex:1">
+          <div class="muted" id="lblPath">مسار التخزين</div>
+          <input id="pathInput" class="input" placeholder="invites/<event>/cards" />
         </div>
       </div>
-
-      <!-- Right table -->
-      <div class="card">
-        <div class="row" style="margin-bottom:6px"><span class="muted">القائمة</span><span id="countBadge" class="muted" style="margin-inline-start:auto">0 ضيف</span></div>
-        <div style="max-height:60vh;overflow:auto">
-          <table>
-            <thead>
-              <tr>
-                <th>الاسم</th>
-                <th>الجوال</th>
-                <th>الكود</th>
-                <th>المعاينة</th>
-                <th>الحالة</th>
-                <th>تنزيل</th>
-                <th>إرسال</th>
-              </tr>
-            </thead>
-            <tbody id="rows"></tbody>
-          </table>
-        </div>
-        <canvas id="preview" style="display:none"></canvas>
+      <div class="row">
+        <button id="btnList" class="btn">📥 عرض الكروت من Firebase</button>
+        <button id="btnZipAll" class="btn">⤓ تنزيل الكل (ZIP)</button>
       </div>
+      <div class="muted" id="hint">يفترض أنك أنشأت الكروت في صفحة دمج الباركود، وهذه الصفحة مخصصة لتنزيلها فقط.</div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="row" style="margin-bottom:8px">
+        <div class="muted" id="countLbl">0 ملف</div>
+        <div style="margin-inline-start:auto" class="muted" id="storagePath">—</div>
+      </div>
+      <div id="grid" class="grid grid-4"></div>
     </div>
   </div>
 
-  <!-- Libs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-storage-compat.js"></script>
+  <!-- Zip -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-storage-compat.js"></script>
 
   <script>
     (function(){
       const $=(s,root=document)=>root.querySelector(s);
-      const STR={ ar:{title:'إرسال الدعوات للضيوف',pending:'جاهز',sent:'تم الإرسال',failed:'فشل',download:'بطاقة',downloadQR:'QR'}, en:{title:'Send invites',pending:'Ready',sent:'Sent',failed:'Failed',download:'Card',downloadQR:'QR'} };
-      let LANG=localStorage.getItem('hs:send:lang')||'ar'; function L(k){return (STR[LANG]||STR.ar)[k]||k}
-      document.title = `Hormez — ${L('title')}`;
+      const STR={
+        ar:{title:'تنزيل الكروت',event:'اسم الحدث',path:'مسار التخزين',list:'عرض الكروت من Firebase',zip:'تنزيل الكل (ZIP)',files:'ملف',hint:'يفترض أنك أنشأت الكروت في صفحة دمج الباركود، وهذه الصفحة مخصصة لتنزيلها فقط.'},
+        en:{title:'Download cards',event:'Event name',path:'Storage path',list:'List from Firebase',zip:'Download all (ZIP)',files:'file(s)',hint:'Assumes cards were generated in merge page. This page only downloads them.'}
+      };
+      let LANG=localStorage.getItem('hs:dl:lang')||'ar';
+      function applyLang(){ const L=STR[LANG]; document.title='Hormez — '+L.title; $('#lblEvent').textContent=L.event; $('#lblPath').textContent=L.path; $('#btnList').textContent='📥 '+L.list; $('#btnZipAll').textContent='⤓ '+L.zip; $('#hint').textContent=L.hint; $('#langBtn').textContent=(LANG==='ar'?'EN':'AR'); }
 
-      // ===== Firebase =====
       const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv", storageBucket:"hormez-inv.firebasestorage.app" };
-      try{ if(!firebase.apps.length){firebase.initializeApp(cfg);} }catch{}
-      const db=(()=>{ try{return firebase.firestore();}catch{return null} })();
-      const storage=(()=>{ try{return firebase.storage();}catch{return null} })();
+      if(!firebase.apps.length) firebase.initializeApp(cfg);
+      const storage=firebase.storage();
 
-      // ملفات ورابط الصور المرفوعة كما هي
-      const uploaded = { plain: { file:null, url:'' }, qr: { file:null, url:'' } };
+      let files=[]; // {name,url}
 
-      const state={ rows:[], cardImg:null };
+      function defaultPath(){ const ev=$('#eventName').value.trim(); if(!ev) return 'invites/<event>/cards'; return `invites/${ev}/cards`; }
 
-      function normalizePhone(p, cc){ p = String(p||'').replace(/[^\d+]/g,''); if(p.startsWith('0')) p = p.replace(/^0+/, ''); if(!p.startsWith('+')) p = (cc||'') + p; return p; }
-      function buildLink(code){ const base = ($('#baseUrl').value||'').trim(); const u = base.includes('?')? base + '&code=' + encodeURIComponent(code) : base + (base.endsWith('=')? '' : '?code=') + encodeURIComponent(code); return u; }
-
-      // ===== Table render =====
-      function render(){ const tb=$('#rows'); tb.innerHTML=''; $('#countBadge').textContent= state.rows.length + (LANG==='ar'? ' ضيف':' guests'); state.rows.forEach((r,i)=>{
-          const tr=document.createElement('tr');
-          tr.innerHTML=`<td contenteditable="true">${r.name||''}</td>
-                         <td contenteditable="true" class="mono">${r.phone||''}</td>
-                         <td contenteditable="true" class="mono">${r.code||''}</td>
-                         <td class="mono">${previewMsg(r).replace(/</g,'&lt;')}</td>
-                         <td><span class="status-badge ${r.status==='sent'?'ok':(r.status==='failed'?'err':'warn')}">${r.status||L('pending')}</span></td>
-                         <td><button class="btn" data-dlcard="${i}">${L('download')}</button> <button class="btn" data-dlqr="${i}">${L('downloadQR')}</button></td>
-                         <td><button class="btn" data-send="${i}">إرسال</button> <button class="btn" data-del="${i}">حذف</button></td>`;
-          tb.appendChild(tr);
-        });
-        tb.querySelectorAll('button[data-send]').forEach(b=> b.addEventListener('click', ()=> sendOne(parseInt(b.getAttribute('data-send'),10))));
-        tb.querySelectorAll('button[data-del]').forEach(b=> b.addEventListener('click', ()=> { const j=parseInt(b.getAttribute('data-del'),10); state.rows.splice(j,1); render(); }));
-        tb.querySelectorAll('button[data-dlqr]').forEach(b=> b.addEventListener('click', ()=> downloadQR(parseInt(b.getAttribute('data-dlqr'),10))));
-        tb.querySelectorAll('button[data-dlcard]').forEach(b=> b.addEventListener('click', ()=> downloadCard(parseInt(b.getAttribute('data-dlcard'),10))));
-        tb.querySelectorAll('td[contenteditable]').forEach((cell)=>{ cell.addEventListener('blur', ()=>{ const rowIndex = [...cell.parentElement.parentElement.children].indexOf(cell.parentElement); const colIndex = [...cell.parentElement.children].indexOf(cell); const cols=['name','phone','code']; if(colIndex<3){ state.rows[rowIndex][cols[colIndex]] = cell.textContent.trim(); render(); } }); });
+      async function listAllCards(){ const path=($('#pathInput').value.trim()||defaultPath()); $('#storagePath').textContent=path; const ref=storage.ref().child(path); files=[]; $('#grid').innerHTML=''; $('#countLbl').textContent='…';
+        async function listAllRec(r){ const res=await r.listAll(); for(const p of res.prefixes){ await listAllRec(p); } for(const it of res.items){ const url=await it.getDownloadURL(); files.push({name:it.name,url}); } }
+        try{ await listAllRec(ref); files.sort((a,b)=>a.name.localeCompare(b.name, undefined, {numeric:true})); renderList(); }
+        catch(e){ alert(e.message||e); $('#countLbl').textContent='0'; }
       }
 
-      function tmpl(extra){
-        const ar = `{name}، يسعدنا دعوتك لحضور {event}.\nكودك: {code}\nالرابط: {link}\nالصورة: {image}`;
-        const en = `Dear {name}, you're invited to {event}.\nYour code: {code}\nLink: {link}\nImage: {image}`;
-        const cur = ($('#msgTemplate').value||'').trim();
-        const lang=$('#msgLang').value; const base = cur || (lang==='ar'? ar: en);
-        return base.replaceAll('{image}', (extra?.image)||'');
-      }
-      function previewMsg(r, extra){ const link=buildLink(r.code); const t=tmpl(extra); return t.replaceAll('{name}', r.name||'').replaceAll('{event}', $('#eventName').value||'').replaceAll('{code}', r.code||'').replaceAll('{link}', link); }
-
-      function openWhatsApp(phone, text){ const url = `https://wa.me/${phone.replace(/[^\d]/g,'')}?text=${encodeURIComponent(text)}`; window.open(url, '_blank'); }
-      function openSMS(phone, text){ const url = `sms:${encodeURIComponent(phone)}?&body=${encodeURIComponent(text)}`; window.open(url, '_blank'); }
-
-      function makeQRCanvas(text, size, colorDark, colorLight){ const holder=document.createElement('div'); new QRCode(holder,{text,width:size,height:size,colorDark,colorLight,correctLevel:QRCode.CorrectLevel.M}); return holder.querySelector('canvas'); }
-      function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-      async function drawCard(canvas, code){ const ctx=canvas.getContext('2d'); const img=state.cardImg; if(!img){ const size=parseInt($('#qrSize').value||'300',10); const qr=makeQRCanvas(code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); canvas.width=size; canvas.height=size; ctx.clearRect(0,0,size,size); ctx.drawImage(qr,0,0,size,size); return; }
-        const w=img.naturalWidth, h=img.naturalHeight; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
-        const size=parseInt($('#qrSize').value||'300',10); let x=parseInt($('#posX').value||'0',10); let y=parseInt($('#posY').value||'0',10); x=clamp(x,0,Math.max(0,w-size)); y=clamp(y,0,Math.max(0,h-size));
-        const qr=makeQRCanvas(code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); ctx.drawImage(qr, x, y, size, size);
-        const fontSize=parseInt($('#fontSize').value||'36',10); const toff=parseInt($('#textOffset').value||'20',10); ctx.fillStyle=$('#textColor').value||'#fff'; ctx.font=`bold ${fontSize}px ui-monospace,Menlo,Consolas,'Courier New',monospace`; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(code, x+size/2, y+size+toff);
+      function renderList(){ const grid=$('#grid'); grid.innerHTML=''; const L=STR[LANG]; $('#countLbl').textContent = files.length+' '+L.files; for(const f of files){ const card=document.createElement('div'); card.className='item'; card.innerHTML = `<img class="thumb" loading="lazy" src="${f.url}" alt="${f.name}"><div class="mono">${f.name}</div><button class="btn" data-dl="${f.url}">تنزيل</button>`; grid.appendChild(card); }
+        grid.querySelectorAll('button[data-dl]').forEach(b=> b.addEventListener('click', ()=>{ const u=b.getAttribute('data-dl'); const a=document.createElement('a'); a.href=u; a.download=''; a.click(); }));
       }
 
-      async function downloadQR(idx){ const r=state.rows[idx]; if(!r) return; const size=parseInt($('#qrSize').value||'300',10); const qr=makeQRCanvas(r.code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); const url=qr.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=`${r.code}.png`; a.click(); }
-      async function downloadCard(idx){ const r=state.rows[idx]; if(!r) return; const canvas=$('#preview'); await drawCard(canvas, r.code); const url=canvas.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=`card-${r.code}.png`; a.click(); }
+      async function zipAll(){ if(!files.length){ alert(LANG==='ar'?'لا توجد ملفات':'No files'); return; } const zip=new JSZip(); const path=$('#storagePath').textContent||'cards'; let i=0; for(const f of files){ const res=await fetch(f.url); const blob=await res.blob(); zip.file(f.name, blob); i++; $('#countLbl').textContent=`${i}/${files.length}`; }
+        const blob=await zip.generateAsync({type:'blob'}); saveAs(blob, (path.replace(/[\/:*?"<>|]/g,'_')||'cards')+'.zip'); }
 
-      // رفع Blob وإرجاع URL
-      async function uploadBlobAndGetURL(path, blob){
-        if(!storage) throw new Error('Firebase Storage غير مفعّل');
-        const ref = storage.ref().child(path);
-        await ref.put(blob, { contentType: 'image/png', cacheControl:'public,max-age=31536000' });
-        return await ref.getDownloadURL();
-      }
-      // رفع ملف input كما هو
-      async function uploadFileInput(inputEl, which){
-        const f=inputEl.files?.[0];
-        if(!f){ alert('اختر ملفًا أولًا'); return ''; }
-        const ev=($('#eventName').value||'event').replace(/\s+/g,'_');
-        const path=`invites/${ev}/${which}.png`;
-        const url=await uploadBlobAndGetURL(path, f);
-        uploaded[which].file=f; uploaded[which].url=url;
-        return url;
-      }
-
-      async function sendOne(idx){
-        const r=state.rows[idx]; if(!r) return;
-        const phone = normalizePhone(r.phone, $('#countryCode').value);
-        let extra={};
-        try{
-          const mode = (document.querySelector('input[name="imgMode"]:checked')||{}).value;
-          if(mode==='plain'){
-            if(!uploaded.plain.url){
-              if(!uploaded.plain.file){ alert('ارفع كرت الدعوة الأصلي أولًا'); throw new Error('no-plain'); }
-              const url=await uploadFileInput($('#plainCardImage'),'plain'); uploaded.plain.url=url;
-            }
-            extra.image = uploaded.plain.url;
-          } else if(mode==='qr'){
-            if(!uploaded.qr.url){
-              if(!uploaded.qr.file){ alert('ارفع كرت الـQR أولًا'); throw new Error('no-qr'); }
-              const url=await uploadFileInput($('#qrCardImage'),'qr'); uploaded.qr.url=url;
-            }
-            extra.image = uploaded.qr.url;
-          } else { extra.image=''; }
-
-          const text = previewMsg(r, extra);
-          if(($('#channel').value)==='whatsapp'){ openWhatsApp(phone, text); } else { openSMS(phone, text); }
-          state.rows[idx].status='sent';
-          try{
-            if(db){
-              await db.collection('invites').doc(r.code).set({
-                sentAt: firebase.firestore.FieldValue.serverTimestamp(),
-                sentTo: phone,
-                imageMode: mode,
-                sentImage: extra.image||null
-              }, { merge:true });
-            }
-          }catch{}
-        }catch(e){
-          state.rows[idx].status='failed';
-        }
-        render();
-      }
-
-      async function sendAll(){ let i=0; const batch=3; const delay=1600; async function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
-        while(i < state.rows.length){ const end=Math.min(i+batch, state.rows.length); for(let j=i;j<end;j++){ await sendOne(j); } i=end; await sleep(delay); }
-      }
-
-      // ===== CSV & Firestore =====
-      function loadCSVFile(file){ Papa.parse(file,{header:true,skipEmptyLines:true,complete: (res)=>{ const rows=[]; res.data.forEach(x=>{ rows.push({ name: x.name||x.Name||'', phone: x.phone||x.Phone||'', code: x.code||x.Code||'' , status:'ready' }); }); state.rows=rows; render(); }}); }
-      async function fetchFromFirestore(){ if(!db){ alert('Firestore غير متاح'); return; } const ev=$('#eventName').value.trim(); if(!ev){ alert('اكتب اسم الحدث'); return; } try{ const snap=await db.collection('invites').where('EventName','==',ev).get(); const arr=[]; snap.forEach(d=>{ const x=d.data()||{}; arr.push({ name: x.Name||'', phone: x.Phone||'', code: x.Code||d.id, status:'ready' }); }); state.rows=arr; render(); }catch(e){ alert(e.message); }
-      }
-
-      function exportCSV(){ const lines=['name,phone,code,status']; state.rows.forEach(r=>{ lines.push([r.name,r.phone,r.code,r.status||''].join(',')); }); const blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='invite-send-status.csv'; a.click(); URL.revokeObjectURL(url); }
-
-      // ===== ZIP all =====
-      async function zipAll(type){ if(!state.rows.length){ alert('القائمة فارغة'); return; } const zip=new JSZip(); const canvas=$('#preview'); if(type==='cards' && !state.cardImg){ if(!confirm('لا توجد صورة كرت مرفوعة، سيتم إنشاء ملفات QR فقط. المتابعة؟')) return; }
-        for(const r of state.rows){ if(type==='cards'){ await drawCard(canvas, r.code); const url=canvas.toDataURL('image/png'); const data=await (await fetch(url)).blob(); zip.file(`card-${r.code}.png`, data);} else { const size=parseInt($('#qrSize').value||'300',10); const qr=makeQRCanvas(r.code, size, $('#qrColor').value||'#000', $('#bgColor').value||'#fff'); const url=qr.toDataURL('image/png'); const data=await (await fetch(url)).blob(); zip.file(`${r.code}.png`, data);} }
-        const blob=await zip.generateAsync({type:'blob'}); saveAs(blob, type==='cards'? 'cards.zip':'qrs.zip'); }
-
-      // ===== Wire =====
       document.addEventListener('DOMContentLoaded', ()=>{
-        $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:send:lang',LANG); render(); });
-        $('#csvFile').addEventListener('change', (e)=>{ const f=e.target.files?.[0]; if(f) loadCSVFile(f); });
-        $('#btnFetch').addEventListener('click', fetchFromFirestore);
-        $('#btnAddRow').addEventListener('click', ()=>{ state.rows.unshift({name:'',phone:'',code:'',status:'ready'}); render(); });
-        $('#btnClear').addEventListener('click', ()=>{ state.rows=[]; render(); });
-        $('#btnSendAll').addEventListener('click', sendAll);
-        $('#btnExportCsv').addEventListener('click', exportCSV);
-        ['eventName','countryCode','baseUrl','channel','msgLang','msgTemplate'].forEach(id=>{ $('#'+id).addEventListener('input', ()=> render()); });
-
-        // توليد/معاينة عند الحاجة
-        $('#cardImage').addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(f){ const img=new Image(); img.onload=()=>{ state.cardImg=img; alert('تم تحميل صورة الكرت — للمعاينة/الجيل'); }; img.src=URL.createObjectURL(f); } });
-        $('#btnPreviewCard').addEventListener('click', async()=>{ const sample=(state.rows[0]?.code||'SAMPLE_001'); await drawCard($('#preview'), sample); const url=$('#preview').toDataURL('image/png'); window.open(url,'_blank'); });
-        $('#btnZipCards').addEventListener('click', ()=> zipAll('cards'));
-        $('#btnZipQrs').addEventListener('click', ()=> zipAll('qrs'));
-
-        // رفع الكروت الجاهزة كما هي
-        $('#btnUploadPlain').addEventListener('click', async ()=>{
-          try{ $('#plainStatus').textContent='جارٍ الرفع...';
-               const url=await uploadFileInput($('#plainCardImage'),'plain');
-               $('#plainStatus').textContent='تم الرفع'; console.log('plain url',url);
-          }catch(e){ $('#plainStatus').textContent='خطأ'; }
-        });
-        $('#btnUploadQRCard').addEventListener('click', async ()=>{
-          try{ $('#qrCardStatus').textContent='جارٍ الرفع...';
-               const url=await uploadFileInput($('#qrCardImage'),'qr');
-               $('#qrCardStatus').textContent='تم الرفع'; console.log('qr url',url);
-          }catch(e){ $('#qrCardStatus').textContent='خطأ'; }
-        });
-
-        render();
+        applyLang();
+        $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:dl:lang',LANG); applyLang(); renderList(); });
+        $('#btnList').addEventListener('click', listAllCards);
+        $('#btnZipAll').addEventListener('click', zipAll);
+        // Prefill path when user types event
+        $('#eventName').addEventListener('input', ()=>{ if(!$('#pathInput').value.trim()||$('#pathInput').value.includes('<event>')) $('#pathInput').value=defaultPath(); });
       });
     })();
   </script>
