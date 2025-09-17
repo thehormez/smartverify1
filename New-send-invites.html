@@ -3,107 +3,59 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — تنزيل كروت الدعوة الجاهزة فقط</title>
+  <title>Hormez — إرسال الكروت عبر واتساب</title>
   <style>
-    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155}
-    html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    body{margin:0;background:#0b1020;color:#e5e7eb;font-family:system-ui}
     .container{max-width:1100px;margin:0 auto;padding:16px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
-    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+    .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:12px}
+    .btn{border:1px solid #334155;background:#0b1220;color:#e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer}
     .btn:hover{background:#0d1528}
-    .input,.select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
-    .muted{color:var(--muted)}
-    .grid{display:grid;gap:10px}
-    .grid-4{grid-template-columns:repeat(4,1fr)}
-    @media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}}
-    .thumb{width:100%;aspect-ratio:4/3;background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:10px;object-fit:cover}
-    .item{display:flex;flex-direction:column;gap:8px}
-    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+    .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+    .item{background:#0b1220;padding:10px;border-radius:12px;text-align:center}
+    .item img{max-width:100%;border-radius:8px;margin-bottom:8px}
+    .input{width:100%;padding:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="row" style="margin-bottom:10px">
-      <div style="font-weight:800">🗂️ تنزيل الكروت الجاهزة (بدون أي إرسال)</div>
-      <div style="margin-inline-start:auto" class="row"><button id="langBtn" class="btn">AR</button></div>
-    </div>
+    <h2>📨 رفع الكروت الجاهزة وإرسالها عبر واتساب</h2>
 
     <div class="card">
-      <div class="row">
-        <div style="flex:1">
-          <div class="muted" id="lblEvent">اسم الحدث</div>
-          <input id="eventName" class="input" placeholder="مثال: زفاف سعيد" />
-        </div>
-        <div style="flex:1">
-          <div class="muted" id="lblPath">مسار التخزين</div>
-          <input id="pathInput" class="input" placeholder="invites/<event>/cards" />
-        </div>
-      </div>
-      <div class="row">
-        <button id="btnList" class="btn">📥 عرض الكروت من Firebase</button>
-        <button id="btnZipAll" class="btn">⤓ تنزيل الكل (ZIP)</button>
-      </div>
-      <div class="muted" id="hint">يفترض أنك أنشأت الكروت في صفحة دمج الباركود، وهذه الصفحة مخصصة لتنزيلها فقط.</div>
+      <label>اختر الكروت (يمكن اختيار أكثر من كرت)</label>
+      <input type="file" id="cardFiles" accept="image/*" multiple class="input" />
     </div>
 
-    <div class="card" style="margin-top:12px">
-      <div class="row" style="margin-bottom:8px">
-        <div class="muted" id="countLbl">0 ملف</div>
-        <div style="margin-inline-start:auto" class="muted" id="storagePath">—</div>
-      </div>
-      <div id="grid" class="grid grid-4"></div>
-    </div>
+    <div id="cardsGrid" class="grid"></div>
   </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-storage-compat.js"></script>
-  <!-- Zip -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
   <script>
-    (function(){
-      const $=(s,root=document)=>root.querySelector(s);
-      const STR={
-        ar:{title:'تنزيل الكروت',event:'اسم الحدث',path:'مسار التخزين',list:'عرض الكروت من Firebase',zip:'تنزيل الكل (ZIP)',files:'ملف',hint:'يفترض أنك أنشأت الكروت في صفحة دمج الباركود، وهذه الصفحة مخصصة لتنزيلها فقط.'},
-        en:{title:'Download cards',event:'Event name',path:'Storage path',list:'List from Firebase',zip:'Download all (ZIP)',files:'file(s)',hint:'Assumes cards were generated in merge page. This page only downloads them.'}
-      };
-      let LANG=localStorage.getItem('hs:dl:lang')||'ar';
-      function applyLang(){ const L=STR[LANG]; document.title='Hormez — '+L.title; $('#lblEvent').textContent=L.event; $('#lblPath').textContent=L.path; $('#btnList').textContent='📥 '+L.list; $('#btnZipAll').textContent='⤓ '+L.zip; $('#hint').textContent=L.hint; $('#langBtn').textContent=(LANG==='ar'?'EN':'AR'); }
+    const input=document.getElementById('cardFiles');
+    const grid=document.getElementById('cardsGrid');
 
-      const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv", storageBucket:"hormez-inv.firebasestorage.app" };
-      if(!firebase.apps.length) firebase.initializeApp(cfg);
-      const storage=firebase.storage();
-
-      let files=[]; // {name,url}
-
-      function defaultPath(){ const ev=$('#eventName').value.trim(); if(!ev) return 'invites/<event>/cards'; return `invites/${ev}/cards`; }
-
-      async function listAllCards(){ const path=($('#pathInput').value.trim()||defaultPath()); $('#storagePath').textContent=path; const ref=storage.ref().child(path); files=[]; $('#grid').innerHTML=''; $('#countLbl').textContent='…';
-        async function listAllRec(r){ const res=await r.listAll(); for(const p of res.prefixes){ await listAllRec(p); } for(const it of res.items){ const url=await it.getDownloadURL(); files.push({name:it.name,url}); } }
-        try{ await listAllRec(ref); files.sort((a,b)=>a.name.localeCompare(b.name, undefined, {numeric:true})); renderList(); }
-        catch(e){ alert(e.message||e); $('#countLbl').textContent='0'; }
-      }
-
-      function renderList(){ const grid=$('#grid'); grid.innerHTML=''; const L=STR[LANG]; $('#countLbl').textContent = files.length+' '+L.files; for(const f of files){ const card=document.createElement('div'); card.className='item'; card.innerHTML = `<img class="thumb" loading="lazy" src="${f.url}" alt="${f.name}"><div class="mono">${f.name}</div><button class="btn" data-dl="${f.url}">تنزيل</button>`; grid.appendChild(card); }
-        grid.querySelectorAll('button[data-dl]').forEach(b=> b.addEventListener('click', ()=>{ const u=b.getAttribute('data-dl'); const a=document.createElement('a'); a.href=u; a.download=''; a.click(); }));
-      }
-
-      async function zipAll(){ if(!files.length){ alert(LANG==='ar'?'لا توجد ملفات':'No files'); return; } const zip=new JSZip(); const path=$('#storagePath').textContent||'cards'; let i=0; for(const f of files){ const res=await fetch(f.url); const blob=await res.blob(); zip.file(f.name, blob); i++; $('#countLbl').textContent=`${i}/${files.length}`; }
-        const blob=await zip.generateAsync({type:'blob'}); saveAs(blob, (path.replace(/[\/:*?"<>|]/g,'_')||'cards')+'.zip'); }
-
-      document.addEventListener('DOMContentLoaded', ()=>{
-        applyLang();
-        $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:dl:lang',LANG); applyLang(); renderList(); });
-        $('#btnList').addEventListener('click', listAllCards);
-        $('#btnZipAll').addEventListener('click', zipAll);
-        // Prefill path when user types event
-        $('#eventName').addEventListener('input', ()=>{ if(!$('#pathInput').value.trim()||$('#pathInput').value.includes('<event>')) $('#pathInput').value=defaultPath(); });
+    input.addEventListener('change',()=>{
+      grid.innerHTML='';
+      [...input.files].forEach((file,idx)=>{
+        const url=URL.createObjectURL(file);
+        const item=document.createElement('div');
+        item.className='item';
+        item.innerHTML=`
+          <img src="${url}" alt="card ${idx}" />
+          <input type="tel" placeholder="رقم الضيف (مثال: 9665XXXXXXX)" class="input phone" />
+          <div style="margin-top:6px">
+            <a href="${url}" download="${file.name}" class="btn">⤓ تنزيل</a>
+            <button class="btn sendBtn">📲 واتساب</button>
+          </div>
+        `;
+        item.querySelector('.sendBtn').addEventListener('click',()=>{
+          const phone=item.querySelector('.phone').value.trim();
+          if(!phone){alert('أدخل رقم الضيف');return;}
+          const msg=encodeURIComponent('دعوتك مرفقة بالصورة 👇');
+          const wa=`https://wa.me/${phone}?text=${msg}`;
+          window.open(wa,'_blank');
+        });
+        grid.appendChild(item);
       });
-    })();
+    });
   </script>
 </body>
 </html>
