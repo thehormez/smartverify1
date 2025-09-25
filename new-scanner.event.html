@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hormez — ماسح مناسبة محددة</title>
+  <style>
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--ok:#22c55e;--bad:#ef4444;--warn:#f59e0b}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    .container{max-width:980px;margin:0 auto;padding:16px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn:hover{background:#0d1528}
+    .select,.input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
+    #video{width:100%;aspect-ratio:3/4;background:#000;border-radius:12px}
+    .muted{color:var(--muted)}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .status{display:flex;gap:8px;align-items:center}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
+    .hist{max-height:280px;overflow:auto}
+    .ok{color:#86efac} .err{color:#fca5a5}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row" style="margin-bottom:8px">
+      <div style="font-weight:800">🎯 ماسح الباركود — مناسبة محددة</div>
+      <div style="margin-inline-start:auto" class="row">
+        <span class="tag">Event: <b id="evTag">—</b></span>
+        <button id="langBtn" class="btn">AR</button>
+      </div>
+    </div>
+
+    <div id="httpsWarn" class="card" style="display:none; border-color:#7f1d1d;background:#450a0a;color:#fecaca">
+      ⚠️ الكاميرا تتطلب HTTPS أو localhost.
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between; gap:8px">
+        <div class="status"><div id="statusDot" class="dot" style="background:#9ca3af"></div><div id="statusText" class="muted">—</div></div>
+        <div class="row">
+          <button id="startBtn" class="btn">▶️ تشغيل</button>
+          <button id="stopBtn" class="btn" disabled>⏹️ إيقاف</button>
+          <button id="switchBtn" class="btn">🔄 تبديل</button>
+          <button id="torchBtn" class="btn">💡 فلاش</button>
+        </div>
+      </div>
+      <video id="video" playsinline muted autoplay></video>
+      <div class="row" style="margin-top:10px">
+        <div style="flex:1">
+          <div class="muted" id="lblCam">الكاميرا</div>
+          <select id="cameraSelect" class="select"></select>
+        </div>
+        <div style="flex:1">
+          <div class="muted" id="lblManual">إدخال يدوي</div>
+          <div class="row">
+            <input id="manualCode" class="input" placeholder="SA_001" />
+            <button id="manualBtn" class="btn">تحقق</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <div class="card" style="flex:1">
+        <div class="muted" style="font-size:12px">النتيجة الأخيرة</div>
+        <div id="lastCode" style="font-size:22px;font-weight:800;margin-top:6px">—</div>
+        <div id="lastMsg" class="muted" style="font-size:12px;margin-top:4px">—</div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="muted" style="font-size:12px">السجل (محفوظ محليًا حسب المناسبة)</div>
+        <div id="hist" class="hist"></div>
+        <div class="row" style="margin-top:8px"><button id="clearHist" class="btn">مسح السجل</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZXing candidates & native flag -->
+  <script>
+    (function(){
+      const CANDS=[
+        'https://unpkg.com/@zxing/browser@0.1.3/umd/index.min.js',
+        'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.3/umd/index.min.js',
+        'https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js',
+        'https://cdn.jsdelivr.net/npm/@zxing/library@0.18.6/umd/index.min.js'
+      ];
+      function load(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
+      window.ensureZXing=async()=>{if(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))return true;for(const u of CANDS){try{await load(u);if(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))return true;}catch(_){} }return !!(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))};
+      window.hasNativeDetector = 'BarcodeDetector' in window;
+    })();
+  </script>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+  <script>
+  (function(){
+    const $=(s,root=document)=>root.querySelector(s);
+    const T={
+      ar:{ready:'جاهز',checking:'جاري التحقق…',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',camera:'الكاميرا',manual:'إدخال يدوي',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',notfound:'❌ الكود غير موجود',mismatch:'❌ لا يخص هذه المناسبة',needHttps:'⚠️ يتطلب HTTPS',camlib:'⚠️ مكتبة الكاميرا لم تُحمّل',paused:'⏸️ إيقاف مؤقت'},
+      en:{ready:'Ready',checking:'Checking…',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',camera:'Camera',manual:'Manual input',ok:'✅ Accepted',dupe:'⚠️ Already used',notfound:'❌ Code not found',mismatch:'❌ Not this event',needHttps:'⚠️ HTTPS required',camlib:'⚠️ Camera lib not loaded',paused:'⏸️ Paused'}
+    };
+    let LANG=localStorage.getItem('hs:evscan:lang')||'ar';
+    function i18n(){ const L=T[LANG]; $('#langBtn').textContent = (LANG==='ar'?'EN':'AR'); $('#statusText').textContent=L.ready; $('#lblCam').textContent=L.camera; $('#lblManual').textContent=L.manual; $('#startBtn').textContent=L.start; $('#stopBtn').textContent=L.stop; $('#switchBtn').textContent=L.switch; $('#torchBtn').textContent=L.flash; }
+
+    // ===== Fixed Event =====
+    const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
+    if(!firebase.apps.length){ firebase.initializeApp(cfg); }
+    const db=firebase.firestore();
+
+    // اجعل المناسبة ثابتة عبر ?event=NAME أو ثابت داخل الكود
+    const URL_EVENT = new URLSearchParams(location.search).get('event');
+    const EVENT_NAME = URL_EVENT || 'زفاف سعيد'; // ← غيّر الاسم هنا عند بناء صفحة خاصة
+    $('#evTag').textContent = EVENT_NAME;
+
+    // HTTPS guard
+    function httpsOK(){ const isLocal = ['localhost','127.0.0.1'].includes(location.hostname); const ok = location.protocol==='https:'||isLocal; $('#httpsWarn').style.display = ok? 'none':'block'; $('#startBtn').disabled = !ok; return ok; }
+
+    // History
+    function hKey(){ return `hs:evscan:hist:${EVENT_NAME}` }
+    function getHist(){ try{ return JSON.parse(localStorage.getItem(hKey())||'[]'); }catch{return []} }
+    function pushHist(code,msg,good){ const h=getHist(); h.unshift({code,msg,at:Date.now(),good}); localStorage.setItem(hKey(), JSON.stringify(h.slice(0,80))); renderHist(); }
+    function renderHist(){ const box=$('#hist'); const L=T[LANG]; const h=getHist(); box.innerHTML=''; if(!h.length){ box.innerHTML = `<div class="muted">—</div>`; return; } h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='6px'; d.style.borderTop='1px solid var(--line)'; d.innerHTML = `<div style="font-family:ui-monospace">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); }); }
+
+    // UI helpers
+    function setStatus(text,color){ $('#statusText').textContent=text; $('#statusDot').style.background=color; }
+    function showLast(code,msg,good){ $('#lastCode').textContent=code||'—'; $('#lastCode').style.color = good? '#86efac':'#fca5a5'; $('#lastMsg').textContent=msg||''; }
+
+    // Camera state
+    let devices=[], currentDeviceId=null, track=null, scanning=false, torch=false, rafId=null, lastAt=0; const cooldown=1200; let reader=null, ndet=null;
+
+    async function ensurePerm(){ try{ const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); tmp.getTracks().forEach(t=>t.stop()); }catch{} }
+    async function listCams(){ const all=await navigator.mediaDevices.enumerateDevices(); devices = all.filter(d=>d.kind==='videoinput'); const sel=$('#cameraSelect'); sel.innerHTML=''; devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label||`Camera ${i+1}`; sel.appendChild(o); }); if(devices.length){ if(!currentDeviceId){ const back=devices.find(d=>/back|rear|environment/i.test(d.label||'')); currentDeviceId = back? back.deviceId : devices[0].deviceId; } sel.value=currentDeviceId; }
+    }
+
+    async function start(){ if(!httpsOK()) { alert(T[LANG].needHttps); return; } await ensurePerm(); await listCams(); const video=$('#video'); const dev=$('#cameraSelect').value||currentDeviceId; currentDeviceId=dev; const stream = await navigator.mediaDevices.getUserMedia({video:{deviceId: dev? {exact:dev}:undefined, focusMode:'continuous'}, audio:false}); video.srcObject=stream; await video.play().catch(()=>{}); track = stream.getVideoTracks()[0]||null; scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false; setStatus(T[LANG].ready,'#22c55e');
+      // Try ZXing first
+      const zxingOk = await window.ensureZXing();
+      if(zxingOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){
+        reader = new window.ZXing.BrowserMultiFormatReader();
+        reader.decodeFromVideoDevice(dev||null, video, (res,err)=>{
+          if(res){ const now=Date.now(); if(now-lastAt<cooldown) return; lastAt=now; const text = res.getText? res.getText(): (res.text||''); onCode(String(text||'').trim()); }
+        });
+      } else if('BarcodeDetector' in window){
+        ndet = new window.BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']});
+        const loop=async()=>{ if(!scanning) return; try{ const bar=await ndet.detect(video); if(bar && bar.length){ const now=Date.now(); if(now-lastAt>=cooldown){ lastAt=now; onCode(String(bar[0].rawValue||'').trim()); } } }catch{} rafId = requestAnimationFrame(loop); };
+        loop();
+      } else {
+        alert(T[LANG].camlib); setStatus(T[LANG].camlib,'#f59e0b');
+      }
+    }
+
+    async function stop(){ try{ if(reader){ try{reader.reset();}catch{} reader=null; } if(rafId){ cancelAnimationFrame(rafId); rafId=null; } if(track){ try{track.stop();}catch{} track=null; } const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; setStatus(T[LANG].paused,'#f59e0b'); }
+
+    async function switchCam(){ if(!devices.length) return; const idx=devices.findIndex(d=>d.deviceId===currentDeviceId); const next=devices[(idx+1)%devices.length]; currentDeviceId=next.deviceId; $('#cameraSelect').value=currentDeviceId; if(scanning){ await stop(); await start(); } }
+
+    async function toggleTorch(){ try{ if(!track) return; const caps=track.getCapabilities?.(); if(!caps?.torch) return alert('No torch'); torch=!torch; await track.applyConstraints({advanced:[{torch}]}); }catch(e){ alert('Torch error'); } }
+
+    // ===== Verification against Firestore (event-locked)
+    async function verifyAndMark(code){ const L=T[LANG]; setStatus(L.checking,'#f59e0b');
+      try{
+        // كولكشن invites: نبحث بالـ Code + EventName
+        const ref = db.collection('invites');
+        const q = await ref.where('Code','==',code).where('EventName','==',EVENT_NAME).limit(1).get();
+        if(q.empty){ showLast(code,L.mismatch,false); pushHist(code,L.mismatch,false); return; }
+        const doc = q.docs[0]; const data = doc.data()||{};
+        if(String((data.Status||'')).toLowerCase()==='yes'){
+          showLast(code,L.dupe,false); pushHist(code,L.dupe,false);
+        } else {
+          // علّم أنه مستخدم الآن
+          await doc.ref.set({ Status:'yes', scannedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+          showLast(code,L.ok,true); pushHist(code,L.ok,true);
+        }
+      }catch(e){ showLast(code, e.message||'Error', false); pushHist(code, e.message||'Error', false); }
+    }
+
+    function onCode(text){ if(!text) return; verifyAndMark(text); }
+
+    // Wire
+    document.addEventListener('DOMContentLoaded', ()=>{
+      i18n(); httpsOK(); renderHist();
+      $('#langBtn').addEventListener('click', ()=>{ LANG= (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:evscan:lang',LANG); i18n(); renderHist(); });
+      $('#startBtn').addEventListener('click', start);
+      $('#stopBtn').addEventListener('click', stop);
+      $('#switchBtn').addEventListener('click', switchCam);
+      $('#torchBtn').addEventListener('click', toggleTorch);
+      $('#manualBtn').addEventListener('click', ()=>{ const c=$('#manualCode').value.trim(); if(c) onCode(c); });
+      $('#clearHist').addEventListener('click', ()=>{ localStorage.removeItem(hKey()); renderHist(); });
+    });
+  })();
+  </script>
+</body>
+</html>
