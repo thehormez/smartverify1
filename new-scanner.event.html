@@ -22,6 +22,7 @@
     .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
     .hist{max-height:280px;overflow:auto}
     .ok{color:#86efac} .err{color:#fca5a5}
+    .hidden{display:none}
   </style>
 </head>
 <body>
@@ -30,12 +31,22 @@
       <div style="font-weight:800">🎯 ماسح الباركود — مناسبة محددة</div>
       <div style="margin-inline-start:auto" class="row">
         <span class="tag">Event: <b id="evTag">—</b></span>
+        <button id="setEventBtn" class="btn">تعيين/تغيير الحدث</button>
         <button id="langBtn" class="btn">AR</button>
       </div>
     </div>
 
     <div id="httpsWarn" class="card" style="display:none; border-color:#7f1d1d;background:#450a0a;color:#fecaca">
       ⚠️ الكاميرا تتطلب HTTPS أو localhost.
+    </div>
+
+    <!-- بطاقة تعيين الحدث -->
+    <div id="evSetup" class="card hidden">
+      <div class="muted" style="margin-bottom:6px">اكتب اسم المناسبة بالضبط كما هو في Firestore (الحقل EventName)</div>
+      <div class="row">
+        <input id="evInput" class="input" placeholder="مثال: زفاف سعيد" />
+        <button id="saveEv" class="btn">حفظ</button>
+      </div>
     </div>
 
     <div class="card">
@@ -137,55 +148,74 @@
   (function(){
     const $=(s,root=document)=>root.querySelector(s);
     const T={
-      ar:{ready:'جاهز',checking:'جاري التحقق…',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',camera:'الكاميرا',manual:'إدخال يدوي',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',notfound:'❌ الكود غير موجود',mismatch:'❌ لا يخص هذه المناسبة',needHttps:'⚠️ يتطلب HTTPS',camlib:'⚠️ مكتبة الكاميرا لم تُحمّل',paused:'⏸️ إيقاف مؤقت'},
-      en:{ready:'Ready',checking:'Checking…',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',camera:'Camera',manual:'Manual input',ok:'✅ Accepted',dupe:'⚠️ Already used',notfound:'❌ Code not found',mismatch:'❌ Not this event',needHttps:'⚠️ HTTPS required',camlib:'⚠️ Camera lib not loaded',paused:'⏸️ Paused'}
+      ar:{ready:'جاهز',checking:'جاري التحقق…',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',camera:'الكاميرا',manual:'إدخال يدوي',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',notfound:'❌ الكود غير موجود',mismatch:'❌ لا يخص هذه المناسبة',needHttps:'⚠️ يتطلب HTTPS',camlib:'⚠️ مكتبة الكاميرا لم تُحمّل',paused:'⏸️ إيقاف مؤقت',needEvent:'الرجاء تعيين اسم المناسبة أولاً'},
+      en:{ready:'Ready',checking:'Checking…',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',camera:'Camera',manual:'Manual input',ok:'✅ Accepted',dupe:'⚠️ Already used',notfound:'❌ Code not found',mismatch:'❌ Not this event',needHttps:'⚠️ HTTPS required',camlib:'⚠️ Camera lib not loaded',paused:'⏸️ Paused',needEvent:'Please set the event name first'}
     };
     let LANG=localStorage.getItem('hs:evscan:lang')||'ar';
     function i18n(){ const L=T[LANG]; $('#langBtn').textContent = (LANG==='ar'?'EN':'AR'); $('#statusText').textContent=L.ready; $('#lblCam').textContent=L.camera; $('#lblManual').textContent=L.manual; $('#startBtn').textContent=L.start; $('#stopBtn').textContent=L.stop; $('#switchBtn').textContent=L.switch; $('#torchBtn').textContent=L.flash; }
 
-    // ===== Fixed Event =====
+    // ===== Firebase =====
     const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
     if(!firebase.apps.length){ firebase.initializeApp(cfg); }
     const db=firebase.firestore();
 
-    // اجعل المناسبة ثابتة عبر ?event=NAME أو ثابت داخل الكود
+    // ===== Event handling =====
     const URL_EVENT = new URLSearchParams(location.search).get('event');
-    const EVENT_NAME = URL_EVENT || 'زفاف سعيد'; // ← غيّر الاسم هنا عند بناء صفحة خاصة
-    $('#evTag').textContent = EVENT_NAME;
+    let EVENT_LOCKED = false; // true إذا محدد من URL
+    let EVENT_NAME = '';
+
+    function setEvent(name, locked=false){
+      EVENT_NAME = String(name||'').trim();
+      EVENT_LOCKED = !!locked;
+      $('#evTag').textContent = EVENT_NAME || '—';
+      localStorage.setItem('hs:evscan:event', EVENT_NAME);
+      // تحديث السجل حسب الحدث
+      renderHist();
+      // إخفاء بطاقة التعيين إذا اكتمل
+      $('#evSetup').classList.add('hidden');
+      // تفعيل الأزرار فقط إذا حدث موجود
+      $('#startBtn').disabled = !httpsOK() || !EVENT_NAME;
+      $('#manualBtn').disabled = !EVENT_NAME;
+    }
+
+    function initEvent(){
+      const saved = localStorage.getItem('hs:evscan:event')||'';
+      if(URL_EVENT){ setEvent(URL_EVENT, true); }
+      else if(saved){ setEvent(saved, false); }
+      else { // اطلب من المستخدم التعيين
+        $('#evSetup').classList.remove('hidden');
+        $('#startBtn').disabled = true; $('#manualBtn').disabled=true;
+      }
+    }
 
     // HTTPS guard
-    function httpsOK(){ const isLocal = ['localhost','127.0.0.1'].includes(location.hostname); const ok = location.protocol==='https:'||isLocal; $('#httpsWarn').style.display = ok? 'none':'block'; $('#startBtn').disabled = !ok; return ok; }
+    function httpsOK(){ const isLocal = ['localhost','127.0.0.1'].includes(location.hostname); const ok = location.protocol==='https:'||isLocal; $('#httpsWarn').style.display = ok? 'none':'block'; if(!ok) { $('#startBtn').disabled=true; } return ok; }
 
-    // History
-    function hKey(){ return `hs:evscan:hist:${EVENT_NAME}` }
+    // History per event
+    function hKey(){ return `hs:evscan:hist:${EVENT_NAME||'__NONE__'}` }
     function getHist(){ try{ return JSON.parse(localStorage.getItem(hKey())||'[]'); }catch{return []} }
     function pushHist(code,msg,good){ const h=getHist(); h.unshift({code,msg,at:Date.now(),good}); localStorage.setItem(hKey(), JSON.stringify(h.slice(0,80))); renderHist(); }
-    function renderHist(){ const box=$('#hist'); const L=T[LANG]; const h=getHist(); box.innerHTML=''; if(!h.length){ box.innerHTML = `<div class="muted">—</div>`; return; } h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='6px'; d.style.borderTop='1px solid var(--line)'; d.innerHTML = `<div style="font-family:ui-monospace">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); }); }
+    function renderHist(){ const box=$('#hist'); const L=T[LANG]; box.innerHTML=''; const h=getHist(); if(!EVENT_NAME){ box.innerHTML = `<div class="muted">${L.needEvent}</div>`; return; } if(!h.length){ box.innerHTML = `<div class="muted">—</div>`; return; } h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='6px'; d.style.borderTop='1px solid var(--line)'; d.innerHTML = `<div style="font-family:ui-monospace">${x.code}</div><div class=\"muted\" style=\"font-size:12px\">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); }); }
 
     // UI helpers
     function setStatus(text,color){ $('#statusText').textContent=text; $('#statusDot').style.background=color; }
-    function showLast(code,msg,good){ document.getElementById('lastCode').textContent=code||'—'; document.getElementById('lastCode').style.color = good? '#86efac':'#fca5a5'; document.getElementById('lastMsg').textContent=msg||''; try{ window.__hsPlayTone(good? 'ok':'err'); navigator.vibrate?.(good? 60:120); }catch{} }
+    function showLast(code,msg,good){ $('#lastCode').textContent=code||'—'; $('#lastCode').style.color = good? '#86efac':'#fca5a5'; $('#lastMsg').textContent=msg||''; try{ window.__hsPlayTone(good? 'ok':'err'); navigator.vibrate?.(good? 60:120); }catch{} }
 
     // Camera state
-    let devices=[], currentDeviceId=null, track=null, scanning=false, torch=false, rafId=null; let reader=null, ndet=null; let locked=false; function lockPause(){ locked=true; const ms = Math.max(300, parseInt(document.getElementById('pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
+    let devices=[], currentDeviceId=null, track=null, scanning=false, torch=false, rafId=null; let reader=null, ndet=null; let locked=false; function lockPause(){ locked=true; const ms = Math.max(300, parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
 
     async function ensurePerm(){ try{ const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); tmp.getTracks().forEach(t=>t.stop()); }catch{} }
-    async function listCams(){ const all=await navigator.mediaDevices.enumerateDevices(); devices = all.filter(d=>d.kind==='videoinput'); const sel=$('#cameraSelect'); sel.innerHTML=''; devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label||`Camera ${i+1}`; sel.appendChild(o); }); if(devices.length){ if(!currentDeviceId){ const back=devices.find(d=>/back|rear|environment/i.test(d.label||'')); currentDeviceId = back? back.deviceId : devices[0].deviceId; } sel.value=currentDeviceId; }
+    async function listCams(){ const all=await navigator.mediaDevices.enumerateDevices(); devices = all.filter(d=>d.kind==='videoinput'); const sel=$('#cameraSelect'); sel.innerHTML=''; devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label||`Camera ${i+1}`; sel.appendChild(o); }); if(devices.length){ if(!currentDeviceId){ const back=devices.find(d=>/back|rear|environment|خلف/i.test(d.label||'')); currentDeviceId = back? back.deviceId : devices[0].deviceId; } sel.value=currentDeviceId; }
     }
 
-    async function start(){ locked=false; if(!httpsOK()) { alert(T[LANG].needHttps); return; } await ensurePerm(); await listCams(); const video=$('#video'); const dev=$('#cameraSelect').value||currentDeviceId; currentDeviceId=dev; const stream = await navigator.mediaDevices.getUserMedia({video:{deviceId: dev? {exact:dev}:undefined, focusMode:'continuous'}, audio:false}); video.srcObject=stream; await video.play().catch(()=>{}); track = stream.getVideoTracks()[0]||null; scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false; setStatus(T[LANG].ready,'#22c55e');
-      // Try ZXing first
+    async function start(){ locked=false; if(!EVENT_NAME){ alert(T[LANG].needEvent); return; } if(!httpsOK()) { alert(T[LANG].needHttps); return; } await ensurePerm(); await listCams(); const video=$('#video'); const dev=$('#cameraSelect').value||currentDeviceId; currentDeviceId=dev; const stream = await navigator.mediaDevices.getUserMedia({video:{deviceId: dev? {exact:dev}:undefined, focusMode:'continuous'}, audio:false}); video.srcObject=stream; await video.play().catch(()=>{}); track = stream.getVideoTracks()[0]||null; scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false; setStatus(T[LANG].ready,'#22c55e');
       const zxingOk = await window.ensureZXing();
       if(zxingOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){
         reader = new window.ZXing.BrowserMultiFormatReader();
-        reader.decodeFromVideoDevice(dev||null, video, (res, err) => {
-          if(res){ if(locked) return; const text = res.getText ? res.getText() : (res.text||''); onCode(String(text||'').trim()); }
-        }); if(now-lastAt<cooldown) return; lastAt=now; const text = res.getText? res.getText(): (res.text||''); onCode(String(text||'').trim()); }
-        });
+        reader.decodeFromVideoDevice(dev||null, video, (res,err)=>{ if(res){ if(locked) return; const text = res.getText? res.getText(): (res.text||''); onCode(String(text||'').trim()); } });
       } else if('BarcodeDetector' in window){
         ndet = new window.BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']});
-        const loop=async()=>{ if(!scanning) return; try{ if(!locked){ const bar = await ndet.detect(video); if(bar && bar.length){ onCode(String(bar[0].rawValue||'').trim()); } } }catch{} rafId = requestAnimationFrame(loop); };
-        loop();
+        const loop=async()=>{ if(!scanning) return; try{ if(!locked){ const bar=await ndet.detect(video); if(bar && bar.length){ onCode(String(bar[0].rawValue||'').trim()); } } }catch{} rafId = requestAnimationFrame(loop); }; loop();
       } else {
         alert(T[LANG].camlib); setStatus(T[LANG].camlib,'#f59e0b');
       }
@@ -197,10 +227,10 @@
 
     async function toggleTorch(){ try{ if(!track) return; const caps=track.getCapabilities?.(); if(!caps?.torch) return alert('No torch'); torch=!torch; await track.applyConstraints({advanced:[{torch}]}); }catch(e){ alert('Torch error'); } }
 
-    // ===== Verification against Firestore (event-locked)
+    // ===== Verification (event-locked)
     async function verifyAndMark(code){ const L=T[LANG]; setStatus(L.checking,'#f59e0b');
       try{
-        // كولكشن invites: نبحث بالـ Code + EventName
+        if(!EVENT_NAME){ showLast(code, L.needEvent, false); return; }
         const ref = db.collection('invites');
         const q = await ref.where('Code','==',code).where('EventName','==',EVENT_NAME).limit(1).get();
         if(q.empty){ showLast(code,L.mismatch,false); pushHist(code,L.mismatch,false); return; }
@@ -208,7 +238,6 @@
         if(String((data.Status||'')).toLowerCase()==='yes'){
           showLast(code,L.dupe,false); pushHist(code,L.dupe,false);
         } else {
-          // علّم أنه مستخدم الآن
           await doc.ref.set({ Status:'yes', scannedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
           showLast(code,L.ok,true); pushHist(code,L.ok,true);
         }
@@ -219,14 +248,27 @@
 
     // Wire
     document.addEventListener('DOMContentLoaded', ()=>{
-      i18n(); httpsOK(); renderHist();
+      i18n(); httpsOK(); initEvent(); renderHist();
       $('#langBtn').addEventListener('click', ()=>{ LANG= (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:evscan:lang',LANG); i18n(); renderHist(); });
       $('#startBtn').addEventListener('click', start);
       $('#stopBtn').addEventListener('click', stop);
       $('#switchBtn').addEventListener('click', switchCam);
       $('#torchBtn').addEventListener('click', toggleTorch);
-      $('#manualBtn').addEventListener('click', ()=>{ const c=$('#manualCode').value.trim(); if(c) onCode(c); });
-      $('#clearHist').addEventListener('click', ()=>{ localStorage.removeItem(hKey()); renderHist(); });
+      $('#manualBtn').addEventListener('click', ()=>{ const c=$('#manualCode').value.trim(); if(!c){return;} onCode(c); });
+      $('#clearHist').addEventListener('click', ()=>{ if(!EVENT_NAME) return; localStorage.removeItem(hKey()); renderHist(); });
+
+      $('#setEventBtn').addEventListener('click', ()=>{
+        if(EVENT_LOCKED){ alert('تم تعيين الحدث من خلال رابط الصفحة ولا يمكن تغييره.'); return; }
+        $('#evSetup').classList.toggle('hidden');
+        $('#evInput').value = EVENT_NAME || '';
+      });
+
+      $('#saveEv').addEventListener('click', ()=>{
+        const v = $('#evInput').value.trim();
+        if(!v){ alert('أدخل اسم المناسبة'); return; }
+        if(scanning){ stop(); }
+        setEvent(v, false);
+      });
     });
   })();
   </script>
