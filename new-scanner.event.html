@@ -15,7 +15,12 @@
     .btn:disabled{opacity:.5;cursor:not-allowed}
     .btn:hover{background:#0d1528}
     .select,.input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
-    #video{width:100%;aspect-ratio:3/4;background:#000;border-radius:12px}
+    #video{width:100%;height:clamp(260px,60vh,520px);background:#000;border-radius:12px;object-fit:cover}
+    .scanWrap{width:100%;max-width:560px;margin-inline:auto}
+    @media(max-width:640px){.container{padding:10px} .row{gap:8px} .btn{padding:8px 10px} .select,.input{padding:9px} #video{height:clamp(220px,55vh,440px);} }
+    @media(min-width:1024px){.container{max-width:1060px}}
+    @media(min-width:1280px){.container{max-width:1180px} #video{height:520px}}
+    
     .muted{color:var(--muted)}
     .dot{width:10px;height:10px;border-radius:50%}
     .status{display:flex;gap:8px;align-items:center}
@@ -59,7 +64,9 @@
           <button id="torchBtn" class="btn">💡 فلاش</button>
         </div>
       </div>
-      <video id="video" playsinline muted autoplay></video>
+      <div class="scanWrap">
+        <video id="video" playsinline muted autoplay></video>
+      </div>
       <div class="row" style="margin-top:10px">
         <div style="width:180px">
           <div class="muted">فترة التوقف بين القراءات (ملّي ثانية)</div>
@@ -103,24 +110,19 @@
     </div>
   </div>
 
-  <!-- أصوات بسيطة عبر WebAudio -->
+  <!-- أصوات واضحة (WAV مضمّنة) -->
+  <audio id="sndOk" preload="auto">
+    <source type="audio/wav" src="data:audio/wav;base64,UklGRrYAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAaW5mbwAAABAA..." />
+  </audio>
+  <audio id="sndErr" preload="auto">
+    <source type="audio/wav" src="data:audio/wav;base64,UklGRq8AAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAaW5mbwAAABAA..." />
+  </audio>
   <script>
     window.__hsPlayTone = function(type='ok'){
       try{ if(document.getElementById('soundMode')?.value==='off') return; }catch{}
       try{
-        const ctx = new (window.AudioContext||window.webkitAudioContext)();
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.type = 'sine';
-        const now = ctx.currentTime;
-        const dur = type==='ok'? 0.12 : 0.22;
-        const freq = type==='ok'? 880 : 220;
-        o.frequency.value = freq;
-        o.connect(g); g.connect(ctx.destination);
-        g.gain.setValueAtTime(0.001, now);
-        g.gain.exponentialRampToValueAtTime(0.2, now+0.02);
-        g.gain.exponentialRampToValueAtTime(0.001, now+dur);
-        o.start(now); o.stop(now+dur+0.02);
+        const el = (type==='ok') ? document.getElementById('sndOk') : document.getElementById('sndErr');
+        if(!el) return; el.currentTime = 0; const p = el.play(); if(p && p.catch) p.catch(()=>{});
       }catch{}
     }
   </script>
