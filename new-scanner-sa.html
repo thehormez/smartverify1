@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — Event Scanner Pro</title>
+  <title>Hormez — Event Scanner Pro (Inline Audio)</title>
   <style>
-    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--card:#0e172a}
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b}
     body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
     .container{max-width:1200px;margin:0 auto;padding:14px}
     .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
@@ -43,16 +43,16 @@
     <div class="container row" style="justify-content:space-between">
       <div class="row"><b>HS</b><div id="tbTitle" class="muted" style="margin-inline-start:8px">ماسح الباركود — مناسبة محددة</div></div>
       <div class="row">
-        <span class="tag"><span id="lblEventTop">Event</span>: <b id="evTag">—</b></span>
+        <span class="tag"><span id="lblEventTop">الحدث</span>: <b id="evTag">—</b></span>
         <button id="setEventBtn" class="btn">تعيين/تغيير الحدث</button>
-        <button id="langBtn" class="btn">AR</button>
+        <button id="langBtn" class="btn">EN</button>
       </div>
     </div>
   </div>
 
   <div class="container grid grid-2">
     <!-- Left: Scanner -->
-    <div class="card">
+    <div class="card" id="dropZone">
       <div class="row" style="justify-content:space-between; gap:8px">
         <div class="status"><div id="statusDot" class="dot" style="background:#9ca3af"></div><div id="statusText" class="muted">—</div></div>
         <div class="row">
@@ -74,7 +74,7 @@
       <!-- Controls -->
       <div class="row" style="margin-top:10px">
         <div style="width:150px">
-          <div id="lblPause" class="muted">فترة التوقف (ms)</div>
+          <div id="lblPause" class="muted">فترة التوقف (ملّي ثانية)</div>
           <input id="pauseMs" class="input" type="number" value="2000" />
         </div>
         <div style="width:140px">
@@ -105,15 +105,15 @@
         </div>
       </div>
 
-      <!-- Custom sounds -->
+      <!-- Inline sounds + manual input -->
       <div class="row" style="margin-top:10px">
-        <div style="width:260px">
-          <div id="lblOkSound" class="muted">صوت القبول (MP3/WAV)</div>
-          <input id="okFile" type="file" accept="audio/*" class="input" />
-        </div>
-        <div style="width:260px">
-          <div id="lblErrSound" class="muted">صوت الرفض (MP3/WAV)</div>
-          <input id="errFile" type="file" accept="audio/*" class="input" />
+        <div style="flex:1">
+          <div id="lblManual" class="muted">إدخال يدوي</div>
+          <div class="row">
+            <input id="manualCode" class="input" placeholder="SA_001" />
+            <button id="manualBtn" class="btn">تحقق</button>
+          </div>
+          <div class="muted" style="font-size:12px;margin-top:6px">يمكنك أيضًا سحب وإفلات ملفي الصوت هنا (success.wav / error.wav) لحفظهما محليًا.</div>
         </div>
       </div>
 
@@ -141,7 +141,6 @@
 
   <!-- QR lib for preview -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-
   <!-- ZXing loader & native flag -->
   <script>
     (function(){
@@ -165,21 +164,24 @@
   (function(){
     const $=(s,root=document)=>root.querySelector(s);
 
+    // ===== Embedded Audio (paste data URIs here if available) =====
+    // NOTE: we also persist to localStorage when files are dropped/selected; on next load we auto-use stored versions.
+    const EMBED_OK = '';
+    const EMBED_ERR = '';
+
     // ===== i18n FULL =====
     const I18N={
       ar:{tbTitle:'ماسح الباركود — مناسبة محددة', eventTop:'الحدث', setEvent:'تعيين/تغيير الحدث', langBtn:'EN',
           ready:'جاهز', checking:'جاري التحقق…', paused:'⏸️ مؤقت', needEvent:'حدد المناسبة أولاً', ok:'✅ مقبول', dupe:'⚠️ مستخدم سابقًا', mismatch:'❌ غير تابع للمناسبة', notfound:'❌ غير موجود',
-          start:'▶️ تشغيل', stop:'⏹️ إيقاف', switch:'🔄 تبديل', torch:'💡 فلاش',
+          start:'▶️ تشغيل', stop:'⏹️ إيقاف', switch:'🔄 تبديل', torch:'💡 فلاش', manual:'إدخال يدوي', manualBtn:'تحقق', placeholderManual:'SA_001',
           pauseLbl:'فترة التوقف (ملّي ثانية)', soundLbl:'الأصوات', scanSize:'حجم القارئ', regex:'نمط الكود (Regex)', strict:'وضع صارم', strictOn:'مطابق فقط', strictOff:'اقبل الكل',
-          okSound:'صوت القبول (MP3/WAV)', errSound:'صوت الرفض (MP3/WAV)',
-          last:'النتيجة الأخيرة', history:'السجل (محفوظ محليًا حسب المناسبة)', clear:'مسح السجل', httpsWarn:'⚠️ الكاميرا تتطلب HTTPS أو localhost.', placeholderManual:'SA_001'
+          last:'النتيجة الأخيرة', history:'السجل (محفوظ محليًا حسب المناسبة)', clear:'مسح السجل', httpsWarn:'⚠️ الكاميرا تتطلب HTTPS أو localhost.'
       },
       en:{tbTitle:'Barcode Scanner — Event Locked', eventTop:'Event', setEvent:'Set/Change Event', langBtn:'AR',
           ready:'Ready', checking:'Checking…', paused:'⏸️ Paused', needEvent:'Set the event first', ok:'✅ Accepted', dupe:'⚠️ Already used', mismatch:'❌ Not this event', notfound:'❌ Not found',
-          start:'▶️ Start', stop:'⏹️ Stop', switch:'🔄 Switch', torch:'💡 Torch',
+          start:'▶️ Start', stop:'⏹️ Stop', switch:'🔄 Switch', torch:'💡 Torch', manual:'Manual input', manualBtn:'Verify', placeholderManual:'SA_001',
           pauseLbl:'Pause (ms)', soundLbl:'Sounds', scanSize:'Scanner size', regex:'Code pattern (Regex)', strict:'Strict mode', strictOn:'Match only', strictOff:'Accept all',
-          okSound:'Success sound (MP3/WAV)', errSound:'Error sound (MP3/WAV)',
-          last:'Last result', history:'History (per event, local)', clear:'Clear history', httpsWarn:'⚠️ Camera requires HTTPS or localhost.', placeholderManual:'SA_001'
+          last:'Last result', history:'History (per event, local)', clear:'Clear history', httpsWarn:'⚠️ Camera requires HTTPS or localhost.'
       }
     }
     let LANG = localStorage.getItem('hs:evscan:lang') || 'ar';
@@ -190,9 +192,8 @@
       $('#startBtn').textContent=t.start; $('#stopBtn').textContent=t.stop; $('#switchBtn').textContent=t.switch; $('#torchBtn').textContent=t.torch;
       $('#lblPause').textContent=t.pauseLbl; $('#lblSound').textContent=t.soundLbl; $('#lblScanSize').textContent=t.scanSize; $('#lblRegex').textContent=t.regex; $('#lblStrict').textContent=t.strict;
       const strictSel=$('#strictMode'); if(strictSel){ strictSel.options[0].text=t.strictOn; strictSel.options[1].text=t.strictOff; }
-      $('#lblOkSound').textContent=t.okSound; $('#lblErrSound').textContent=t.errSound;
-      $('#lblLast').textContent=t.last; $('#lblHist').textContent=t.history; $('#clearHist').textContent=t.clear;
-      $('#httpsWarn').textContent=t.httpsWarn; $('#manualCode')?.setAttribute('placeholder', t.placeholderManual);
+      $('#lblLast').textContent=t.last; $('#lblHist').textContent=t.history; $('#clearHist').textContent=t.clear; $('#httpsWarn').textContent=t.httpsWarn;
+      $('#lblManual').textContent=t.manual; $('#manualBtn').textContent=t.manualBtn; $('#manualCode')?.setAttribute('placeholder', t.placeholderManual);
       setStatus(t.ready,'#16a34a');
     }
 
@@ -201,58 +202,73 @@
     if(!firebase.apps.length){ firebase.initializeApp(cfg); }
     const db=firebase.firestore();
 
-    // ===== Event state
+    // ===== Event state =====
     const URL_EVENT = new URLSearchParams(location.search).get('event');
     let EVENT_LOCKED=false, EVENT_NAME='';
     function setEvent(name,locked=false){ EVENT_NAME=String(name||'').trim(); EVENT_LOCKED=!!locked; $('#evTag').textContent=EVENT_NAME||'—'; localStorage.setItem('hs:evscan:event',EVENT_NAME); renderHist(); refreshButtons(); }
     function initEvent(){ const saved=localStorage.getItem('hs:evscan:event')||''; if(URL_EVENT){ setEvent(URL_EVENT,true); } else if(saved){ setEvent(saved); } else { promptEvent(); } }
-    function promptEvent(){ const t=I18N[LANG]||I18N.ar; const name=prompt((LANG==='ar'?'اكتب اسم المناسبة (مطابق لـ EventName):':'Enter event name (exact EventName):')); if(name){ setEvent(name,false); } }
+    function promptEvent(){ const name=prompt((LANG==='ar'?'اكتب اسم المناسبة (مطابق لـ EventName):':'Enter event name (exact EventName):')); if(name){ setEvent(name,false); } }
 
-    // ===== HTTPS guard
+    // ===== HTTPS guard =====
     function httpsOK(){ const isLocal=['localhost','127.0.0.1'].includes(location.hostname); const ok=location.protocol==='https:'||isLocal; $('#httpsWarn').style.display= ok? 'none':'block'; return ok; }
 
-    // ===== Audio (custom files with fallback tone)
-    let audioCtx=null, okURL=null, errURL=null, okAudio=null, errAudio=null;
+    // ===== Audio =====
+    let audioCtx=null, okAudio=null, errAudio=null;
     function ensureAudio(){ try{ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended') audioCtx.resume(); }catch{} }
-    function setCustomAudio(kind, file){ if(!file) return; const url=URL.createObjectURL(file); if(kind==='ok'){ okURL&&URL.revokeObjectURL(okURL); okURL=url; okAudio=new Audio(okURL); localStorage.setItem('hs:evscan:ok', 'blob'); } else { errURL&&URL.revokeObjectURL(errURL); errURL=url; errAudio=new Audio(errURL); localStorage.setItem('hs:evscan:err', 'blob'); } }
-    function playTone(kind='ok'){
-      if($('#soundMode')?.value==='off') return;
-      ensureAudio();
-      // Prefer custom files
+
+    function loadAudioFromDataURI(){
+      // 1) hard-embedded
+      if(EMBED_OK){ okAudio=new Audio(EMBED_OK); okAudio.preload='auto'; }
+      if(EMBED_ERR){ errAudio=new Audio(EMBED_ERR); errAudio.preload='auto'; }
+      // 2) localStorage (persisted after drop)
       try{
-        if(kind==='ok' && okAudio){ okAudio.currentTime=0; okAudio.play().catch(()=>{}); return; }
-        if(kind==='err' && errAudio){ errAudio.currentTime=0; errAudio.play().catch(()=>{}); return; }
-      }catch{}
-      // Fallback simple tone
-      try{
-        if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
-        o.type='sine'; o.frequency.value=(kind==='ok')?880:220; const now=audioCtx.currentTime; const dur=(kind==='ok')?0.12:0.22;
-        o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(0.0001,now); g.gain.exponentialRampToValueAtTime(0.25,now+0.02); g.gain.exponentialRampToValueAtTime(0.0001,now+dur); o.start(); o.stop(now+dur+0.02);
+        if(!okAudio){ const s=localStorage.getItem('hs:evscan:okData'); if(s) { okAudio=new Audio(s); okAudio.preload='auto'; } }
+        if(!errAudio){ const s=localStorage.getItem('hs:evscan:errData'); if(s) { errAudio=new Audio(s); errAudio.preload='auto'; } }
       }catch{}
     }
 
-    // ===== History
+    function playTone(kind='ok'){
+      if($('#soundMode')?.value==='off') return;
+      ensureAudio();
+      try{ const a=(kind==='ok')? okAudio: errAudio; if(a){ a.currentTime=0; a.play().catch(()=>{}); return; } }catch{}
+      // fallback tone
+      try{ if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.value=(kind==='ok')?880:220; const now=audioCtx.currentTime; const dur=(kind==='ok')?0.12:0.22; o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(0.0001,now); g.gain.exponentialRampToValueAtTime(0.25,now+0.02); g.gain.exponentialRampToValueAtTime(0.0001,now+dur); o.start(); o.stop(now+dur+0.02);}catch{}
+    }
+
+    // Drag & drop inline store
+    function wireDrop(){
+      const dz=document.getElementById('dropZone'); if(!dz) return;
+      ['dragover','dragenter'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.style.outline='2px dashed #64748b'; }));
+      ['dragleave','drop'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.style.outline=''; }));
+      dz.addEventListener('drop', async (e)=>{
+        const files=[...e.dataTransfer.files];
+        for(const f of files){ const buf=await f.arrayBuffer(); const b64=btoa(String.fromCharCode(...new Uint8Array(buf))); const uri=`data:${f.type||'audio/wav'};base64,${b64}`;
+          if(/success|ok/i.test(f.name)) { localStorage.setItem('hs:evscan:okData',uri); okAudio=new Audio(uri); okAudio.preload='auto'; }
+          if(/error|err/i.test(f.name))   { localStorage.setItem('hs:evscan:errData',uri); errAudio=new Audio(uri); errAudio.preload='auto'; }
+        }
+        alert('✅ تم حفظ الأصوات محليًا، سيُستخدمان تلقائيًا.');
+      });
+    }
+
+    // ===== History =====
     function hKey(){return `hs:evscan:hist:${EVENT_NAME||'__NONE__'}`}
     function getHist(){ try{return JSON.parse(localStorage.getItem(hKey())||'[]')}catch{return[]} }
     function pushHist(code,msg,good){ const h=getHist(); h.unshift({code,msg,good,at:Date.now()}); localStorage.setItem(hKey(),JSON.stringify(h.slice(0,80))); renderHist(); }
     function renderHist(){ const box=$('#hist'); const t=I18N[LANG]; box.innerHTML=''; const h=getHist(); if(!EVENT_NAME){ box.innerHTML=`<div class="muted">${t.needEvent}</div>`; return;} if(!h.length){ box.innerHTML=`<div class="muted">—</div>`; return;} h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='6px'; d.style.borderTop='1px solid rgba(255,255,255,.08)'; d.innerHTML=`<div class="mono">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); }); }
 
-    // ===== UI helpers
+    // ===== UI helpers =====
     function refreshButtons(){ const t=I18N[LANG]; $('#startBtn').textContent=t.start; $('#stopBtn').textContent=t.stop; $('#switchBtn').textContent=t.switch; $('#torchBtn').textContent=t.torch; $('#startBtn').disabled = !httpsOK() || !EVENT_NAME; $('#stopBtn').disabled = !scanning; }
     function setStatus(text,color){ $('#statusText').textContent=text; $('#statusDot').style.background=color; }
     function drawQR(text){ const c=$('#qrCanvas'); if(!c) return; const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); if(!text) return; try{ QRCode.toCanvas(c,text,{width:120,margin:1},()=>{});}catch{} }
     function highlight(ok){ const w=$('#scanWrap'); w.classList.remove('ok','err'); w.classList.add(ok?'ok':'err'); const ms=Math.max(300,parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ w.classList.remove('ok','err'); }, Math.min(ms, 2500)); }
 
-    // ===== Scanner state
-    let devices=[], currentDeviceId=null, track=null, scanning=false, rafId=null, reader=null, ndet=null; let locked=false;
+    // ===== Scanner state =====
+    let scanning=false, rafId=null, reader=null, ndet=null; let locked=false;
     function lockPause(){ locked=true; const ms=Math.max(300,parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
     function strictOn(){ return ($('#strictMode')?.value||'on')==='on'; }
     function codeRegex(){ try{ return new RegExp($('#codeRegex')?.value||''); }catch{ return null; } }
 
-    async function ensurePerm(){ try{ const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); tmp.getTracks().forEach(t=>t.stop()); }catch{} }
-    async function listCams(){ const all=await navigator.mediaDevices.enumerateDevices(); devices=all.filter(d=>d.kind==='videoinput'); }
-
-    async function start(){ ensureAudio(); if(!EVENT_NAME){ alert(I18N[LANG].needEvent); return; } if(!httpsOK()){ alert(I18N[LANG].httpsWarn); return;} await ensurePerm(); await listCams(); const v=$('#video'); const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}, audio:false}); v.srcObject=stream; await v.play().catch(()=>{}); track=stream.getVideoTracks()[0]||null; scanning=true; refreshButtons(); setStatus(I18N[LANG].ready,'#16a34a');
+    async function start(){ ensureAudio(); loadAudioFromDataURI(); if(!EVENT_NAME){ alert(I18N[LANG].needEvent); return; } if(!httpsOK()){ alert(I18N[LANG].httpsWarn); return;} const v=$('#video'); const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}, audio:false}); v.srcObject=stream; await v.play().catch(()=>{}); scanning=true; refreshButtons(); setStatus(I18N[LANG].ready,'#16a34a');
       const zOk=await window.ensureZXing();
       if(zOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){ let r; try{ if(window.ZXing.BarcodeFormat&&window.ZXing.DecodeHintType){ const hints=new Map(); hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS,[window.ZXing.BarcodeFormat.QR_CODE]); r=new window.ZXing.BrowserMultiFormatReader(hints);} else { r=new window.ZXing.BrowserMultiFormatReader(); } }catch{ r=new window.ZXing.BrowserMultiFormatReader(); }
         reader=r; reader.decodeFromVideoDevice(null, v, (res,err)=>{ if(res){ if(locked) return; const text=res.getText?res.getText():(res.text||''); handleRawScan(String(text||'').trim()); } });
@@ -260,9 +276,9 @@
       else { alert('Camera library not loaded'); setStatus('⚠️', '#f59e0b'); }
     }
 
-    async function stop(){ try{ if(reader){ try{reader.reset();}catch{} reader=null;} if(rafId){ cancelAnimationFrame(rafId); rafId=null;} const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } track=null; }catch{} scanning=false; refreshButtons(); setStatus(I18N[LANG].paused,'#f59e0b'); }
+    async function stop(){ try{ if(reader){ try{reader.reset();}catch{} reader=null;} if(rafId){ cancelAnimationFrame(rafId); rafId=null;} const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} scanning=false; refreshButtons(); setStatus(I18N[LANG].paused,'#f59e0b'); }
 
-    // ===== Verify
+    // ===== Verify =====
     async function verifyAndMark(code){ setStatus(I18N[LANG].checking,'#f59e0b');
       try{
         const q=await db.collection('invites').where('Code','==',code).where('EventName','==',EVENT_NAME).limit(1).get();
@@ -278,22 +294,17 @@
     function onCode(text){ if(!text) return; if(locked) return; lockPause(); verifyAndMark(text); }
     function handleRawScan(raw){ const strict=strictOn(); const re=codeRegex(); if(strict){ if(!re) return; if(!re.test(raw)) return; } onCode(raw); }
 
-    // ===== Wire
+    // ===== Wire =====
     document.addEventListener('DOMContentLoaded', ()=>{
       // Lang
       applyLang();
       $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:evscan:lang',LANG); applyLang(); renderHist(); });
 
       // Event
-      const URL_EVENT = new URLSearchParams(location.search).get('event');
       if(URL_EVENT){ setEvent(URL_EVENT,true); } else { const saved=localStorage.getItem('hs:evscan:event')||''; if(saved){ setEvent(saved); } else { promptEvent(); } }
 
       // Size control
       const savedW=localStorage.getItem('hs:evscan:scanw'); if(savedW && $('#scanSize')) $('#scanSize').value=savedW; applyScanSize(); $('#scanSize')?.addEventListener('change', applyScanSize);
-
-      // Custom sounds
-      $('#okFile')?.addEventListener('change', e=>{ const f=e.target.files?.[0]; if(f) setCustomAudio('ok', f); });
-      $('#errFile')?.addEventListener('change', e=>{ const f=e.target.files?.[0]; if(f) setCustomAudio('err', f); });
 
       // Buttons
       $('#startBtn').addEventListener('click', ()=>{ ensureAudio(); start(); });
@@ -301,6 +312,10 @@
       $('#switchBtn').addEventListener('click', async ()=>{ await stop(); start(); });
       $('#torchBtn').addEventListener('click', ()=>{ alert('Use system torch if available (browser limits).'); });
       $('#clearHist').addEventListener('click', ()=>{ if(!EVENT_NAME) return; localStorage.removeItem(hKey()); renderHist(); });
+      $('#manualBtn').addEventListener('click', ()=>{ ensureAudio(); const c=$('#manualCode').value.trim(); if(!c) return; handleRawScan(c); });
+
+      // Drop audio to inline store
+      wireDrop();
     });
 
     function applyScanSize(){ const wrap=$('#scanWrap'); if(!wrap) return; const w=$('#scanSize')?.value||'480'; wrap.style.maxWidth=w+'px'; localStorage.setItem('hs:evscan:scanw',w); }
