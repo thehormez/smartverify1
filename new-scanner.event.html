@@ -23,7 +23,7 @@
     .status{display:flex;gap:8px;align-items:center}
 
     /* Scanner video */
-    .scanWrap{position:relative;width:100%;aspect-ratio:3/4;max-width:680px;margin-inline:auto;border-radius:14px;overflow:hidden;background:#000;border:1px solid rgba(255,255,255,.08)}
+    .scanWrap{position:relative;width:100%;aspect-ratio:3/4;max-width:480px;margin-inline:auto;border-radius:14px;overflow:hidden;background:#000;border:1px solid rgba(255,255,255,.08)}
     #video{width:100%;height:100%;object-fit:cover}
     .frame{position:absolute;inset:0;pointer-events:none}
     .corner{position:absolute;width:42px;height:42px;border:3px solid rgba(255,255,255,.7)}
@@ -79,22 +79,30 @@
 
       <!-- Controls -->
       <div class="row" style="margin-top:10px">
-        <div style="width:180px">
+        <div style="width:160px">
           <div class="muted">فترة التوقف (ملّي ثانية)</div>
           <input id="pauseMs" class="input" type="number" value="2000" />
         </div>
-        <div style="width:160px">
+        <div style="width:150px">
           <div class="muted">الأصوات</div>
           <select id="soundMode" class="select">
             <option value="on">تشغيل</option>
             <option value="off">إيقاف</option>
           </select>
         </div>
-        <div style="width:230px">
+        <div style="width:180px">
+          <div class="muted">حجم القارئ</div>
+          <select id="scanSize" class="select">
+            <option value="360">صغير</option>
+            <option value="480" selected>متوسط</option>
+            <option value="680">كبير</option>
+          </select>
+        </div>
+        <div style="width:220px">
           <div class="muted">نمط الكود (Regex)</div>
           <input id="codeRegex" class="input mono" value="^[A-Z]{2}_[0-9]{3,}$" />
         </div>
-        <div style="width:190px">
+        <div style="width:170px">
           <div class="muted">وضع صارم</div>
           <select id="strictMode" class="select">
             <option value="on">اقبل المطابق فقط</option>
@@ -305,6 +313,14 @@
     // Wire
     document.addEventListener('DOMContentLoaded', ()=>{
       i18n(); httpsOK(); initEvent(); renderHist(); drawQRPreview('');
+      // حجم القارئ
+      const savedW = localStorage.getItem('hs:evscan:scanw');
+      if(savedW && document.getElementById('scanSize')){
+        document.getElementById('scanSize').value = savedW;
+      }
+      applyScanSize();
+      document.getElementById('scanSize')?.addEventListener('change', applyScanSize);
+
       $('#langBtn').addEventListener('click', ()=>{ LANG= (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:evscan:lang',LANG); i18n(); renderHist(); });
       $('#startBtn').addEventListener('click', ()=>{ ensureAudio(); start(); });
       $('#stopBtn').addEventListener('click', stop);
@@ -315,7 +331,6 @@
 
       $('#setEventBtn').addEventListener('click', ()=>{
         if(EVENT_LOCKED){ alert('تم تعيين الحدث من خلال رابط الصفحة ولا يمكن تغييره.'); return; }
-        // toggle inline setup card
         const ex=document.getElementById('evSetup');
         if(ex){ ex.classList.toggle('hidden'); ex.querySelector('#evInput')?.focus(); }
         else{
@@ -327,6 +342,13 @@
         }
       });
     });
+
+    function applyScanSize(){
+      const wrap = document.getElementById('scanWrap'); if(!wrap) return;
+      const w = document.getElementById('scanSize')?.value || '480';
+      wrap.style.maxWidth = w + 'px';
+      localStorage.setItem('hs:evscan:scanw', w);
+    }
   })();
   </script>
 </body>
