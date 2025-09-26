@@ -50,6 +50,20 @@
       </div>
       <video id="video" playsinline muted autoplay></video>
       <div class="row" style="margin-top:10px">
+        <div style="width:180px">
+          <div class="muted">فترة التوقف بين القراءات (ملّي ثانية)</div>
+          <input id="pauseMs" class="input" type="number" value="2000" />
+        </div>
+        <div style="width:160px">
+          <div class="muted">الأصوات</div>
+          <select id="soundMode" class="select">
+            <option value="on">تشغيل</option>
+            <option value="off">إيقاف</option>
+          </select>
+        </div>
+        <div style="flex:1"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
         <div style="flex:1">
           <div class="muted" id="lblCam">الكاميرا</div>
           <select id="cameraSelect" class="select"></select>
@@ -77,6 +91,28 @@
       </div>
     </div>
   </div>
+
+  <!-- أصوات بسيطة عبر WebAudio -->
+  <script>
+    window.__hsPlayTone = function(type='ok'){
+      try{ if(document.getElementById('soundMode')?.value==='off') return; }catch{}
+      try{
+        const ctx = new (window.AudioContext||window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        const now = ctx.currentTime;
+        const dur = type==='ok'? 0.12 : 0.22;
+        const freq = type==='ok'? 880 : 220;
+        o.frequency.value = freq;
+        o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.001, now);
+        g.gain.exponentialRampToValueAtTime(0.2, now+0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, now+dur);
+        o.start(now); o.stop(now+dur+0.02);
+      }catch{}
+    }
+  </script>
 
   <!-- ZXing candidates & native flag -->
   <script>
@@ -114,7 +150,7 @@
 
     // اجعل المناسبة ثابتة عبر ?event=NAME أو ثابت داخل الكود
     const URL_EVENT = new URLSearchParams(location.search).get('event');
-    const EVENT_NAME = URL_EVENT || 'زفاف خالد'; // ← غيّر الاسم هنا عند بناء صفحة خاصة
+    const EVENT_NAME = URL_EVENT || 'زفاف سعيد'; // ← غيّر الاسم هنا عند بناء صفحة خاصة
     $('#evTag').textContent = EVENT_NAME;
 
     // HTTPS guard
@@ -128,26 +164,27 @@
 
     // UI helpers
     function setStatus(text,color){ $('#statusText').textContent=text; $('#statusDot').style.background=color; }
-    function showLast(code,msg,good){ $('#lastCode').textContent=code||'—'; $('#lastCode').style.color = good? '#86efac':'#fca5a5'; $('#lastMsg').textContent=msg||''; }
+    function showLast(code,msg,good){ document.getElementById('lastCode').textContent=code||'—'; document.getElementById('lastCode').style.color = good? '#86efac':'#fca5a5'; document.getElementById('lastMsg').textContent=msg||''; try{ window.__hsPlayTone(good? 'ok':'err'); navigator.vibrate?.(good? 60:120); }catch{} }
 
     // Camera state
-    let devices=[], currentDeviceId=null, track=null, scanning=false, torch=false, rafId=null, lastAt=0; const cooldown=1200; let reader=null, ndet=null;
+    let devices=[], currentDeviceId=null, track=null, scanning=false, torch=false, rafId=null; let reader=null, ndet=null; let locked=false; function lockPause(){ locked=true; const ms = Math.max(300, parseInt(document.getElementById('pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
 
     async function ensurePerm(){ try{ const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); tmp.getTracks().forEach(t=>t.stop()); }catch{} }
     async function listCams(){ const all=await navigator.mediaDevices.enumerateDevices(); devices = all.filter(d=>d.kind==='videoinput'); const sel=$('#cameraSelect'); sel.innerHTML=''; devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label||`Camera ${i+1}`; sel.appendChild(o); }); if(devices.length){ if(!currentDeviceId){ const back=devices.find(d=>/back|rear|environment/i.test(d.label||'')); currentDeviceId = back? back.deviceId : devices[0].deviceId; } sel.value=currentDeviceId; }
     }
 
-    async function start(){ if(!httpsOK()) { alert(T[LANG].needHttps); return; } await ensurePerm(); await listCams(); const video=$('#video'); const dev=$('#cameraSelect').value||currentDeviceId; currentDeviceId=dev; const stream = await navigator.mediaDevices.getUserMedia({video:{deviceId: dev? {exact:dev}:undefined, focusMode:'continuous'}, audio:false}); video.srcObject=stream; await video.play().catch(()=>{}); track = stream.getVideoTracks()[0]||null; scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false; setStatus(T[LANG].ready,'#22c55e');
+    async function start(){ locked=false; if(!httpsOK()) { alert(T[LANG].needHttps); return; } await ensurePerm(); await listCams(); const video=$('#video'); const dev=$('#cameraSelect').value||currentDeviceId; currentDeviceId=dev; const stream = await navigator.mediaDevices.getUserMedia({video:{deviceId: dev? {exact:dev}:undefined, focusMode:'continuous'}, audio:false}); video.srcObject=stream; await video.play().catch(()=>{}); track = stream.getVideoTracks()[0]||null; scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false; setStatus(T[LANG].ready,'#22c55e');
       // Try ZXing first
       const zxingOk = await window.ensureZXing();
       if(zxingOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){
         reader = new window.ZXing.BrowserMultiFormatReader();
-        reader.decodeFromVideoDevice(dev||null, video, (res,err)=>{
-          if(res){ const now=Date.now(); if(now-lastAt<cooldown) return; lastAt=now; const text = res.getText? res.getText(): (res.text||''); onCode(String(text||'').trim()); }
+        reader.decodeFromVideoDevice(dev||null, video, (res, err) => {
+          if(res){ if(locked) return; const text = res.getText ? res.getText() : (res.text||''); onCode(String(text||'').trim()); }
+        }); if(now-lastAt<cooldown) return; lastAt=now; const text = res.getText? res.getText(): (res.text||''); onCode(String(text||'').trim()); }
         });
       } else if('BarcodeDetector' in window){
         ndet = new window.BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']});
-        const loop=async()=>{ if(!scanning) return; try{ const bar=await ndet.detect(video); if(bar && bar.length){ const now=Date.now(); if(now-lastAt>=cooldown){ lastAt=now; onCode(String(bar[0].rawValue||'').trim()); } } }catch{} rafId = requestAnimationFrame(loop); };
+        const loop=async()=>{ if(!scanning) return; try{ if(!locked){ const bar = await ndet.detect(video); if(bar && bar.length){ onCode(String(bar[0].rawValue||'').trim()); } } }catch{} rafId = requestAnimationFrame(loop); };
         loop();
       } else {
         alert(T[LANG].camlib); setStatus(T[LANG].camlib,'#f59e0b');
@@ -178,7 +215,7 @@
       }catch(e){ showLast(code, e.message||'Error', false); pushHist(code, e.message||'Error', false); }
     }
 
-    function onCode(text){ if(!text) return; verifyAndMark(text); }
+    function onCode(text){ if(!text) return; if(locked) return; lockPause(); verifyAndMark(text); }
 
     // Wire
     document.addEventListener('DOMContentLoaded', ()=>{
