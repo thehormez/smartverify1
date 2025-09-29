@@ -48,7 +48,11 @@
   <div class="container grid grid-3">
     <!-- (1) استيراد الضيوف -->
     <div class="card">
-      <div class="muted" id="secImport">استيراد الضيوف</div>
+      $1
+      <div class="row" style="margin-top:10px">
+        <button id="pickContactsBtn" class="btn">📇 استيراد من جهات الاتصال (تجريبي)</button>
+        <span class="muted" style="font-size:12px">قد لا يعمل على كل المتصفحات</span>
+      </div>
       <div style="margin-top:6px">
         <input type="file" id="fileInput" class="input" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
       </div>
@@ -263,6 +267,26 @@
       }
     }
 
+    // ===== Contacts Picker (experimental) =====
+    async function pickContacts(){
+      try{
+        if(!('contacts' in navigator) || !('select' in navigator.contacts)){
+          alert('المتصفح لا يدعم استيراد جهات الاتصال مباشرة. استخدم CSV.');
+          return;
+        }
+        const props=['name','tel'];
+        const opts={ multiple:true };
+        const selected = await navigator.contacts.select(props, opts);
+        if(!selected || !selected.length) return;
+        const mapped = selected.map(c=>{
+          const name = Array.isArray(c.name)? (c.name[0]||'') : (c.name||'');
+          const tel  = Array.isArray(c.tel)?  (c.tel[0]||'')  : (c.tel||'');
+          return { name, phone: tel, count: 1 };
+        }).filter(x=> x.name && x.phone);
+        if(mapped.length) addRows(mapped);
+      }catch(e){ alert('تعذر الوصول لجهات الاتصال: '+ (e.message||e)); }
+    }
+
     // ===== UI wiring =====
     function toast(msg){ const t=document.createElement('div'); t.className='tag'; t.textContent=msg; t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)'; t.style.top='12px'; t.style.zIndex='50'; document.body.appendChild(t); setTimeout(()=>t.remove(),1500); }
 
@@ -284,9 +308,8 @@
         const msgTpl=$('#waTemplate').value; const preview=list.map(r=> T[LANG]===T.ar? `إلى ${r.name} (${r.phone}) → ${msgTpl.replace(/\{\{name\}\}/g,r.name).replace(/\{\{count\}\}/g,r.qty).replace(/\{\{event\}\}/g,event)}` : `To ${r.name} (${r.phone}) → ${msgTpl.replace(/\{\{name\}\}/g,r.name).replace(/\{\{count\}\}/g,r.qty).replace(/\{\{event\}\}/g,event)}` ).join('\n\n');
         alert(preview);
       });
-      $('#helpBtn').addEventListener('click', ()=>{
-        const L=T[LANG];
-        alert((LANG==='ar')? 'الخطوات:\n1) ارفع CSV أو قم باللصق.\n2) اكتب اسم الحدث وحدد العدد الافتراضي إن رغبت.\n3) عدّل الأعداد لكل ضيف عند الحاجة.\n4) اضغط إرسال جماعي لفتح واتساب ويب لكل ضيف.' : 'Steps:\n1) Import CSV or paste.\n2) Enter event name and default qty.\n3) Adjust per-guest quantities.\n4) Click Bulk send to open WhatsApp Web tabs.');
+      $1
+      $('#pickContactsBtn').addEventListener('click', pickContacts);
       });
     });
   </script>
