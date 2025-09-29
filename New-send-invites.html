@@ -70,8 +70,8 @@
       }
 
       function Login({ onSuccess }) {
-        const [username, زفاف خالد] = useState("");
-        const [password, 6666] = useState("");
+        const [username, setUsername] = useState("");
+        const [password, setPassword] = useState("");
 
         const attempt = () => {
           const c = CLIENTS.find(x => x.username === username.trim());
