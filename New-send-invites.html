@@ -3,34 +3,65 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — بوابة العميل</title>
+  <title>Hormez — بوابة العميل (نمط Techno)</title>
   <style>
-    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--card:#0e172a;--ok:#16a34a;--warn:#f59e0b}
+    /* ===== THEME ===== */
+    :root{
+      /* Techno-like palette (يمكن تغييرها سريعًا) */
+      --bg:#0a0a0a;        /* خلفية عامة داكنة جدًا */
+      --ink:#f5f7fa;       /* نص أساسي فاتح */
+      --muted:#9aa4b2;     /* نص ثانوي */
+      --card:#121212;      /* خلفيات البطاقات */
+      --line:#242424;      /* حدود ناعمة */
+      --accent:#ffd24a;    /* ذهبي دافئ للأزرار والعناوين */
+      --accent-2:#00c6ff;  /* سماوي للتباين الخفيف */
+      --ok:#16a34a;        /* نجاح */
+      --warn:#f59e0b;      /* تحذير */
+    }
     html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
-    .container{max-width:1100px;margin:0 auto;padding:16px}
-    .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
+    body{margin:0;background:linear-gradient(180deg,#0a0a0a,#0b0b0b);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+
+    .container{max-width:1120px;margin:0 auto;padding:16px}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+
+    /* ===== APP BAR ===== */
+    .appbar{position:sticky;top:0;z-index:20;background:rgba(10,10,10,.8);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#0e0e0e;border:1px solid #1e1e1e;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+    .logo span{font-weight:900;color:var(--accent)}
+
+    /* ===== HERO ===== */
+    .hero{background:linear-gradient(135deg, rgba(255,210,74,.14), rgba(0,198,255,.10));border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px}
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#0f0f0f;border-radius:999px;padding:8px 12px}
+
+    /* ===== CARDS GRID ===== */
     .grid{display:grid;gap:12px}
     .grid-3{grid-template-columns:repeat(3,1fr)}
     @media(max-width:980px){.grid-3{grid-template-columns:1fr}}
-    a.card{display:block;text-decoration:none;color:inherit}
+
+    a.card, .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;color:inherit;text-decoration:none;transition:transform .15s ease, border-color .15s ease}
+    a.card:hover{transform:translateY(-2px);border-color:#2e2e2e}
     .muted{color:var(--muted)}
-    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
-    .btn:hover{background:#0d1528}
-    .input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
-    .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
+    .title{font-weight:800}
+
+    .btn{appearance:none;border:1px solid var(--line);background:#111;color:var(--ink);border-radius:12px;padding:10px 14px;cursor:pointer}
+    .btn:hover{background:#151515;border-color:#2a2a2a}
+    .btn-cta{background:linear-gradient(135deg,var(--accent),#ffe494);color:#0b0b0b;border:none;font-weight:800}
+    .btn-cta:hover{filter:brightness(1.05)}
+    .input, .select{width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:#0f0f0f;color:var(--ink)}
+
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
   </style>
 </head>
 <body>
-  <div class="topbar">
+  <!-- APP BAR -->
+  <div class="appbar">
     <div class="container row" style="justify-content:space-between">
-      <div class="row">
-        <div class="logo" style="width:40px;height:40px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center"><span style="font-weight:900;color:#ffd700">HS</span></div>
-        <div style="margin-inline-start:10px">
-          <div class="muted" style="font-size:12px">بوابة العميل</div>
-          <div style="font-weight:800">لوحة خدمات المناسبة</div>
+      <div class="brand">
+        <div class="logo"><span>HS</span></div>
+        <div>
+          <div class="muted" style="font-size:12px">بوابة العميل • Customer Portal</div>
+          <div class="title" id="appTitle">لوحة خدمات المناسبة</div>
         </div>
       </div>
       <div class="row">
@@ -40,53 +71,73 @@
   </div>
 
   <div class="container">
-    <div class="card">
+    <!-- HERO / EVENT -->
+    <div class="hero">
       <div class="row" style="gap:12px;align-items:flex-end">
         <div style="flex:2">
-          <div id="lblEvent" class="muted">اسم الحدث</div>
+          <div class="muted" id="lblEvent">اسم الحدث</div>
           <input id="eventInput" class="input" placeholder="مثال: زفاف سعيد" />
         </div>
-        <div>
+        <div style="width:200px">
           <div class="muted" id="lblLang">اللغة</div>
-          <select id="langSelect" class="input" style="width:160px">
+          <select id="langSelect" class="select">
             <option value="ar" selected>العربية</option>
             <option value="en">English</option>
           </select>
         </div>
         <div>
-          <button id="applyBtn" class="btn">تطبيق على الروابط</button>
+          <button id="applyBtn" class="btn btn-cta">تطبيق</button>
         </div>
-        <div class="tag">رابط المشاركة: <span id="shareUrl" style="margin-inline-start:6px;font-family:ui-monospace"></span></div>
+        <div class="pill" title="انسخه للعميل">
+          رابط المشاركة:
+          <span id="shareUrl" class="mono" style="margin-inline-start:6px"></span>
+        </div>
       </div>
+      <div class="muted" style="margin-top:8px">سيتم ربط جميع الصفحات بالحدث عبر ?event=</div>
     </div>
 
-    <div class="grid grid-3" style="margin-top:12px">
-      <a id="cardScanner" class="card" href="#" target="_blank">
-        <div class="muted">الماسح</div>
-        <div style="font-weight:800">تشغيل ماسح الدعوات</div>
-        <div class="muted" style="font-size:12px">يربط على ?event=</div>
-      </a>
-      <a id="cardDashboard" class="card" href="#" target="_blank">
-        <div class="muted">لوحة الحضور</div>
-        <div style="font-weight:800">عرض الحضور المباشر</div>
-        <div class="muted" style="font-size:12px">يربط على ?event=</div>
-      </a>
-      <a id="cardInviteSender" class="card" href="#" target="_blank">
+    <!-- GRID — ترتيب مطابق لفكرة التطبيق: إرسال، ماسح، لوحة حضور، دمج، رفع، تقارير -->
+    <div class="grid grid-3" style="margin-top:14px">
+      <!-- 1) إرسال الدعوات -->
+      <a id="cardSender" class="card" target="_blank">
         <div class="muted">إرسال الدعوات</div>
-        <div style="font-weight:800">WhatsApp Web — CSV/جهات الاتصال</div>
-        <div class="muted" style="font-size:12px">صفحة العميل</div>
+        <div class="title" style="margin-top:2px">WhatsApp Web — CSV / جهات الاتصال</div>
+        <div class="muted" style="margin-top:6px;font-size:12px">قوالب نص + إرسال جماعي / فردي</div>
       </a>
-      <a id="cardUpload" class="card" href="#" target="_blank">
+
+      <!-- 2) الماسح -->
+      <a id="cardScanner" class="card" target="_blank">
+        <div class="muted">الماسح</div>
+        <div class="title" style="margin-top:2px">تشغيل ماسح الدعوات</div>
+        <div class="muted" style="margin-top:6px;font-size:12px">قفل على الحدث + ألوان نجاح/خطأ</div>
+      </a>
+
+      <!-- 3) لوحة الحضور -->
+      <a id="cardDashboard" class="card" target="_blank">
+        <div class="muted">لوحة الحضور</div>
+        <div class="title" style="margin-top:2px">عرض الحضور المباشر</div>
+        <div class="muted" style="margin-top:6px;font-size:12px">إجمالي / مستخدم / متبقي / نسبة</div>
+      </a>
+
+      <!-- 4) دمج الباركود -->
+      <a id="cardMerge" class="card" target="_blank">
+        <div class="muted">دمج الباركود</div>
+        <div class="title" style="margin-top:2px">new-merge-qr.html</div>
+        <div class="muted" style="margin-top:6px;font-size:12px">تحكم بالحجم/الموضع واللون</div>
+      </a>
+
+      <!-- 5) رفع الدعوات -->
+      <a id="cardUpload" class="card" target="_blank">
         <div class="muted">رفع الدعوات</div>
-        <div style="font-weight:800">new-uploadqr.html</div>
+        <div class="title" style="margin-top:2px">new-uploadqr.html</div>
+        <div class="muted" style="margin-top:6px;font-size:12px">رفع الملفات والموافقة</div>
       </a>
-      <a id="cardMerge" class="card" href="#" target="_blank">
-        <div class="muted">دمج الباركود على البطاقة</div>
-        <div style="font-weight:800">new-merge-qr.html</div>
-      </a>
-      <a id="cardDocs" class="card" href="#" target="_blank">
+
+      <!-- 6) التقارير -->
+      <a id="cardReports" class="card" target="_blank">
         <div class="muted">التقارير والتصدير</div>
-        <div style="font-weight:800">CSV/ملخصات</div>
+        <div class="title" style="margin-top:2px">ملف CSV وملخصات</div>
+        <div class="muted" style="margin-top:6px;font-size:12px">قريبًا</div>
       </a>
     </div>
   </div>
@@ -94,31 +145,32 @@
   <script>
     const $=(s,root=document)=>root.querySelector(s);
     const STR={
-      ar:{event:'اسم الحدث', lang:'اللغة', apply:'تطبيق على الروابط', share:'رابط المشاركة'},
-      en:{event:'Event name', lang:'Language', apply:'Apply to links', share:'Share URL'}
+      ar:{event:'اسم الحدث', lang:'اللغة', apply:'تطبيق', share:'رابط المشاركة', sender:'إرسال الدعوات', scanner:'الماسح', dashboard:'لوحة الحضور', merge:'دمج الباركود', upload:'رفع الدعوات', reports:'التقارير'},
+      en:{event:'Event name', lang:'Language', apply:'Apply', share:'Share URL', sender:'Invite Sender', scanner:'Scanner', dashboard:'Dashboard', merge:'Merge QR', upload:'Upload', reports:'Reports'}
     };
 
     const LINKS={
-      scanner: 'new-scanner.html',
-      dashboard: 'new-dashboard.html',
-      inviteSender: 'client-invite-sender.html',
-      upload: 'new-uploadqr.html',
-      merge: 'new-merge-qr.html',
-      docs: '#'
+      sender: 'client-invite-sender.html',
+      scanner:'new-scanner.html',
+      dashboard:'new-dashboard.html',
+      merge:'new-merge-qr.html',
+      upload:'new-uploadqr.html',
+      reports:'#'
     };
 
     function applyLang(){ const lang=$('#langSelect').value; document.documentElement.lang=lang; document.documentElement.dir=(lang==='ar')?'rtl':'ltr'; $('#langBtn').textContent=(lang==='ar')?'EN':'AR'; $('#lblEvent').textContent=STR[lang].event; $('#lblLang').textContent=STR[lang].lang; $('#applyBtn').textContent=STR[lang].apply; }
 
     function rebuild(){ const ev=encodeURIComponent($('#eventInput').value.trim()); const base=location.origin+location.pathname.replace(/[^\/]*$/,'');
+      const urlSender  = LINKS.sender;
       const urlScanner = LINKS.scanner + (ev? `?event=${ev}`:'');
       const urlDash    = LINKS.dashboard + (ev? `?event=${ev}`:'');
-      const urlSender  = LINKS.inviteSender;
-      const urlUpload  = LINKS.upload;
       const urlMerge   = LINKS.merge + (ev? `?event=${ev}`:'');
-      $('#cardScanner').href=urlScanner; $('#cardDashboard').href=urlDash; $('#cardInviteSender').href=urlSender; $('#cardUpload').href=urlUpload; $('#cardMerge').href=urlMerge; $('#cardDocs').href='#';
-      const share = base + `customer-home.html?event=${ev}`; $('#shareUrl').textContent = share; }
+      const urlUpload  = LINKS.upload;
+      $('#cardSender').href=urlSender; $('#cardScanner').href=urlScanner; $('#cardDashboard').href=urlDash; $('#cardMerge').href=urlMerge; $('#cardUpload').href=urlUpload; $('#cardReports').href=LINKS.reports;
+      const share = base + `customer-home.html?event=${ev}`; $('#shareUrl').textContent=share;
+    }
 
-    document.addEventListener('DOMContentLoaded', ()=>{
+    document.addEventListener('DOMContentLoaded',()=>{
       const p=new URLSearchParams(location.search); const ev=p.get('event')||''; if(ev) $('#eventInput').value=decodeURIComponent(ev);
       $('#applyBtn').addEventListener('click', rebuild);
       $('#langBtn').addEventListener('click', ()=>{ const sel=$('#langSelect'); sel.value = sel.value==='ar'?'en':'ar'; applyLang(); });
