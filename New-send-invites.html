@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — صفحة العميل لإرسال الدعوات</title>
+  <title>Hormez — لوحة الزبون</title>
   <style>
     :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--card:#0e172a;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b}
     html,body{height:100%}
@@ -11,306 +11,165 @@
     .container{max-width:1200px;margin:0 auto;padding:14px}
     .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
-    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    .btn:hover{background:#0d1528}
-    .select,.input,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
+    .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
     .grid{display:grid;gap:12px}
-    @media(min-width:1024px){.grid-3{grid-template-columns:1.5fr 1fr 1fr}}
+    .grid-3{grid-template-columns:2fr 1fr 1fr}
+    .grid-2{grid-template-columns:1.5fr 1fr}
+    @media(max-width:1040px){.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+    .muted{color:var(--muted)}
+    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn:hover{background:#0d1528}
+    .input, .select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
+    .kpi{display:flex;justify-content:space-between;align-items:center}
+    .kpi .n{font-size:28px;font-weight:900}
+    .badge{padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.15);font-weight:700;font-size:12px}
+    .ok{background:rgba(22,163,74,.12);color:#86efac}
+    .warn{background:rgba(245,158,11,.12);color:#fde68a}
+    .err{background:rgba(220,38,38,.12);color:#fca5a5}
     table{width:100%;border-collapse:collapse}
     th,td{padding:10px;border-top:1px solid rgba(255,255,255,.08)}
     thead th{position:sticky;top:0;background:#0e162c}
-    .muted{color:var(--muted)}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
     .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
+    .pill{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);background:#0b1220;border-radius:10px;padding:8px 10px}
   </style>
 </head>
 <body>
   <!-- Topbar -->
   <div class="topbar">
     <div class="container row" style="justify-content:space-between">
-      <div class="row" style="gap:12px">
+      <div class="row">
         <div class="logo" style="width:38px;height:38px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center"><span style="font-weight:900;color:#ffd700">HS</span></div>
-        <div>
-          <div class="muted" style="font-size:12px">HORMEZ</div>
-          <div id="tbTitle" style="font-weight:800">صفحة العميل لإرسال الدعوات</div>
-          <div id="tbSub" class="muted" style="font-size:12px">CSV/Excel للضيوف + رسالة واتساب + إرسال جماعي/فردي</div>
+        <div style="margin-inline-start:10px">
+          <div class="muted" style="font-size:12px">لوحة الزبون</div>
+          <div style="font-weight:800" id="tbTitle">مركز خدمات المناسبة</div>
+          <div class="muted" style="font-size:12px" id="tbSub">عرض الحضور، إرسال الدعوات، الماسح، التقارير</div>
         </div>
       </div>
       <div class="row">
         <button id="langBtn" class="btn">EN</button>
-        <button id="helpBtn" class="btn">؟</button>
       </div>
     </div>
   </div>
 
   <div class="container grid grid-3">
-    <!-- (1) استيراد الضيوف -->
+    <!-- (A) إعداد الحدث -->
     <div class="card">
-      $1
-      <div class="row" style="margin-top:10px">
-        <button id="pickContactsBtn" class="btn">📇 استيراد من جهات الاتصال (تجريبي)</button>
-        <span class="muted" style="font-size:12px">قد لا يعمل على كل المتصفحات</span>
-      </div>
-      <div style="margin-top:6px">
-        <input type="file" id="fileInput" class="input" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
-      </div>
-      <div style="margin-top:8px" class="muted" id="fmtHint">الصيغة: name, phone[, count]</div>
-      <div style="margin-top:8px">
-        <textarea id="pasteArea" rows="5" class="input" placeholder="name, phone\nname2, phone2"></textarea>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button id="parseBtn" class="btn">إضافة المدخلات</button>
-        <button id="clearAllBtn" class="btn">مسح القائمة</button>
-      </div>
-      <div style="margin-top:8px" class="muted" id="exHint">مثال CSV: علي, 0551234567, 2</div>
-    </div>
-
-    <!-- (2) إعدادات الإرسال -->
-    <div class="card">
-      <div class="muted" id="secSettings">إعدادات الإرسال</div>
-      <div style="margin-top:8px">
-        <div class="muted" id="lblEvent">اسم الحدث</div>
+      <div class="muted" id="lblEvent">الحدث</div>
+      <div class="row" style="margin-top:6px;align-items:flex-end">
         <input id="eventName" class="input" placeholder="زفاف سعيد" />
-      </div>
-      <div style="margin-top:8px">
-        <div class="muted" id="lblDefaultQty">عدد الدعوات الافتراضي</div>
-        <input id="defaultQty" class="input" type="number" min="1" value="1" />
-      </div>
-      <div style="margin-top:8px">
-        <div class="muted" id="lblCc">بادئة الدولة (اختياري)</div>
-        <input id="countryCode" class="input" placeholder="مثال: 966 بدون +" />
-      </div>
-      <div style="margin-top:8px">
-        <div class="muted" id="lblDelay">تأخير بين الفتحات (ms)</div>
-        <input id="openDelay" class="input" type="number" min="0" value="800" />
-      </div>
-      <div style="margin-top:8px">
-        <div class="muted" id="lblMsg">نص رسالة واتساب</div>
-        <textarea id="waTemplate" rows="6" class="input" placeholder="مرحبًا {{name}}، يسعدنا دعوتك لحضور {{event}}. عدد الدعوات: {{count}}.">مرحبًا {{name}}، يسعدنا دعوتك لحضور {{event}}. عدد الدعوات: {{count}}.</textarea>
+        <button id="applyEventBtn" class="btn">تطبيق</button>
+        <span class="tag">رابط المشاركة: <span id="shareUrl" class="mono" style="margin-inline-start:6px"></span></span>
       </div>
       <div class="row" style="margin-top:8px">
-        <button id="applyDefaultBtn" class="btn">تطبيق العدد الافتراضي</button>
-        <button id="exportBtn" class="btn">تصدير CSV</button>
+        <a id="openScanner" target="_blank" class="btn">🔎 فتح الماسح</a>
+        <a id="openDashboard" target="_blank" class="btn">📊 لوحة الحضور</a>
+        <a id="openSender" target="_blank" class="btn">💬 إرسال الدعوات</a>
       </div>
     </div>
 
-    <!-- (3) إرسال/فلترة -->
+    <!-- (B) حالة الدعوات (Firestore) -->
     <div class="card">
-      <div class="muted" id="secActions">الإرسال والفلترة</div>
-      <div style="margin-top:8px">
-        <div class="muted" id="lblSearch">بحث</div>
-        <input id="searchInput" class="input" placeholder="ابحث بالاسم أو الرقم" />
+      <div class="muted" id="lblKpi">المؤشرات</div>
+      <div class="kpi" style="margin-top:6px"><span id="kpiTotalLbl">الإجمالي</span><span class="n" id="kpiTotal">—</span></div>
+      <div class="kpi"><span id="kpiUsedLbl">المستخدم</span><span class="n" id="kpiUsed">—</span></div>
+      <div class="kpi"><span id="kpiLeftLbl">المتبقي</span><span class="n" id="kpiLeft">—</span></div>
+      <div class="kpi"><span id="kpiRateLbl">نسبة الحضور</span><span class="n" id="kpiRate">—%</span></div>
+      <div class="row" style="margin-top:8px"><button id="exportCsvBtn" class="btn">⤓ تصدير CSV</button></div>
+    </div>
+
+    <!-- (C) قائمة الضيوف المحلية (للإرسال) -->
+    <div class="card">
+      <div class="muted" id="lblGuests">قائمة الضيوف (محلي)</div>
+      <div style="margin-top:6px" class="row">
+        <span class="pill">الكل: <b id="gCount">0</b></span>
+        <a id="openClientSender" target="_blank" class="btn">فتح صفحة الإرسال</a>
+      </div>
+      <div class="muted" style="margin-top:6px">يتم جلب القائمة من جهازك (client-invite-sender.html)</div>
+    </div>
+  </div>
+
+  <div class="container grid grid-2" style="margin-top:12px">
+    <!-- (D) أحدث المسحات -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div class="muted" id="lblRecent">أحدث المسحات (آخر 100)</div>
+        <input id="searchInput" class="input" placeholder="ابحث بالكود" style="max-width:260px" />
+      </div>
+      <div style="max-height:45vh;overflow:auto;margin-top:8px">
+        <table>
+          <thead><tr><th id="thCode">الكود</th><th id="thStatus">الحالة</th><th id="thTime">الوقت</th></tr></thead>
+          <tbody id="rowsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- (E) أدوات سريعة -->
+    <div class="card">
+      <div class="muted">أدوات سريعة</div>
+      <div class="row" style="margin-top:8px">
+        <a id="openMerge" target="_blank" class="btn">🧩 دمج الباركود على البطاقة</a>
+        <a id="openUpload" target="_blank" class="btn">⬆️ رفع الدعوات</a>
       </div>
       <div class="row" style="margin-top:8px">
-        <button id="bulkSendBtn" class="btn">إرسال جماعي (WhatsApp Web)</button>
-        <button id="previewBtn" class="btn">معاينة 10 رسائل</button>
+        <button id="copyLinksBtn" class="btn">📎 نسخ جميع الروابط</button>
       </div>
-      <div style="margin-top:8px" class="muted" id="waNote">سيتم فتح WhatsApp Web مع نص الرسالة جاهز. لا يمكن إرفاق صورة تلقائيًا من المتصفح — أرفق صورتك يدويًا داخل المحادثة.</div>
     </div>
   </div>
 
-  <!-- جدول الضيوف -->
-  <div class="container card" style="margin-top:12px">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <div class="muted" id="tblTitle">قائمة الضيوف</div>
-      <span class="tag"><span id="stats">—</span></span>
-    </div>
-    <div style="max-height:55vh;overflow:auto;margin-top:8px">
-      <table>
-        <thead>
-          <tr>
-            <th id="thName">الاسم</th>
-            <th id="thPhone">الرقم</th>
-            <th id="thQty">العدد</th>
-            <th id="thSend">إرسال</th>
-          </tr>
-        </thead>
-        <tbody id="rowsBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- PapaParse (CSV/Excel via SheetJS-lite alt) -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
 
   <script>
-    const $ = (s, root=document) => root.querySelector(s);
-
-    // ===== i18n =====
-    const T = {
-      ar: { title:'صفحة العميل لإرسال الدعوات', sub:'CSV/Excel للضيوف + رسالة واتساب + إرسال جماعي/فردي', import:'استيراد الضيوف', fmt:'الصيغة: name, phone[, count]', example:'مثال CSV: علي, 0551234567, 2', settings:'إعدادات الإرسال', event:'اسم الحدث', defQty:'عدد الدعوات الافتراضي', cc:'بادئة الدولة (اختياري)', delay:'تأخير بين الفتحات (ms)', msg:'نص رسالة واتساب', apply:'تطبيق العدد الافتراضي', export:'تصدير CSV', actions:'الإرسال والفلترة', search:'بحث', bulk:'إرسال جماعي (WhatsApp Web)', preview:'معاينة 10 رسائل', note:'سيتم فتح WhatsApp Web مع نص الرسالة جاهز. لا يمكن إرفاق صورة تلقائيًا من المتصفح — أرفق صورتك يدويًا داخل المحادثة.', guests:'قائمة الضيوف', name:'الاسم', phone:'الرقم', qty:'العدد', send:'إرسال', added:'تمت الإضافة', cleared:'تم المسح', noRows:'لا توجد بيانات', stats:(n)=>`الكل: ${n}` },
-      en: { title:"Client — Invite Sender", sub:"CSV/Excel contacts + WhatsApp text + Bulk/Single send", import:"Import guests", fmt:"Format: name, phone[, count]", example:"CSV example: Ali, 0551234567, 2", settings:"Send settings", event:"Event name", defQty:"Default invites per guest", cc:"Country prefix (optional)", delay:"Open delay (ms)", msg:"WhatsApp message", apply:"Apply default", export:"Export CSV", actions:"Send & Filter", search:"Search", bulk:"Bulk send (WhatsApp Web)", preview:"Preview 10", note:"WhatsApp Web will open with prefilled text. Browsers can't auto-attach images — attach your image manually.", guests:"Guest list", name:"Name", phone:"Phone", qty:"Qty", send:"Send", added:"Added", cleared:"Cleared", noRows:"No data", stats:(n)=>`Total: ${n}` }
+    const $=(s,root=document)=>root.querySelector(s);
+    const T={
+      ar:{title:'مركز خدمات المناسبة', sub:'عرض الحضور، إرسال الدعوات، الماسح، التقارير', event:'الحدث', apply:'تطبيق', total:'الإجمالي', used:'المستخدم', left:'المتبقي', rate:'نسبة الحضور', recent:'أحدث المسحات (آخر 100)', code:'الكود', status:'الحالة', time:'الوقت', export:'تصدير CSV', guests:'قائمة الضيوف (محلي)', search:'ابحث بالكود', copied:'تم النسخ', linkNote:'يربط الحدث على الروابط'},
+      en:{title:'Event Services Center', sub:'Attendance, Sending, Scanner, Reports', event:'Event', apply:'Apply', total:'Total', used:'Checked-in', left:'Remaining', rate:'Attendance', recent:'Recent scans (last 100)', code:'Code', status:'Status', time:'Time', export:'Export CSV', guests:'Guest list (local)', search:'Search code', copied:'Copied', linkNote:'Event is applied to links'}
     };
-    let LANG = localStorage.getItem('hs:client:lang') || 'ar';
+    let LANG=localStorage.getItem('hs:cust:lang')||'ar';
 
-    function applyLang(){
-      const L=T[LANG]; document.documentElement.lang=LANG; document.documentElement.dir=(LANG==='ar')?'rtl':'ltr';
-      $('#langBtn').textContent = (LANG==='ar')? 'EN' : 'AR';
-      $('#tbTitle').textContent=L.title; $('#tbSub').textContent=L.sub;
-      $('#secImport').textContent=L.import; $('#fmtHint').textContent=L.fmt; $('#exHint').textContent=L.example;
-      $('#secSettings').textContent=L.settings; $('#lblEvent').textContent=L.event; $('#lblDefaultQty').textContent=L.defQty; $('#lblCc').textContent=L.cc; $('#lblDelay').textContent=L.delay; $('#lblMsg').textContent=L.msg; $('#applyDefaultBtn').textContent=L.apply; $('#exportBtn').textContent=L.export;
-      $('#secActions').textContent=L.actions; $('#lblSearch').textContent=L.search; $('#bulkSendBtn').textContent=L.bulk; $('#previewBtn').textContent=L.preview; $('#waNote').textContent=L.note;
-      $('#tblTitle').textContent=L.guests; $('#thName').textContent=L.name; $('#thPhone').textContent=L.phone; $('#thQty').textContent=L.qty; $('#thSend').textContent=L.send;
-      render();
+    function applyLang(){ const L=T[LANG]; document.documentElement.lang=LANG; document.documentElement.dir=(LANG==='ar')?'rtl':'ltr'; $('#langBtn').textContent=(LANG==='ar')?'EN':'AR'; $('#tbTitle').textContent=L.title; $('#tbSub').textContent=L.sub; $('#lblEvent').textContent=L.event; $('#applyEventBtn').textContent=L.apply; $('#kpiTotalLbl').textContent=L.total; $('#kpiUsedLbl').textContent=L.used; $('#kpiLeftLbl').textContent=L.left; $('#kpiRateLbl').textContent=L.rate; $('#lblRecent').textContent=L.recent; $('#thCode').textContent=L.code; $('#thStatus').textContent=L.status; $('#thTime').textContent=L.time; $('#exportCsvBtn').textContent=(LANG==='ar'? '⤓ ':'')+L.export; $('#lblGuests').textContent=L.guests; $('#searchInput').placeholder=L.search; }
+
+    // Firebase
+    const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
+    if(!firebase.apps.length){ firebase.initializeApp(cfg);} const db=firebase.firestore();
+
+    // Event from URL (if exists)
+    const p=new URLSearchParams(location.search); const EV0=p.get('event')? decodeURIComponent(p.get('event')): '';
+
+    function rebuildLinks(){ const ev=encodeURIComponent($('#eventName').value.trim()); const base=location.origin+location.pathname.replace(/[^\/]*$/,'');
+      const scanner=`new-scanner.html${ev? '?event='+ev:''}`; const dash=`new-dashboard.html${ev? '?event='+ev:''}`; const sender='client-invite-sender.html'; const merge=`new-merge-qr.html${ev? '?event='+ev:''}`; const upload='new-uploadqr.html';
+      $('#openScanner').href=scanner; $('#openDashboard').href=dash; $('#openSender').href=sender; $('#openMerge').href=merge; $('#openUpload').href=upload; $('#openClientSender').href=sender;
+      $('#shareUrl').textContent = base + `customer-dashboard.html?event=${ev}`;
     }
 
-    // ===== State =====
-    let rows = JSON.parse(localStorage.getItem('hs:client:rows')||'[]');
+    // KPIs & table
+    let unsub=null, rows=[];
+    function startStream(){ if(unsub) unsub(); const ev=$('#eventName').value.trim(); const ref=db.collection('invites'); const q = ev? ref.where('EventName','==',ev) : ref; unsub = q.onSnapshot(snap=>{ let t=0,u=0; const rec=[]; snap.forEach(d=>{ const x=d.data()||{}; t++; if((x.Status||'').toLowerCase()==='yes') u++; if(x.scannedAt?.toDate?.()) rec.push({id:d.id, Code:x.Code||d.id, Status:x.Status||'no', scannedAt:x.scannedAt.toDate()}); }); rec.sort((a,b)=>(b.scannedAt?.getTime?.()||0)-(a.scannedAt?.getTime?.()||0)); rows=rec.slice(0,100); renderKPIs(t,u); renderRows(); }); }
 
-    function save(){ localStorage.setItem('hs:client:rows', JSON.stringify(rows)); }
+    function renderKPIs(total,used){ const left=Math.max(total-used,0); const rate= total>0? Math.round((used/total)*100):0; $('#kpiTotal').textContent=total; $('#kpiUsed').textContent=used; $('#kpiLeft').textContent=left; $('#kpiRate').textContent=rate+'%'; }
 
-    function addRows(list){
-      const defQty = parseInt($('#defaultQty').value||'1',10) || 1;
-      for(const r of list){
-        const name = (r.name||r[0]||'').toString().trim();
-        const phone= (r.phone||r[1]||'').toString().trim();
-        const qty  = parseInt((r.count||r[2]||defQty),10) || defQty;
-        if(!name || !phone) continue;
-        rows.push({name, phone, qty});
-      }
-      save(); render(); toast(T[LANG].added);
-    }
+    function renderRows(){ const s=($('#searchInput').value||'').trim().toLowerCase(); const list=s? rows.filter(r=> (r.Code||'').toLowerCase().includes(s) ): rows; const tb=$('#rowsBody'); tb.innerHTML=''; const isAr=(LANG==='ar'); if(list.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=3; td.className='muted'; td.style.textAlign='center'; td.style.padding='18px'; td.textContent = isAr? 'لا توجد مسحات':'No scans'; tr.appendChild(td); tb.appendChild(tr); return; } for(const r of list){ const tr=document.createElement('tr'); const td1=document.createElement('td'); td1.className='mono'; td1.textContent=r.Code; tr.appendChild(td1); const td2=document.createElement('td'); const b=document.createElement('span'); const ok=(r.Status||'no').toLowerCase()==='yes'; b.className='badge '+(ok?'ok':'err'); b.textContent = ok? (isAr?'yes':'yes') : (isAr?'no':'no'); td2.appendChild(b); tr.appendChild(td2); const td3=document.createElement('td'); td3.textContent = r.scannedAt? r.scannedAt.toLocaleString(isAr?'ar-EG':'en-GB'):'—'; tr.appendChild(td3); tb.appendChild(tr);} }
 
-    function clearAll(){ rows=[]; save(); render(); toast(T[LANG].cleared); }
+    function exportCSV(){ const L=T[LANG]; const header=[L.code,L.status,'EventName',L.time].join(','); const ev=$('#eventName').value.trim()||'ALL'; const lines=rows.map(r=> [r.Code, r.Status, ev, r.scannedAt? new Date(r.scannedAt).toISOString():'' ].join(',')); const csv=[header,...lines].join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`hormez-${ev}-scans.csv`; a.click(); URL.revokeObjectURL(url); }
 
-    function render(){
-      const L=T[LANG];
-      const q=($('#searchInput').value||'').toLowerCase().trim();
-      const body=$('#rowsBody'); body.innerHTML='';
-      const filtered = rows.filter(r => !q || r.name.toLowerCase().includes(q) || r.phone.includes(q));
-      $('#stats').textContent = L.stats(filtered.length);
-      if(filtered.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.className='muted'; td.style.textAlign='center'; td.style.padding='18px'; td.textContent=L.noRows; tr.appendChild(td); body.appendChild(tr); return; }
-      filtered.forEach((r,idx)=>{
-        const tr=document.createElement('tr');
-        // name
-        const td1=document.createElement('td'); td1.textContent=r.name; tr.appendChild(td1);
-        // phone
-        const td2=document.createElement('td'); td2.className='mono'; td2.textContent=r.phone; tr.appendChild(td2);
-        // qty
-        const td3=document.createElement('td'); const inp=document.createElement('input'); inp.type='number'; inp.min='1'; inp.value=r.qty; inp.className='input'; inp.style.width='110px'; inp.onchange=()=>{ r.qty = Math.max(1, parseInt(inp.value||'1',10)||1); save(); }; td3.appendChild(inp); tr.appendChild(td3);
-        // send
-        const td4=document.createElement('td'); const b=document.createElement('button'); b.className='btn'; b.textContent=L.send; b.onclick=()=> openWA(r); td4.appendChild(b); tr.appendChild(td4);
-        body.appendChild(tr);
-      });
-    }
+    // Guests local count
+    function refreshGuests(){ try{ const ls=JSON.parse(localStorage.getItem('hs:client:rows')||'[]'); $('#gCount').textContent = Array.isArray(ls)? ls.length: 0; }catch{ $('#gCount').textContent='0'; } }
 
-    // ===== WhatsApp helpers =====
-    function buildPhone(phone){
-      const cc = ($('#countryCode').value||'').replace(/[^0-9]/g,'');
-      let p = phone.replace(/[^0-9]/g,'');
-      if(cc && !p.startsWith(cc)) p = cc + p.replace(/^0+/, '');
-      return p;
-    }
-    function tpl(str, ctx){ return str.replace(/\{\{(\w+)\}\}/g, (_,k)=> (ctx[k] ?? '')); }
-    function openWA(rec){
-      const event = $('#eventName').value.trim();
-      const msgTpl = $('#waTemplate').value;
-      const text = tpl(msgTpl, { name: rec.name, count: rec.qty, event });
-      const phone = buildPhone(rec.phone);
-      if(!phone){ alert('رقم غير صالح'); return; }
-      const url = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(text)}`;
-      window.open(url, '_blank');
-    }
+    // Copy all links
+    function copyLinks(){ const a=[$('#openScanner').href,$('#openDashboard').href,$('#openSender').href,$('#openMerge').href,$('#openUpload').href].filter(Boolean).join('\n'); navigator.clipboard?.writeText(a).then(()=> toast(T[LANG].copied)); }
 
-    async function bulkSend(limit=10){
-      const L=T[LANG];
-      const event = $('#eventName').value.trim();
-      if(!event){ alert(L.event+': ?'); return; }
-      const msgTpl = $('#waTemplate').value; const delay = Math.max(0, parseInt($('#openDelay').value||'800',10));
-      const q=($('#searchInput').value||'').toLowerCase().trim();
-      const list = rows.filter(r => !q || r.name.toLowerCase().includes(q) || r.phone.includes(q));
-      if(!list.length){ alert(L.noRows); return; }
-      let opened = 0;
-      for(const r of list){
-        const text=tpl(msgTpl,{name:r.name,count:r.qty,event});
-        const phone=buildPhone(r.phone); if(!phone) continue;
-        const url=`https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(text)}`;
-        window.open(url, '_blank'); opened++;
-        if(opened>=limit){ await new Promise(res=>setTimeout(res, delay)); opened=0; }
-      }
-    }
-
-    function exportCSV(){
-      const L=T[LANG];
-      const header=['name','phone','count'];
-      const lines = rows.map(r=> [r.name, r.phone, r.qty].join(','));
-      const csv=[header.join(','), ...lines].join('\n');
-      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='guests.csv'; a.click(); URL.revokeObjectURL(url);
-    }
-
-    // ===== CSV parsing =====
-    function parseText(text){
-      const res = Papa.parse(text, { header:false, skipEmptyLines:true });
-      const list = res.data.map(row=>({ name: (row[0]||'').toString(), phone:(row[1]||'').toString(), count: row[2] }));
-      addRows(list);
-    }
-
-    function parseFile(file){
-      if(!file) return;
-      const ext = (file.name.split('.').pop()||'').toLowerCase();
-      if(ext==='csv'){
-        Papa.parse(file, { header:true, skipEmptyLines:true, complete: (res)=>{
-          // If headerless CSV, reparse without header
-          if(res.meta.fields && res.meta.fields.length>=2 && (res.data[0] && (res.data[0].name||res.data[0].phone))){
-            const list = res.data.map(r=>({ name:r.name||'', phone:r.phone||'', count:r.count })); addRows(list);
-          } else {
-            Papa.parse(file, { header:false, skipEmptyLines:true, complete:(res2)=>{
-              const list = res2.data.map(row=>({ name:(row[0]||'').toString(), phone:(row[1]||'').toString(), count: row[2] })); addRows(list);
-            }});
-          }
-        }});
-      } else {
-        alert('فضلاً ارفع CSV. (Excel غير مدعوم في هذه النسخة المستقلة بدون مكتبات إضافية)');
-      }
-    }
-
-    // ===== Contacts Picker (experimental) =====
-    async function pickContacts(){
-      try{
-        if(!('contacts' in navigator) || !('select' in navigator.contacts)){
-          alert('المتصفح لا يدعم استيراد جهات الاتصال مباشرة. استخدم CSV.');
-          return;
-        }
-        const props=['name','tel'];
-        const opts={ multiple:true };
-        const selected = await navigator.contacts.select(props, opts);
-        if(!selected || !selected.length) return;
-        const mapped = selected.map(c=>{
-          const name = Array.isArray(c.name)? (c.name[0]||'') : (c.name||'');
-          const tel  = Array.isArray(c.tel)?  (c.tel[0]||'')  : (c.tel||'');
-          return { name, phone: tel, count: 1 };
-        }).filter(x=> x.name && x.phone);
-        if(mapped.length) addRows(mapped);
-      }catch(e){ alert('تعذر الوصول لجهات الاتصال: '+ (e.message||e)); }
-    }
-
-    // ===== UI wiring =====
     function toast(msg){ const t=document.createElement('div'); t.className='tag'; t.textContent=msg; t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)'; t.style.top='12px'; t.style.zIndex='50'; document.body.appendChild(t); setTimeout(()=>t.remove(),1500); }
 
+    // Wire
     document.addEventListener('DOMContentLoaded', ()=>{
-      applyLang();
-      $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:client:lang',LANG); applyLang(); });
-      $('#parseBtn').addEventListener('click', ()=> parseText($('#pasteArea').value||''));
-      $('#fileInput').addEventListener('change', (e)=> parseFile(e.target.files?.[0]));
-      $('#clearAllBtn').addEventListener('click', clearAll);
-      $('#applyDefaultBtn').addEventListener('click', ()=>{ const n=Math.max(1, parseInt($('#defaultQty').value||'1',10)||1); rows.forEach(r=>r.qty=n); save(); render(); });
-      $('#exportBtn').addEventListener('click', exportCSV);
-      $('#searchInput').addEventListener('input', render);
-      $('#bulkSendBtn').addEventListener('click', ()=> bulkSend(8));
-      $('#previewBtn').addEventListener('click', ()=>{
-        const L=T[LANG];
-        const event=$('#eventName').value.trim(); const q=($('#searchInput').value||'').toLowerCase().trim();
-        const list=rows.filter(r=>!q || r.name.toLowerCase().includes(q) || r.phone.includes(q)).slice(0,10);
-        if(!list.length) { alert(L.noRows); return; }
-        const msgTpl=$('#waTemplate').value; const preview=list.map(r=> T[LANG]===T.ar? `إلى ${r.name} (${r.phone}) → ${msgTpl.replace(/\{\{name\}\}/g,r.name).replace(/\{\{count\}\}/g,r.qty).replace(/\{\{event\}\}/g,event)}` : `To ${r.name} (${r.phone}) → ${msgTpl.replace(/\{\{name\}\}/g,r.name).replace(/\{\{count\}\}/g,r.qty).replace(/\{\{event\}\}/g,event)}` ).join('\n\n');
-        alert(preview);
-      });
-      $1
-      $('#pickContactsBtn').addEventListener('click', pickContacts);
-      });
+      if(EV0) $('#eventName').value=EV0; applyLang(); rebuildLinks(); refreshGuests(); startStream();
+      $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:cust:lang',LANG); applyLang(); renderRows(); });
+      $('#applyEventBtn').addEventListener('click', ()=>{ rebuildLinks(); startStream(); });
+      $('#searchInput').addEventListener('input', renderRows);
+      $('#exportCsvBtn').addEventListener('click', exportCSV);
+      $('#copyLinksBtn').addEventListener('click', copyLinks);
     });
   </script>
 </body>
