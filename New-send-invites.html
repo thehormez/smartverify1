@@ -3,47 +3,34 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — لوحة الزبون</title>
+  <title>Hormez — بوابة العميل</title>
   <style>
-    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--card:#0e172a;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b}
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--card:#0e172a;--ok:#16a34a;--warn:#f59e0b}
     html,body{height:100%}
     body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
-    .container{max-width:1200px;margin:0 auto;padding:14px}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
     .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
     .grid{display:grid;gap:12px}
-    .grid-3{grid-template-columns:2fr 1fr 1fr}
-    .grid-2{grid-template-columns:1.5fr 1fr}
-    @media(max-width:1040px){.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+    .grid-3{grid-template-columns:repeat(3,1fr)}
+    @media(max-width:980px){.grid-3{grid-template-columns:1fr}}
+    a.card{display:block;text-decoration:none;color:inherit}
     .muted{color:var(--muted)}
     .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
     .btn:hover{background:#0d1528}
-    .input, .select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
-    .kpi{display:flex;justify-content:space-between;align-items:center}
-    .kpi .n{font-size:28px;font-weight:900}
-    .badge{padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.15);font-weight:700;font-size:12px}
-    .ok{background:rgba(22,163,74,.12);color:#86efac}
-    .warn{background:rgba(245,158,11,.12);color:#fde68a}
-    .err{background:rgba(220,38,38,.12);color:#fca5a5}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-top:1px solid rgba(255,255,255,.08)}
-    thead th{position:sticky;top:0;background:#0e162c}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
     .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
-    .pill{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);background:#0b1220;border-radius:10px;padding:8px 10px}
   </style>
 </head>
 <body>
-  <!-- Topbar -->
   <div class="topbar">
     <div class="container row" style="justify-content:space-between">
       <div class="row">
-        <div class="logo" style="width:38px;height:38px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center"><span style="font-weight:900;color:#ffd700">HS</span></div>
+        <div class="logo" style="width:40px;height:40px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center"><span style="font-weight:900;color:#ffd700">HS</span></div>
         <div style="margin-inline-start:10px">
-          <div class="muted" style="font-size:12px">لوحة الزبون</div>
-          <div style="font-weight:800" id="tbTitle">مركز خدمات المناسبة</div>
-          <div class="muted" style="font-size:12px" id="tbSub">عرض الحضور، إرسال الدعوات، الماسح، التقارير</div>
+          <div class="muted" style="font-size:12px">بوابة العميل</div>
+          <div style="font-weight:800">لوحة خدمات المناسبة</div>
         </div>
       </div>
       <div class="row">
@@ -52,124 +39,91 @@
     </div>
   </div>
 
-  <div class="container grid grid-3">
-    <!-- (A) إعداد الحدث -->
+  <div class="container">
     <div class="card">
-      <div class="muted" id="lblEvent">الحدث</div>
-      <div class="row" style="margin-top:6px;align-items:flex-end">
-        <input id="eventName" class="input" placeholder="زفاف سعيد" />
-        <button id="applyEventBtn" class="btn">تطبيق</button>
-        <span class="tag">رابط المشاركة: <span id="shareUrl" class="mono" style="margin-inline-start:6px"></span></span>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <a id="openScanner" target="_blank" class="btn">🔎 فتح الماسح</a>
-        <a id="openDashboard" target="_blank" class="btn">📊 لوحة الحضور</a>
-        <a id="openSender" target="_blank" class="btn">💬 إرسال الدعوات</a>
+      <div class="row" style="gap:12px;align-items:flex-end">
+        <div style="flex:2">
+          <div id="lblEvent" class="muted">اسم الحدث</div>
+          <input id="eventInput" class="input" placeholder="مثال: زفاف سعيد" />
+        </div>
+        <div>
+          <div class="muted" id="lblLang">اللغة</div>
+          <select id="langSelect" class="input" style="width:160px">
+            <option value="ar" selected>العربية</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div>
+          <button id="applyBtn" class="btn">تطبيق على الروابط</button>
+        </div>
+        <div class="tag">رابط المشاركة: <span id="shareUrl" style="margin-inline-start:6px;font-family:ui-monospace"></span></div>
       </div>
     </div>
 
-    <!-- (B) حالة الدعوات (Firestore) -->
-    <div class="card">
-      <div class="muted" id="lblKpi">المؤشرات</div>
-      <div class="kpi" style="margin-top:6px"><span id="kpiTotalLbl">الإجمالي</span><span class="n" id="kpiTotal">—</span></div>
-      <div class="kpi"><span id="kpiUsedLbl">المستخدم</span><span class="n" id="kpiUsed">—</span></div>
-      <div class="kpi"><span id="kpiLeftLbl">المتبقي</span><span class="n" id="kpiLeft">—</span></div>
-      <div class="kpi"><span id="kpiRateLbl">نسبة الحضور</span><span class="n" id="kpiRate">—%</span></div>
-      <div class="row" style="margin-top:8px"><button id="exportCsvBtn" class="btn">⤓ تصدير CSV</button></div>
-    </div>
-
-    <!-- (C) قائمة الضيوف المحلية (للإرسال) -->
-    <div class="card">
-      <div class="muted" id="lblGuests">قائمة الضيوف (محلي)</div>
-      <div style="margin-top:6px" class="row">
-        <span class="pill">الكل: <b id="gCount">0</b></span>
-        <a id="openClientSender" target="_blank" class="btn">فتح صفحة الإرسال</a>
-      </div>
-      <div class="muted" style="margin-top:6px">يتم جلب القائمة من جهازك (client-invite-sender.html)</div>
-    </div>
-  </div>
-
-  <div class="container grid grid-2" style="margin-top:12px">
-    <!-- (D) أحدث المسحات -->
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <div class="muted" id="lblRecent">أحدث المسحات (آخر 100)</div>
-        <input id="searchInput" class="input" placeholder="ابحث بالكود" style="max-width:260px" />
-      </div>
-      <div style="max-height:45vh;overflow:auto;margin-top:8px">
-        <table>
-          <thead><tr><th id="thCode">الكود</th><th id="thStatus">الحالة</th><th id="thTime">الوقت</th></tr></thead>
-          <tbody id="rowsBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- (E) أدوات سريعة -->
-    <div class="card">
-      <div class="muted">أدوات سريعة</div>
-      <div class="row" style="margin-top:8px">
-        <a id="openMerge" target="_blank" class="btn">🧩 دمج الباركود على البطاقة</a>
-        <a id="openUpload" target="_blank" class="btn">⬆️ رفع الدعوات</a>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button id="copyLinksBtn" class="btn">📎 نسخ جميع الروابط</button>
-      </div>
+    <div class="grid grid-3" style="margin-top:12px">
+      <a id="cardScanner" class="card" href="#" target="_blank">
+        <div class="muted">الماسح</div>
+        <div style="font-weight:800">تشغيل ماسح الدعوات</div>
+        <div class="muted" style="font-size:12px">يربط على ?event=</div>
+      </a>
+      <a id="cardDashboard" class="card" href="#" target="_blank">
+        <div class="muted">لوحة الحضور</div>
+        <div style="font-weight:800">عرض الحضور المباشر</div>
+        <div class="muted" style="font-size:12px">يربط على ?event=</div>
+      </a>
+      <a id="cardInviteSender" class="card" href="#" target="_blank">
+        <div class="muted">إرسال الدعوات</div>
+        <div style="font-weight:800">WhatsApp Web — CSV/جهات الاتصال</div>
+        <div class="muted" style="font-size:12px">صفحة العميل</div>
+      </a>
+      <a id="cardUpload" class="card" href="#" target="_blank">
+        <div class="muted">رفع الدعوات</div>
+        <div style="font-weight:800">new-uploadqr.html</div>
+      </a>
+      <a id="cardMerge" class="card" href="#" target="_blank">
+        <div class="muted">دمج الباركود على البطاقة</div>
+        <div style="font-weight:800">new-merge-qr.html</div>
+      </a>
+      <a id="cardDocs" class="card" href="#" target="_blank">
+        <div class="muted">التقارير والتصدير</div>
+        <div style="font-weight:800">CSV/ملخصات</div>
+      </a>
     </div>
   </div>
-
-  <!-- Firebase compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
 
   <script>
     const $=(s,root=document)=>root.querySelector(s);
-    const T={
-      ar:{title:'مركز خدمات المناسبة', sub:'عرض الحضور، إرسال الدعوات، الماسح، التقارير', event:'الحدث', apply:'تطبيق', total:'الإجمالي', used:'المستخدم', left:'المتبقي', rate:'نسبة الحضور', recent:'أحدث المسحات (آخر 100)', code:'الكود', status:'الحالة', time:'الوقت', export:'تصدير CSV', guests:'قائمة الضيوف (محلي)', search:'ابحث بالكود', copied:'تم النسخ', linkNote:'يربط الحدث على الروابط'},
-      en:{title:'Event Services Center', sub:'Attendance, Sending, Scanner, Reports', event:'Event', apply:'Apply', total:'Total', used:'Checked-in', left:'Remaining', rate:'Attendance', recent:'Recent scans (last 100)', code:'Code', status:'Status', time:'Time', export:'Export CSV', guests:'Guest list (local)', search:'Search code', copied:'Copied', linkNote:'Event is applied to links'}
+    const STR={
+      ar:{event:'اسم الحدث', lang:'اللغة', apply:'تطبيق على الروابط', share:'رابط المشاركة'},
+      en:{event:'Event name', lang:'Language', apply:'Apply to links', share:'Share URL'}
     };
-    let LANG=localStorage.getItem('hs:cust:lang')||'ar';
 
-    function applyLang(){ const L=T[LANG]; document.documentElement.lang=LANG; document.documentElement.dir=(LANG==='ar')?'rtl':'ltr'; $('#langBtn').textContent=(LANG==='ar')?'EN':'AR'; $('#tbTitle').textContent=L.title; $('#tbSub').textContent=L.sub; $('#lblEvent').textContent=L.event; $('#applyEventBtn').textContent=L.apply; $('#kpiTotalLbl').textContent=L.total; $('#kpiUsedLbl').textContent=L.used; $('#kpiLeftLbl').textContent=L.left; $('#kpiRateLbl').textContent=L.rate; $('#lblRecent').textContent=L.recent; $('#thCode').textContent=L.code; $('#thStatus').textContent=L.status; $('#thTime').textContent=L.time; $('#exportCsvBtn').textContent=(LANG==='ar'? '⤓ ':'')+L.export; $('#lblGuests').textContent=L.guests; $('#searchInput').placeholder=L.search; }
+    const LINKS={
+      scanner: 'new-scanner.html',
+      dashboard: 'new-dashboard.html',
+      inviteSender: 'client-invite-sender.html',
+      upload: 'new-uploadqr.html',
+      merge: 'new-merge-qr.html',
+      docs: '#'
+    };
 
-    // Firebase
-    const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
-    if(!firebase.apps.length){ firebase.initializeApp(cfg);} const db=firebase.firestore();
+    function applyLang(){ const lang=$('#langSelect').value; document.documentElement.lang=lang; document.documentElement.dir=(lang==='ar')?'rtl':'ltr'; $('#langBtn').textContent=(lang==='ar')?'EN':'AR'; $('#lblEvent').textContent=STR[lang].event; $('#lblLang').textContent=STR[lang].lang; $('#applyBtn').textContent=STR[lang].apply; }
 
-    // Event from URL (if exists)
-    const p=new URLSearchParams(location.search); const EV0=p.get('event')? decodeURIComponent(p.get('event')): '';
+    function rebuild(){ const ev=encodeURIComponent($('#eventInput').value.trim()); const base=location.origin+location.pathname.replace(/[^\/]*$/,'');
+      const urlScanner = LINKS.scanner + (ev? `?event=${ev}`:'');
+      const urlDash    = LINKS.dashboard + (ev? `?event=${ev}`:'');
+      const urlSender  = LINKS.inviteSender;
+      const urlUpload  = LINKS.upload;
+      const urlMerge   = LINKS.merge + (ev? `?event=${ev}`:'');
+      $('#cardScanner').href=urlScanner; $('#cardDashboard').href=urlDash; $('#cardInviteSender').href=urlSender; $('#cardUpload').href=urlUpload; $('#cardMerge').href=urlMerge; $('#cardDocs').href='#';
+      const share = base + `customer-home.html?event=${ev}`; $('#shareUrl').textContent = share; }
 
-    function rebuildLinks(){ const ev=encodeURIComponent($('#eventName').value.trim()); const base=location.origin+location.pathname.replace(/[^\/]*$/,'');
-      const scanner=`new-scanner.html${ev? '?event='+ev:''}`; const dash=`new-dashboard.html${ev? '?event='+ev:''}`; const sender='client-invite-sender.html'; const merge=`new-merge-qr.html${ev? '?event='+ev:''}`; const upload='new-uploadqr.html';
-      $('#openScanner').href=scanner; $('#openDashboard').href=dash; $('#openSender').href=sender; $('#openMerge').href=merge; $('#openUpload').href=upload; $('#openClientSender').href=sender;
-      $('#shareUrl').textContent = base + `customer-dashboard.html?event=${ev}`;
-    }
-
-    // KPIs & table
-    let unsub=null, rows=[];
-    function startStream(){ if(unsub) unsub(); const ev=$('#eventName').value.trim(); const ref=db.collection('invites'); const q = ev? ref.where('EventName','==',ev) : ref; unsub = q.onSnapshot(snap=>{ let t=0,u=0; const rec=[]; snap.forEach(d=>{ const x=d.data()||{}; t++; if((x.Status||'').toLowerCase()==='yes') u++; if(x.scannedAt?.toDate?.()) rec.push({id:d.id, Code:x.Code||d.id, Status:x.Status||'no', scannedAt:x.scannedAt.toDate()}); }); rec.sort((a,b)=>(b.scannedAt?.getTime?.()||0)-(a.scannedAt?.getTime?.()||0)); rows=rec.slice(0,100); renderKPIs(t,u); renderRows(); }); }
-
-    function renderKPIs(total,used){ const left=Math.max(total-used,0); const rate= total>0? Math.round((used/total)*100):0; $('#kpiTotal').textContent=total; $('#kpiUsed').textContent=used; $('#kpiLeft').textContent=left; $('#kpiRate').textContent=rate+'%'; }
-
-    function renderRows(){ const s=($('#searchInput').value||'').trim().toLowerCase(); const list=s? rows.filter(r=> (r.Code||'').toLowerCase().includes(s) ): rows; const tb=$('#rowsBody'); tb.innerHTML=''; const isAr=(LANG==='ar'); if(list.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=3; td.className='muted'; td.style.textAlign='center'; td.style.padding='18px'; td.textContent = isAr? 'لا توجد مسحات':'No scans'; tr.appendChild(td); tb.appendChild(tr); return; } for(const r of list){ const tr=document.createElement('tr'); const td1=document.createElement('td'); td1.className='mono'; td1.textContent=r.Code; tr.appendChild(td1); const td2=document.createElement('td'); const b=document.createElement('span'); const ok=(r.Status||'no').toLowerCase()==='yes'; b.className='badge '+(ok?'ok':'err'); b.textContent = ok? (isAr?'yes':'yes') : (isAr?'no':'no'); td2.appendChild(b); tr.appendChild(td2); const td3=document.createElement('td'); td3.textContent = r.scannedAt? r.scannedAt.toLocaleString(isAr?'ar-EG':'en-GB'):'—'; tr.appendChild(td3); tb.appendChild(tr);} }
-
-    function exportCSV(){ const L=T[LANG]; const header=[L.code,L.status,'EventName',L.time].join(','); const ev=$('#eventName').value.trim()||'ALL'; const lines=rows.map(r=> [r.Code, r.Status, ev, r.scannedAt? new Date(r.scannedAt).toISOString():'' ].join(',')); const csv=[header,...lines].join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`hormez-${ev}-scans.csv`; a.click(); URL.revokeObjectURL(url); }
-
-    // Guests local count
-    function refreshGuests(){ try{ const ls=JSON.parse(localStorage.getItem('hs:client:rows')||'[]'); $('#gCount').textContent = Array.isArray(ls)? ls.length: 0; }catch{ $('#gCount').textContent='0'; } }
-
-    // Copy all links
-    function copyLinks(){ const a=[$('#openScanner').href,$('#openDashboard').href,$('#openSender').href,$('#openMerge').href,$('#openUpload').href].filter(Boolean).join('\n'); navigator.clipboard?.writeText(a).then(()=> toast(T[LANG].copied)); }
-
-    function toast(msg){ const t=document.createElement('div'); t.className='tag'; t.textContent=msg; t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)'; t.style.top='12px'; t.style.zIndex='50'; document.body.appendChild(t); setTimeout(()=>t.remove(),1500); }
-
-    // Wire
     document.addEventListener('DOMContentLoaded', ()=>{
-      if(EV0) $('#eventName').value=EV0; applyLang(); rebuildLinks(); refreshGuests(); startStream();
-      $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:cust:lang',LANG); applyLang(); renderRows(); });
-      $('#applyEventBtn').addEventListener('click', ()=>{ rebuildLinks(); startStream(); });
-      $('#searchInput').addEventListener('input', renderRows);
-      $('#exportCsvBtn').addEventListener('click', exportCSV);
-      $('#copyLinksBtn').addEventListener('click', copyLinks);
+      const p=new URLSearchParams(location.search); const ev=p.get('event')||''; if(ev) $('#eventInput').value=decodeURIComponent(ev);
+      $('#applyBtn').addEventListener('click', rebuild);
+      $('#langBtn').addEventListener('click', ()=>{ const sel=$('#langSelect'); sel.value = sel.value==='ar'?'en':'ar'; applyLang(); });
+      $('#langSelect').addEventListener('change', applyLang);
+      applyLang(); rebuild();
     });
   </script>
 </body>
