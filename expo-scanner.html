@@ -3,10 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — Event Scanner Pro</title>
+  <title>Hormez — ماسح مناسبة احترافي</title>
   <style>
     :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--card:#0e172a}
-    html,body{height:100%}
     body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
     .container{max-width:1200px;margin:0 auto;padding:14px}
     .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
@@ -20,7 +19,7 @@
     .status{display:flex;gap:8px;align-items:center}
     .dot{width:10px;height:10px;border-radius:50%}
 
-    /* Scanner */
+    /* Scanner video */
     .scanWrap{position:relative;width:100%;aspect-ratio:3/4;max-width:480px;margin-inline:auto;border-radius:14px;overflow:hidden;border:4px solid var(--line);transition:border-color .25s ease, box-shadow .25s ease}
     .scanWrap.ok{border-color:var(--ok); box-shadow:0 0 0 3px rgba(22,163,74,.25) inset}
     .scanWrap.err{border-color:var(--bad); box-shadow:0 0 0 3px rgba(220,38,38,.25) inset}
@@ -34,7 +33,7 @@
     .grid{display:grid;gap:12px}
     @media(min-width:1024px){.grid-2{grid-template-columns:2fr 1fr}}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    .hist{max-height:320px;overflow:auto}
+    .hist{max-height:300px;overflow:auto}
     .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
   </style>
 </head>
@@ -42,17 +41,18 @@
   <!-- Topbar -->
   <div class="topbar">
     <div class="container row" style="justify-content:space-between">
-      <div class="row"><div class="logo" style="width:36px;height:36px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center"><span style="font-weight:900;color:#ffd700">HS</span></div><div id="tbTitle" class="muted" style="margin-inline-start:8px">ماسح الباركود — مناسبة محددة</div></div>
+      <div class="row"><b>HS</b><div class="muted" style="margin-inline-start:8px">ماسح الباركود — مناسبة محددة</div></div>
       <div class="row">
-        <span class="tag"><span id="lblEventTop">الحدث</span>: <b id="evTag">—</b></span>
-        <button id="langBtn" class="btn">EN</button>
+        <span class="tag">Event: <b id="evTag">—</b></span>
+        <button id="setEventBtn" class="btn">تعيين/تغيير الحدث</button>
+        <button id="langBtn" class="btn">AR</button>
       </div>
     </div>
   </div>
 
   <div class="container grid grid-2">
     <!-- Left: Scanner -->
-    <div class="card" id="leftCard">
+    <div class="card">
       <div class="row" style="justify-content:space-between; gap:8px">
         <div class="status"><div id="statusDot" class="dot" style="background:#9ca3af"></div><div id="statusText" class="muted">—</div></div>
         <div class="row">
@@ -74,38 +74,34 @@
       <!-- Controls -->
       <div class="row" style="margin-top:10px">
         <div style="width:150px">
-          <div id="lblPause" class="muted">فترة التوقف (ملّي ثانية)</div>
-          <input id="pauseMs" class="input" type="number" value="1500" />
+          <div class="muted">فترة التوقف (ms)</div>
+          <input id="pauseMs" class="input" type="number" value="2000" />
         </div>
-        <div style="width:200px">
-          <div id="lblRegex" class="muted">نمط الكود (Regex)</div>
+        <div style="width:140px">
+          <div class="muted">الأصوات</div>
+          <select id="soundMode" class="select">
+            <option value="on">تشغيل</option>
+            <option value="off">إيقاف</option>
+          </select>
+        </div>
+        <div style="width:170px">
+          <div class="muted">حجم القارئ</div>
+          <select id="scanSize" class="select">
+            <option value="360">صغير</option>
+            <option value="480" selected>متوسط</option>
+            <option value="680">كبير</option>
+          </select>
+        </div>
+        <div style="width:220px">
+          <div class="muted">نمط الكود (Regex)</div>
           <input id="codeRegex" class="input mono" value="^[A-Z]{2}_[0-9]{3,}$" />
         </div>
         <div style="width:170px">
-          <div id="lblStrict" class="muted">وضع صارم</div>
+          <div class="muted">وضع صارم</div>
           <select id="strictMode" class="select">
             <option value="on">مطابق فقط</option>
             <option value="off">اقبل الكل</option>
           </select>
-        </div>
-        <div style="width:170px">
-          <div id="lblScanSize" class="muted">حجم القارئ</div>
-          <select id="scanSize" class="select">
-            <option value="320">صغير</option>
-            <option value="420" selected>متوسط</option>
-            <option value="560">كبير</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Manual input -->
-      <div class="row" style="margin-top:10px">
-        <div style="flex:1">
-          <div id="lblManual" class="muted">إدخال يدوي</div>
-          <div class="row">
-            <input id="manualCode" class="input" placeholder="SA_001" />
-            <button id="manualBtn" class="btn">تحقق</button>
-          </div>
         </div>
       </div>
 
@@ -116,7 +112,7 @@
 
     <!-- Right: Last result + history -->
     <div class="card">
-      <div id="lblLast" class="muted" style="font-size:12px">النتيجة الأخيرة</div>
+      <div class="muted" style="font-size:12px">النتيجة الأخيرة</div>
       <div class="row" style="margin-top:6px; align-items:center">
         <canvas id="qrCanvas" width="120" height="120" style="background:#fff;border-radius:10px"></canvas>
         <div>
@@ -125,7 +121,7 @@
         </div>
       </div>
 
-      <div id="lblHist" class="muted" style="font-size:12px;margin-top:14px">السجل (محفوظ محليًا حسب المناسبة)</div>
+      <div class="muted" style="font-size:12px;margin-top:14px">السجل (محفوظ محليًا حسب المناسبة)</div>
       <div id="hist" class="hist"></div>
       <div class="row" style="margin-top:8px"><button id="clearHist" class="btn">مسح السجل</button></div>
     </div>
@@ -133,6 +129,7 @@
 
   <!-- QR lib for preview -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
   <!-- ZXing loader & native flag -->
   <script>
     (function(){
@@ -156,106 +153,98 @@
   (function(){
     const $=(s,root=document)=>root.querySelector(s);
 
-    // ===== Inline audio (embed your Base64 below) =====
-    // NOTES:
-    // - These are lightweight default tones. You can paste bigger Base64 WAVs in OK_B64/ERR_B64 without any external files.
-    // - WebAudio fallback will always work if autoplay is blocked.
-    const OK_B64 = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABZhdGEAAAAA"; // very short ping
-    const ERR_B64 = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABZhdGEAAAAA"; // very short ping (same placeholder)
-    let okAudio = new Audio(OK_B64), errAudio = new Audio(ERR_B64);
+    // i18n (مختصر)
+    const T={ ar:{ready:'جاهز',checking:'جاري التحقق…',paused:'⏸️ مؤقت',needEvent:'حدد المناسبة أولاً',ok:'✅ مقبول',dupe:'⚠️ مستخدم سابقًا',mismatch:'❌ غير تابع للمناسبة',notfound:'❌ غير موجود',start:'▶️ تشغيل',stop:'⏹️ إيقاف'},
+              en:{ready:'Ready',checking:'Checking…',paused:'⏸️ Paused',needEvent:'Set event first',ok:'✅ Accepted',dupe:'⚠️ Already used',mismatch:'❌ Not this event',notfound:'❌ Not found',start:'▶️ Start',stop:'⏹️ Stop'} };
+    let LANG=localStorage.getItem('hs:evscan:lang')||'ar';
+    function L(k){return (T[LANG]||T.ar)[k]||k}
 
-    let audioCtx=null; function ensureAudio(){ try{ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended') audioCtx.resume(); }catch{} }
-    function playTone(kind='ok'){ try{ const a=(kind==='ok')?okAudio:errAudio; a.currentTime=0; a.play().catch(()=>{}); }catch{ try{ if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.value=(kind==='ok')?880:220; const now=audioCtx.currentTime; const dur=(kind==='ok')?0.12:0.22; o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(0.0001,now); g.gain.exponentialRampToValueAtTime(0.25,now+0.02); g.gain.exponentialRampToValueAtTime(0.0001,now+dur); o.start(); o.stop(now+dur+0.02);}catch{} }
-
-    // ===== i18n =====
-    const I18N={
-      ar:{tbTitle:'ماسح الباركود — مناسبة محددة', eventTop:'الحدث', ready:'جاهز', checking:'جاري التحقق…', paused:'⏸️ مؤقت', needEvent:'مرر اسم الحدث عبر الرابط ?event=', ok:'✅ مقبول', dupe:'⚠️ مستخدم سابقًا', mismatch:'❌ غير تابع للمناسبة', notfound:'❌ غير موجود', start:'▶️ تشغيل', stop:'⏹️ إيقاف', switch:'🔄 تبديل', torch:'💡 فلاش', manual:'إدخال يدوي', manualBtn:'تحقق', placeholderManual:'SA_001', regex:'نمط الكود (Regex)', strict:'وضع صارم', strictOn:'مطابق فقط', strictOff:'اقبل الكل', scanSize:'حجم القارئ', last:'النتيجة الأخيرة', history:'السجل (محفوظ محليًا حسب المناسبة)', clear:'مسح السجل', httpsWarn:'⚠️ الكاميرا تتطلب HTTPS أو localhost.'},
-      en:{tbTitle:'Barcode Scanner — Event Locked', eventTop:'Event', ready:'Ready', checking:'Checking…', paused:'⏸️ Paused', needEvent:'Pass event via ?event=', ok:'✅ Accepted', dupe:'⚠️ Already used', mismatch:'❌ Not this event', notfound:'❌ Not found', start:'▶️ Start', stop:'⏹️ Stop', switch:'🔄 Switch', torch:'💡 Torch', manual:'Manual input', manualBtn:'Verify', placeholderManual:'SA_001', regex:'Code pattern (Regex)', strict:'Strict mode', strictOn:'Match only', strictOff:'Accept all', scanSize:'Scanner size', last:'Last result', history:'History (per event, local)', clear:'Clear history', httpsWarn:'⚠️ Camera requires HTTPS or localhost.'}
-    }
-    let LANG = localStorage.getItem('hs:evscan:lang')||'ar';
-
-    function applyLang(){ const t=I18N[LANG]; document.documentElement.lang=LANG; document.documentElement.dir=(LANG==='ar')?'rtl':'ltr';
-      $('#tbTitle').textContent=t.tbTitle; $('#lblEventTop').textContent=t.eventTop; $('#langBtn').textContent=(LANG==='ar')?'EN':'AR';
-      $('#startBtn').textContent=t.start; $('#stopBtn').textContent=t.stop; $('#switchBtn').textContent=t.switch; $('#torchBtn').textContent=t.torch;
-      $('#lblPause').textContent=(LANG==='ar')?'فترة التوقف (ملّي ثانية)':'Pause (ms)';
-      $('#lblRegex').textContent=t.regex; $('#lblStrict').textContent=t.strict; const strictSel=$('#strictMode'); if(strictSel){ strictSel.options[0].text=t.strictOn; strictSel.options[1].text=t.strictOff; }
-      $('#lblScanSize').textContent=t.scanSize; $('#lblManual').textContent=t.manual; $('#manualBtn').textContent=t.manualBtn; $('#manualCode')?.setAttribute('placeholder', t.placeholderManual);
-      $('#lblLast').textContent=t.last; $('#lblHist').textContent=t.history; $('#clearHist').textContent=t.clear; $('#httpsWarn').textContent=t.httpsWarn; setStatus(t.ready,'#16a34a'); }
-
-    // ===== Firebase =====
+    // Firebase
     const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
     if(!firebase.apps.length){ firebase.initializeApp(cfg); }
     const db=firebase.firestore();
 
-    // ===== Event from outside only =====
-    const EVENT = new URLSearchParams(location.search).get('event') || sessionStorage.getItem('hs:evscan:event') || '';
-    $('#evTag').textContent = EVENT || '—';
+    // Event state
+    const URL_EVENT = new URLSearchParams(location.search).get('event');
+    let EVENT_LOCKED=false, EVENT_NAME='';
+    function setEvent(name,locked=false){ EVENT_NAME=String(name||'').trim(); EVENT_LOCKED=!!locked; $('#evTag').textContent=EVENT_NAME||'—'; localStorage.setItem('hs:evscan:event',EVENT_NAME); renderHist(); refreshButtons(); }
+    function initEvent(){ const saved=localStorage.getItem('hs:evscan:event')||''; if(URL_EVENT){ setEvent(URL_EVENT,true); } else if(saved){ setEvent(saved); } else { promptEvent(); } }
+    function promptEvent(){ const name=prompt('اكتب اسم المناسبة (مطابق لـ EventName):'); if(name){ setEvent(name,false); } }
 
-    // ===== Guards =====
+    // HTTPS guard
     function httpsOK(){ const isLocal=['localhost','127.0.0.1'].includes(location.hostname); const ok=location.protocol==='https:'||isLocal; $('#httpsWarn').style.display= ok? 'none':'block'; return ok; }
 
-    // ===== History =====
-    function hKey(){return `hs:evscan:hist:${EVENT||'__NONE__'}`}
+    // Audio
+    let audioCtx=null; function ensureAudio(){ try{ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended') audioCtx.resume(); }catch{} }
+    function beep(type='ok'){ if($('#soundMode')?.value==='off') return; try{ ensureAudio(); if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.value=(type==='ok')?880:220; const now=audioCtx.currentTime; const dur=(type==='ok')?0.12:0.22; o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(0.0001,now); g.gain.exponentialRampToValueAtTime(0.25,now+0.02); g.gain.exponentialRampToValueAtTime(0.0001,now+dur); o.start(); o.stop(now+dur+0.02);}catch{} }
+
+    // History
+    function hKey(){return `hs:evscan:hist:${EVENT_NAME||'__NONE__'}`}
     function getHist(){ try{return JSON.parse(localStorage.getItem(hKey())||'[]')}catch{return[]} }
     function pushHist(code,msg,good){ const h=getHist(); h.unshift({code,msg,good,at:Date.now()}); localStorage.setItem(hKey(),JSON.stringify(h.slice(0,80))); renderHist(); }
-    function renderHist(){ const box=$('#hist'); box.innerHTML=''; const h=getHist(); if(!EVENT){ box.innerHTML=`<div class="muted">${I18N[LANG].needEvent}</div>`; return;} if(!h.length){ box.innerHTML=`<div class="muted">—</div>`; return;} h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='6px'; d.style.borderTop='1px solid rgba(255,255,255,.08)'; d.innerHTML=`<div class="mono">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); }); }
+    function renderHist(){ const box=$('#hist'); box.innerHTML=''; const h=getHist(); if(!EVENT_NAME){ box.innerHTML=`<div class="muted">${L('needEvent')}</div>`; return;} if(!h.length){ box.innerHTML=`<div class="muted">—</div>`; return;} h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='6px'; d.style.borderTop='1px solid rgba(255,255,255,.08)'; d.innerHTML=`<div class="mono">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); }); }
 
-    // ===== UI helpers =====
-    function refreshButtons(){ $('#startBtn').disabled = !httpsOK() || !EVENT; $('#stopBtn').disabled = !scanning; }
+    // UI helpers
+    function refreshButtons(){ $('#startBtn').textContent=L('start'); $('#stopBtn').textContent=L('stop'); $('#startBtn').disabled = !httpsOK() || !EVENT_NAME; $('#stopBtn').disabled = !scanning; }
     function setStatus(text,color){ $('#statusText').textContent=text; $('#statusDot').style.background=color; }
     function drawQR(text){ const c=$('#qrCanvas'); if(!c) return; const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); if(!text) return; try{ QRCode.toCanvas(c,text,{width:120,margin:1},()=>{});}catch{} }
-    function highlight(ok){ const w=$('#scanWrap'); w.classList.remove('ok','err'); w.classList.add(ok?'ok':'err'); const ms=Math.max(300,parseInt($('#pauseMs')?.value||'1500',10)); setTimeout(()=>{ w.classList.remove('ok','err'); }, Math.min(ms, 2500)); }
+    function highlight(ok){ const w=$('#scanWrap'); w.classList.remove('ok','err'); w.classList.add(ok?'ok':'err'); // رجوع تلقائي للون الافتراضي بعد فترة التوقف
+      const ms=Math.max(300,parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ w.classList.remove('ok','err'); }, Math.min(ms, 2500)); }
 
-    // ===== Scanner =====
-    let scanning=false, rafId=null, reader=null, ndet=null, track=null; let locked=false; let currentDeviceId=null, devices=[];
-    function lockPause(){ locked=true; const ms=Math.max(300,parseInt($('#pauseMs')?.value||'1500',10)); setTimeout(()=>{ locked=false; }, ms); }
+    // Scanner state
+    let devices=[], currentDeviceId=null, track=null, scanning=false, rafId=null, reader=null, ndet=null; let locked=false;
+    function lockPause(){ locked=true; const ms=Math.max(300,parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
     function strictOn(){ return ($('#strictMode')?.value||'on')==='on'; }
     function codeRegex(){ try{ return new RegExp($('#codeRegex')?.value||''); }catch{ return null; } }
 
-    async function listCams(){ const all=await navigator.mediaDevices.enumerateDevices(); devices=all.filter(d=>d.kind==='videoinput'); }
+    async function ensurePerm(){ try{ const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); tmp.getTracks().forEach(t=>t.stop()); }catch{} }
+    async function listCams(){ const all=await navigator.mediaDevices.enumerateDevices(); devices=all.filter(d=>d.kind==='videoinput'); const sel=$('#cameraSelect'); if(!sel) return; sel.innerHTML=''; devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label||`Camera ${i+1}`; sel.appendChild(o); }); if(devices.length){ if(!currentDeviceId){ const back=devices.find(d=>/back|rear|environment|خلف/i.test(d.label||'')); currentDeviceId=back?back.deviceId:devices[0].deviceId; } sel.value=currentDeviceId; } }
 
-    async function start(){ ensureAudio(); if(!EVENT){ alert(I18N[LANG].needEvent); return;} if(!httpsOK()){ alert(I18N[LANG].httpsWarn); return;} await listCams(); const v=$('#video'); const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}, audio:false}); v.srcObject=stream; await v.play().catch(()=>{}); track=stream.getVideoTracks()[0]||null; scanning=true; refreshButtons(); setStatus(I18N[LANG].ready,'#16a34a');
+    async function start(){ ensureAudio(); if(!EVENT_NAME){ alert(L('needEvent')); return; } if(!httpsOK()){ alert('HTTPS required'); return;} await ensurePerm(); await listCams(); const dev=currentDeviceId; const v=$('#video'); const stream=await navigator.mediaDevices.getUserMedia({video:{deviceId: dev?{exact:dev}:undefined, focusMode:'continuous'}, audio:false}); v.srcObject=stream; await v.play().catch(()=>{}); track=stream.getVideoTracks()[0]||null; scanning=true; refreshButtons(); setStatus(L('ready'),'#16a34a');
       const zOk=await window.ensureZXing();
-      if(zOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){ let r; try{ if(window.ZXing.BarcodeFormat&&window.ZXing.DecodeHintType){ const hints=new Map(); hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS,[window.ZXing.BarcodeFormat.QR_CODE]); r=new window.ZXing.BrowserMultiFormatReader(hints);} else { r=new window.ZXing.BrowserMultiFormatReader(); } }catch{ r=new window.ZXing.BrowserMultiFormatReader(); }
-        reader=r; reader.decodeFromVideoDevice(null, v, (res,err)=>{ if(res){ if(locked) return; const text=res.getText?res.getText():(res.text||''); handleRawScan(String(text||'').trim()); } });
+      if(zOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){ try{ if(window.ZXing.BarcodeFormat&&window.ZXing.DecodeHintType){ const hints=new Map(); hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS,[window.ZXing.BarcodeFormat.QR_CODE]); reader=new window.ZXing.BrowserMultiFormatReader(hints);} else { reader=new window.ZXing.BrowserMultiFormatReader(); } }catch{ reader=new window.ZXing.BrowserMultiFormatReader(); }
+        reader.decodeFromVideoDevice(dev||null, v, (res,err)=>{ if(res){ if(locked) return; const text=res.getText?res.getText():(res.text||''); handleRawScan(String(text||'').trim()); } });
       } else if('BarcodeDetector' in window){ ndet=new window.BarcodeDetector({formats:['qr_code']}); const loop=async()=>{ if(!scanning) return; try{ if(!locked){ const arr=await ndet.detect(v); if(arr&&arr.length){ handleRawScan(String(arr[0].rawValue||'').trim()); } } }catch{} rafId=requestAnimationFrame(loop); }; loop(); }
       else { alert('Camera library not loaded'); setStatus('⚠️', '#f59e0b'); }
     }
 
-    async function stop(){ try{ if(reader){ try{reader.reset();}catch{} reader=null;} if(rafId){ cancelAnimationFrame(rafId); rafId=null;} const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } track=null; }catch{} scanning=false; refreshButtons(); setStatus(I18N[LANG].paused,'#f59e0b'); }
+    async function stop(){ try{ if(reader){ try{reader.reset();}catch{} reader=null;} if(rafId){ cancelAnimationFrame(rafId); rafId=null;} const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } track=null; }catch{} scanning=false; refreshButtons(); setStatus(L('paused'),'#f59e0b'); }
 
     async function toggleTorch(){ try{ if(!track) return alert('No torch'); const caps=track.getCapabilities?.(); if(!caps?.torch) return alert('Torch not supported'); const on=!(track.getConstraints()?.advanced?.[0]?.torch); await track.applyConstraints({advanced:[{torch:on}]}); }catch(e){ alert('Torch error'); } }
 
-    // ===== Verify =====
-    async function verifyAndMark(code){ setStatus(I18N[LANG].checking,'#f59e0b');
+    // Verify
+    async function verifyAndMark(code){ setStatus(L('checking'),'#f59e0b');
       try{
-        const q=await db.collection('invites').where('Code','==',code).where('EventName','==',EVENT).limit(1).get();
-        if(q.empty){ show(false, I18N[LANG].mismatch, code); return; }
+        const q=await db.collection('invites').where('Code','==',code).where('EventName','==',EVENT_NAME).limit(1).get();
+        if(q.empty){ show(false, L('mismatch'), code); return; }
         const d=q.docs[0]; const data=d.data()||{};
-        if(String(data.Status||'').toLowerCase()==='yes'){ show(false, I18N[LANG].dupe, code); }
-        else { await d.ref.set({ Status:'yes', scannedAt: firebase.firestore.FieldValue.serverTimestamp() }, {merge:true}); show(true, I18N[LANG].ok, code); }
+        if(String(data.Status||'').toLowerCase()==='yes'){ show(false, L('dupe'), code); }
+        else { await d.ref.set({ Status:'yes', scannedAt: firebase.firestore.FieldValue.serverTimestamp() }, {merge:true}); show(true, L('ok'), code); }
       }catch(e){ show(false, e.message||'Error', code); }
     }
 
-    function show(ok, msg, code){ $('#lastCode').textContent=code||'—'; $('#lastCode').style.color= ok? '#86efac':'#fca5a5'; $('#lastMsg').textContent=msg||''; drawQR(code||''); pushHist(code,msg,ok); navigator.vibrate?.(ok?60:120); playTone(ok?'ok':'err'); highlight(ok); lockPause(); }
+    function show(ok, msg, code){ $('#lastCode').textContent=code||'—'; $('#lastCode').style.color= ok? '#86efac':'#fca5a5'; $('#lastMsg').textContent=msg||''; drawQR(code||''); pushHist(code,msg,ok); navigator.vibrate?.(ok?60:120); beep(ok?'ok':'err'); highlight(ok); }
 
-    function handleRawScan(raw){ const strict=strictOn(); const re=codeRegex(); if(strict){ if(!re) return; if(!re.test(raw)) return; } verifyAndMark(raw); }
+    function onCode(text){ if(!text) return; if(locked) return; lockPause(); verifyAndMark(text); }
+    function handleRawScan(raw){ const strict=strictOn(); const re=codeRegex(); if(strict){ if(!re) return; if(!re.test(raw)) return; } onCode(raw); }
 
-    // ===== Wire =====
+    // Wire
     document.addEventListener('DOMContentLoaded', ()=>{
-      applyLang(); renderHist(); refreshButtons();
-      $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:evscan:lang',LANG); applyLang(); renderHist(); });
+      initEvent(); renderHist(); drawQR(''); refreshButtons();
+      // scan size
+      const savedW=localStorage.getItem('hs:evscan:scanw'); if(savedW && $('#scanSize')) $('#scanSize').value=savedW; applyScanSize(); $('#scanSize')?.addEventListener('change', applyScanSize);
+
+      $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:evscan:lang',LANG); refreshButtons(); renderHist(); });
       $('#startBtn').addEventListener('click', ()=>{ ensureAudio(); start(); });
       $('#stopBtn').addEventListener('click', stop);
-      $('#switchBtn').addEventListener('click', async ()=>{ await stop(); start(); });
-      $('#torchBtn').addEventListener('click', toggleTorch);
-      $('#clearHist').addEventListener('click', ()=>{ localStorage.removeItem(hKey()); renderHist(); });
-      $('#manualBtn').addEventListener('click', ()=>{ ensureAudio(); const c=$('#manualCode').value.trim(); if(!c) return; handleRawScan(c); });
-      // Apply saved size
-      const savedW=localStorage.getItem('hs:evscan:scanw'); if(savedW && $('#scanSize')) $('#scanSize').value=savedW; applyScanSize(); $('#scanSize')?.addEventListener('change', applyScanSize);
+      $('#switchBtn')?.addEventListener('click', async ()=>{ await stop(); const sel=$('#cameraSelect'); if(sel){ const w=sel.selectedIndex; sel.selectedIndex=(w+1)%(sel.length||1); currentDeviceId=sel.value; } await start(); });
+      $('#torchBtn')?.addEventListener('click', toggleTorch);
+      $('#manualBtn')?.addEventListener('click', ()=>{ ensureAudio(); const c=$('#manualCode')?.value?.trim(); if(!c) return; handleRawScan(c); });
+      $('#clearHist').addEventListener('click', ()=>{ if(!EVENT_NAME) return; localStorage.removeItem(hKey()); renderHist(); });
+      $('#setEventBtn').addEventListener('click', ()=>{ if(EVENT_LOCKED){ alert('تم تعيين الحدث من رابط الصفحة'); return;} promptEvent(); });
     });
 
-    function applyScanSize(){ const wrap=$('#scanWrap'); if(!wrap) return; const w=$('#scanSize')?.value||'420'; wrap.style.maxWidth=w+'px'; localStorage.setItem('hs:evscan:scanw',w); }
+    function applyScanSize(){ const wrap=$('#scanWrap'); if(!wrap) return; const w=$('#scanSize')?.value||'480'; wrap.style.maxWidth=w+'px'; localStorage.setItem('hs:evscan:scanw',w); }
   })();
   </script>
 </body>
