@@ -3,275 +3,291 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — إرسال الكروت (محلي) • فردي/جماعي</title>
+  <title>Hormez — صفحة العميل لإرسال الدعوات</title>
   <style>
-    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155}
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--card:#0e172a;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b}
     html,body{height:100%}
     body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
-    .container{max-width:1200px;margin:0 auto;padding:16px}
+    .container{max-width:1200px;margin:0 auto;padding:14px}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
-    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:8px 12px;cursor:pointer}
-    .btn:hover{background:#0d1528}
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
     .btn:disabled{opacity:.5;cursor:not-allowed}
-    .input,.select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
+    .btn:hover{background:#0d1528}
+    .select,.input,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
     .grid{display:grid;gap:12px}
-    .grid-cards{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
-    .thumb{width:100%;aspect-ratio:4/5;background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:12px;object-fit:cover}
+    @media(min-width:1024px){.grid-3{grid-template-columns:1.5fr 1fr 1fr}}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-top:1px solid rgba(255,255,255,.08)}
+    thead th{position:sticky;top:0;background:#0e162c}
     .muted{color:var(--muted)}
-    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
-    .badge{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);padding:4px 8px;border-radius:999px;font-size:12px}
-    .item{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
-    .stack{display:flex;flex-direction:column;gap:8px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="row" style="margin-bottom:10px">
-      <div style="font-weight:800">📨 إرسال الكروت (محلي) — تحميل صور + ربط الضيوف + إرسال فردي/جماعي</div>
-      <div style="margin-inline-start:auto" class="row">
-        <input id="searchBox" class="input" placeholder="بحث بالاسم/الرقم/اسم الملف" style="min-width:260px" />
-        <select id="filterMode" class="select">
-          <option value="all">الكل</option>
-          <option value="paired">المرتبطة بضيوف</option>
-          <option value="unpaired">غير المرتبطة</option>
-        </select>
-        <button id="btnSendAll" class="btn">📤 إرسال جماعي</button>
-        <button id="btnZipAll" class="btn">⤓ تنزيل جميع الصور (ZIP)</button>
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="container row" style="justify-content:space-between">
+      <div class="row" style="gap:12px">
+        <div class="logo" style="width:38px;height:38px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center"><span style="font-weight:900;color:#ffd700">HS</span></div>
+        <div>
+          <div class="muted" style="font-size:12px">HORMEZ</div>
+          <div id="tbTitle" style="font-weight:800">صفحة العميل لإرسال الدعوات</div>
+          <div id="tbSub" class="muted" style="font-size:12px">CSV/Excel للضيوف + رسالة واتساب + إرسال جماعي/فردي</div>
+        </div>
       </div>
-    </div>
-
-    <!-- إعدادات عامة -->
-    <div class="card">
       <div class="row">
-        <div style="flex:2">
-          <div class="muted">قالب الرسالة</div>
-          <textarea id="msgTemplate" rows="2" class="input" placeholder="{name}، دعوتك مرفقة بالصورة."></textarea>
-          <div class="muted" style="font-size:12px">المتغيّرات المتاحة: {name}</div>
-        </div>
-        <div style="flex:1">
-          <div class="muted">مهلة الإرسال الجماعي (ملّي ثانية، تُفتح الروابط في تبويبات جديدة)</div>
-          <input id="batchDelay" class="input" type="number" value="1200" />
-        </div>
+        <button id="langBtn" class="btn">EN</button>
+        <button id="helpBtn" class="btn">؟</button>
       </div>
-    </div>
-
-    <!-- رفع الكروت -->
-    <div class="card">
-      <div class="row">
-        <div style="flex:2">
-          <div class="muted">تحميل الكروت من جهازك</div>
-          <input id="cardsInput" class="input" type="file" accept="image/*" multiple />
-        </div>
-        <div style="flex:1">
-          <div class="muted">عدّاد</div>
-          <div class="badge"><span>🖼️</span><span id="countCards">0</span> صورة</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- إضافة الضيوف -->
-    <div class="card">
-      <div class="row">
-        <div style="flex:1">
-          <div class="muted">أضف الأسماء والأرقام (سطر لكل ضيف: name, phone)</div>
-          <textarea id="guestsText" rows="6" class="input" placeholder="أحمد, 9665XXXXXXX
-سارة, 9665YYYYYYY"></textarea>
-        </div>
-        <div style="width:320px" class="stack">
-          <div>
-            <div class="muted">أو ارفع ملف Excel/CSV (أول عمود name، ثاني عمود phone)</div>
-            <input id="csvInput" class="input" type="file" accept=".csv,.xlsx" />
-          </div>
-          <button id="btnParseGuests" class="btn">✔️ تأكيد قائمة الضيوف</button>
-          <div class="badge"><span>👤</span><span id="countGuests">0</span> ضيف</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- شبكة العناصر -->
-    <div class="card">
-      <div class="row" style="margin-bottom:8px">
-        <div class="muted">الكروت + ربط الضيوف (يتم الربط حسب الترتيب تلقائيًا؛ يمكن تغييره من القائمة)</div>
-      </div>
-      <div id="grid" class="grid grid-cards"></div>
     </div>
   </div>
 
+  <div class="container grid grid-3">
+    <!-- (1) استيراد الضيوف -->
+    <div class="card">
+      <div class="muted" id="secImport">استيراد الضيوف</div>
+      <div style="margin-top:6px">
+        <input type="file" id="fileInput" class="input" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+      </div>
+      <div style="margin-top:8px" class="muted" id="fmtHint">الصيغة: name, phone[, count]</div>
+      <div style="margin-top:8px">
+        <textarea id="pasteArea" rows="5" class="input" placeholder="name, phone\nname2, phone2"></textarea>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="parseBtn" class="btn">إضافة المدخلات</button>
+        <button id="clearAllBtn" class="btn">مسح القائمة</button>
+      </div>
+      <div style="margin-top:8px" class="muted" id="exHint">مثال CSV: علي, 0551234567, 2</div>
+    </div>
+
+    <!-- (2) إعدادات الإرسال -->
+    <div class="card">
+      <div class="muted" id="secSettings">إعدادات الإرسال</div>
+      <div style="margin-top:8px">
+        <div class="muted" id="lblEvent">اسم الحدث</div>
+        <input id="eventName" class="input" placeholder="زفاف سعيد" />
+      </div>
+      <div style="margin-top:8px">
+        <div class="muted" id="lblDefaultQty">عدد الدعوات الافتراضي</div>
+        <input id="defaultQty" class="input" type="number" min="1" value="1" />
+      </div>
+      <div style="margin-top:8px">
+        <div class="muted" id="lblCc">بادئة الدولة (اختياري)</div>
+        <input id="countryCode" class="input" placeholder="مثال: 966 بدون +" />
+      </div>
+      <div style="margin-top:8px">
+        <div class="muted" id="lblDelay">تأخير بين الفتحات (ms)</div>
+        <input id="openDelay" class="input" type="number" min="0" value="800" />
+      </div>
+      <div style="margin-top:8px">
+        <div class="muted" id="lblMsg">نص رسالة واتساب</div>
+        <textarea id="waTemplate" rows="6" class="input" placeholder="مرحبًا {{name}}، يسعدنا دعوتك لحضور {{event}}. عدد الدعوات: {{count}}.">مرحبًا {{name}}، يسعدنا دعوتك لحضور {{event}}. عدد الدعوات: {{count}}.</textarea>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="applyDefaultBtn" class="btn">تطبيق العدد الافتراضي</button>
+        <button id="exportBtn" class="btn">تصدير CSV</button>
+      </div>
+    </div>
+
+    <!-- (3) إرسال/فلترة -->
+    <div class="card">
+      <div class="muted" id="secActions">الإرسال والفلترة</div>
+      <div style="margin-top:8px">
+        <div class="muted" id="lblSearch">بحث</div>
+        <input id="searchInput" class="input" placeholder="ابحث بالاسم أو الرقم" />
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="bulkSendBtn" class="btn">إرسال جماعي (WhatsApp Web)</button>
+        <button id="previewBtn" class="btn">معاينة 10 رسائل</button>
+      </div>
+      <div style="margin-top:8px" class="muted" id="waNote">سيتم فتح WhatsApp Web مع نص الرسالة جاهز. لا يمكن إرفاق صورة تلقائيًا من المتصفح — أرفق صورتك يدويًا داخل المحادثة.</div>
+    </div>
+  </div>
+
+  <!-- جدول الضيوف -->
+  <div class="container card" style="margin-top:12px">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="muted" id="tblTitle">قائمة الضيوف</div>
+      <span class="tag"><span id="stats">—</span></span>
+    </div>
+    <div style="max-height:55vh;overflow:auto;margin-top:8px">
+      <table>
+        <thead>
+          <tr>
+            <th id="thName">الاسم</th>
+            <th id="thPhone">الرقم</th>
+            <th id="thQty">العدد</th>
+            <th id="thSend">إرسال</th>
+          </tr>
+        </thead>
+        <tbody id="rowsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PapaParse (CSV/Excel via SheetJS-lite alt) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
   <script>
-    // ===== حالة التطبيق
-    const state = {
-      cards: [],   // [{file, url, name}]
-      guests: [],  // [{name, phone}]
-      pairs: []    // index-wise pairing: pairs[i] = guestIndex for card i
+    const $ = (s, root=document) => root.querySelector(s);
+
+    // ===== i18n =====
+    const T = {
+      ar: { title:'صفحة العميل لإرسال الدعوات', sub:'CSV/Excel للضيوف + رسالة واتساب + إرسال جماعي/فردي', import:'استيراد الضيوف', fmt:'الصيغة: name, phone[, count]', example:'مثال CSV: علي, 0551234567, 2', settings:'إعدادات الإرسال', event:'اسم الحدث', defQty:'عدد الدعوات الافتراضي', cc:'بادئة الدولة (اختياري)', delay:'تأخير بين الفتحات (ms)', msg:'نص رسالة واتساب', apply:'تطبيق العدد الافتراضي', export:'تصدير CSV', actions:'الإرسال والفلترة', search:'بحث', bulk:'إرسال جماعي (WhatsApp Web)', preview:'معاينة 10 رسائل', note:'سيتم فتح WhatsApp Web مع نص الرسالة جاهز. لا يمكن إرفاق صورة تلقائيًا من المتصفح — أرفق صورتك يدويًا داخل المحادثة.', guests:'قائمة الضيوف', name:'الاسم', phone:'الرقم', qty:'العدد', send:'إرسال', added:'تمت الإضافة', cleared:'تم المسح', noRows:'لا توجد بيانات', stats:(n)=>`الكل: ${n}` },
+      en: { title:"Client — Invite Sender", sub:"CSV/Excel contacts + WhatsApp text + Bulk/Single send", import:"Import guests", fmt:"Format: name, phone[, count]", example:"CSV example: Ali, 0551234567, 2", settings:"Send settings", event:"Event name", defQty:"Default invites per guest", cc:"Country prefix (optional)", delay:"Open delay (ms)", msg:"WhatsApp message", apply:"Apply default", export:"Export CSV", actions:"Send & Filter", search:"Search", bulk:"Bulk send (WhatsApp Web)", preview:"Preview 10", note:"WhatsApp Web will open with prefilled text. Browsers can't auto-attach images — attach your image manually.", guests:"Guest list", name:"Name", phone:"Phone", qty:"Qty", send:"Send", added:"Added", cleared:"Cleared", noRows:"No data", stats:(n)=>`Total: ${n}` }
     };
+    let LANG = localStorage.getItem('hs:client:lang') || 'ar';
 
-    const $ = (s,root=document)=>root.querySelector(s);
-    const cardsInput = $('#cardsInput');
-    const csvInput = $('#csvInput');
-    const guestsText = $('#guestsText');
-    const grid = $('#grid');
+    function applyLang(){
+      const L=T[LANG]; document.documentElement.lang=LANG; document.documentElement.dir=(LANG==='ar')?'rtl':'ltr';
+      $('#langBtn').textContent = (LANG==='ar')? 'EN' : 'AR';
+      $('#tbTitle').textContent=L.title; $('#tbSub').textContent=L.sub;
+      $('#secImport').textContent=L.import; $('#fmtHint').textContent=L.fmt; $('#exHint').textContent=L.example;
+      $('#secSettings').textContent=L.settings; $('#lblEvent').textContent=L.event; $('#lblDefaultQty').textContent=L.defQty; $('#lblCc').textContent=L.cc; $('#lblDelay').textContent=L.delay; $('#lblMsg').textContent=L.msg; $('#applyDefaultBtn').textContent=L.apply; $('#exportBtn').textContent=L.export;
+      $('#secActions').textContent=L.actions; $('#lblSearch').textContent=L.search; $('#bulkSendBtn').textContent=L.bulk; $('#previewBtn').textContent=L.preview; $('#waNote').textContent=L.note;
+      $('#tblTitle').textContent=L.guests; $('#thName').textContent=L.name; $('#thPhone').textContent=L.phone; $('#thQty').textContent=L.qty; $('#thSend').textContent=L.send;
+      render();
+    }
 
-    function sanitizePhone(p){
-      p = String(p||'').trim();
-      // نسمح بـ+ في البداية وباقيها أرقام فقط
-      p = p.replace(/\s+/g,'').replace(/(?!^)\+/g,'');
-      if(!/^\+?\d+$/.test(p)) p = p.replace(/[^\d+]/g,'');
+    // ===== State =====
+    let rows = JSON.parse(localStorage.getItem('hs:client:rows')||'[]');
+
+    function save(){ localStorage.setItem('hs:client:rows', JSON.stringify(rows)); }
+
+    function addRows(list){
+      const defQty = parseInt($('#defaultQty').value||'1',10) || 1;
+      for(const r of list){
+        const name = (r.name||r[0]||'').toString().trim();
+        const phone= (r.phone||r[1]||'').toString().trim();
+        const qty  = parseInt((r.count||r[2]||defQty),10) || defQty;
+        if(!name || !phone) continue;
+        rows.push({name, phone, qty});
+      }
+      save(); render(); toast(T[LANG].added);
+    }
+
+    function clearAll(){ rows=[]; save(); render(); toast(T[LANG].cleared); }
+
+    function render(){
+      const L=T[LANG];
+      const q=($('#searchInput').value||'').toLowerCase().trim();
+      const body=$('#rowsBody'); body.innerHTML='';
+      const filtered = rows.filter(r => !q || r.name.toLowerCase().includes(q) || r.phone.includes(q));
+      $('#stats').textContent = L.stats(filtered.length);
+      if(filtered.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.className='muted'; td.style.textAlign='center'; td.style.padding='18px'; td.textContent=L.noRows; tr.appendChild(td); body.appendChild(tr); return; }
+      filtered.forEach((r,idx)=>{
+        const tr=document.createElement('tr');
+        // name
+        const td1=document.createElement('td'); td1.textContent=r.name; tr.appendChild(td1);
+        // phone
+        const td2=document.createElement('td'); td2.className='mono'; td2.textContent=r.phone; tr.appendChild(td2);
+        // qty
+        const td3=document.createElement('td'); const inp=document.createElement('input'); inp.type='number'; inp.min='1'; inp.value=r.qty; inp.className='input'; inp.style.width='110px'; inp.onchange=()=>{ r.qty = Math.max(1, parseInt(inp.value||'1',10)||1); save(); }; td3.appendChild(inp); tr.appendChild(td3);
+        // send
+        const td4=document.createElement('td'); const b=document.createElement('button'); b.className='btn'; b.textContent=L.send; b.onclick=()=> openWA(r); td4.appendChild(b); tr.appendChild(td4);
+        body.appendChild(tr);
+      });
+    }
+
+    // ===== WhatsApp helpers =====
+    function buildPhone(phone){
+      const cc = ($('#countryCode').value||'').replace(/[^0-9]/g,'');
+      let p = phone.replace(/[^0-9]/g,'');
+      if(cc && !p.startsWith(cc)) p = cc + p.replace(/^0+/, '');
       return p;
     }
-
-    function buildMessage(name){
-      const t = ($('#msgTemplate').value||'').trim() || '{name}، دعوتك مرفقة بالصورة.';
-      return t.replaceAll('{name}', name||'');
+    function tpl(str, ctx){ return str.replace(/\{\{(\w+)\}\}/g, (_,k)=> (ctx[k] ?? '')); }
+    function openWA(rec){
+      const event = $('#eventName').value.trim();
+      const msgTpl = $('#waTemplate').value;
+      const text = tpl(msgTpl, { name: rec.name, count: rec.qty, event });
+      const phone = buildPhone(rec.phone);
+      if(!phone){ alert('رقم غير صالح'); return; }
+      const url = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
     }
 
-    function openWhatsAppWebSameTab(phone, text){
-      const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(sanitizePhone(phone))}&text=${encodeURIComponent(text)}`;
-      // نفس التبويب
-      window.location.href = url;
-    }
-
-    function renderGrid(){
-      const term = ($('#searchBox').value||'').toLowerCase().trim();
-      const mode = ($('#filterMode').value||'all');
-      grid.innerHTML = '';
-      state.cards.forEach((card, i)=>{
-        const gIdx = state.pairs[i];
-        const g = gIdx>=0 ? state.guests[gIdx] : null;
-        const hay = [card.name.toLowerCase(), (g?.name||'').toLowerCase(), (g?.phone||'').toLowerCase()].join(' ');
-        if(term && !hay.includes(term)) return;
-        if(mode==='paired' && !(gIdx>=0)) return;
-        if(mode==='unpaired' && (gIdx>=0)) return;
-
-        const item = document.createElement('div');
-        item.className = 'item';
-        const sel = document.createElement('select');
-        sel.className = 'select';
-        sel.innerHTML = `<option value="-1">— اختر ضيف —</option>` +
-          state.guests.map((g, idx)=>`<option value="${idx}">${g.name} — ${sanitizePhone(g.phone)}</option>`).join('');
-        sel.value = (state.pairs[i] ?? -1);
-        sel.addEventListener('change', ()=>{ state.pairs[i] = parseInt(sel.value, 10); });
-
-        const img = document.createElement('img'); img.className='thumb'; img.src=card.url; img.alt=card.name;
-        const dl = document.createElement('a'); dl.className='btn'; dl.href=card.url; dl.download=card.name; dl.textContent='⤓ تنزيل';
-
-        const phoneInput = document.createElement('input'); phoneInput.className='input mono'; phoneInput.placeholder='رقم الضيف (اختياري)';
-
-        const sendBtn = document.createElement('button'); sendBtn.className='btn'; sendBtn.textContent='📲 واتساب (تبويب نفسه)';
-        sendBtn.addEventListener('click', ()=>{
-          let phone = phoneInput.value.trim();
-          if(!phone && gIdx>=0){ phone = state.guests[gIdx]?.phone || ''; }
-          phone = sanitizePhone(phone);
-          if(!phone){ alert('ادخل رقم الضيف أو اربط ضيفًا من القائمة'); return; }
-          const guestName = (gIdx>=0? state.guests[gIdx]?.name : '') || '';
-          const text = buildMessage(guestName);
-          openWhatsAppWebSameTab(phone, text);
-        });
-
-        const meta = document.createElement('div'); meta.className='muted mono'; meta.textContent=card.name + (g? ` → ${g.name}`:'');
-
-        item.appendChild(img); item.appendChild(meta); item.appendChild(sel); item.appendChild(phoneInput);
-        const row = document.createElement('div'); row.className='row'; row.appendChild(dl); row.appendChild(sendBtn);
-        item.appendChild(row); grid.appendChild(item);
-      });
-    }
-
-    async function sendAll(){
-      const delay = Math.max(800, parseInt($('#batchDelay').value||'1200',10));
-      const queue = [];
-      state.cards.forEach((card,i)=>{ const gIdx = state.pairs[i]; if(gIdx>=0){ queue.push(state.guests[gIdx]); } });
-      if(!queue.length){ alert('لا توجد عناصر مرتبطة بضيوف'); return; }
-      // للتجميعي: سنفتح في تبويبات جديدة حتى لا نفقد الصفحة.
-      for(let k=0;k<queue.length;k++){
-        const g = queue[k];
-        const phone = sanitizePhone(g.phone);
-        const text = buildMessage(g.name);
-        const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}`;
-        window.open(url, '_blank');
-        await new Promise(r=>setTimeout(r, delay));
+    async function bulkSend(limit=10){
+      const L=T[LANG];
+      const event = $('#eventName').value.trim();
+      if(!event){ alert(L.event+': ?'); return; }
+      const msgTpl = $('#waTemplate').value; const delay = Math.max(0, parseInt($('#openDelay').value||'800',10));
+      const q=($('#searchInput').value||'').toLowerCase().trim();
+      const list = rows.filter(r => !q || r.name.toLowerCase().includes(q) || r.phone.includes(q));
+      if(!list.length){ alert(L.noRows); return; }
+      let opened = 0;
+      for(const r of list){
+        const text=tpl(msgTpl,{name:r.name,count:r.qty,event});
+        const phone=buildPhone(r.phone); if(!phone) continue;
+        const url=`https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank'); opened++;
+        if(opened>=limit){ await new Promise(res=>setTimeout(res, delay)); opened=0; }
       }
     }
 
-    // قراءة CSV بسيط name,phone
-    function parseCSV(text){
-      const lines = text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-      const rows = [];
-      for(const ln of lines){
-        const m = ln.split(',');
-        if(m.length>=2){ rows.push({ name: m[0].trim(), phone: m[1].trim() }); }
-      }
-      return rows;
+    function exportCSV(){
+      const L=T[LANG];
+      const header=['name','phone','count'];
+      const lines = rows.map(r=> [r.name, r.phone, r.qty].join(','));
+      const csv=[header.join(','), ...lines].join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='guests.csv'; a.click(); URL.revokeObjectURL(url);
     }
 
-    function buildGuestsFromText(){
-      const txt = guestsText.value || '';
-      return parseCSV(txt);
+    // ===== CSV parsing =====
+    function parseText(text){
+      const res = Papa.parse(text, { header:false, skipEmptyLines:true });
+      const list = res.data.map(row=>({ name: (row[0]||'').toString(), phone:(row[1]||'').toString(), count: row[2] }));
+      addRows(list);
     }
 
-    function autoPair(){
-      state.pairs = state.cards.map((_,i)=> i < state.guests.length ? i : -1);
-    }
-
-    // ===== أحداث
-    document.addEventListener('DOMContentLoaded', ()=>{
-      document.getElementById('btnSendAll').addEventListener('click', sendAll);
-
-      document.getElementById('btnParseGuests').addEventListener('click', ()=>{
-        const g = buildGuestsFromText();
-        state.guests = g;
-        document.getElementById('countGuests').textContent = g.length;
-        autoPair();
-        renderGrid();
-      });
-
-      document.getElementById('csvInput').addEventListener('change', async ()=>{
-        const f = document.getElementById('csvInput').files?.[0]; if(!f) return;
-        if(/\.xlsx$/i.test(f.name)){
-          // تحميل SheetJS عند الحاجة فقط
-          await new Promise(r=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; s.onload=r; document.head.appendChild(s); });
-          const data = await f.arrayBuffer();
-          const wb = XLSX.read(data, {type:'array'});
-          const ws = wb.Sheets[wb.SheetNames[0]];
-          const arr = XLSX.utils.sheet_to_json(ws, {header:1});
-          const rows = [];
-          for(let i=0;i<arr.length;i++){
-            const row = arr[i]; if(!row || row.length<2) continue; if(i===0 && /name/i.test(row[0]) && /phone/i.test(row[1])) continue; // تخطّي العنوان
-            rows.push({ name: String(row[0]||'').trim(), phone: String(row[1]||'').trim() });
-          }
-          state.guests = rows; document.getElementById('countGuests').textContent = rows.length; autoPair(); renderGrid();
-        } else {
-          const text = await f.text();
-          let rows = [];
-          const first = (text.split(/\r?\n/)[0]||'');
-          if(/name\s*,\s*phone/i.test(first)){
-            rows = text.split(/\r?\n/).slice(1).filter(Boolean).map(l=>l.split(',')).filter(r=>r.length>=2).map(r=>({name:r[0].trim(), phone:r[1].trim()}));
+    function parseFile(file){
+      if(!file) return;
+      const ext = (file.name.split('.').pop()||'').toLowerCase();
+      if(ext==='csv'){
+        Papa.parse(file, { header:true, skipEmptyLines:true, complete: (res)=>{
+          // If headerless CSV, reparse without header
+          if(res.meta.fields && res.meta.fields.length>=2 && (res.data[0] && (res.data[0].name||res.data[0].phone))){
+            const list = res.data.map(r=>({ name:r.name||'', phone:r.phone||'', count:r.count })); addRows(list);
           } else {
-            rows = text.split(/\r?\n/).filter(Boolean).map(l=>l.split(',')).filter(r=>r.length>=2).map(r=>({name:r[0].trim(), phone:r[1].trim()}));
+            Papa.parse(file, { header:false, skipEmptyLines:true, complete:(res2)=>{
+              const list = res2.data.map(row=>({ name:(row[0]||'').toString(), phone:(row[1]||'').toString(), count: row[2] })); addRows(list);
+            }});
           }
-          state.guests = rows; document.getElementById('countGuests').textContent = rows.length; autoPair(); renderGrid();
-        }
-      });
+        }});
+      } else {
+        alert('فضلاً ارفع CSV. (Excel غير مدعوم في هذه النسخة المستقلة بدون مكتبات إضافية)');
+      }
+    }
 
-      document.getElementById('cardsInput').addEventListener('change', ()=>{
-        const files = document.getElementById('cardsInput').files;
-        state.cards = [...files].map(f=>({file:f, url:URL.createObjectURL(f), name:f.name}));
-        document.getElementById('countCards').textContent = state.cards.length;
-        autoPair();
-        renderGrid();
-      });
+    // ===== UI wiring =====
+    function toast(msg){ const t=document.createElement('div'); t.className='tag'; t.textContent=msg; t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)'; t.style.top='12px'; t.style.zIndex='50'; document.body.appendChild(t); setTimeout(()=>t.remove(),1500); }
 
-      document.getElementById('btnZipAll').addEventListener('click', async ()=>{
-        const js1 = document.createElement('script'); js1.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-        const js2 = document.createElement('script'); js2.src='https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js';
-        await new Promise(r=>{ js1.onload=r; document.head.appendChild(js1); });
-        await new Promise(r=>{ js2.onload=r; document.head.appendChild(js2); });
-        const zip = new JSZip();
-        for(const c of state.cards){ const res = await fetch(c.url); const blob = await res.blob(); zip.file(c.name, blob); }
-        const blob = await zip.generateAsync({type:'blob'}); saveAs(blob, 'cards.zip');
+    document.addEventListener('DOMContentLoaded', ()=>{
+      applyLang();
+      $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:client:lang',LANG); applyLang(); });
+      $('#parseBtn').addEventListener('click', ()=> parseText($('#pasteArea').value||''));
+      $('#fileInput').addEventListener('change', (e)=> parseFile(e.target.files?.[0]));
+      $('#clearAllBtn').addEventListener('click', clearAll);
+      $('#applyDefaultBtn').addEventListener('click', ()=>{ const n=Math.max(1, parseInt($('#defaultQty').value||'1',10)||1); rows.forEach(r=>r.qty=n); save(); render(); });
+      $('#exportBtn').addEventListener('click', exportCSV);
+      $('#searchInput').addEventListener('input', render);
+      $('#bulkSendBtn').addEventListener('click', ()=> bulkSend(8));
+      $('#previewBtn').addEventListener('click', ()=>{
+        const L=T[LANG];
+        const event=$('#eventName').value.trim(); const q=($('#searchInput').value||'').toLowerCase().trim();
+        const list=rows.filter(r=>!q || r.name.toLowerCase().includes(q) || r.phone.includes(q)).slice(0,10);
+        if(!list.length) { alert(L.noRows); return; }
+        const msgTpl=$('#waTemplate').value; const preview=list.map(r=> T[LANG]===T.ar? `إلى ${r.name} (${r.phone}) → ${msgTpl.replace(/\{\{name\}\}/g,r.name).replace(/\{\{count\}\}/g,r.qty).replace(/\{\{event\}\}/g,event)}` : `To ${r.name} (${r.phone}) → ${msgTpl.replace(/\{\{name\}\}/g,r.name).replace(/\{\{count\}\}/g,r.qty).replace(/\{\{event\}\}/g,event)}` ).join('\n\n');
+        alert(preview);
       });
-
-      document.getElementById('searchBox').addEventListener('input', renderGrid);
-      document.getElementById('filterMode').addEventListener('change', renderGrid);
+      $('#helpBtn').addEventListener('click', ()=>{
+        const L=T[LANG];
+        alert((LANG==='ar')? 'الخطوات:\n1) ارفع CSV أو قم باللصق.\n2) اكتب اسم الحدث وحدد العدد الافتراضي إن رغبت.\n3) عدّل الأعداد لكل ضيف عند الحاجة.\n4) اضغط إرسال جماعي لفتح واتساب ويب لكل ضيف.' : 'Steps:\n1) Import CSV or paste.\n2) Enter event name and default qty.\n3) Adjust per-guest quantities.\n4) Click Bulk send to open WhatsApp Web tabs.');
+      });
     });
   </script>
 </body>
