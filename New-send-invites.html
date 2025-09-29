@@ -1,10 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-// نسخة خفيفة بالكامل بدون shadcn/ui أو أي مكتبات خارجية
-// تعتمد فقط على Tailwind (مفعّل في المعاينة) وعناصر HTML
-// تدعم RTL وتضم: تسجيل الدخول + لوحة العميل + دعوة جديدة + الإرسال + التذكير + الحضور
+// ⚡️ نسخة خفيفة بلا shadcn ولا مكوّنات خارجية — فقط Tailwind + عناصر HTML
+// لحل مشكلة ظهور الصفحة ككتابة غير منسقة
 
-// حسابات تجريبية محلية
 const CLIENTS = [
   { id: "c1", name: "عميل تجريبي", username: "client1", password: "123456", credit: 50 },
 ];
@@ -19,68 +17,40 @@ function normalizePhone(phone) {
 function makeInvite({ guestName, phone, count, eventName }) {
   return {
     id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    guestName: (guestName || "").trim(),
+    guestName: guestName?.trim() || "",
     phone: normalizePhone(phone),
     count: Math.max(1, Number(count || 1)),
-    eventName: (eventName || "بدون اسم حدث").trim(),
-    status: "new", // new | sent | reminded | attended
+    eventName: eventName?.trim() || "بدون اسم حدث",
+    status: "new",
     createdAt: new Date().toISOString(),
   };
 }
 
 function computeStats(invites) {
   const total = invites.length;
-  const sent = invites.filter((i) => i.status === "sent" || i.status === "reminded" || i.status === "attended").length;
-  const attended = invites.filter((i) => i.status === "attended").length;
+  const sent = invites.filter(i => ["sent","reminded","attended"].includes(i.status)).length;
+  const attended = invites.filter(i => i.status === "attended").length;
   return { total, sent, attended };
 }
 
-function openWhatsApp(phone, messageEncoded) {
+function openWhatsApp(phone, msg) {
   const digits = normalizePhone(phone);
   if (!digits) { alert("رقم الهاتف غير صالح"); return; }
-  const url = `https://wa.me/${digits}?text=${messageEncoded}`;
-  try { window.open(url, "_blank", "noopener,noreferrer"); } catch {}
-}
-
-function buildWhatsAppMessage(invite) {
-  const text = `مرحبا ${invite.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${invite.eventName}\nعدد الكروت للمرافقين: ${invite.count}\n\nللاستفسار والرد يرجى التواصل عبر الواتساب.`;
-  return encodeURIComponent(text);
-}
-
-function saveInvites(clientId, invites) {
-  try {
-    const all = JSON.parse(localStorage.getItem(LS_INVITES) || "{}");
-    all[clientId] = invites;
-    localStorage.setItem(LS_INVITES, JSON.stringify(all));
-  } catch {}
-}
-
-function loadInvites(clientId) {
-  try {
-    const all = JSON.parse(localStorage.getItem(LS_INVITES) || "{}");
-    return Array.isArray(all[clientId]) ? all[clientId] : [];
-  } catch { return []; }
+  const url = `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
+  window.open(url, "_blank");
 }
 
 export default function ClientInviteApp() {
   const [auth, setAuth] = useState(() => {
     try { return JSON.parse(localStorage.getItem(LS_AUTH) || "null"); } catch { return null; }
   });
-  const [invites, setInvites] = useState(() => (auth ? loadInvites(auth.client.id) : []));
+  const [invites, setInvites] = useState(() => auth ? loadInvites(auth.client.id) : []);
 
-  useEffect(() => {
-    if (auth?.client?.id) setInvites(loadInvites(auth.client.id));
-  }, [auth?.client?.id]);
+  useEffect(() => { if (auth) setInvites(loadInvites(auth.client.id)); }, [auth?.client?.id]);
+  useEffect(() => { if (auth) saveInvites(auth.client.id, invites); }, [auth, invites]);
 
-  useEffect(() => {
-    if (auth?.client?.id) saveInvites(auth.client.id, invites);
-  }, [auth, invites]);
-
-  return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
-      {!auth ? <Login onSuccess={setAuth} /> : <ClientArea auth={auth} setAuth={setAuth} invites={invites} setInvites={setInvites} />}
-    </div>
-  );
+  if (!auth) return <Login onSuccess={setAuth}/>;
+  return <ClientArea auth={auth} setAuth={setAuth} invites={invites} setInvites={setInvites}/>;
 }
 
 function Login({ onSuccess }) {
@@ -88,33 +58,27 @@ function Login({ onSuccess }) {
   const [password, setPassword] = useState("");
 
   const attempt = () => {
-    const client = CLIENTS.find((c) => c.username === username.trim());
-    if (!client || client.password !== password) {
-      alert("بيانات الدخول غير صحيحة");
-      return;
-    }
-    const payload = { client: { id: client.id, name: client.name, username: client.username, credit: client.credit } };
+    const c = CLIENTS.find(x => x.username === username.trim());
+    if (!c || c.password !== password) { alert("بيانات الدخول غير صحيحة"); return; }
+    const payload = { client: { id: c.id, name: c.name, username: c.username, credit: c.credit } };
     localStorage.setItem(LS_AUTH, JSON.stringify(payload));
     onSuccess(payload);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" dir="rtl">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center p-6" dir="rtl">
       <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl p-6">
-        <div className="text-center text-2xl font-black mb-6">
-          <span>HORMEZ </span><span className="text-yellow-400">SECURITY</span>
-        </div>
+        <h1 className="text-center text-2xl font-black mb-6">HORMEZ <span className="text-yellow-400">SECURITY</span></h1>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm mb-1">اسم المستخدم</label>
-            <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="client1" value={username} onChange={(e)=>setUsername(e.target.value)} />
+            <label className="block mb-1">اسم المستخدم</label>
+            <input className="w-full rounded bg-neutral-800 border border-neutral-700 px-3 py-2" value={username} onChange={e=>setUsername(e.target.value)}/>
           </div>
           <div>
-            <label className="block text-sm mb-1">كلمة المرور</label>
-            <input type="password" className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="••••••" value={password} onChange={(e)=>setPassword(e.target.value)} />
+            <label className="block mb-1">كلمة المرور</label>
+            <input type="password" className="w-full rounded bg-neutral-800 border border-neutral-700 px-3 py-2" value={password} onChange={e=>setPassword(e.target.value)}/>
           </div>
-          <button onClick={attempt} className="w-full rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-2">تسجيل الدخول</button>
-          <p className="text-xs text-neutral-400 leading-5">الحساب هنا تجريبي محليًا. لنسخة إنتاجية، اربطه بـ Firebase Auth.</p>
+          <button onClick={attempt} className="w-full rounded bg-yellow-500 text-black font-bold py-2">تسجيل الدخول</button>
         </div>
       </div>
     </div>
@@ -123,323 +87,119 @@ function Login({ onSuccess }) {
 
 function ClientArea({ auth, setAuth, invites, setInvites }) {
   const [active, setActive] = useState("home");
-  const stats = useMemo(() => computeStats(invites), [invites]);
+  const stats = useMemo(()=>computeStats(invites), [invites]);
 
-  const logout = () => {
-    localStorage.removeItem(LS_AUTH);
-    setAuth(null);
-  };
-
-  const addInvite = (inv) => {
-    setInvites((prev) => [inv, ...prev]);
-    alert("تمت إضافة الدعوة");
-  };
-
-  const markStatus = (id, status) => {
-    setInvites((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
-  };
+  const logout = () => { localStorage.removeItem(LS_AUTH); setAuth(null); };
+  const addInvite = inv => setInvites([inv, ...invites]);
+  const markStatus = (id, status) => setInvites(prev => prev.map(i=>i.id===id?{...i,status}:i));
 
   return (
-    <div>
-      <header className="border-b border-neutral-800 bg-neutral-950/60 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-yellow-500" />
-            <span className="font-black tracking-wide">HORMEZ <span className="text-yellow-400">SECURITY</span></span>
-          </div>
-          <div className="flex items-center gap-3" dir="rtl">
-            <span className="rounded-full border border-neutral-700 text-neutral-300 text-sm px-3 py-1">{auth.client.name}</span>
-            <button onClick={logout} className="text-neutral-300 hover:text-white">خروج</button>
-          </div>
+    <div className="min-h-screen bg-neutral-950 text-neutral-100" dir="rtl">
+      <header className="border-b border-neutral-800 bg-neutral-900 p-4 flex justify-between">
+        <span className="font-black">HORMEZ <span className="text-yellow-400">SECURITY</span></span>
+        <div>
+          <span className="mr-3">{auth.client.name}</span>
+          <button onClick={logout}>خروج</button>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto p-4 md:p-8" dir="rtl">
-        <div className="space-y-6">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <h2 className="text-xl md:text-2xl font-bold">مرحباً بك يا {auth.client.name}</h2>
-                <p className="text-neutral-400">لوحة العميل لإدارة الدعوات عبر الواتساب</p>
-              </div>
-              <span className="bg-yellow-500 text-black text-sm py-1 px-3 rounded-full">الرصيد: {Math.max(0, (auth.client.credit ?? 0) - stats.sent)}</span>
-            </div>
-            <div className="my-4 h-px bg-neutral-800" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <StatCard label="إجمالي الدعوات" value={stats.total} />
-              <StatCard label="الدعوات المُرسلة" value={stats.sent} />
-              <StatCard label="الحضور" value={stats.attended} />
-              <StatCard label="المتبقي من الرصيد" value={Math.max(0, (auth.client.credit ?? 0) - stats.sent)} />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <NavBtn active={active === "home"} onClick={() => setActive("home")} label="الصفحة الرئيسية" />
-            <NavBtn active={active === "new"} onClick={() => setActive("new")} label="دعوة جديدة" />
-            <NavBtn active={active === "send"} onClick={() => setActive("send")} label="الإرسال" />
-            <NavBtn active={active === "remind"} onClick={() => setActive("remind")} label="التذكير" />
-            <NavBtn active={active === "attend"} onClick={() => setActive("attend")} label="الحضور" />
-          </div>
-
-          {active === "home" && (
-            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-              <InviteTable invites={invites} onMark={markStatus} />
-            </div>
-          )}
-
-          {active === "new" && <NewInviteForm onCreate={addInvite} />}
-          {active === "send" && <SendCenter invites={invites} onSent={(id) => markStatus(id, "sent")} />}
-          {active === "remind" && <RemindCenter invites={invites} onReminded={(id) => markStatus(id, "reminded")} />}
-          {active === "attend" && <AttendCenter invites={invites} onAttended={(id) => markStatus(id, "attended")} />}
+      <main className="max-w-4xl mx-auto p-4 space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Stat label="إجمالي الدعوات" value={stats.total}/>
+          <Stat label="الدعوات المُرسلة" value={stats.sent}/>
+          <Stat label="الحضور" value={stats.attended}/>
+          <Stat label="الرصيد المتبقي" value={Math.max(0, (auth.client.credit ?? 0) - stats.sent)}/>
         </div>
+
+        <div className="flex gap-2 flex-wrap">
+          {NavBtn("home","الرئيسية",()=>setActive("home"),active)}
+          {NavBtn("new","دعوة جديدة",()=>setActive("new"),active)}
+          {NavBtn("send","الإرسال",()=>setActive("send"),active)}
+          {NavBtn("remind","التذكير",()=>setActive("remind"),active)}
+          {NavBtn("attend","الحضور",()=>setActive("attend"),active)}
+        </div>
+
+        {active==="home" && <InviteTable invites={invites} onMark={markStatus}/>} 
+        {active==="new" && <NewInviteForm onCreate={addInvite}/>} 
       </main>
     </div>
   );
 }
 
-function StatCard({ label, value }) {
-  return (
-    <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-4">
-      <p className="text-neutral-400 text-sm">{label}</p>
-      <p className="text-2xl font-extrabold mt-1">{value}</p>
-    </div>
-  );
+function Stat({label,value}){
+  return <div className="bg-neutral-900 p-4 rounded"><p className="text-neutral-400 text-sm">{label}</p><p className="text-2xl font-bold">{value}</p></div>;
 }
 
-function NavBtn({ active, label, onClick }) {
-  return (
-    <button onClick={onClick} className={`rounded-2xl px-4 py-2 border ${active ? "bg-yellow-500 text-black border-yellow-500" : "bg-neutral-800 text-neutral-200 border-neutral-700 hover:bg-neutral-700"}`}>
-      {label}
-    </button>
-  );
+function NavBtn(key,label,onClick,active){
+  return <button key={key} onClick={onClick} className={`px-4 py-2 rounded ${active===key?"bg-yellow-500 text-black":"bg-neutral-800 text-white"}`}>{label}</button>;
 }
 
-function InviteTable({ invites, onMark }) {
-  if (!invites.length) {
-    return <div className="text-neutral-400 text-sm">لا توجد دعوات بعد. اذهب إلى <span className="mx-1 bg-yellow-500 text-black px-2 py-0.5 rounded">دعوة جديدة</span> لإضافة أول دعوة.</div>;
-  }
+function InviteTable({invites,onMark}){
+  if(!invites.length) return <p className="text-neutral-400">لا توجد دعوات بعد.</p>;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-right">
-        <thead>
-          <tr className="text-neutral-400 text-sm border-b border-neutral-800">
-            <th className="py-2">الاسم</th>
-            <th className="py-2">الجوال</th>
-            <th className="py-2">عدد الكروت</th>
-            <th className="py-2">الحدث</th>
-            <th className="py-2">الحالة</th>
-            <th className="py-2">إجراءات</th>
+    <table className="w-full text-right border border-neutral-800">
+      <thead className="bg-neutral-800 text-neutral-300">
+        <tr><th>الاسم</th><th>الجوال</th><th>الحدث</th><th>الحالة</th><th>إجراءات</th></tr>
+      </thead>
+      <tbody>
+        {invites.map(i=>(
+          <tr key={i.id} className="border-t border-neutral-800">
+            <td>{i.guestName}</td>
+            <td>{i.phone}</td>
+            <td>{i.eventName}</td>
+            <td>{i.status}</td>
+            <td className="flex gap-2">
+              <button onClick={()=>onMark(i.id,"sent")} className="px-2 bg-blue-600 rounded">مرسلة</button>
+              <button onClick={()=>onMark(i.id,"attended")} className="px-2 bg-green-600 rounded">حضر</button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {invites.map((inv) => (
-            <tr key={inv.id} className="border-b border-neutral-900/60">
-              <td className="py-2">{inv.guestName}</td>
-              <td className="py-2">{inv.phone}</td>
-              <td className="py-2">{inv.count}</td>
-              <td className="py-2">{inv.eventName}</td>
-              <td className="py-2">
-                <span className={`px-2 py-0.5 rounded text-sm ${inv.status === "new" ? "bg-neutral-700" : inv.status === "sent" ? "bg-blue-600" : inv.status === "reminded" ? "bg-purple-600" : "bg-green-600"}`}>
-                  {inv.status === "new" ? "جديدة" : inv.status === "sent" ? "مُرسلة" : inv.status === "reminded" ? "مُذكّر" : "حضر"}
-                </span>
-              </td>
-              <td className="py-2">
-                <div className="flex gap-2 justify-end">
-                  <button className="px-3 py-1 rounded border border-neutral-700" onClick={() => onMark(inv.id, "sent")}>تحديد كمرسلة</button>
-                  <button className="px-3 py-1 rounded border border-neutral-700" onClick={() => onMark(inv.id, "reminded")}>تحديد كمذكّر</button>
-                  <button className="px-3 py-1 rounded bg-green-600 hover:bg-green-500" onClick={() => onMark(inv.id, "attended")}>تحديد كحضور</button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
-function NewInviteForm({ onCreate }) {
-  const [guestName, setGuestName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [count, setCount] = useState(1);
-  const [eventName, setEventName] = useState("زفاف خالد");
+function NewInviteForm({onCreate}){
+  const [guestName,setGuestName]=useState("");
+  const [phone,setPhone]=useState("");
+  const [count,setCount]=useState(1);
+  const [eventName,setEventName]=useState("زفاف خالد");
 
-  const importFromContacts = async () => {
-    try {
-      const supported = "contacts" in navigator && "select" in (navigator.contacts || {});
-      if (!supported) { alert("قد لا يدعم متصفحك استيراد جهات الاتصال. جرّب كروم على أندرويد."); return; }
-      const contacts = await navigator.contacts.select(["name", "tel"], { multiple: false });
-      if (contacts && contacts[0]) {
-        const c = contacts[0];
-        setGuestName((c.name && c.name[0]) || "");
-        setPhone((c.tel && c.tel[0]) || "");
-      }
-    } catch { alert("تعذر الوصول لجهات الاتصال"); }
-  };
-
-  const create = () => {
-    if (!guestName || !phone) { alert("يرجى إدخال الاسم ورقم الهاتف"); return; }
-    onCreate(makeInvite({ guestName, phone, count, eventName }));
-    setGuestName(""); setPhone(""); setCount(1);
+  const create=()=>{
+    if(!guestName||!phone){alert("أدخل الاسم ورقم الهاتف");return;}
+    onCreate(makeInvite({guestName,phone,count,eventName}));
+    setGuestName("");setPhone("");setCount(1);
   };
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="md:col-span-2">
-          <label className="mb-1 inline-block text-sm">استيراد من سجل الهاتف</label>
-          <div className="flex gap-2">
-            <button onClick={importFromContacts} className="px-4 py-2 rounded-xl bg-neutral-800 border border-neutral-700">سجل الهاتف</button>
-            <details className="px-3 py-2 rounded-xl border border-neutral-700 text-neutral-300 cursor-pointer">
-              <summary>التعليمات</summary>
-              <ol className="list-decimal pr-5 space-y-1 text-sm mt-2">
-                <li>استخدم جهاز أندرويد مع متصفح كروم الأحدث.</li>
-                <li>اسمح للموقع بالوصول إلى جهات الاتصال.</li>
-                <li>اختر جهة الاتصال ثم وافق على المشاركة.</li>
-              </ol>
-            </details>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm mb-1">الاسم</label>
-          <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="اسم الضيف" />
-        </div>
-        <div>
-          <label className="block text-sm mb-1">رقم الهاتف</label>
-          <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" />
-        </div>
-        <div>
-          <label className="block text-sm mb-1">عدد الكروت للمرافقين</label>
-          <input type="number" min={1} className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2" value={count} onChange={(e) => setCount(Number(e.target.value || 1))} />
-        </div>
-        <div>
-          <label className="block text-sm mb-1">اسم الحدث</label>
-          <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2" value={eventName} onChange={(e) => setEventName(e.target.value)} placeholder="مثال: زفاف خالد" />
-        </div>
-
-        <div className="md:col-span-2 flex gap-2">
-          <button onClick={create} className="px-5 py-2 rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold">إضافة الدعوة</button>
-        </div>
+    <div className="bg-neutral-900 p-6 rounded space-y-4">
+      <div>
+        <label>الاسم</label>
+        <input className="w-full bg-neutral-800 px-3 py-2 rounded" value={guestName} onChange={e=>setGuestName(e.target.value)}/>
       </div>
-    </div>
-  );
-}
-
-function SendCenter({ invites, onSent }) {
-  const [filter, setFilter] = useState("");
-  const list = invites
-    .filter((i) => i.status === "new" || i.status === "reminded")
-    .filter((i) => [i.guestName, i.phone, i.eventName].some((f) => (f || "").toLowerCase().includes(filter.toLowerCase())));
-
-  const send = (inv) => {
-    const decoded = decodeURIComponent(buildWhatsAppMessage(inv));
-    const canShare = navigator.share && typeof navigator.share === "function";
-    if (canShare) {
-      navigator.share({ title: `دعوة ${inv.eventName}`, text: decoded }).catch(() => {});
-    } else {
-      openWhatsApp(inv.phone, buildWhatsAppMessage(inv));
-    }
-    onSent(inv.id);
-    alert("تم الإرسال عبر الواتساب");
-  };
-
-  return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-      <div className="flex gap-2 mb-4">
-        <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="بحث بالاسم أو الرقم" value={filter} onChange={(e) => setFilter(e.target.value)} />
+      <div>
+        <label>رقم الهاتف</label>
+        <input className="w-full bg-neutral-800 px-3 py-2 rounded" value={phone} onChange={e=>setPhone(e.target.value)}/>
       </div>
-      {!list.length ? (
-        <p className="text-neutral-400 text-sm">لا توجد عناصر جاهزة للإرسال الآن.</p>
-      ) : (
-        <div className="grid md:grid-cols-2 gap-3">
-          {list.map((inv) => (
-            <div key={inv.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-2">
-              <p>
-                <b>{inv.guestName}</b> — {inv.phone}
-              </p>
-              <p className="text-sm text-neutral-400">{inv.eventName} • كروت: {inv.count}</p>
-              <div className="flex gap-2 justify-end">
-                <button className="px-4 py-2 rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black" onClick={() => send(inv)}>
-                  إرسال واتساب
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function RemindCenter({ invites, onReminded }) {
-  const candidates = invites.filter((i) => i.status === "sent");
-
-  const remind = (inv) => {
-    const text = `تذكير لطيف يا ${inv.guestName}\nهل ستتمكن من الحضور؟`;
-    const encoded = encodeURIComponent(text);
-    openWhatsApp(inv.phone, encoded);
-    onReminded(inv.id);
-    alert("تم إرسال تذكير");
-  };
-
-  return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-      {!candidates.length ? (
-        <p className="text-neutral-400 text-sm">لا توجد دعوات بحاجة إلى تذكير حالياً.</p>
-      ) : (
-        <div className="grid md:grid-cols-2 gap-3">
-          {candidates.map((inv) => (
-            <div key={inv.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-2">
-              <p>
-                <b>{inv.guestName}</b> — {inv.phone}
-              </p>
-              <p className="text-sm text-neutral-400">{inv.eventName}</p>
-              <div className="flex gap-2 justify-end">
-                <button className="px-4 py-2 rounded-2xl border border-neutral-700" onClick={() => remind(inv)}>
-                  إرسال تذكير
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AttendCenter({ invites, onAttended }) {
-  const [filter, setFilter] = useState("");
-  const list = invites.filter((i) => [i.guestName, i.phone, i.eventName].some((f) => (f || "").toLowerCase().includes(filter.toLowerCase())));
-
-  return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-      <div className="flex gap-2 mb-4">
-        <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2" placeholder="بحث بالاسم أو الرقم" value={filter} onChange={(e) => setFilter(e.target.value)} />
+      <div>
+        <label>عدد الكروت</label>
+        <input type="number" className="w-full bg-neutral-800 px-3 py-2 rounded" value={count} onChange={e=>setCount(Number(e.target.value||1))}/>
       </div>
-      {!list.length ? (
-        <p className="text-neutral-400 text-sm">لا توجد بيانات مطابقة.</p>
-      ) : (
-        <div className="grid md:grid-cols-2 gap-3">
-          {list.map((inv) => (
-            <div key={inv.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-2">
-              <p>
-                <b>{inv.guestName}</b> — {inv.phone}
-              </p>
-              <p className="text-sm text-neutral-400">{inv.eventName} • كروت: {inv.count}</p>
-              <div className="flex gap-2 justify-end">
-                {inv.status !== "attended" ? (
-                  <button className="px-4 py-2 rounded-2xl bg-green-600 hover:bg-green-500" onClick={() => onAttended(inv.id)}>
-                    تحديد كـ حضر
-                  </button>
-                ) : (
-                  <span className="px-2 py-0.5 rounded bg-green-600">تم الحضور</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div>
+        <label>اسم الحدث</label>
+        <input className="w-full bg-neutral-800 px-3 py-2 rounded" value={eventName} onChange={e=>setEventName(e.target.value)}/>
+      </div>
+      <button onClick={create} className="w-full bg-yellow-500 text-black py-2 rounded">إضافة الدعوة</button>
     </div>
   );
+}
+
+function saveInvites(clientId,invites){
+  const all=JSON.parse(localStorage.getItem(LS_INVITES)||"{}");
+  all[clientId]=invites;
+  localStorage.setItem(LS_INVITES,JSON.stringify(all));
+}
+function loadInvites(clientId){
+  const all=JSON.parse(localStorage.getItem(LS_INVITES)||"{}");
+  return Array.isArray(all[clientId])?all[clientId]:[];
 }
