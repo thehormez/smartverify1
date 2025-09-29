@@ -1,182 +1,553 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — بوابة العميل (نمط Techno)</title>
-  <style>
-    /* ===== THEME ===== */
-    :root{
-      /* Techno-like palette (يمكن تغييرها سريعًا) */
-      --bg:#0a0a0a;        /* خلفية عامة داكنة جدًا */
-      --ink:#f5f7fa;       /* نص أساسي فاتح */
-      --muted:#9aa4b2;     /* نص ثانوي */
-      --card:#121212;      /* خلفيات البطاقات */
-      --line:#242424;      /* حدود ناعمة */
-      --accent:#ffd24a;    /* ذهبي دافئ للأزرار والعناوين */
-      --accent-2:#00c6ff;  /* سماوي للتباين الخفيف */
-      --ok:#16a34a;        /* نجاح */
-      --warn:#f59e0b;      /* تحذير */
+import React, { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast, Toaster } from "sonner";
+import { Phone, LogOut, User2, Send, Users2, Home, BellRing, QrCode, Contact, CheckCircle2, Info } from "lucide-react";
+
+// =========================
+// ⚙️ بسيط للتجربة (بدون باك إند)
+// يمكن لاحقاً ربطه بـ Firebase/Auth + Firestore
+// ضع بيانات العميل هنا مؤقتاً (أنت تحدد الباسورد للعميل)
+// =========================
+const CLIENTS = [
+  { id: "c1", name: "عميل تجريبي", username: "client1", password: "123456", credit: 50 },
+];
+
+// 🔐 مفاتيح تخزين محلي
+const LS_AUTH = "hormez_client_auth";
+const LS_INVITES = "hormez_client_invites"; // per-client map
+
+// 📦 نمط الدعوة
+function makeInvite({ guestName, phone, count, eventName }) {
+  return {
+    id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+    guestName: guestName?.trim() || "",
+    phone: phone?.trim() || "",
+    count: Number(count || 1),
+    eventName: eventName?.trim() || "بدون اسم حدث",
+    status: "new", // new | sent | reminded | attended
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// 🧮 حساب الإحصائيات
+function computeStats(invites) {
+  const total = invites.length;
+  const sent = invites.filter(i => i.status === "sent" || i.status === "reminded" || i.status === "attended").length;
+  const attended = invites.filter(i => i.status === "attended").length;
+  return { total, sent, attended };
+}
+
+// 🔗 إنشاء رسالة واتساب
+function buildWhatsAppMessage(invite) {
+  const text = `مرحبا ${invite.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${invite.eventName}\nعدد الكروت للمرافقين: ${invite.count}\n\nللاستفسار والرد يرجى التواصل عبر الواتساب.`;
+  return encodeURIComponent(text);
+}
+
+function openWhatsApp(phone, messageEncoded) {
+  const digits = String(phone || "").split("").filter(ch => ch >= "0" && ch <= "9").join("");
+  if (!digits) { toast.error("رقم الهاتف غير صالح"); return; }
+  const url = `https://wa.me/${digits}?text=${messageEncoded}`;
+  try { window.open(url, "_blank", "noopener,noreferrer"); } catch {}
+}?text=${messageEncoded}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function tryNativeShare({ title, text }) {
+  if (navigator.share) {
+    navigator.share({ title, text }).catch(() => {});
+    return true;
+  }
+  return false;
+}
+
+function saveInvites(clientId, invites) {
+  const all = JSON.parse(localStorage.getItem(LS_INVITES) || "{}");
+  all[clientId] = invites;
+  localStorage.setItem(LS_INVITES, JSON.stringify(all));
+}
+
+function loadInvites(clientId) {
+  const all = JSON.parse(localStorage.getItem(LS_INVITES) || "{}");
+  return Array.isArray(all[clientId]) ? all[clientId] : [];
+}
+
+export default function ClientInviteApp() {
+  const [auth, setAuth] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_AUTH) || "null"); } catch { return null; }
+  });
+  const [invites, setInvites] = useState(() => (auth ? loadInvites(auth.client.id) : []));
+
+  useEffect(() => {
+    if (auth) setInvites(loadInvites(auth.client.id));
+  }, [auth?.client?.id]);
+
+  useEffect(() => {
+    if (auth) saveInvites(auth.client.id, invites);
+  }, [auth, invites]);
+
+  if (!auth) return <Login onSuccess={setAuth} />;
+
+  return <ClientArea auth={auth} setAuth={setAuth} invites={invites} setInvites={setInvites} />;
+}
+
+function Login({ onSuccess }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const attempt = () => {
+    const client = CLIENTS.find(c => c.username === username.trim());
+    if (!client || client.password !== password) {
+      toast.error("بيانات الدخول غير صحيحة");
+      return;
     }
-    html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,#0a0a0a,#0b0b0b);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    const payload = { client: { id: client.id, name: client.name, username: client.username, credit: client.credit } };
+    localStorage.setItem(LS_AUTH, JSON.stringify(payload));
+    onSuccess(payload);
+  };
 
-    .container{max-width:1120px;margin:0 auto;padding:16px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  return (
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center p-6">
+      <Toaster richColors position=\"top-center\" />
+      <Card className=\"w-full max-w-md bg-neutral-900 border-neutral-800 shadow-xl\">
+        <CardHeader>
+          <CardTitle className="text-center text-2xl">
+            <span className="font-black tracking-wide">HORMEZ </span>
+            <span className="text-yellow-400">SECURITY</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4" dir="rtl">
+            <div>
+              <Label htmlFor="username">اسم المستخدم</Label>
+              <Input id="username" placeholder="client1" value={username} onChange={e=>setUsername(e.target.value)} className="bg-neutral-800 border-neutral-700" />
+            </div>
+            <div>
+              <Label htmlFor="password">كلمة المرور</Label>
+              <Input id="password" type="password" placeholder="••••••" value={password} onChange={e=>setPassword(e.target.value)} className="bg-neutral-800 border-neutral-700" />
+            </div>
+            <Button onClick={attempt} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold">تسجيل الدخول</Button>
+            <p className="text-xs text-neutral-400 leading-5">
+              ◀︎ ملاحظة: الحسابات هنا تجريبية محلياً فقط. للبيئة الحقيقية اربطه بـ Firebase Auth.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
-    /* ===== APP BAR ===== */
-    .appbar{position:sticky;top:0;z-index:20;background:rgba(10,10,10,.8);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-    .brand{display:flex;gap:12px;align-items:center}
-    .logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#0e0e0e;border:1px solid #1e1e1e;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
-    .logo span{font-weight:900;color:var(--accent)}
+function ClientArea({ auth, setAuth, invites, setInvites }) {
+  const [active, setActive] = useState("home");
+  const stats = useMemo(() => computeStats(invites), [invites]);
 
-    /* ===== HERO ===== */
-    .hero{background:linear-gradient(135deg, rgba(255,210,74,.14), rgba(0,198,255,.10));border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px}
-    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#0f0f0f;border-radius:999px;padding:8px 12px}
+  const logout = () => {
+    localStorage.removeItem(LS_AUTH);
+    setAuth(null);
+  };
 
-    /* ===== CARDS GRID ===== */
-    .grid{display:grid;gap:12px}
-    .grid-3{grid-template-columns:repeat(3,1fr)}
-    @media(max-width:980px){.grid-3{grid-template-columns:1fr}}
+  const addInvite = (inv) => {
+    // خصم رصيد واحد لكل دعوة (يمكن تعديله)
+    const updated = [inv, ...invites];
+    setInvites(updated);
+    toast.success("تمت إضافة الدعوة");
+  };
 
-    a.card, .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;color:inherit;text-decoration:none;transition:transform .15s ease, border-color .15s ease}
-    a.card:hover{transform:translateY(-2px);border-color:#2e2e2e}
-    .muted{color:var(--muted)}
-    .title{font-weight:800}
+  const markStatus = (id, status) => {
+    setInvites(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+  };
 
-    .btn{appearance:none;border:1px solid var(--line);background:#111;color:var(--ink);border-radius:12px;padding:10px 14px;cursor:pointer}
-    .btn:hover{background:#151515;border-color:#2a2a2a}
-    .btn-cta{background:linear-gradient(135deg,var(--accent),#ffe494);color:#0b0b0b;border:none;font-weight:800}
-    .btn-cta:hover{filter:brightness(1.05)}
-    .input, .select{width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:#0f0f0f;color:var(--ink)}
+  return (
+    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      <TopBar clientName={auth.client.name} onLogout={logout} />
+      <Toaster richColors position=\"top-center\" />
 
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-  </style>
-</head>
-<body>
-  <!-- APP BAR -->
-  <div class="appbar">
-    <div class="container row" style="justify-content:space-between">
-      <div class="brand">
-        <div class="logo"><span>HS</span></div>
-        <div>
-          <div class="muted" style="font-size:12px">بوابة العميل • Customer Portal</div>
-          <div class="title" id="appTitle">لوحة خدمات المناسبة</div>
+      <main className="max-w-6xl mx-auto p-4 md:p-8" dir="rtl">
+        {/* Greeting & Stats */}
+        <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-6">
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold">مرحباً بك يا {auth.client.name}</h2>
+                  <p className="text-neutral-400">لوحة العميل لإدارة الدعوات عبر الواتساب</p>
+                </div>
+                <Badge className="bg-yellow-500 text-black text-sm py-1 px-3 rounded-full">الرصيد: {Math.max(0, (auth.client.credit ?? 0) - stats.sent)}</Badge>
+              </div>
+              <Separator className="my-4 bg-neutral-800" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <StatCard icon={<Home className="w-5 h-5"/>} label="إجمالي الدعوات" value={stats.total} />
+                <StatCard icon={<Send className="w-5 h-5"/>} label="الدعوات المُرسلة" value={stats.sent} />
+                <StatCard icon={<CheckCircle2 className="w-5 h-5"/>} label="الحضور" value={stats.attended} />
+                <StatCard icon={<Users2 className="w-5 h-5"/>} label="المتبقي من الرصيد" value={Math.max(0, (auth.client.credit ?? 0) - stats.sent)} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Nav */}
+          <div className="flex flex-wrap gap-2">
+            <NavBtn active={active==="home"} onClick={()=>setActive("home")} icon={<Home className="w-4 h-4"/>} label="الصفحة الرئيسية"/>
+            <NavBtn active={active==="new"} onClick={()=>setActive("new")} icon={<Contact className="w-4 h-4"/>} label="دعوة جديدة"/>
+            <NavBtn active={active==="send"} onClick={()=>setActive("send")} icon={<Send className="w-4 h-4"/>} label="الإرسال"/>
+            <NavBtn active={active==="remind"} onClick={()=>setActive("remind")} icon={<BellRing className="w-4 h-4"/>} label="التذكير"/>
+            <NavBtn active={active==="attend"} onClick={()=>setActive("attend")} icon={<QrCode className="w-4 h-4"/>} label="الحضور"/>
+          </div>
+
+          {/* Pages */}
+          {active === "home" && (
+            <Card className="bg-neutral-900 border-neutral-800">
+              <CardContent className="pt-6">
+                <InviteTable invites={invites} onMark={markStatus} />
+              </CardContent>
+            </Card>
+          )}
+
+          {active === "new" && (
+            <NewInviteForm onCreate={addInvite} />
+          )}
+
+          {active === "send" && (
+            <SendCenter invites={invites} onSent={(id)=>markStatus(id, "sent")} />
+          )}
+
+          {active === "remind" && (
+            <RemindCenter invites={invites} onReminded={(id)=>markStatus(id, "reminded")} />
+          )}
+
+          {active === "attend" && (
+            <AttendCenter invites={invites} onAttended={(id)=>markStatus(id, "attended")} />
+          )}
+
+        </motion.div>
+      </main>
+    </div>
+  );
+}
+
+function TopBar({ clientName, onLogout }) {
+  return (
+    <header className="border-b border-neutral-800 bg-neutral-950/60 backdrop-blur sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-yellow-500" />
+          <span className="font-black tracking-wide">HORMEZ <span className="text-yellow-400">SECURITY</span></span>
+        </div>
+        <div className="flex items-center gap-3" dir="rtl">
+          <Badge variant="outline" className="border-neutral-700 text-neutral-300">
+            <User2 className="w-4 h-4 ml-1"/>{clientName}
+          </Badge>
+          <Button variant="ghost" className="text-neutral-300 hover:text-white" onClick={onLogout}>
+            <LogOut className="w-4 h-4 ml-1"/> خروج
+          </Button>
         </div>
       </div>
-      <div class="row">
-        <button id="langBtn" class="btn">EN</button>
-      </div>
+    </header>
+  );
+}
+
+function StatCard({ icon, label, value }) {
+  return (
+    <Card className="bg-neutral-900/60 border-neutral-800">
+      <CardContent className="pt-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-neutral-400 text-sm">{label}</p>
+            <p className="text-2xl font-extrabold mt-1">{value}</p>
+          </div>
+          <div className="p-2 rounded-xl bg-neutral-800 text-yellow-400">{icon}</div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function NavBtn({ active, icon, label, onClick }) {
+  return (
+    <Button onClick={onClick} variant={active ? "default" : "secondary"} className={
+      `rounded-2xl ${active ? "bg-yellow-500 text-black hover:bg-yellow-400" : "bg-neutral-800 border border-neutral-700 text-neutral-200 hover:bg-neutral-700"}`
+    }>
+      <div className="flex items-center gap-2">{icon}<span>{label}</span></div>
+    </Button>
+  );
+}
+
+function InviteTable({ invites, onMark }) {
+  if (!invites.length) {
+    return (
+      <div className="text-neutral-400 text-sm" dir="rtl">لا توجد دعوات بعد. اذهب إلى <Badge className="mx-1 bg-yellow-500 text-black">دعوة جديدة</Badge> لإضافة أول دعوة.</div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto" dir="rtl">
+      <table className="w-full text-right">
+        <thead>
+          <tr className="text-neutral-400 text-sm border-b border-neutral-800">
+            <th className="py-2">الاسم</th>
+            <th className="py-2">الجوال</th>
+            <th className="py-2">عدد الكروت</th>
+            <th className="py-2">الحدث</th>
+            <th className="py-2">الحالة</th>
+            <th className="py-2">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {invites.map(inv => (
+            <tr key={inv.id} className="border-b border-neutral-900/60">
+              <td className="py-2">{inv.guestName}</td>
+              <td className="py-2">{inv.phone}</td>
+              <td className="py-2">{inv.count}</td>
+              <td className="py-2">{inv.eventName}</td>
+              <td className="py-2">
+                <Badge className={
+                  inv.status === "new" ? "bg-neutral-700" :
+                  inv.status === "sent" ? "bg-blue-600" :
+                  inv.status === "reminded" ? "bg-purple-600" : "bg-green-600"
+                }>
+                  {inv.status === "new" ? "جديدة" : inv.status === "sent" ? "مُرسلة" : inv.status === "reminded" ? "مُذكّر" : "حضر"}
+                </Badge>
+              </td>
+              <td className="py-2">
+                <div className="flex gap-2 justify-end">
+                  <Button size="sm" variant="outline" className="border-neutral-700 text-neutral-200" onClick={()=>onMark(inv.id, "sent")}>تحديد كمرسلة</Button>
+                  <Button size="sm" variant="outline" className="border-neutral-700 text-neutral-200" onClick={()=>onMark(inv.id, "reminded")}>تحديد كمذكّر</Button>
+                  <Button size="sm" className="bg-green-600 hover:bg-green-500" onClick={()=>onMark(inv.id, "attended")}>تحديد كحضور</Button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-  </div>
+  );
+}
 
-  <div class="container">
-    <!-- HERO / EVENT -->
-    <div class="hero">
-      <div class="row" style="gap:12px;align-items:flex-end">
-        <div style="flex:2">
-          <div class="muted" id="lblEvent">اسم الحدث</div>
-          <input id="eventInput" class="input" placeholder="مثال: زفاف سعيد" />
-        </div>
-        <div style="width:200px">
-          <div class="muted" id="lblLang">اللغة</div>
-          <select id="langSelect" class="select">
-            <option value="ar" selected>العربية</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-        <div>
-          <button id="applyBtn" class="btn btn-cta">تطبيق</button>
-        </div>
-        <div class="pill" title="انسخه للعميل">
-          رابط المشاركة:
-          <span id="shareUrl" class="mono" style="margin-inline-start:6px"></span>
-        </div>
-      </div>
-      <div class="muted" style="margin-top:8px">سيتم ربط جميع الصفحات بالحدث عبر ?event=</div>
-    </div>
+function NewInviteForm({ onCreate }) {
+  const [guestName, setGuestName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [count, setCount] = useState(1);
+  const [eventName, setEventName] = useState("زفاف خالد");
 
-    <!-- GRID — ترتيب مطابق لفكرة التطبيق: إرسال، ماسح، لوحة حضور، دمج، رفع، تقارير -->
-    <div class="grid grid-3" style="margin-top:14px">
-      <!-- 1) إرسال الدعوات -->
-      <a id="cardSender" class="card" target="_blank">
-        <div class="muted">إرسال الدعوات</div>
-        <div class="title" style="margin-top:2px">WhatsApp Web — CSV / جهات الاتصال</div>
-        <div class="muted" style="margin-top:6px;font-size:12px">قوالب نص + إرسال جماعي / فردي</div>
-      </a>
-
-      <!-- 2) الماسح -->
-      <a id="cardScanner" class="card" target="_blank">
-        <div class="muted">الماسح</div>
-        <div class="title" style="margin-top:2px">تشغيل ماسح الدعوات</div>
-        <div class="muted" style="margin-top:6px;font-size:12px">قفل على الحدث + ألوان نجاح/خطأ</div>
-      </a>
-
-      <!-- 3) لوحة الحضور -->
-      <a id="cardDashboard" class="card" target="_blank">
-        <div class="muted">لوحة الحضور</div>
-        <div class="title" style="margin-top:2px">عرض الحضور المباشر</div>
-        <div class="muted" style="margin-top:6px;font-size:12px">إجمالي / مستخدم / متبقي / نسبة</div>
-      </a>
-
-      <!-- 4) دمج الباركود -->
-      <a id="cardMerge" class="card" target="_blank">
-        <div class="muted">دمج الباركود</div>
-        <div class="title" style="margin-top:2px">new-merge-qr.html</div>
-        <div class="muted" style="margin-top:6px;font-size:12px">تحكم بالحجم/الموضع واللون</div>
-      </a>
-
-      <!-- 5) رفع الدعوات -->
-      <a id="cardUpload" class="card" target="_blank">
-        <div class="muted">رفع الدعوات</div>
-        <div class="title" style="margin-top:2px">new-uploadqr.html</div>
-        <div class="muted" style="margin-top:6px;font-size:12px">رفع الملفات والموافقة</div>
-      </a>
-
-      <!-- 6) التقارير -->
-      <a id="cardReports" class="card" target="_blank">
-        <div class="muted">التقارير والتصدير</div>
-        <div class="title" style="margin-top:2px">ملف CSV وملخصات</div>
-        <div class="muted" style="margin-top:6px;font-size:12px">قريبًا</div>
-      </a>
-    </div>
-  </div>
-
-  <script>
-    const $=(s,root=document)=>root.querySelector(s);
-    const STR={
-      ar:{event:'اسم الحدث', lang:'اللغة', apply:'تطبيق', share:'رابط المشاركة', sender:'إرسال الدعوات', scanner:'الماسح', dashboard:'لوحة الحضور', merge:'دمج الباركود', upload:'رفع الدعوات', reports:'التقارير'},
-      en:{event:'Event name', lang:'Language', apply:'Apply', share:'Share URL', sender:'Invite Sender', scanner:'Scanner', dashboard:'Dashboard', merge:'Merge QR', upload:'Upload', reports:'Reports'}
-    };
-
-    const LINKS={
-      sender: 'client-invite-sender.html',
-      scanner:'new-scanner.html',
-      dashboard:'new-dashboard.html',
-      merge:'new-merge-qr.html',
-      upload:'new-uploadqr.html',
-      reports:'#'
-    };
-
-    function applyLang(){ const lang=$('#langSelect').value; document.documentElement.lang=lang; document.documentElement.dir=(lang==='ar')?'rtl':'ltr'; $('#langBtn').textContent=(lang==='ar')?'EN':'AR'; $('#lblEvent').textContent=STR[lang].event; $('#lblLang').textContent=STR[lang].lang; $('#applyBtn').textContent=STR[lang].apply; }
-
-    function rebuild(){ const ev=encodeURIComponent($('#eventInput').value.trim()); const base=location.origin+location.pathname.replace(/[^\/]*$/,'');
-      const urlSender  = LINKS.sender;
-      const urlScanner = LINKS.scanner + (ev? `?event=${ev}`:'');
-      const urlDash    = LINKS.dashboard + (ev? `?event=${ev}`:'');
-      const urlMerge   = LINKS.merge + (ev? `?event=${ev}`:'');
-      const urlUpload  = LINKS.upload;
-      $('#cardSender').href=urlSender; $('#cardScanner').href=urlScanner; $('#cardDashboard').href=urlDash; $('#cardMerge').href=urlMerge; $('#cardUpload').href=urlUpload; $('#cardReports').href=LINKS.reports;
-      const share = base + `customer-home.html?event=${ev}`; $('#shareUrl').textContent=share;
+  // 📇 استيراد من سجل الهاتف (Contact Picker API)
+  const importFromContacts = async () => {
+    try {
+      const supported = "contacts" in navigator && "select" in (navigator.contacts || {});
+      if (!supported) {
+        toast("قد لا يدعم متصفحك استيراد جهات الاتصال مباشرة. جرّب كروم/أندرويد.");
+        return;
+      }
+      const props = ["name", "tel"];
+      const contacts = await navigator.contacts.select(props, { multiple: false });
+      if (contacts && contacts[0]) {
+        const c = contacts[0];
+        setGuestName((c.name && c.name[0]) || "");
+        setPhone((c.tel && c.tel[0]) || "");
+      }
+    } catch (e) {
+      toast.error("تعذر الوصول لجهات الاتصال");
     }
+  };
 
-    document.addEventListener('DOMContentLoaded',()=>{
-      const p=new URLSearchParams(location.search); const ev=p.get('event')||''; if(ev) $('#eventInput').value=decodeURIComponent(ev);
-      $('#applyBtn').addEventListener('click', rebuild);
-      $('#langBtn').addEventListener('click', ()=>{ const sel=$('#langSelect'); sel.value = sel.value==='ar'?'en':'ar'; applyLang(); });
-      $('#langSelect').addEventListener('change', applyLang);
-      applyLang(); rebuild();
-    });
-  </script>
-</body>
-</html>
+  const create = () => {
+    if (!guestName || !phone) {
+      toast.error("يرجى إدخال الاسم ورقم الهاتف");
+      return;
+    }
+    const inv = makeInvite({ guestName, phone, count, eventName });
+    onCreate(inv);
+    setGuestName("");
+    setPhone("");
+    setCount(1);
+  };
+
+  return (
+    <Card className="bg-neutral-900 border-neutral-800">
+      <CardHeader>
+        <CardTitle className="text-lg">إضافة دعوة جديدة</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid md:grid-cols-2 gap-4" dir="rtl">
+          <div className="md:col-span-2">
+            <Label className="mb-1 inline-block">استيراد من سجل الهاتف</Label>
+            <div className="flex gap-2">
+              <Button variant="secondary" className="bg-neutral-800 border border-neutral-700 text-neutral-200" onClick={importFromContacts}>
+                <Phone className="w-4 h-4 ml-1"/> سجل الهاتف
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" className="text-neutral-300">
+                    <Info className="w-4 h-4 ml-1"/> التعليمات
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-neutral-900 border-neutral-800 text-neutral-200">
+                  <DialogHeader>
+                    <DialogTitle>تفعيل استيراد جهات الاتصال</DialogTitle>
+                  </DialogHeader>
+                  <ol className="list-decimal pr-5 space-y-2 text-sm">
+                    <li>استخدم جهاز أندرويد مع متصفح كروم الأحدث.</li>
+                    <li>من إعدادات الموقع، اسمح بالوصول إلى جهات الاتصال.</li>
+                    <li>عند الضغط على "سجل الهاتف" اختر جهة الاتصال ثم وافق على المشاركة.</li>
+                  </ol>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          <div>
+            <Label>الاسم</Label>
+            <Input value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="اسم الضيف" className="bg-neutral-800 border-neutral-700"/>
+          </div>
+          <div>
+            <Label>رقم الهاتف</Label>
+            <Input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="05xxxxxxxx" className="bg-neutral-800 border-neutral-700"/>
+          </div>
+          <div>
+            <Label>عدد الكروت للمرافقين</Label>
+            <Input type="number" min={1} value={count} onChange={e=>setCount(Number(e.target.value || 1))} className="bg-neutral-800 border-neutral-700"/>
+          </div>
+          <div>
+            <Label>اسم الحدث</Label>
+            <Input value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="مثال: زفاف خالد" className="bg-neutral-800 border-neutral-700"/>
+          </div>
+
+          <div className="md:col-span-2 flex gap-2">
+            <Button className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold" onClick={create}>إضافة الدعوة</Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SendCenter({ invites, onSent }) {
+  const [filter, setFilter] = useState("");
+  const list = invites.filter(i => i.status === "new" || i.status === "reminded").filter(i =>
+    [i.guestName, i.phone, i.eventName].some(f => f?.toLowerCase().includes(filter.toLowerCase()))
+  );
+
+  const send = (inv) => {
+    const msg = decodeURIComponent(buildWhatsAppMessage(inv));
+    const shared = tryNativeShare({ title: `دعوة ${inv.eventName}`, text: msg });
+    if (!shared) {
+      openWhatsApp(inv.phone, buildWhatsAppMessage(inv));
+    }
+    onSent(inv.id);
+    toast.success("تم الإرسال عبر الواتساب");
+  };
+
+  return (
+    <Card className="bg-neutral-900 border-neutral-800" dir="rtl">
+      <CardHeader>
+        <CardTitle className="text-lg">مركز الإرسال</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-2 mb-4">
+          <Input placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} className="bg-neutral-800 border-neutral-700"/>
+        </div>
+        {!list.length ? (
+          <p className="text-neutral-400 text-sm">لا توجد عناصر جاهزة للإرسال الآن.</p>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-3">
+            {list.map(inv => (
+              <Card key={inv.id} className="bg-neutral-900 border-neutral-800">
+                <CardContent className="pt-4 space-y-2">
+                  <p><b>{inv.guestName}</b> — {inv.phone}</p>
+                  <p className="text-sm text-neutral-400">{inv.eventName} • كروت: {inv.count}</p>
+                  <div className="flex gap-2 justify-end">
+                    <Button className="bg-yellow-500 hover:bg-yellow-400 text-black" onClick={()=>send(inv)}>
+                      <Send className="w-4 h-4 ml-1"/> إرسال واتساب
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function RemindCenter({ invites, onReminded }) {
+  const candidates = invites.filter(i => i.status === "sent");
+
+  const remind = (inv) => {
+    const text = `تذكير لطيف يا ${inv.guestName}\nهل ستتمكن من الحضور؟`;
+    const encoded = encodeURIComponent(text);
+    openWhatsApp(inv.phone, encoded);
+    onReminded(inv.id);
+    toast("تم إرسال تذكير");
+  };
+
+  return (
+    <Card className="bg-neutral-900 border-neutral-800" dir="rtl">
+      <CardHeader>
+        <CardTitle className="text-lg">التذكير</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {!candidates.length ? (
+          <p className="text-neutral-400 text-sm">لا توجد دعوات بحاجة إلى تذكير حالياً.</p>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-3">
+            {candidates.map(inv => (
+              <Card key={inv.id} className="bg-neutral-900 border-neutral-800">
+                <CardContent className="pt-4 space-y-2">
+                  <p><b>{inv.guestName}</b> — {inv.phone}</p>
+                  <p className="text-sm text-neutral-400">{inv.eventName}</p>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" className="border-neutral-700 text-neutral-200" onClick={()=>remind(inv)}>إرسال تذكير</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AttendCenter({ invites, onAttended }) {
+  const [filter, setFilter] = useState("");
+  const list = invites.filter(i => [i.guestName, i.phone, i.eventName].some(f => f?.toLowerCase().includes(filter.toLowerCase())));
+
+  return (
+    <Card className="bg-neutral-900 border-neutral-800" dir="rtl">
+      <CardHeader>
+        <CardTitle className="text-lg">تسجيل الحضور (يدوياً)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-2 mb-4">
+          <Input placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} className="bg-neutral-800 border-neutral-700"/>
+        </div>
+        {!list.length ? (
+          <p className="text-neutral-400 text-sm">لا توجد بيانات مطابقة.</p>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-3">
+            {list.map(inv => (
+              <Card key={inv.id} className="bg-neutral-900 border-neutral-800">
+                <CardContent className="pt-4 space-y-2">
+                  <p><b>{inv.guestName}</b> — {inv.phone}</p>
+                  <p className="text-sm text-neutral-400">{inv.eventName} • كروت: {inv.count}</p>
+                  <div className="flex gap-2 justify-end">
+                    {inv.status !== "attended" ? (
+                      <Button className="bg-green-600 hover:bg-green-500" onClick={()=>onAttended(inv.id)}>تحديد كـ حضر</Button>
+                    ) : (
+                      <Badge className="bg-green-600">تم الحضور</Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
