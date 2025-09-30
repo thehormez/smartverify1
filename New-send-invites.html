@@ -4,84 +4,72 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>بوابة العميل | إرسال الدعوات</title>
-    <!-- Tailwind via CDN -->
+
+    <!-- Tailwind (تصميم سريع) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- React 18 UMD + ReactDOM -->
+    <!-- React + ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-    <!-- Babel (لتشغيل JSX داخل المتصفح مباشرة) -->
+    <!-- Babel لتشغيل JSX مباشرة -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <!-- لو حبيت مصادقة لاحقًا: -->
-    <!-- <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script> -->
+
+    <!-- SheetJS لقراءة ملفات Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   </head>
   <body class="bg-neutral-950 text-neutral-100">
     <div id="root"></div>
 
     <script type="text/babel">
       // =========================
-      // ⚙️ Firebase Config — املأها بقيم مشروعك
+      // ⚙️ Firebase Config — املأ بقيم مشروعك
       // =========================
       const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
         projectId: "YOUR_PROJECT_ID",
-        // اختياري:
         storageBucket: "YOUR_PROJECT_ID.appspot.com",
         messagingSenderId: "YOUR_SENDER_ID",
         appId: "YOUR_APP_ID",
       };
       firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
       const db = firebase.firestore();
 
       // =========================
-      // ⚙️ جلب اسم الحدث من نظامك الخارجي (اختياري)
-      // مرّر eventId في الرابط: index.html?eventId=123
+      // أدوات عامة
       // =========================
-      const EVENT_API = {
-        urlTemplate: "https://your-system.example.com/api/events/{eventId}", // عدّل رابط API
-        bearerToken: "", // إن لزم
-        getName: (data) => data?.name, // عدّل المسار إذا غير name
-      };
-
       const { useState, useEffect, useMemo, createContext, useContext } = React;
 
       const getEventIdFromURL = () =>
         new URLSearchParams(location.search).get("eventId") || "";
 
-      const buildHeaders = () => {
-        const h = { Accept: "application/json" };
-        if (EVENT_API.bearerToken) h["Authorization"] = `Bearer ${EVENT_API.bearerToken}`;
-        return h;
+      const normalizePhone = (p) => String(p || "").replace(/\D/g, "");
+      const openWhatsApp = (phone, message) => {
+        const digits = normalizePhone(phone);
+        if (!digits) { alert("رقم الهاتف غير صالح"); return; }
+        const url = `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+        window.open(url, "_blank", "noopener,noreferrer");
       };
 
-      async function fetchEventNameFromExternal(eventId) {
-        if (!eventId) return "";
-        const url = EVENT_API.urlTemplate.replace("{eventId}", encodeURIComponent(eventId));
-        try {
-          const res = await fetch(url, { headers: buildHeaders() });
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          const data = await res.json();
-          return EVENT_API.getName(data) || "";
-        } catch (e) {
-          console.warn("External event API failed:", e);
-          return "";
-        }
-      }
-
-      // ===== بيانات محلية بسيطة (بلا باك-إند للحسابات) =====
-      const CLIENTS = [
-        { id: "c1", name: "عميل تجريبي", username: "client1", password: "123456", credit: 50 },
-      ];
-      const LS_AUTH = "hormez_client_auth";
+      // حفظ/تحميل الدعوات محليًا لكل مستخدم (اختياري)
       const LS_INVITES = "hormez_client_invites";
+      const saveInvites = (uid, invites) => {
+        const all = JSON.parse(localStorage.getItem(LS_INVITES) || "{}");
+        all[uid] = invites;
+        localStorage.setItem(LS_INVITES, JSON.stringify(all));
+      };
+      const loadInvites = (uid) => {
+        const all = JSON.parse(localStorage.getItem(LS_INVITES) || "{}");
+        return Array.isArray(all[uid]) ? all[uid] : [];
+      };
 
-      const normalizePhone = (p) => String(p || "").replace(/\D/g, "");
       const makeInvite = ({ guestName, phone, count, eventName }) => ({
         id: Date.now() + "_" + Math.random().toString(36).slice(2, 8),
         guestName: (guestName || "").trim(),
@@ -93,362 +81,294 @@
       });
       const computeStats = (invites) => {
         const total = invites.length;
-        const sent = invites.filter((i) =>
-          ["sent", "reminded", "attended"].includes(i.status)
-        ).length;
-        const attended = invites.filter((i) => i.status === "attended").length;
+        const sent = invites.filter(i => ["sent","reminded","attended"].includes(i.status)).length;
+        const attended = invites.filter(i => i.status === "attended").length;
         return { total, sent, attended };
       };
-      const saveInvites = (clientId, invites) => {
-        const all = JSON.parse(localStorage.getItem(LS_INVITES) || "{}");
-        all[clientId] = invites;
-        localStorage.setItem(LS_INVITES, JSON.stringify(all));
-      };
-      const loadInvites = (clientId) => {
-        const all = JSON.parse(localStorage.getItem(LS_INVITES) || "{}");
-        return Array.isArray(all[clientId]) ? all[clientId] : [];
-      };
 
-      const openWhatsApp = (phone, message) => {
-        const digits = normalizePhone(phone);
-        if (!digits) {
-          alert("رقم الهاتف غير صالح");
-          return;
-        }
-        const url = `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-        window.open(url, "_blank", "noopener,noreferrer");
-      };
-
-      // ===== سياق الحدث =====
-      const EventContext = createContext({ id: "", name: "", remaining: null });
-      const useEvent = () => useContext(EventContext);
-
-      // ===== Firestore Helpers =====
+      // =========================
+      // Firestore Helpers
+      // =========================
       const eventRef = (eventId) => db.collection("events").doc(eventId);
-      const inviteRef = (eventId, inviteId) =>
-        eventRef(eventId).collection("invites").doc(inviteId);
-
-      /**
-       * getEventFromFirestore: يجلب مستند الحدث من Firestore (إن وجد)
-       * الحقول المتوقعة:
-       *  - name: اسم الحدث
-       *  - cards_total: إجمالي الكروت
-       *  - cards_used: الكروت المصروفة
-       */
-      async function getEventFromFirestore(eventId) {
-        if (!eventId) return null;
-        const snap = await eventRef(eventId).get();
-        if (!snap.exists) return null;
-        return { id: eventId, ...snap.data() };
-      }
+      const inviteRef = (eventId, inviteId) => eventRef(eventId).collection("invites").doc(inviteId);
 
       /**
        * sendInviteTx:
-       * Transaction تخصم عدد الكروت (count) عند الإرسال، وتُسجّل الدعوة.
-       * - تتحقق من توفر الرصيد: (cards_total - cards_used) >= count
-       * - تحدث cards_used
-       * - تضيف دعوة في events/{eventId}/invites/{inviteId}
+       * Transaction تخصم عدد الكروت (count) من رصيد الحدث + تسجّل الدعوة كـ sent
+       * الحقول المتوقعة في /events/{eventId}:
+       * - name: String
+       * - cards_total: Number
+       * - cards_used: Number
+       * - allowed_uids: Array<String> (من لهم صلاحية الخصم/الإرسال)
        */
-      async function sendInviteTx(eventId, invite) {
+      async function sendInviteTx(eventId, invite, currentUid) {
         const eRef = eventRef(eventId);
         const iRef = inviteRef(eventId, invite.id);
+
         await db.runTransaction(async (tx) => {
           const eSnap = await tx.get(eRef);
-          if (!eSnap.exists) {
-            throw new Error("لم يتم العثور على الحدث في Firestore");
-          }
+          if (!eSnap.exists) throw new Error("لم يتم العثور على الحدث");
+
           const data = eSnap.data();
+          const allowed = Array.isArray(data.allowed_uids) ? data.allowed_uids : [];
+          if (!allowed.includes(currentUid)) {
+            throw new Error("ليس لديك صلاحية على هذا الحدث");
+          }
+
           const total = Number(data.cards_total || 0);
-          const used = Number(data.cards_used || 0);
+          const used  = Number(data.cards_used || 0);
           const remaining = total - used;
 
           if (remaining < invite.count) {
-            throw new Error(
-              `الرصيد غير كافٍ. المتاح: ${remaining} — المطلوب: ${invite.count}`
-            );
+            throw new Error(`الرصيد غير كافٍ. المتاح: ${remaining} — المطلوب: ${invite.count}`);
           }
 
-          tx.update(eRef, { cards_used: used + invite.count });
+          // خصم الرصيد + تسجيل الدعوة
+          tx.update(eRef, { cards_used: used + invite.count, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
           tx.set(iRef, {
             ...invite,
             status: "sent",
             sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+            sentBy: currentUid,
           });
         });
       }
 
-      // ===== التطبيق =====
-      function App() {
-        const [auth, setAuth] = useState(() => {
-          try {
-            return JSON.parse(localStorage.getItem(LS_AUTH) || "null");
-          } catch {
-            return null;
+      // =========================
+      // CSV / Clipboard / XLSX helpers
+      // =========================
+      function parseCSV(text) {
+        const lines = text.trim().split(/\r?\n/).filter(Boolean);
+        if (!lines.length) return [];
+        const firstCells = lines[0].split(",").map(s=>s.trim().toLowerCase());
+        const hasHeader = ["name","phone","count","event"].some(k => firstCells.includes(k));
+        const rows = hasHeader ? lines.slice(1) : lines;
+        return rows.map(line => {
+          const cells = line.split(",").map(x=>x?.trim() ?? "");
+          let name, phone, count, eventName;
+          if (hasHeader) {
+            const idx = {
+              name: firstCells.indexOf("name"),
+              phone: firstCells.indexOf("phone"),
+              count: firstCells.indexOf("count"),
+              event: firstCells.indexOf("event"),
+            };
+            name  = idx.name  >=0 ? cells[idx.name]  : "";
+            phone = idx.phone >=0 ? cells[idx.phone] : "";
+            count = idx.count >=0 ? Number(cells[idx.count]||1) : 1;
+            eventName = idx.event>=0 ? cells[idx.event] : "";
+          } else {
+            const [a,b,c,d] = cells;
+            name=a; phone=b; count=Number(c||1); eventName=d||"";
           }
+          return { guestName:name, phone, count: Math.max(1, count), eventName };
         });
-        const [invites, setInvites] = useState(() =>
-          auth ? loadInvites(auth.client.id) : []
-        );
-        const [eventInfo, setEventInfo] = useState({
-          id: "",
-          name: "",
-          total: null,
-          used: null,
-        });
-
-        // جلب eventId + تحميل بيانات الحدث (اسم + رصيد) من Firestore، مع محاولة اسم خارجي (اختياري)
-        useEffect(() => {
-          (async () => {
-            const id = getEventIdFromURL();
-            if (!id) {
-              setEventInfo({ id: "", name: "", total: null, used: null });
-              return;
-            }
-
-            // جرّب Firestore أولاً
-            const e = await getEventFromFirestore(id);
-            if (e) {
-              setEventInfo({
-                id,
-                name: e.name || "",
-                total: Number(e.cards_total ?? 0),
-                used: Number(e.cards_used ?? 0),
-              });
-            } else {
-              // fallback: API خارجي لجلب الاسم فقط
-              const name = await fetchEventNameFromExternal(id);
-              setEventInfo({ id, name, total: null, used: null });
-            }
-          })();
-        }, []);
-
-        useEffect(() => {
-          if (auth?.client?.id) setInvites(loadInvites(auth.client.id));
-        }, [auth?.client?.id]);
-
-        useEffect(() => {
-          if (auth?.client?.id) saveInvites(auth.client.id, invites);
-        }, [auth, invites]);
-
-        const content = !auth ? (
-          <Login onSuccess={setAuth} />
-        ) : (
-          <ClientArea
-            auth={auth}
-            setAuth={setAuth}
-            invites={invites}
-            setInvites={setInvites}
-            eventInfo={eventInfo}
-            setEventInfo={setEventInfo}
-          />
-        );
-
-        // remaining (إن كانت بيانات الرصيد متاحة من Firestore)
-        const remaining =
-          eventInfo.total != null && eventInfo.used != null
-            ? Math.max(0, eventInfo.total - eventInfo.used)
-            : null;
-
-        return (
-          <EventContext.Provider
-            value={{ id: eventInfo.id, name: eventInfo.name, remaining }}
-          >
-            {content}
-          </EventContext.Provider>
-        );
       }
 
-      function Login({ onSuccess }) {
-        const [username, setUsername] = useState("");
-        const [password, setPassword] = useState("");
-        const attempt = () => {
-          const c = CLIENTS.find((x) => x.username === username.trim());
-          if (!c || c.password !== password) {
-            alert("بيانات الدخول غير صحيحة");
-            return;
-          }
-          const payload = {
-            client: {
-              id: c.id,
-              name: c.name,
-              username: c.username,
-              credit: c.credit,
-            },
+      function parsePasted(text) {
+        const lines = text.trim().split(/\r?\n/).filter(Boolean);
+        const out = [];
+        for (const line of lines) {
+          const parts = line.split(/[,|\t]| {2,}/).map(s=>s.trim()).filter(Boolean);
+          const p = parts.length >= 3 ? parts : line.split(/\s+/);
+          const [name, phone, countStr, ...rest] = p;
+          const count = Math.max(1, Number(countStr||1));
+          out.push({ guestName: name||"", phone: phone||"", count, eventName: (rest?.[0]||"") });
+        }
+        return out;
+      }
+
+      async function readXLSX(file) {
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, { header: 1 });
+        const rows = json.filter(r => r && r.length);
+        if (!rows.length) return [];
+        const first = rows[0].map(v => String(v||"").trim().toLowerCase());
+        const hasHeader = ["name","phone","count","event"].some(k => first.includes(k));
+        const body = hasHeader ? rows.slice(1) : rows;
+        return body.map(r => {
+          const [a,b,c,d] = r;
+          return {
+            guestName: String(a||"").trim(),
+            phone: String(b||"").trim(),
+            count: Math.max(1, Number(c||1)),
+            eventName: String(d||"").trim(),
           };
-          localStorage.setItem(LS_AUTH, JSON.stringify(payload));
-          onSuccess(payload);
+        });
+      }
+
+      // =========================
+      // Event Context
+      // =========================
+      const EventContext = createContext({ id: "", name: "", remaining: null });
+      const useEvent = () => useContext(EventContext);
+
+      // =========================
+      // التطبيق
+      // =========================
+      function App() {
+        const [user, setUser] = useState(() => auth.currentUser);
+        const [ready, setReady] = useState(false);
+
+        useEffect(() => {
+          const unsub = auth.onAuthStateChanged(u => {
+            setUser(u || null);
+            setReady(true);
+          });
+          return () => unsub();
+        }, []);
+
+        if (!ready) {
+          return <div className="min-h-screen flex items-center justify-center">...جاري التحميل</div>;
+        }
+
+        return user ? <AuthedApp user={user} /> : <Login />;
+      }
+
+      function Login() {
+        const [email, setEmail] = useState("");
+        const [password, setPassword] = useState("");
+        const [err, setErr] = useState("");
+
+        const signIn = async () => {
+          setErr("");
+          try {
+            await auth.signInWithEmailAndPassword(email.trim(), password);
+          } catch (e) {
+            setErr(e.message || "تعذر تسجيل الدخول");
+          }
         };
+
         return (
           <div className="min-h-screen flex items-center justify-center p-6">
             <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl p-6">
-              <h1 className="text-center text-2xl font-black mb-6">
-                HORMEZ <span className="text-yellow-400">SECURITY</span>
-              </h1>
+              <h1 className="text-center text-2xl font-black mb-6">تسجيل الدخول</h1>
               <div className="space-y-4" dir="rtl">
+                {err && <div className="bg-red-600/20 border border-red-600/40 text-red-300 p-2 rounded">{err}</div>}
                 <div>
-                  <label className="block text-sm mb-1">اسم المستخدم</label>
-                  <input
-                    className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
-                    placeholder="client1"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                  />
+                  <label className="block text-sm mb-1">البريد الإلكتروني</label>
+                  <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
+                         placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} />
                 </div>
                 <div>
                   <label className="block text-sm mb-1">كلمة المرور</label>
-                  <input
-                    type="password"
-                    className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
-                    placeholder="••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  <input type="password" className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
+                         placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
                 </div>
-                <button
-                  onClick={attempt}
-                  className="w-full rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-2"
-                >
-                  تسجيل الدخول
-                </button>
+                <button onClick={signIn} className="w-full rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-2">دخول</button>
+                <p className="text-xs text-neutral-400 leading-5">فعّل Email/Password من Firebase Console وأنشئ للمستخدمين حسابات.</p>
               </div>
             </div>
           </div>
         );
       }
 
-      function ClientArea({
-        auth,
-        setAuth,
-        invites,
-        setInvites,
-        eventInfo,
-        setEventInfo,
-      }) {
-        const [active, setActive] = useState("home");
+      function AuthedApp({ user }) {
+        const [invites, setInvites] = useState(() => loadInvites(user.uid));
+        const [eventInfo, setEventInfo] = useState({ id: "", name: "", total: null, used: null });
         const stats = useMemo(() => computeStats(invites), [invites]);
-        const event = useEvent();
 
-        const logout = () => {
-          localStorage.removeItem(LS_AUTH);
-          setAuth(null);
-        };
+        const eventId = getEventIdFromURL();
+
+        // تحميل بيانات الحدث من Firestore
+        useEffect(() => {
+          (async () => {
+            if (!eventId) { setEventInfo({ id: "", name: "", total: null, used: null }); return; }
+            const snap = await eventRef(eventId).get();
+            if (!snap.exists) { setEventInfo({ id: eventId, name: "", total: null, used: null }); return; }
+            const d = snap.data();
+            setEventInfo({
+              id: eventId,
+              name: d.name || "",
+              total: Number(d.cards_total ?? 0),
+              used: Number(d.cards_used ?? 0),
+            });
+          })();
+        }, [eventId]);
+
+        // حفظ الدعوات محلياً لكل مستخدم
+        useEffect(() => { saveInvites(user.uid, invites); }, [user.uid, invites]);
+
+        const remaining = (eventInfo.total != null && eventInfo.used != null)
+          ? Math.max(0, eventInfo.total - eventInfo.used)
+          : null;
+
+        const logout = () => auth.signOut();
+
         const addInvite = (inv) => {
-          setInvites((prev) => [inv, ...prev]);
+          setInvites(prev => [inv, ...prev]);
           alert("تمت إضافة الدعوة");
         };
-        const markStatus = (id, status) =>
-          setInvites((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
 
-        // تحديث الرصيد المعروض بعد كل خصم ناجح
+        const markStatus = (id, status) => {
+          setInvites(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+        };
+
         const refreshEventBalance = async () => {
           if (!eventInfo.id) return;
           const snap = await eventRef(eventInfo.id).get();
           if (!snap.exists) return;
           const d = snap.data();
-          setEventInfo((prev) => ({
-            ...prev,
-            total: Number(d.cards_total ?? 0),
-            used: Number(d.cards_used ?? 0),
-          }));
+          setEventInfo(prev => ({ ...prev, total: Number(d.cards_total ?? 0), used: Number(d.cards_used ?? 0) }));
         };
 
+        const [active, setActive] = useState("home");
+
         return (
-          <div>
-            <header className="border-b border-neutral-800 bg-neutral-900 p-4 flex items-center justify-between">
-              <span className="font-black">
-                HORMEZ <span className="text-yellow-400">SECURITY</span>
-              </span>
-              <div className="flex items-center gap-3" dir="rtl">
-                <span className="rounded-full border border-neutral-700 text-neutral-300 text-sm px-3 py-1">
-                  {auth.client.name}
-                </span>
-                <button className="hover:text-white text-neutral-300" onClick={logout}>
-                  خروج
-                </button>
-              </div>
-            </header>
+          <EventContext.Provider value={{ id: eventInfo.id, name: eventInfo.name, remaining }}>
+            <div>
+              <header className="border-b border-neutral-800 bg-neutral-900 p-4 flex items-center justify-between">
+                <span className="font-black">لوحة الدعوات</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-neutral-300">{user.email}</span>
+                  <button className="hover:text-white text-neutral-300" onClick={logout}>خروج</button>
+                </div>
+              </header>
 
-            <main className="max-w-5xl mx-auto p-4 md:p-8" dir="rtl">
-              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div>
-                    <h2 className="text-xl md:text-2xl font-bold">
-                      مرحباً بك يا {auth.client.name}
-                    </h2>
-                    <p className="text-neutral-400">
-                      {eventInfo.name
-                        ? <>الحدث الحالي: <b className="text-neutral-100">{eventInfo.name}</b></>
-                        : event.name
-                        ? <>الحدث الحالي: <b className="text-neutral-100">{event.name}</b></>
-                        : "لم يتم العثور على اسم الحدث (تحقق من eventId أو Firestore)"}
-                    </p>
+              <main className="max-w-5xl mx-auto p-4 md:p-8" dir="rtl">
+                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                      <h2 className="text-xl md:text-2xl font-bold">الحدث: {eventInfo.name || "—"}</h2>
+                      <p className="text-neutral-400">Event ID: {eventInfo.id || "غير محدد"}</p>
+                    </div>
+                    <span className="bg-yellow-500 text-black text-sm py-1 px-3 rounded-full">
+                      {remaining != null ? `المتبقي من كروت الحدث: ${remaining}` : "—"}
+                    </span>
                   </div>
-                  <span className="bg-yellow-500 text-black text-sm py-1 px-3 rounded-full">
-                    {event.remaining != null
-                      ? `المتبقي من كروت الحدث: ${event.remaining}`
-                      : `الرصيد (محلي): ${Math.max(0, (auth.client.credit ?? 0) - stats.sent)}`}
-                  </span>
+                  <div className="my-4 h-px bg-neutral-800" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <Stat label="إجمالي الدعوات" value={stats.total} />
+                    <Stat label="الدعوات المُرسلة" value={stats.sent} />
+                    <Stat label="الحضور" value={stats.attended} />
+                    <Stat label="الرصيد المتبقي" value={remaining ?? "—"} />
+                  </div>
                 </div>
-                <div className="my-4 h-px bg-neutral-800" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <Stat label="إجمالي الدعوات" value={stats.total} />
-                  <Stat label="الدعوات المُرسلة" value={stats.sent} />
-                  <Stat label="الحضور" value={stats.attended} />
-                  <Stat
-                    label={
-                      event.remaining != null ? "المتبقي (فايربيس)" : "المتبقي (محلي)"
-                    }
-                    value={
-                      event.remaining != null
-                        ? event.remaining
-                        : Math.max(0, (auth.client.credit ?? 0) - stats.sent)
-                    }
-                  />
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {NavBtn("home","الرئيسية",()=>setActive("home"),active)}
+                  {NavBtn("new","دعوة جديدة",()=>setActive("new"),active)}
+                  {NavBtn("send","الإرسال",()=>setActive("send"),active)}
+                  {NavBtn("remind","التذكير",()=>setActive("remind"),active)}
+                  {NavBtn("attend","الحضور",()=>setActive("attend"),active)}
                 </div>
-              </div>
 
-              <div className="flex flex-wrap gap-2 mt-4">
-                {NavBtn("home", "الصفحة الرئيسية", () => setActive("home"), active)}
-                {NavBtn("new", "دعوة جديدة", () => setActive("new"), active)}
-                {NavBtn("send", "الإرسال", () => setActive("send"), active)}
-                {NavBtn("remind", "التذكير", () => setActive("remind"), active)}
-                {NavBtn("attend", "الحضور", () => setActive("attend"), active)}
-              </div>
-
-              {active === "home" && (
-                <InviteTable invites={invites} onMark={markStatus} />
-              )}
-              {active === "new" && (
-                <NewInviteForm
-                  onCreate={addInvite}
-                  forcedEventName={eventInfo.name || event.name}
-                />
-              )}
-              {active === "send" && (
-                <SendCenter
-                  invites={invites}
-                  onSent={async (id, count) => {
-                    markStatus(id, "sent");
-                    await refreshEventBalance();
-                  }}
-                  eventId={eventInfo.id}
-                  onFirebaseSend={sendInviteTx}
-                />
-              )}
-              {active === "remind" && (
-                <RemindCenter
-                  invites={invites}
-                  onReminded={(id) => markStatus(id, "reminded")}
-                />
-              )}
-              {active === "attend" && (
-                <AttendCenter
-                  invites={invites}
-                  onAttended={(id) => markStatus(id, "attended")}
-                />
-              )}
-            </main>
-          </div>
+                {active==="home"   && <InviteTable invites={invites} onMark={markStatus} />}
+                {active==="new"    && <NewInviteForm onCreate={addInvite} forcedEventName={eventInfo.name} />}
+                {active==="send"   && <SendCenter
+                                        invites={invites}
+                                        eventId={eventInfo.id}
+                                        currentUid={user.uid}
+                                        onFirebaseSend={sendInviteTx}
+                                        onSent={async (id) => { markStatus(id, "sent"); await refreshEventBalance(); }}
+                                      />}
+                {active==="remind" && <RemindCenter invites={invites} onReminded={(id)=>markStatus(id,"reminded")} />}
+                {active==="attend" && <AttendCenter invites={invites} onAttended={(id)=>markStatus(id,"attended")} />}
+              </main>
+            </div>
+          </EventContext.Provider>
         );
       }
 
@@ -460,34 +380,12 @@
           </div>
         );
       }
-
-      function NavBtn(key, label, onClick, active) {
-        return (
-          <button
-            onClick={onClick}
-            className={`rounded-2xl px-4 py-2 border ${
-              active === key
-                ? "bg-yellow-500 text-black border-yellow-500"
-                : "bg-neutral-800 text-neutral-200 border-neutral-700 hover:bg-neutral-700"
-            }`}
-          >
-            {label}
-          </button>
-        );
+      function NavBtn(key,label,onClick,active){
+        return <button onClick={onClick} className={`rounded-2xl px-4 py-2 border ${active===key?"bg-yellow-500 text-black border-yellow-500":"bg-neutral-800 text-neutral-200 border-neutral-700 hover:bg-neutral-700"}`}>{label}</button>;
       }
 
       function InviteTable({ invites, onMark }) {
-        if (!invites.length) {
-          return (
-            <div className="text-neutral-400 text-sm">
-              لا توجد دعوات بعد. اذهب إلى{" "}
-              <span className="mx-1 bg-yellow-500 text-black px-2 py-0.5 rounded">
-                دعوة جديدة
-              </span>{" "}
-              لإضافة أول دعوة.
-            </div>
-          );
-        }
+        if (!invites.length) return <div className="text-neutral-400 text-sm">لا توجد دعوات بعد.</div>;
         return (
           <div className="overflow-x-auto mt-4">
             <table className="w-full text-right">
@@ -502,53 +400,23 @@
                 </tr>
               </thead>
               <tbody>
-                {invites.map((inv) => (
+                {invites.map(inv => (
                   <tr key={inv.id} className="border-b border-neutral-900/60">
                     <td className="py-2">{inv.guestName}</td>
                     <td className="py-2">{inv.phone}</td>
                     <td className="py-2">{inv.count}</td>
                     <td className="py-2">{inv.eventName}</td>
                     <td className="py-2">
-                      <span
-                        className={`px-2 py-0.5 rounded text-sm ${
-                          inv.status === "new"
-                            ? "bg-neutral-700"
-                            : inv.status === "sent"
-                            ? "bg-blue-600"
-                            : inv.status === "reminded"
-                            ? "bg-purple-600"
-                            : "bg-green-600"
-                        }`}
-                      >
-                        {inv.status === "new"
-                          ? "جديدة"
-                          : inv.status === "sent"
-                          ? "مُرسلة"
-                          : inv.status === "reminded"
-                          ? "مُذكّر"
-                          : "حضر"}
+                      <span className={`px-2 py-0.5 rounded text-sm ${
+                        inv.status==="new"?"bg-neutral-700":inv.status==="sent"?"bg-blue-600":inv.status==="reminded"?"bg-purple-600":"bg-green-600"}`}>
+                        {inv.status==="new"?"جديدة":inv.status==="sent"?"مُرسلة":inv.status==="reminded"?"مُذكّر":"حضر"}
                       </span>
                     </td>
                     <td className="py-2">
                       <div className="flex gap-2 justify-end">
-                        <button
-                          className="px-3 py-1 rounded border border-neutral-700"
-                          onClick={() => onMark(inv.id, "sent")}
-                        >
-                          تحديد كمرسلة
-                        </button>
-                        <button
-                          className="px-3 py-1 rounded border border-neutral-700"
-                          onClick={() => onMark(inv.id, "reminded")}
-                        >
-                          تحديد كمذكّر
-                        </button>
-                        <button
-                          className="px-3 py-1 rounded bg-green-600 hover:bg-green-500"
-                          onClick={() => onMark(inv.id, "attended")}
-                        >
-                          تحديد كحضور
-                        </button>
+                        <button className="px-3 py-1 rounded border border-neutral-700" onClick={()=>onMark(inv.id,"sent")}>تحديد كمرسلة</button>
+                        <button className="px-3 py-1 rounded border border-neutral-700" onClick={()=>onMark(inv.id,"reminded")}>تحديد كمذكّر</button>
+                        <button className="px-3 py-1 rounded bg-green-600 hover:bg-green-500" onClick={()=>onMark(inv.id,"attended")}>تحديد كحضور</button>
                       </div>
                     </td>
                   </tr>
@@ -559,45 +427,93 @@
         );
       }
 
+      // ===== NewInviteForm مع الاستيراد من الجهاز (CSV/XLSX) واللصق =====
       function NewInviteForm({ onCreate, forcedEventName }) {
         const [guestName, setGuestName] = useState("");
         const [phone, setPhone] = useState("");
         const [count, setCount] = useState(1);
         const [eventName, setEventName] = useState(forcedEventName || "زفاف خالد");
-        useEffect(() => {
-          if (forcedEventName) setEventName(forcedEventName);
-        }, [forcedEventName]);
+        const [pasteText, setPasteText] = useState("");
+        const [importing, setImporting] = useState(false);
 
-        // Contact Picker API (اختياري)
+        useEffect(()=>{ if (forcedEventName) setEventName(forcedEventName); }, [forcedEventName]);
+
+        const create = () => {
+          if (!guestName || !phone) { alert("يرجى إدخال الاسم ورقم الهاتف"); return; }
+          onCreate(makeInvite({ guestName, phone, count, eventName }));
+          setGuestName(""); setPhone(""); setCount(1);
+        };
+
+        const onFileChange = async (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          setImporting(true);
+          try {
+            let rows = [];
+            if (/\.(xlsx|xlsm|xlsb|xls)$/i.test(f.name)) rows = await readXLSX(f);
+            else rows = parseCSV(await f.text());
+
+            if (!rows.length) { alert("لم يتم العثور على بيانات في الملف"); return; }
+
+            const fixedEvent = forcedEventName || "";
+            rows.forEach(r => {
+              const inv = makeInvite({
+                guestName: r.guestName,
+                phone: r.phone,
+                count: r.count,
+                eventName: fixedEvent || r.eventName || eventName,
+              });
+              onCreate(inv);
+            });
+            alert(`تم استيراد ${rows.length} دعوة من الملف`);
+            e.target.value = "";
+          } catch (err) {
+            console.error(err);
+            alert("فشل قراءة الملف. تأكد من الصيغة: name,phone,count[,event]");
+          } finally {
+            setImporting(false);
+          }
+        };
+
+        const onPasteConvert = () => {
+          const rows = parsePasted(pasteText);
+          if (!rows.length) { alert("لم يتم التعرف على أي سطر"); return; }
+          const fixedEvent = forcedEventName || "";
+          rows.forEach(r => {
+            const inv = makeInvite({
+              guestName: r.guestName,
+              phone: r.phone,
+              count: r.count,
+              eventName: fixedEvent || r.eventName || eventName,
+            });
+            onCreate(inv);
+          });
+          alert(`تم تحويل ${rows.length} سطر إلى دعوات`);
+          setPasteText("");
+        };
+
+        const pasteCountFromClipboard = async () => {
+          try {
+            const t = await navigator.clipboard.readText();
+            const n = Number((t || "").match(/\d+/)?.[0] || "");
+            if (!n || n < 1) { alert("لم أجد رقمًا صالحًا في الحافظة"); return; }
+            setCount(n);
+          } catch {
+            alert("تعذّر قراءة الحافظة. امنح المتصفح إذن الوصول.");
+          }
+        };
+
         const importFromContacts = async () => {
           try {
             const supported = "contacts" in navigator && "select" in (navigator.contacts || {});
-            if (!supported) {
-              alert("قد لا يدعم متصفحك استيراد جهات الاتصال. جرّب كروم على أندرويد.");
-              return;
-            }
-            const contacts = await navigator.contacts.select(["name", "tel"], {
-              multiple: false,
-            });
+            if (!supported) { alert("قد لا يدعم متصفحك استيراد جهات الاتصال. جرّب كروم على أندرويد."); return; }
+            const contacts = await navigator.contacts.select(["name","tel"], { multiple:false });
             if (contacts && contacts[0]) {
               const c = contacts[0];
               setGuestName((c.name && c.name[0]) || "");
               setPhone((c.tel && c.tel[0]) || "");
             }
-          } catch {
-            alert("تعذر الوصول لجهات الاتصال");
-          }
-        };
-
-        const create = () => {
-          if (!guestName || !phone) {
-            alert("يرجى إدخال الاسم ورقم الهاتف");
-            return;
-          }
-          onCreate(makeInvite({ guestName, phone, count, eventName }));
-          setGuestName("");
-          setPhone("");
-          setCount(1);
+          } catch { alert("تعذر الوصول لجهات الاتصال"); }
         };
 
         return (
@@ -606,150 +522,125 @@
               <div className="md:col-span-2">
                 <label className="mb-1 inline-block text-sm">استيراد من سجل الهاتف</label>
                 <div className="flex gap-2">
-                  <button
-                    className="px-4 py-2 rounded-xl bg-neutral-800 border border-neutral-700"
-                    onClick={importFromContacts}
-                  >
-                    سجل الهاتف
-                  </button>
+                  <button className="px-4 py-2 rounded-xl bg-neutral-800 border border-neutral-700" onClick={importFromContacts}>سجل الهاتف</button>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm mb-1">الاسم</label>
-                <input
-                  className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  placeholder="اسم الضيف"
-                />
+                <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
+                       value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="اسم الضيف" />
               </div>
               <div>
                 <label className="block text-sm mb-1">رقم الهاتف</label>
-                <input
-                  className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="05xxxxxxxx"
-                />
+                <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
+                       value={phone} onChange={e=>setPhone(e.target.value)} placeholder="05xxxxxxxx" />
               </div>
               <div>
-                <label className="block text-sm mb-1">عدد الكروت للمرافقين</label>
-                <input
-                  type="number"
-                  min="1"
-                  className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
-                  value={count}
-                  onChange={(e) => setCount(Number(e.target.value || 1))}
-                />
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm mb-1">عدد الكروت للمرافقين</label>
+                  <button type="button" onClick={pasteCountFromClipboard} className="text-xs underline text-neutral-300">لصق العدد من الحافظة</button>
+                </div>
+                <input type="number" min="1" className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
+                       value={count} onChange={e=>setCount(Number(e.target.value || 1))} />
               </div>
 
               <div>
                 <label className="block text-sm mb-1">اسم الحدث</label>
-                <input
-                  className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
-                  value={eventName}
-                  onChange={(e) => setEventName(e.target.value)}
-                  placeholder="مثال: زفاف خالد"
-                  readOnly={Boolean(forcedEventName)}
-                  title={forcedEventName ? "يتم جلبه تلقائياً من النظام" : ""}
-                />
+                <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
+                       value={eventName}
+                       onChange={e=>setEventName(e.target.value)}
+                       placeholder="مثال: زفاف خالد"
+                       readOnly={Boolean(forcedEventName)}
+                       title={forcedEventName ? "يتم جلبه تلقائياً من النظام" : ""} />
               </div>
 
               <div className="md:col-span-2">
-                <button
-                  className="px-5 py-2 rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold"
-                  onClick={create}
-                >
+                <button className="px-5 py-2 rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold" onClick={create}>
                   إضافة الدعوة
                 </button>
+              </div>
+
+              {/* === استيراد من جهازك: CSV/XLSX === */}
+              <div className="md:col-span-2 mt-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold">استيراد من ملف (CSV / XLSX)</h3>
+                  {importing && <span className="text-xs text-neutral-400">...جاري القراءة</span>}
+                </div>
+                <input type="file" accept=".csv,.xlsx,.xls" className="mt-2" onChange={onFileChange} />
+                <p className="text-xs text-neutral-400 mt-1">
+                  الصيغة المتوقعة: <code>name,phone,count[,event]</code> — مع ترويسة اختيارية.
+                </p>
+              </div>
+
+              {/* === لصق قائمة من الحافظة === */}
+              <div className="md:col-span-2">
+                <h3 className="font-bold">لصق قائمة</h3>
+                <textarea className="w-full h-28 rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
+                          placeholder={"مثال:\nأحمد,0500000000,2\nسارة,0555555555,1"}
+                          value={pasteText} onChange={e=>setPasteText(e.target.value)} />
+                <div className="mt-2 flex gap-2">
+                  <button className="px-4 py-2 rounded-2xl border border-neutral-700" onClick={onPasteConvert}>تحويل إلى دعوات</button>
+                </div>
               </div>
             </div>
           </div>
         );
       }
 
-      function SendCenter({ invites, onSent, eventId, onFirebaseSend }) {
+      function SendCenter({ invites, eventId, currentUid, onFirebaseSend, onSent }) {
         const [filter, setFilter] = useState("");
         const list = invites
-          .filter((i) => i.status === "new" || i.status === "reminded")
-          .filter((i) =>
-            [i.guestName, i.phone, i.eventName].some((f) =>
-              (f || "").toLowerCase().includes(filter.toLowerCase())
-            )
-          );
+          .filter(i => i.status==="new" || i.status==="reminded")
+          .filter(i => [i.guestName, i.phone, i.eventName].some(f => (f || "").toLowerCase().includes(filter.toLowerCase())));
 
         const send = async (inv) => {
-          if (!eventId) {
-            alert("لم يتم تحديد eventId في الرابط.");
-            return;
-          }
-          const text =
-            `مرحبا ${inv.guestName}\n\n` +
-            `يشرفنا دعوتك لحضور الفعالية: ${inv.eventName}\n` +
-            `عدد الكروت للمرافقين: ${inv.count}\n\n` +
-            `للاستفسار والرد يرجى التواصل عبر الواتساب.`;
+          if (!eventId) { alert("يرجى فتح الصفحة مع eventId في الرابط"); return; }
 
-          // خطوة 1: تنفيذ Transaction على فايربيس (خصم الكروت + تسجيل الدعوة)
+          // 1) خصم الرصيد + تسجيل الدعوة داخل Transaction
           try {
-            await onFirebaseSend(eventId, inv); // throw إذا لا يوجد رصيد
+            await onFirebaseSend(eventId, inv, currentUid);
           } catch (e) {
-            alert(e.message || "تعذّر خصم الرصيد من فايربيس");
+            alert(e.message || "فشل الخصم من الرصيد");
             return;
           }
 
-          // خطوة 2: الإرسال عبر المشاركة/الواتساب
-          if (navigator.share) {
-            try { await navigator.share({ title: `دعوة ${inv.eventName}`, text }); } catch {}
-          } else {
-            openWhatsApp(inv.phone, text);
-          }
+          // 2) إرسال الرسالة
+          const msg = `مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${inv.eventName}\nعدد الكروت للمرافقين: ${inv.count}\n\nللاستفسار والرد يرجى التواصل عبر الواتساب.`;
+          if (navigator.share) { try { await navigator.share({ title: `دعوة ${inv.eventName}`, text: msg }); } catch {} }
+          else { openWhatsApp(inv.phone, msg); }
 
-          // خطوة 3: تحديث الحالة محليًا وإشعار المستخدم
-          onSent(inv.id, inv.count);
-          alert("تم الخصم من الرصيد في فايربيس وإرسال الدعوة");
+          // 3) تحديث الحالة محليًا
+          onSent(inv.id);
+          alert("تم الخصم من رصيد فايربيس وإرسال الدعوة");
         };
 
         return (
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 mt-4">
             <div className="flex gap-2 mb-4">
-              <input
-                className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
-                placeholder="بحث بالاسم أو الرقم"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-              />
+              <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
+                     placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} />
             </div>
-            {!list.length ? (
-              <p className="text-neutral-400 text-sm">لا توجد عناصر جاهزة للإرسال الآن.</p>
-            ) : (
+            {!list.length ? <p className="text-neutral-400 text-sm">لا توجد عناصر جاهزة للإرسال الآن.</p> :
               <div className="grid md:grid-cols-2 gap-3">
-                {list.map((inv) => (
+                {list.map(inv => (
                   <div key={inv.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-2">
-                    <p>
-                      <b>{inv.guestName}</b> — {inv.phone}
-                    </p>
-                    <p className="text-sm text-neutral-400">
-                      {inv.eventName} • كروت: {inv.count}
-                    </p>
+                    <p><b>{inv.guestName}</b> — {inv.phone}</p>
+                    <p className="text-sm text-neutral-400">{inv.eventName} • كروت: {inv.count}</p>
                     <div className="flex gap-2 justify-end">
-                      <button
-                        className="px-4 py-2 rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black"
-                        onClick={() => send(inv)}
-                      >
-                        إرسال واتساب + خصم كروت
-                      </button>
+                      <button className="px-4 py-2 rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black"
+                              onClick={()=>send(inv)}>إرسال واتساب + خصم</button>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
+            }
           </div>
         );
       }
 
       function RemindCenter({ invites, onReminded }) {
-        const candidates = invites.filter((i) => i.status === "sent");
+        const candidates = invites.filter(i => i.status==="sent");
         const remind = (inv) => {
           const text = `تذكير لطيف يا ${inv.guestName}\nهل ستتمكن من الحضور؟`;
           openWhatsApp(inv.phone, text);
@@ -758,77 +649,47 @@
         };
         return (
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 mt-4">
-            {!candidates.length ? (
-              <p className="text-neutral-400 text-sm">لا توجد دعوات بحاجة إلى تذكير حالياً.</p>
-            ) : (
+            {!candidates.length ? <p className="text-neutral-400 text-sm">لا توجد دعوات بحاجة إلى تذكير حالياً.</p> :
               <div className="grid md:grid-cols-2 gap-3">
-                {candidates.map((inv) => (
+                {candidates.map(inv => (
                   <div key={inv.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-2">
-                    <p>
-                      <b>{inv.guestName}</b> — {inv.phone}
-                    </p>
+                    <p><b>{inv.guestName}</b> — {inv.phone}</p>
                     <p className="text-sm text-neutral-400">{inv.eventName}</p>
                     <div className="flex gap-2 justify-end">
-                      <button
-                        className="px-4 py-2 rounded-2xl border border-neutral-700"
-                        onClick={() => remind(inv)}
-                      >
-                        إرسال تذكير
-                      </button>
+                      <button className="px-4 py-2 rounded-2xl border border-neutral-700" onClick={()=>remind(inv)}>إرسال تذكير</button>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
+            }
           </div>
         );
       }
 
       function AttendCenter({ invites, onAttended }) {
         const [filter, setFilter] = useState("");
-        const list = invites.filter((i) =>
-          [i.guestName, i.phone, i.eventName].some((f) =>
-            (f || "").toLowerCase().includes(filter.toLowerCase())
-          )
-        );
+        const list = invites.filter(i => [i.guestName, i.phone, i.eventName].some(f => (f || "").toLowerCase().includes(filter.toLowerCase())));
         return (
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 mt-4">
             <div className="flex gap-2 mb-4">
-              <input
-                className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
-                placeholder="بحث بالاسم أو الرقم"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-              />
+              <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
+                     placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} />
             </div>
-            {!list.length ? (
-              <p className="text-neutral-400 text-sm">لا توجد بيانات مطابقة.</p>
-            ) : (
+            {!list.length ? <p className="text-neutral-400 text-sm">لا توجد بيانات مطابقة.</p> :
               <div className="grid md:grid-cols-2 gap-3">
-                {list.map((inv) => (
+                {list.map(inv => (
                   <div key={inv.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-2">
-                    <p>
-                      <b>{inv.guestName}</b> — {inv.phone}
-                    </p>
-                    <p className="text-sm text-neutral-400">
-                      {inv.eventName} • كروت: {inv.count}
-                    </p>
+                    <p><b>{inv.guestName}</b> — {inv.phone}</p>
+                    <p className="text-sm text-neutral-400">{inv.eventName} • كروت: {inv.count}</p>
                     <div className="flex gap-2 justify-end">
-                      {inv.status !== "attended" ? (
-                        <button
-                          className="px-4 py-2 rounded-2xl bg-green-600 hover:bg-green-500"
-                          onClick={() => onAttended(inv.id)}
-                        >
-                          تحديد كـ حضر
-                        </button>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded bg-green-600">تم الحضور</span>
-                      )}
+                      {inv.status !== "attended"
+                        ? <button className="px-4 py-2 rounded-2xl bg-green-600 hover:bg-green-500" onClick={()=>onAttended(inv.id)}>تحديد كـ حضر</button>
+                        : <span className="px-2 py-0.5 rounded bg-green-600">تم الحضور</span>}
                     </div>
                   </div>
                 ))}
               </div>
-            )}
+            }
           </div>
         );
       }
