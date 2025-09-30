@@ -16,9 +16,40 @@
     <div id="root"></div>
 
     <script type="text/babel">
-      // ======= بيانات وتجهيزات محلية =======
-      const { useState, useEffect, useMemo } = React;
+      // =========================
+      // ⚙️ إعداد جلب اسم الحدث من نظامك
+      // مرّر eventId في الرابط: index.html?eventId=123
+      // عدّل إعدادات EVENT_API حسب نظامك (الرابط، التوكن، مسار الاسم)
+      // =========================
+      const EVENT_API = {
+        urlTemplate: "https://your-system.example.com/api/events/{eventId}",
+        bearerToken: "", // مثال: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        getName: (data) => data?.name, // عدّل لو اسم الحقل مختلف (مثلاً data.title)
+      };
 
+      // ===== أدوات مساعدة =====
+      const { useState, useEffect, useMemo, createContext, useContext } = React;
+      const getEventIdFromURL = () => new URLSearchParams(location.search).get("eventId") || "";
+      const buildHeaders = () => {
+        const h = { "Accept": "application/json" };
+        if (EVENT_API.bearerToken) h["Authorization"] = `Bearer ${EVENT_API.bearerToken}`;
+        return h;
+      };
+      async function fetchEventName(eventId) {
+        if (!eventId) return { id: "", name: "" };
+        const url = EVENT_API.urlTemplate.replace("{eventId}", encodeURIComponent(eventId));
+        try {
+          const res = await fetch(url, { headers: buildHeaders() });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+          return { id: eventId, name: EVENT_API.getName(data) || "" };
+        } catch (e) {
+          console.warn("Failed to fetch event:", e);
+          return { id: eventId, name: "" };
+        }
+      }
+
+      // ===== بيانات محلية بسيطة (بدون باك-إند للحسابات) =====
       const CLIENTS = [{ id: "c1", name: "عميل تجريبي", username: "client1", password: "123456", credit: 50 }];
       const LS_AUTH = "hormez_client_auth";
       const LS_INVITES = "hormez_client_invites";
@@ -55,24 +86,37 @@
         window.open(url, "_blank", "noopener,noreferrer");
       };
 
-      // ======= التطبيق =======
+      // ===== سياق اسم الحدث لتوفيره للكل =====
+      const EventContext = createContext({ id: "", name: "" });
+      const useEvent = () => useContext(EventContext);
+
+      // ===== التطبيق =====
       function App() {
         const [auth, setAuth] = useState(() => {
           try { return JSON.parse(localStorage.getItem(LS_AUTH) || "null"); } catch { return null; }
         });
         const [invites, setInvites] = useState(() => auth ? loadInvites(auth.client.id) : []);
+        const [eventInfo, setEventInfo] = useState({ id: "", name: "" });
+
+        // جلب اسم الحدث من نظامك عند فتح الصفحة
+        useEffect(() => {
+          const id = getEventIdFromURL();
+          fetchEventName(id).then(setEventInfo);
+        }, []);
+
         useEffect(() => { if (auth?.client?.id) setInvites(loadInvites(auth.client.id)); }, [auth?.client?.id]);
         useEffect(() => { if (auth?.client?.id) saveInvites(auth.client.id, invites); }, [auth, invites]);
 
-        return !auth
+        const content = !auth
           ? <Login onSuccess={setAuth} />
           : <ClientArea auth={auth} setAuth={setAuth} invites={invites} setInvites={setInvites} />;
+
+        return <EventContext.Provider value={eventInfo}>{content}</EventContext.Provider>;
       }
 
       function Login({ onSuccess }) {
         const [username, setUsername] = useState("");
         const [password, setPassword] = useState("");
-
         const attempt = () => {
           const c = CLIENTS.find(x => x.username === username.trim());
           if (!c || c.password !== password) { alert("بيانات الدخول غير صحيحة"); return; }
@@ -80,7 +124,6 @@
           localStorage.setItem(LS_AUTH, JSON.stringify(payload));
           onSuccess(payload);
         };
-
         return (
           <div className="min-h-screen flex items-center justify-center p-6">
             <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl p-6">
@@ -97,6 +140,7 @@
                          placeholder="••••••" value={password} onChange={e=>setPassword(e.target.value)} />
                 </div>
                 <button onClick={attempt} className="w-full rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-2">تسجيل الدخول</button>
+                <p className="text-xs text-neutral-400 leading-5">الحساب هنا تجريبي محليًا. للبيئة الحقيقية اربطه بـ Firebase Auth.</p>
               </div>
             </div>
           </div>
@@ -106,6 +150,7 @@
       function ClientArea({ auth, setAuth, invites, setInvites }) {
         const [active, setActive] = useState("home");
         const stats = useMemo(()=>computeStats(invites), [invites]);
+        const event = useEvent(); // ← الاسم قادم من نظامك
 
         const logout = () => { localStorage.removeItem(LS_AUTH); setAuth(null); };
         const addInvite = (inv) => { setInvites(prev => [inv, ...prev]); alert("تمت إضافة الدعوة"); };
@@ -126,7 +171,9 @@
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <h2 className="text-xl md:text-2xl font-bold">مرحباً بك يا {auth.client.name}</h2>
-                    <p className="text-neutral-400">لوحة العميل لإدارة الدعوات عبر الواتساب</p>
+                    <p className="text-neutral-400">
+                      {event.name ? <>الحدث الحالي: <b className="text-neutral-100">{event.name}</b></> : "لم يتم العثور على اسم الحدث (تحقق من eventId)"}
+                    </p>
                   </div>
                   <span className="bg-yellow-500 text-black text-sm py-1 px-3 rounded-full">
                     الرصيد: {Math.max(0, (auth.client.credit ?? 0) - stats.sent)}
@@ -150,7 +197,7 @@
               </div>
 
               {active==="home"   && <InviteTable invites={invites} onMark={markStatus} />}
-              {active==="new"    && <NewInviteForm onCreate={addInvite} />}
+              {active==="new"    && <NewInviteForm onCreate={addInvite} forcedEventName={event.name} />}
               {active==="send"   && <SendCenter invites={invites} onSent={(id)=>markStatus(id,"sent")} />}
               {active==="remind" && <RemindCenter invites={invites} onReminded={(id)=>markStatus(id,"reminded")} />}
               {active==="attend" && <AttendCenter invites={invites} onAttended={(id)=>markStatus(id,"attended")} />}
@@ -224,12 +271,14 @@
         );
       }
 
-      function NewInviteForm({ onCreate }) {
+      function NewInviteForm({ onCreate, forcedEventName }) {
         const [guestName, setGuestName] = useState("");
         const [phone, setPhone] = useState("");
         const [count, setCount] = useState(1);
-        const [eventName, setEventName] = useState("زفاف خالد");
+        const [eventName, setEventName] = useState(forcedEventName || "زفاف خالد");
+        useEffect(()=>{ if (forcedEventName) setEventName(forcedEventName); }, [forcedEventName]);
 
+        // Contact Picker API (اختياري، يعمل غالباً على أندرويد/كروم)
         const importFromContacts = async () => {
           try {
             const supported = "contacts" in navigator && "select" in (navigator.contacts || {});
@@ -282,14 +331,22 @@
                 <input type="number" min="1" className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
                        value={count} onChange={e=>setCount(Number(e.target.value || 1))} />
               </div>
+
               <div>
                 <label className="block text-sm mb-1">اسم الحدث</label>
                 <input className="w-full rounded-xl bg-neutral-800 border border-neutral-700 px-3 py-2"
-                       value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="مثال: زفاف خالد" />
+                       value={eventName}
+                       onChange={e=>setEventName(e.target.value)}
+                       placeholder="مثال: زفاف خالد"
+                       readOnly={Boolean(forcedEventName)}
+                       title={forcedEventName ? "يتم جلبه تلقائياً من النظام" : ""}
+                />
               </div>
 
               <div className="md:col-span-2 flex gap-2">
-                <button className="px-5 py-2 rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold" onClick={create}>إضافة الدعوة</button>
+                <button className="px-5 py-2 rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold" onClick={create}>
+                  إضافة الدعوة
+                </button>
               </div>
             </div>
           </div>
@@ -394,3 +451,4 @@
     </script>
   </body>
 </html>
+
