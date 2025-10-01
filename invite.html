@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>بوابة الدعوات | مصادقة بالحدث</title>
+    <title>بوابة الدعوات | مصادقة بالحدث + مخزن باركود محلي</title>
 
     <!-- Tailwind (تصميم سريع) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,6 +29,7 @@
       table th, table td { padding:.6rem .4rem; }
       a.link { color:#93c5fd; }
       code { background:#0f1318; padding:.2rem .35rem; border-radius:6px; border:1px solid #23262b }
+      .thumb { width:56px; height:56px; object-fit:contain; border:1px solid #2a2d33; border-radius:8px; background:#0f1318; }
     </style>
   </head>
   <body>
@@ -40,10 +41,8 @@
       // =========================
       const LS_EVENTS = "hormez_events_meta";    // { [eventName]: { password: string } }
       const LS_AUTH   = "hormez_auth_event";     // { event: string }
-      const LS_INV    = (event) => `hormez_invites::${event}`; // invites per event
-      const LS_PREFS  = (event) => `hormez_prefs::${event}`;   // { autoOpenQR: bool }
-
-      const QR_BASE = "https://thehormez.github.io/smartverify1/new-merge-qr.html";
+      const LS_INV    = (event) => `hormez_invites::${event}`;     // invites per event
+      const LS_QR     = (event) => `hormez_qrcards::${event}`;     // qr cards per event [{id,name,dataUrl,used,assignedTo}]
 
       // =========================
       // أدوات مساعدة
@@ -51,7 +50,7 @@
       const { useState, useEffect, useMemo, useRef } = React;
 
       const normalizePhone = (p) => String(p || "").replace(/\D/g, "");
-      const makeInvite = ({ guestName, phone, count, eventName }) => ({
+      const makeInvite = ({ guestName, phone, count, eventName, qr }) => ({
         id: Date.now() + "_" + Math.random().toString(36).slice(2, 8),
         guestName: (guestName || "").trim(),
         phone: normalizePhone(phone),
@@ -59,6 +58,9 @@
         eventName: (eventName || "بدون اسم حدث").trim(),
         status: "new", // new | sent | reminded | attended
         createdAt: new Date().toISOString(),
+        qrId: qr?.id || null,
+        qrName: qr?.name || null,
+        qrDataUrl: qr?.dataUrl || null,
       });
       const computeStats = (invites) => {
         const total = invites.length;
@@ -79,8 +81,10 @@
         try { const s = localStorage.getItem(LS_INV(event)); return s ? JSON.parse(s) : []; } catch { return []; }
       };
 
-      const getPrefs = (event) => { try { return JSON.parse(localStorage.getItem(LS_PREFS(event))||"null") || { autoOpenQR:false }; } catch { return { autoOpenQR:false }; } };
-      const setPrefs = (event, prefs) => localStorage.setItem(LS_PREFS(event), JSON.stringify(prefs));
+      const saveQRCards = (event, cards) => localStorage.setItem(LS_QR(event), JSON.stringify(cards));
+      const loadQRCards = (event) => {
+        try { const s = localStorage.getItem(LS_QR(event)); return s ? JSON.parse(s) : []; } catch { return []; }
+      };
 
       // CSV / Clipboard / XLSX helpers
       function parseCSV(text) {
@@ -145,7 +149,7 @@
         });
       }
 
-      // ملف كروت فقط: phone,count (يزيد عدّاد الضيف إن وُجد أو ينشئ دعوة جديدة بلا اسم)
+      // ملف كروت فقط: phone,count (لو أردت لاحقاً)
       function parseCardsOnlyCSV(text) {
         const rows = text.trim().split(/\r?\n/).filter(Boolean);
         return rows.map(line => {
@@ -154,9 +158,7 @@
         });
       }
 
-      // =========================
-      // مصادقة بالحدث (اسم حدث + كلمة مرور قابلة للتغيير)
-      // =========================
+      // ===== مصادقة بالحدث =====
       function getEventMeta() { try { return JSON.parse(localStorage.getItem(LS_EVENTS)||"{}"); } catch { return {}; } }
       function setEventMeta(meta) { localStorage.setItem(LS_EVENTS, JSON.stringify(meta)); }
 
@@ -210,19 +212,18 @@
         const [event, setEvent] = useState(() => {
           try { return JSON.parse(localStorage.getItem(LS_AUTH)||"null")?.event || ""; } catch { return ""; }
         });
-        const [ready, setReady] = useState(true);
-
         if (!event) return <AuthView onAuthed={setEvent} />;
         return <EventApp event={event} onLogout={() => { localStorage.removeItem(LS_AUTH); setEvent(""); }} />;
       }
 
       function EventApp({ event, onLogout }) {
         const [invites, setInvites] = useState(() => loadInvites(event));
+        const [qrCards, setQrCards] = useState(() => loadQRCards(event));
         const [active, setActive] = useState("home");
         const stats = useMemo(() => computeStats(invites), [invites]);
-        const prefs = getPrefs(event);
 
         useEffect(() => { saveInvites(event, invites); }, [event, invites]);
+        useEffect(() => { saveQRCards(event, qrCards); }, [event, qrCards]);
 
         const changePassword = () => {
           const meta = getEventMeta();
@@ -236,127 +237,88 @@
           alert("تم تغيير كلمة المرور لهذا الحدث");
         };
 
+        // الحصول على بطاقة QR غير مستخدمة
+        const takeNextQrCard = () => {
+          const idx = qrCards.findIndex(c => !c.used);
+          if (idx === -1) return null;
+          const card = { ...qrCards[idx] };
+          const next = [...qrCards];
+          next[idx] = { ...card, used: true };
+          setQrCards(next);
+          return card;
+        };
+
+        const returnQrToPool = (qrId) => {
+          if (!qrId) return;
+          setQrCards(prev => prev.map(c => c.id === qrId ? { ...c, used:false, assignedTo:null } : c));
+        };
+
         const addInvite = (inv) => {
-          setInvites(prev => [inv, ...prev]);
-          if (prefs.autoOpenQR) openQR(inv);
+          // اسحب كرت من المخزن
+          const qr = takeNextQrCard();
+          if (!qr) { alert("لا توجد كروت باركود محمّلة. حمّلها من تبويب \"الاستيراد\" أولاً."); return; }
+
+          const finalInv = makeInvite({ ...inv, eventName: event, qr });
+          setInvites(prev => [{...finalInv}, ...prev]);
+        };
+
+        const deleteInvite = (id) => {
+          setInvites(prev => {
+            const inv = prev.find(x => x.id === id);
+            if (inv?.qrId) returnQrToPool(inv.qrId);
+            return prev.filter(x => x.id !== id);
+          });
         };
 
         const markStatus = (id, status) => setInvites(prev => prev.map(i => i.id === id ? { ...i, status } : i));
 
-        const openQR = (inv) => {
-          const url = `${QR_BASE}?guest=${encodeURIComponent(inv.guestName)}&count=${encodeURIComponent(inv.count)}&event=${encodeURIComponent(event)}`;
-          window.open(url, "_blank", "noopener,noreferrer");
-        };
-
         const sendText = (inv) => {
-          const msg = `مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد الكروت للمرافقين: ${inv.count}\n\nسيتم إرسال رمز الدخول (QR) لك.`; 
+          const msg = `مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد الكروت للمرافقين: ${inv.count}\n\nمرفق كود الدخول الخاص بك.`;
           if (navigator.share) { navigator.share({ title:`دعوة ${event}`, text: msg }).catch(()=>{}); }
           else { openWhatsApp(inv.phone, msg); }
           markStatus(inv.id, "sent");
         };
 
         const bulkSend = (list) => {
-          // يفتح رسائل متعددة (قد يوقفها المتصفح؛ نعرض تأكيدًا)
           if (!confirm(`سيتم فتح ${list.length} رسالة/تبويب. المتصفح قد يمنع بعضها. متابعة؟`)) return;
-          list.forEach((inv, idx) => {
-            setTimeout(() => sendText(inv), idx * 350);
-          });
+          list.forEach((inv, idx) => setTimeout(() => sendText(inv), idx * 350));
         };
 
-        const toggleAutoQR = () => {
-          const next = { ...prefs, autoOpenQR: !prefs.autoOpenQR };
-          setPrefs(event, next);
-          alert(next.autoOpenQR ? "سيتم فتح صفحة الباركود تلقائيًا لكل دعوة جديدة" : "تم إيقاف الفتح التلقائي للباركود");
-        };
-
-        // استيراد: ملف أسماء+أرقام+عدد
-        const onImportPeopleFile = async (file) => {
-          try {
-            let rows = [];
-            if (/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) rows = await readXLSX(file);
-            else rows = parseCSV(await file.text());
-            if (!rows.length) { alert("لا توجد بيانات في الملف"); return; }
-            const added = [];
-            rows.forEach(r => {
-              const inv = makeInvite({ guestName: r.guestName, phone: r.phone, count: r.count, eventName: event });
-              added.push(inv);
-            });
-            setInvites(prev => [...added, ...prev]);
-            alert(`تم استيراد ${added.length} دعوة`);
-          } catch (e) {
-            console.error(e); alert("تعذّر قراءة الملف. الصيغة: name,phone,count[,event]");
-          }
-        };
-
-        // استيراد: ملف كروت فقط (phone,count) -> يزيد العدّاد للضيف إن وُجد وإلا ينشئ دعوة بدون اسم
-        const onImportCardsOnlyFile = async (file) => {
-          try {
-            let rows = [];
-            if (/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) {
-              const list = await readXLSX(file);
-              rows = list.map(r => ({ phone: r.phone, count: r.count }));
-            } else {
-              rows = parseCardsOnlyCSV(await file.text());
-            }
-            if (!rows.length) { alert("لا توجد بيانات في الملف"); return; }
-
-            setInvites(prev => {
-              const map = new Map(prev.map(i => [i.phone, i]));
-              rows.forEach(({ phone, count }) => {
-                const key = normalizePhone(phone);
-                const existing = key && map.get(key);
-                if (existing) {
-                  existing.count = Math.max(1, Number(existing.count || 1)) + Math.max(1, Number(count||1));
-                } else {
-                  const inv = makeInvite({ guestName: "ضيف", phone: key, count: Math.max(1, Number(count||1)), eventName: event });
-                  prev.unshift(inv);
-                  map.set(key, inv);
-                }
-              });
-              return [...prev];
-            });
-            alert(`تم تحديث/إضافة الكروت لعدد ${rows.length} رقم`);
-          } catch (e) { console.error(e); alert("تعذّر قراءة ملف الكروت"); }
-        };
-
-        // إرسال جماعي: كل الجديدة + المذكّر
         const bulkCandidates = invites.filter(i => i.status === "new" || i.status === "reminded");
+        const cardsRemaining = qrCards.filter(c => !c.used).length;
 
         return (
           <div>
-            {/* Top bar */}
             <header className="sticky top-0 z-20 card px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div style={{width:28,height:28}} className="rounded-full"/>
                 <span className="font-black">لوحة حدث: <span className="text-yellow-400">{event}</span></span>
               </div>
               <div className="flex items-center gap-2">
-                <button className="btn btn-ghost" onClick={toggleAutoQR}>{getPrefs(event).autoOpenQR ? 'إيقاف فتح QR تلقائي' : 'تفعيل فتح QR تلقائي'}</button>
+                <span className="chip">كروت مخزنة: {qrCards.length} • المتاح: {cardsRemaining}</span>
                 <button className="btn btn-ghost" onClick={changePassword}>تغيير كلمة المرور</button>
                 <button className="btn btn-ghost" onClick={onLogout}>خروج</button>
               </div>
             </header>
 
-            {/* Greeting + stats */}
             <main className="max-w-6xl mx-auto p-4 md:p-8" dir="rtl">
               <div className="card p-6">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
                     <h2 className="text-xl md:text-2xl font-bold">مرحباً! إدارة دعوات الحدث</h2>
-                    <p className="text-neutral-400">يمكنك إنشاء الدعوات، توليد باركود، والاستيراد والإرسال الجماعي</p>
+                    <p className="text-neutral-400">ارفع مجموعة الباركود أولاً، ثم أنشئ الدعوات ليتم سحب كرت تلقائياً من المخزون.</p>
                   </div>
-                  <span className="chip">المتبقي محلي (غير مرتبط بالرصيد المركزي)</span>
+                  <span className="chip">الجاهزة للإرسال: {bulkCandidates.length}</span>
                 </div>
                 <div className="my-4 h-px bg-[#23262b]" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <Stat label="إجمالي الدعوات" value={stats.total} />
                   <Stat label="الدعوات المُرسلة" value={stats.sent} />
                   <Stat label="الحضور" value={stats.attended} />
-                  <Stat label="الجاهزة للإرسال" value={bulkCandidates.length} />
+                  <Stat label="الكروت المتبقية" value={cardsRemaining} />
                 </div>
               </div>
 
-              {/* Nav */}
               <div className="flex flex-wrap gap-2 mt-4">
                 {NavBtn("home","الصفحة الرئيسية",()=>setActive("home"),active)}
                 {NavBtn("new","دعوة جديدة",()=>setActive("new"),active)}
@@ -366,12 +328,12 @@
 
               {active === "home" && (
                 <div className="card p-6 mt-3">
-                  <InviteTable invites={invites} onMark={markStatus} onOpenQR={openQR} onSend={sendText} />
+                  <InviteTable invites={invites} onMark={markStatus} onDelete={deleteInvite} />
                 </div>
               )}
 
               {active === "new" && (
-                <NewInviteForm onCreate={(inv)=>addInvite(inv)} forcedEventName={event} />
+                <NewInviteForm onCreate={(inv)=>addInvite(inv)} forcedEventName={event} cardsRemaining={cardsRemaining} />
               )}
 
               {active === "send" && (
@@ -379,7 +341,9 @@
               )}
 
               {active === "import" && (
-                <ImportCenter onImportPeopleFile={onImportPeopleFile} onImportCardsOnlyFile={onImportCardsOnlyFile} />
+                <ImportCenter qrCards={qrCards} setQrCards={setQrCards} onImportPeopleFile={async (file)=>{
+                  try { let rows=[]; if(/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) rows=await readXLSX(file); else rows=parseCSV(await file.text()); if(!rows.length){alert('لا توجد بيانات');return;} const added=[]; rows.forEach(r=>{ added.push(makeInvite({ guestName:r.guestName, phone:r.phone, count:r.count, eventName:event })); }); setInvites(prev=>[...added,...prev]); alert(`تم استيراد ${added.length} دعوة (سيتم سحب الكروت عند إنشاء دعوات جديدة يدوياً فقط).`); } catch(e){console.error(e); alert('تعذر قراءة الملف.');}
+                }} />
               )}
             </main>
           </div>
@@ -399,7 +363,7 @@
         return <button onClick={onClick} className={`btn ${active===key? 'btn-primary' : 'btn-ghost'}`}>{label}</button>;
       }
 
-      function InviteTable({ invites, onMark, onOpenQR, onSend }) {
+      function InviteTable({ invites, onMark, onDelete }) {
         if (!invites.length) return <div className="text-neutral-400 text-sm">لا توجد دعوات بعد.</div>;
         return (
           <div className="overflow-x-auto">
@@ -409,6 +373,7 @@
                   <th>الاسم</th>
                   <th>الجوال</th>
                   <th>عدد الكروت</th>
+                  <th>الباركود</th>
                   <th>الحالة</th>
                   <th>إجراءات</th>
                 </tr>
@@ -420,16 +385,24 @@
                     <td dir="ltr">{inv.phone}</td>
                     <td>{inv.count}</td>
                     <td>
+                      {inv.qrDataUrl ? (
+                        <a className="link" href={inv.qrDataUrl} download={inv.qrName || 'qr.png'} title="تحميل الباركود">
+                          <img className="thumb" src={inv.qrDataUrl} alt="QR" />
+                        </a>
+                      ) : (
+                        <span className="chip">—</span>
+                      )}
+                    </td>
+                    <td>
                       <span className={`chip ${inv.status==='new'?'':''} ${inv.status==='sent'?'!bg-blue-600 !text-white':''} ${inv.status==='reminded'?'!bg-purple-600 !text-white':''} ${inv.status==='attended'?'!bg-green-600 !text-white':''}`}>
                         {inv.status==='new'? 'جديدة' : inv.status==='sent'? 'مُرسلة' : inv.status==='reminded'? 'مُذكّر' : 'حضر'}
                       </span>
                     </td>
                     <td>
                       <div className="flex gap-2 justify-end">
-                        <button className="btn btn-ghost" onClick={()=>onOpenQR(inv)}>توليد باركود</button>
-                        <button className="btn btn-ghost" onClick={()=>onSend(inv)}>إرسال</button>
                         <button className="btn btn-ghost" onClick={()=>onMark(inv.id, 'reminded')}>تذكير</button>
                         <button className="btn btn-ghost" onClick={()=>onMark(inv.id, 'attended')}>حضور</button>
+                        <button className="btn btn-ghost" onClick={()=>onDelete(inv.id)}>حذف</button>
                       </div>
                     </td>
                   </tr>
@@ -440,14 +413,13 @@
         );
       }
 
-      function NewInviteForm({ onCreate, forcedEventName }) {
+      function NewInviteForm({ onCreate, forcedEventName, cardsRemaining }) {
         const [guestName, setGuestName] = useState("");
         const [phone, setPhone] = useState("");
         const [count, setCount] = useState(1);
         const [eventName, setEventName] = useState(forcedEventName || "");
-        const [autoQR, setAutoQR] = useState(getPrefs(eventName).autoOpenQR);
 
-        useEffect(()=>{ setAutoQR(getPrefs(eventName).autoOpenQR); }, [eventName]);
+        useEffect(()=>{ if (forcedEventName) setEventName(forcedEventName); }, [forcedEventName]);
 
         const importFromContacts = async () => {
           try {
@@ -464,8 +436,8 @@
 
         const create = () => {
           if (!guestName || !phone) { alert("يرجى إدخال الاسم ورقم الهاتف"); return; }
-          const inv = makeInvite({ guestName, phone, count, eventName: forcedEventName || eventName });
-          onCreate(inv);
+          if (cardsRemaining <= 0) { alert("لا توجد كروت باركود متاحة. ارفعها أولاً من تبويب الاستيراد."); return; }
+          onCreate({ guestName, phone, count, eventName });
           setGuestName(""); setPhone(""); setCount(1);
         };
 
@@ -495,34 +467,79 @@
               <div>
                 <label className="block text-sm mb-1">اسم الحدث</label>
                 <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="مثال: زفاف خالد" readOnly={Boolean(forcedEventName)} title={forcedEventName ? "يتم تحديده من شاشة الدخول" : ""} />
+                <p className="text-xs text-neutral-400 mt-1">الكروت المتاحة حالياً: {cardsRemaining}</p>
               </div>
 
               <div className="md:col-span-2 flex items-center gap-2">
-                <button className="btn btn-primary" onClick={create}>إضافة الدعوة</button>
-                <span className="text-xs text-neutral-400">سيتم {autoQR? 'فتح' : 'عدم فتح'} صفحة الباركود تلقائياً حسب الإعدادات</span>
+                <button className="btn btn-primary" onClick={create}>إضافة الدعوة (سحب كرت)</button>
               </div>
             </div>
           </div>
         );
       }
 
-      function ImportCenter({ onImportPeopleFile, onImportCardsOnlyFile }) {
+      function ImportCenter({ qrCards, setQrCards, onImportPeopleFile }) {
         const peopleInput = useRef(null);
-        const cardsInput = useRef(null);
+        const qrInput = useRef(null);
 
         const onPeoplePick = (e)=>{ const f=e.target.files?.[0]; if (f) onImportPeopleFile(f); e.target.value=""; };
-        const onCardsPick = (e)=>{ const f=e.target.files?.[0]; if (f) onImportCardsOnlyFile(f); e.target.value=""; };
 
-        const [pasteText, setPasteText] = useState("");
-        const pasteToInvites = () => {
-          const rows = parsePasted(pasteText);
-          if (!rows.length) { alert("لم يتم التعرف على أي سطر"); return; }
-          // حدث سيتم ضبطه في EventApp عند الإنشاء؛ هنا فقط عرض تعليمي
-          alert(`جاهز لإضافة ${rows.length} دعوة: ارجع لتبويب \"دعوة جديدة\" للصق الأفراد يدويًا أو استخدم رفع الملف.`);
+        const onQrPick = async (e) => {
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
+          // نقرأ كل الباركودات كـ DataURL ونضيفها للمخزن
+          const readAsDataURL = (file) => new Promise((res, rej) => {
+            const fr = new FileReader();
+            fr.onload = () => res({ name:file.name, dataUrl: fr.result });
+            fr.onerror = rej;
+            fr.readAsDataURL(file);
+          });
+          try {
+            const results = await Promise.all(files.map(readAsDataURL));
+            const items = results.map(r => ({ id: Date.now()+"_"+Math.random().toString(36).slice(2,8), name:r.name, dataUrl:r.dataUrl, used:false, assignedTo:null }));
+            setQrCards(prev => [...items, ...prev]);
+            alert(`تم تحميل ${items.length} باركود إلى المخزن`);
+          } catch (e) { console.error(e); alert('تعذر قراءة الملفات'); }
+          e.target.value = "";
+        };
+
+        const clearUsed = () => {
+          if (!confirm('حذف العلامة "مستخدم" لكل الباركودات؟')) return;
+          setQrCards(prev => prev.map(c => ({ ...c, used:false, assignedTo:null })));
+        };
+
+        const purgeAll = () => {
+          if (!confirm('مسح جميع الباركودات المخزنة لهذا الحدث؟')) return;
+          setQrCards([]);
         };
 
         return (
           <div className="grid md:grid-cols-2 gap-4 mt-3">
+            <div className="card p-6">
+              <h3 className="font-bold">تحميل كل الباركود من الجهاز</h3>
+              <p className="text-xs text-neutral-400 mt-1">ارفع صور الباركود (PNG/JPG/SVG/PDF*). سيتم حفظها داخل الصفحة لاستخدامها لاحقاً. (*قد لا تُعرض مصغّرات PDF في كل المتصفحات).</p>
+              <div className="mt-3 flex gap-2">
+                <button className="btn btn-primary" onClick={()=>qrInput.current?.click()}>اختيار ملفات باركود</button>
+                <input ref={qrInput} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,application/pdf" multiple className="hidden" onChange={onQrPick} />
+                <button className="btn btn-ghost" onClick={clearUsed}>إعادة تعيين الاستخدام</button>
+                <button className="btn btn-ghost" onClick={purgeAll}>مسح الكل</button>
+              </div>
+
+              {/* معرض مصغّرات */}
+              <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
+                {qrCards.map(c => (
+                  <div key={c.id} className="flex flex-col items-center gap-1">
+                    {c.dataUrl?.startsWith('data:image') ? (
+                      <img className="thumb" src={c.dataUrl} alt={c.name} title={c.name} />
+                    ) : (
+                      <a className="thumb flex items-center justify-center text-xs" href={c.dataUrl} target="_blank" rel="noreferrer">ملف</a>
+                    )}
+                    <span className={`text-[10px] ${c.used? 'text-yellow-400' : 'text-neutral-400'}`}>{c.used? 'مستخدم' : 'متاح'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="card p-6">
               <h3 className="font-bold">تحميل الأسماء والأرقام وعدد الدعوات (CSV / XLSX)</h3>
               <p className="text-xs text-neutral-400 mt-1">صيغة الأعمدة: <code>name,phone,count[,event]</code> مع ترويسة اختيارية.</p>
@@ -530,24 +547,7 @@
                 <button className="btn btn-ghost" onClick={()=>peopleInput.current?.click()}>اختيار ملف</button>
                 <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={onPeoplePick} />
               </div>
-            </div>
-
-            <div className="card p-6">
-              <h3 className="font-bold">إضافة كروت الدعوة للضيوف يدوياً (CSV / XLSX)</h3>
-              <p className="text-xs text-neutral-400 mt-1">صيغة الأعمدة: <code>phone,count</code> — سيزيد العدد للضيف إن وُجد وإلا ينشئ دعوة جديدة.</p>
-              <div className="mt-3 flex gap-2">
-                <button className="btn btn-ghost" onClick={()=>cardsInput.current?.click()}>اختيار ملف</button>
-                <input ref={cardsInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={onCardsPick} />
-              </div>
-            </div>
-
-            <div className="card p-6 md:col-span-2">
-              <h3 className="font-bold">لصق قائمة (اختياري)</h3>
-              <textarea className="w-full h-28 rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2 mt-2" placeholder={"مثال:\nأحمد,0500000000,2\nسارة 0555555555 1\nعلي\t0511111111\t3"} value={pasteText} onChange={e=>setPasteText(e.target.value)} />
-              <div className="mt-2 flex gap-2">
-                <button className="btn btn-ghost" onClick={pasteToInvites}>تحويل (إرشادي)</button>
-                <span className="text-xs text-neutral-400">* للاستخدام السريع فقط — الأفضل استخدام زر الملفات بالأعلى.</span>
-              </div>
+              <p className="text-xs text-neutral-400 mt-3">ملاحظة: سحب الكرت يتم عند إنشاء الدعوة من تبويب "دعوة جديدة" فقط لضمان مطابقة العدد للكروت المتاحة.</p>
             </div>
           </div>
         );
@@ -573,6 +573,9 @@
                   <div key={inv.id} className="card p-4 space-y-2">
                     <p><b>{inv.guestName}</b> — <span dir="ltr">{inv.phone}</span></p>
                     <p className="text-sm text-neutral-400">كروت: {inv.count}</p>
+                    {inv.qrDataUrl && (
+                      <a className="link" href={inv.qrDataUrl} download={inv.qrName || 'qr.png'}>تنزيل الباركود</a>
+                    )}
                     <div className="flex gap-2 justify-end">
                       <button className="btn btn-primary" onClick={()=>onSend(inv)}>إرسال فردي</button>
                     </div>
