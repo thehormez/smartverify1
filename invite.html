@@ -3,52 +3,48 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>بوابة الدعوات | مصادقة بالحدث + مخزن باركود محلي</title>
+    <title>بوابة الدعوات | مصادقة بالحدث + مخزن باركود محلي (منع التكرار)</title>
 
-    <!-- Tailwind (تصميم سريع) -->
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- React + ReactDOM (UMD) -->
+    <!-- React UMD -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-    <!-- Babel لتشغيل JSX مباشرة -->
+    <!-- Babel (JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- SheetJS لقراءة ملفات Excel -->
+    <!-- SheetJS لقراءة Excel/CSV اختيارياً لقوائم الأسماء -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
       * { box-sizing: border-box; }
-      body { background:#0a0a0a; color:#eee; }
+      body { background:#0a0a0a; color:#eee; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Naskh Arabic UI", Arial, sans-serif; }
       .card { background:#111418; border:1px solid #23262b; border-radius:16px; }
       .btn { border-radius:14px; padding:.6rem 1rem; border:1px solid #2a2d33; }
       .btn-primary { background:#facc15; color:#111; border-color:#facc15; }
       .btn-ghost { background:#1a1e24; color:#e6e6e6; }
       .chip { background:#1c2128; color:#c9c9c9; border-radius:10px; padding:.25rem .6rem; border:1px solid #2a2d33; }
       table th, table td { padding:.6rem .4rem; }
+      .thumb { width:56px; height:56px; object-fit:contain; border:1px solid #2a2d33; border-radius:8px; background:#0f1318; }
       a.link { color:#93c5fd; }
       code { background:#0f1318; padding:.2rem .35rem; border-radius:6px; border:1px solid #23262b }
-      .thumb { width:56px; height:56px; object-fit:contain; border:1px solid #2a2d33; border-radius:8px; background:#0f1318; }
     </style>
   </head>
   <body>
     <div id="root"></div>
 
     <script type="text/babel">
-      // =========================
-      // مفاتيح التخزين المحلي (لكل حدث على حدة)
-      // =========================
-      const LS_EVENTS = "hormez_events_meta";    // { [eventName]: { password: string } }
-      const LS_AUTH   = "hormez_auth_event";     // { event: string }
-      const LS_INV    = (event) => `hormez_invites::${event}`;     // invites per event
-      const LS_QR     = (event) => `hormez_qrcards::${event}`;     // qr cards per event [{id,name,dataUrl,used,assignedTo}]
-
-      // =========================
-      // أدوات مساعدة
-      // =========================
       const { useState, useEffect, useMemo, useRef } = React;
 
+      // مفاتيح التخزين المحلي (حسب الحدث)
+      const LS_EVENTS = "hormez_events_meta";    // { [eventName]: { password: string } }
+      const LS_AUTH   = "hormez_auth_event";     // { event: string }
+      const LS_INV    = (event) => `hormez_invites::${event}`;     // الدعوات لكل حدث
+      const LS_QR     = (event) => `hormez_qrcards::${event}`;     // الباركودات لكل حدث
+
+      // أدوات مساعدة
       const normalizePhone = (p) => String(p || "").replace(/\D/g, "");
       const makeInvite = ({ guestName, phone, count, eventName, qr }) => ({
         id: Date.now() + "_" + Math.random().toString(36).slice(2, 8),
@@ -61,6 +57,7 @@
         qrId: qr?.id || null,
         qrName: qr?.name || null,
         qrDataUrl: qr?.dataUrl || null,
+        qrNumber: qr?.cardNumber || null,
       });
       const computeStats = (invites) => {
         const total = invites.length;
@@ -77,92 +74,64 @@
       };
 
       const saveInvites = (event, invites) => localStorage.setItem(LS_INV(event), JSON.stringify(invites));
-      const loadInvites = (event) => {
-        try { const s = localStorage.getItem(LS_INV(event)); return s ? JSON.parse(s) : []; } catch { return []; }
-      };
-
+      const loadInvites = (event) => { try { const s = localStorage.getItem(LS_INV(event)); return s ? JSON.parse(s) : []; } catch { return []; } };
       const saveQRCards = (event, cards) => localStorage.setItem(LS_QR(event), JSON.stringify(cards));
-      const loadQRCards = (event) => {
-        try { const s = localStorage.getItem(LS_QR(event)); return s ? JSON.parse(s) : []; } catch { return []; }
-      };
+      const loadQRCards = (event) => { try { const s = localStorage.getItem(LS_QR(event)); return s ? JSON.parse(s) : []; } catch { return []; } };
 
-      // CSV / Clipboard / XLSX helpers
-      function parseCSV(text) {
-        const lines = text.trim().split(/\r?\n/).filter(Boolean);
-        if (!lines.length) return [];
-        const firstCells = lines[0].split(",").map(s=>s.trim().toLowerCase());
-        const hasHeader = ["name","phone","count","event"].some(k => firstCells.includes(k));
-        const rows = hasHeader ? lines.slice(1) : lines;
-        return rows.map(line => {
-          const cells = line.split(",").map(x=>x?.trim() ?? "");
-          let name, phone, count, eventName;
-          if (hasHeader) {
-            const idx = {
-              name: firstCells.indexOf("name"),
-              phone: firstCells.indexOf("phone"),
-              count: firstCells.indexOf("count"),
-              event: firstCells.indexOf("event"),
-            };
-            name  = idx.name  >=0 ? cells[idx.name]  : "";
-            phone = idx.phone >=0 ? cells[idx.phone] : "";
-            count = idx.count >=0 ? Number(cells[idx.count]||1) : 1;
-            eventName = idx.event>=0 ? cells[idx.event] : "";
-          } else {
-            const [a,b,c,d] = cells;
-            name=a; phone=b; count=Number(c||1); eventName=d||"";
-          }
-          return { guestName:name, phone, count: Math.max(1, count), eventName };
+      // توليد بصمة/هَاش بسيط لسلسلة (لكشف التكرار بالمحتوى)
+      function hashString(str){ let h=5381, i=str.length; while(i) { h=(h*33) ^ str.charCodeAt(--i); } return (h>>>0).toString(36); }
+
+      // قراءة ملف كـ DataURL مع استخراج رقم الكرت من اسم الملف (اختياري)
+      function readFileWithMeta(file){
+        return new Promise((resolve, reject)=>{
+          const fr = new FileReader();
+          fr.onload = () => {
+            const dataUrl = fr.result;
+            const name = file.name || "qr";
+            // استخرج أول رقم واضح من اسم الملف كرقم كرت
+            const m = name.match(/(\d{3,})/); // 3 أرقام فأكثر
+            const cardNumber = m ? m[1] : null;
+            resolve({ name, dataUrl, cardNumber, contentHash: hashString(String(dataUrl)) });
+          };
+          fr.onerror = reject;
+          fr.readAsDataURL(file);
         });
       }
 
-      function parsePasted(text) {
+      // CSV/Excel لقوائم الأشخاص (اختياري)
+      function parseCSV(text){
         const lines = text.trim().split(/\r?\n/).filter(Boolean);
-        const out = [];
-        for (const line of lines) {
-          const parts = line.split(/[,|\t]| {2,}/).map(s=>s.trim()).filter(Boolean);
-          const p = parts.length >= 3 ? parts : line.split(/\s+/);
-          const [name, phone, countStr, ...rest] = p;
-          const count = Math.max(1, Number(countStr||1));
-          out.push({ guestName: name||"", phone: phone||"", count, eventName: (rest?.[0]||"") });
-        }
-        return out;
+        if(!lines.length) return [];
+        const first = lines[0].split(",").map(s=>s.trim().toLowerCase());
+        const hasHeader = ["name","phone","count","event"].some(k=>first.includes(k));
+        const body = hasHeader ? lines.slice(1) : lines;
+        return body.map(line=>{
+          const cells = line.split(",").map(x=>x?.trim()??"");
+          const [a,b,c,d] = cells; // name, phone, count, event
+          return { guestName:a||"", phone:b||"", count:Math.max(1, Number(c||1)), eventName:d||"" };
+        });
       }
-
-      async function readXLSX(file) {
+      async function readXLSX(file){
         const data = await file.arrayBuffer();
         const wb = XLSX.read(data, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(ws, { header: 1 });
-        const rows = json.filter(r => r && r.length);
-        if (!rows.length) return [];
-        const first = rows[0].map(v => String(v||"").trim().toLowerCase());
-        const hasHeader = ["name","phone","count","event"].some(k => first.includes(k));
+        const rows = json.filter(r=>r && r.length);
+        if(!rows.length) return [];
+        const first = rows[0].map(v=>String(v||"").trim().toLowerCase());
+        const hasHeader = ["name","phone","count","event"].some(k=>first.includes(k));
         const body = hasHeader ? rows.slice(1) : rows;
-        return body.map(r => {
+        return body.map(r=>{
           const [a,b,c,d] = r;
-          return {
-            guestName: String(a||"").trim(),
-            phone: String(b||"").trim(),
-            count: Math.max(1, Number(c||1)),
-            eventName: String(d||"").trim(),
-          };
+          return { guestName:String(a||"").trim(), phone:String(b||"").trim(), count:Math.max(1, Number(c||1)), eventName:String(d||"").trim() };
         });
       }
 
-      // ملف كروت فقط: phone,count (لو أردت لاحقاً)
-      function parseCardsOnlyCSV(text) {
-        const rows = text.trim().split(/\r?\n/).filter(Boolean);
-        return rows.map(line => {
-          const [phone, count] = line.split(/[,\t]/).map(s=>s.trim());
-          return { phone, count: Math.max(1, Number(count||1)) };
-        });
-      }
+      // ========= مصادقة بالحدث =========
+      function getEventMeta(){ try { return JSON.parse(localStorage.getItem(LS_EVENTS)||"{}"); } catch { return {}; } }
+      function setEventMeta(meta){ localStorage.setItem(LS_EVENTS, JSON.stringify(meta)); }
 
-      // ===== مصادقة بالحدث =====
-      function getEventMeta() { try { return JSON.parse(localStorage.getItem(LS_EVENTS)||"{}"); } catch { return {}; } }
-      function setEventMeta(meta) { localStorage.setItem(LS_EVENTS, JSON.stringify(meta)); }
-
-      function AuthView({ onAuthed }) {
+      function AuthView({ onAuthed }){
         const [eventName, setEventName] = useState("");
         const [password, setPassword] = useState("");
         const [err, setErr] = useState("");
@@ -170,19 +139,19 @@
         const login = () => {
           setErr("");
           const name = eventName.trim();
-          if (!name) { setErr("ادخل اسم الحدث"); return; }
+          if(!name){ setErr("ادخل اسم الحدث"); return; }
           const meta = getEventMeta();
           const entry = meta[name];
-          if (!entry) {
-            // أول مرة: أنشئ الحدث بهذه الباسورد
+          if(!entry){
+            // أول مرة: نسجل كلمة المرور لهذا الحدث
             meta[name] = { password };
             setEventMeta(meta);
-            localStorage.setItem(LS_AUTH, JSON.stringify({ event: name }));
+            localStorage.setItem(LS_AUTH, JSON.stringify({ event:name }));
             onAuthed(name);
             return;
           }
-          if ((entry.password||"") !== password) { setErr("كلمة المرور غير صحيحة لهذا الحدث"); return; }
-          localStorage.setItem(LS_AUTH, JSON.stringify({ event: name }));
+          if((entry.password||"") !== password){ setErr("كلمة المرور غير صحيحة لهذا الحدث"); return; }
+          localStorage.setItem(LS_AUTH, JSON.stringify({ event:name }));
           onAuthed(name);
         };
 
@@ -191,7 +160,7 @@
             <div className="card w-full max-w-md p-6">
               <h1 className="text-center text-2xl font-black mb-6">تسجيل الدخول بالحدث</h1>
               {err && <div className="mb-3 text-sm text-red-300 bg-red-600/20 border border-red-600/40 p-2 rounded">{err}</div>}
-              <div className="space-y-4" dir="rtl">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-sm mb-1">اسم الحدث</label>
                   <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="مثلاً: زفاف خالد" value={eventName} onChange={e=>setEventName(e.target.value)} />
@@ -199,7 +168,7 @@
                 <div>
                   <label className="block text-sm mb-1">كلمة المرور</label>
                   <input type="password" className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
-                  <p className="text-xs text-neutral-400 mt-1">إذا كان الحدث جديدًا، ستُسجل هذه الكلمة ككلمة مرور له.</p>
+                  <p className="text-xs text-neutral-400 mt-1">إذا كان الحدث جديدًا، ستُسجّل هذه الكلمة له.</p>
                 </div>
                 <button onClick={login} className="btn btn-primary w-full font-bold">دخول</button>
               </div>
@@ -208,105 +177,92 @@
         );
       }
 
-      function App() {
-        const [event, setEvent] = useState(() => {
-          try { return JSON.parse(localStorage.getItem(LS_AUTH)||"null")?.event || ""; } catch { return ""; }
-        });
-        if (!event) return <AuthView onAuthed={setEvent} />;
-        return <EventApp event={event} onLogout={() => { localStorage.removeItem(LS_AUTH); setEvent(""); }} />;
+      function App(){
+        const [event, setEvent] = useState(()=>{ try { return JSON.parse(localStorage.getItem(LS_AUTH)||"null")?.event || ""; } catch { return ""; } });
+        if(!event) return <AuthView onAuthed={setEvent}/>;
+        return <EventApp event={event} onLogout={()=>{ localStorage.removeItem(LS_AUTH); setEvent(""); }} />;
       }
 
-      function EventApp({ event, onLogout }) {
-        const [invites, setInvites] = useState(() => loadInvites(event));
-        const [qrCards, setQrCards] = useState(() => loadQRCards(event));
+      function EventApp({ event, onLogout }){
+        const [invites, setInvites] = useState(()=>loadInvites(event));
+        const [qrCards, setQrCards] = useState(()=>loadQRCards(event));
         const [active, setActive] = useState("home");
-        const stats = useMemo(() => computeStats(invites), [invites]);
+        const stats = useMemo(()=>computeStats(invites), [invites]);
 
-        useEffect(() => { saveInvites(event, invites); }, [event, invites]);
-        useEffect(() => { saveQRCards(event, qrCards); }, [event, qrCards]);
+        useEffect(()=>{ saveInvites(event, invites); }, [event, invites]);
+        useEffect(()=>{ saveQRCards(event, qrCards); }, [event, qrCards]);
 
         const changePassword = () => {
           const meta = getEventMeta();
           const entry = meta[event] || { password:"" };
           const current = prompt("ادخل كلمة المرور الحالية:", "");
-          if ((entry.password||"") !== (current||"")) { alert("كلمة المرور الحالية غير صحيحة"); return; }
+          if((entry.password||"") !== (current||"")) { alert("كلمة المرور الحالية غير صحيحة"); return; }
           const next = prompt("ادخل كلمة المرور الجديدة:", "");
-          if (!next) return;
+          if(!next) return;
           meta[event] = { password: next };
           setEventMeta(meta);
           alert("تم تغيير كلمة المرور لهذا الحدث");
         };
 
-        // الحصول على بطاقة QR غير مستخدمة
+        // اختيار كرت غير مستخدم من المخزون (الأول المتاح)
         const takeNextQrCard = () => {
           const idx = qrCards.findIndex(c => !c.used);
-          if (idx === -1) return null;
+          if(idx === -1) return null;
           const card = { ...qrCards[idx] };
           const next = [...qrCards];
-          next[idx] = { ...card, used: true };
+          next[idx] = { ...card, used:true };
           setQrCards(next);
           return card;
         };
+        const returnQrToPool = (qrId) => { if(!qrId) return; setQrCards(prev => prev.map(c => c.id===qrId ? { ...c, used:false } : c)); };
 
-        const returnQrToPool = (qrId) => {
-          if (!qrId) return;
-          setQrCards(prev => prev.map(c => c.id === qrId ? { ...c, used:false, assignedTo:null } : c));
-        };
-
-        const addInvite = (inv) => {
-          // اسحب كرت من المخزن
+        const addInvite = ({ guestName, phone, count, eventName }) => {
           const qr = takeNextQrCard();
-          if (!qr) { alert("لا توجد كروت باركود محمّلة. حمّلها من تبويب \"الاستيراد\" أولاً."); return; }
-
-          const finalInv = makeInvite({ ...inv, eventName: event, qr });
-          setInvites(prev => [{...finalInv}, ...prev]);
+          if(!qr){ alert("لا توجد كروت باركود متاحة. ارفعها من تبويب \"استيراد\" أولاً."); return; }
+          const inv = makeInvite({ guestName, phone, count, eventName: eventName||event, qr });
+          setInvites(prev => [inv, ...prev]);
         };
-
         const deleteInvite = (id) => {
           setInvites(prev => {
-            const inv = prev.find(x => x.id === id);
-            if (inv?.qrId) returnQrToPool(inv.qrId);
-            return prev.filter(x => x.id !== id);
+            const inv = prev.find(x=>x.id===id);
+            if(inv?.qrId) returnQrToPool(inv.qrId);
+            return prev.filter(x=>x.id!==id);
           });
         };
-
-        const markStatus = (id, status) => setInvites(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+        const markStatus = (id, status) => setInvites(prev => prev.map(i => i.id===id ? { ...i, status } : i));
 
         const sendText = (inv) => {
-          const msg = `مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد الكروت للمرافقين: ${inv.count}\n\nمرفق كود الدخول الخاص بك.`;
-          if (navigator.share) { navigator.share({ title:`دعوة ${event}`, text: msg }).catch(()=>{}); }
-          else { openWhatsApp(inv.phone, msg); }
+          const msg = `مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد الكروت للمرافقين: ${inv.count}\n\nمرفق كود الدخول الخاص بك (قم بتنزيل الصورة من النظام وإرسالها).`;
+          openWhatsApp(inv.phone, msg);
           markStatus(inv.id, "sent");
         };
-
         const bulkSend = (list) => {
-          if (!confirm(`سيتم فتح ${list.length} رسالة/تبويب. المتصفح قد يمنع بعضها. متابعة؟`)) return;
-          list.forEach((inv, idx) => setTimeout(() => sendText(inv), idx * 350));
+          if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. المتصفح قد يمنع بعضها. متابعة؟`)) return;
+          list.forEach((inv, idx)=> setTimeout(()=>sendText(inv), idx*350));
         };
 
-        const bulkCandidates = invites.filter(i => i.status === "new" || i.status === "reminded");
-        const cardsRemaining = qrCards.filter(c => !c.used).length;
+        const cardsRemaining = qrCards.filter(c=>!c.used).length;
+        const bulkCandidates = invites.filter(i=> i.status==="new" || i.status==="reminded");
 
         return (
           <div>
             <header className="sticky top-0 z-20 card px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div style={{width:28,height:28}} className="rounded-full"/>
                 <span className="font-black">لوحة حدث: <span className="text-yellow-400">{event}</span></span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="chip">كروت مخزنة: {qrCards.length} • المتاح: {cardsRemaining}</span>
+                <span className="chip">الكروت المخزنة: {qrCards.length} • المتاح: {cardsRemaining}</span>
                 <button className="btn btn-ghost" onClick={changePassword}>تغيير كلمة المرور</button>
                 <button className="btn btn-ghost" onClick={onLogout}>خروج</button>
               </div>
             </header>
 
-            <main className="max-w-6xl mx-auto p-4 md:p-8" dir="rtl">
+            <main className="max-w-6xl mx-auto p-4 md:p-8">
               <div className="card p-6">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
-                    <h2 className="text-xl md:text-2xl font-bold">مرحباً! إدارة دعوات الحدث</h2>
-                    <p className="text-neutral-400">ارفع مجموعة الباركود أولاً، ثم أنشئ الدعوات ليتم سحب كرت تلقائياً من المخزون.</p>
+                    <h2 className="text-xl md:text-2xl font-bold">إدارة الدعوات</h2>
+                    <p className="text-neutral-400">ارفع مجموعة الباركود أولاً، ثم أنشئ الدعوات ليتم سحب كرت تلقائياً من المخزون مع منع التكرار.</p>
                   </div>
                   <span className="chip">الجاهزة للإرسال: {bulkCandidates.length}</span>
                 </div>
@@ -333,7 +289,7 @@
               )}
 
               {active === "new" && (
-                <NewInviteForm onCreate={(inv)=>addInvite(inv)} forcedEventName={event} cardsRemaining={cardsRemaining} />
+                <NewInviteForm onCreate={addInvite} forcedEventName={event} cardsRemaining={cardsRemaining} />
               )}
 
               {active === "send" && (
@@ -342,7 +298,14 @@
 
               {active === "import" && (
                 <ImportCenter qrCards={qrCards} setQrCards={setQrCards} onImportPeopleFile={async (file)=>{
-                  try { let rows=[]; if(/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) rows=await readXLSX(file); else rows=parseCSV(await file.text()); if(!rows.length){alert('لا توجد بيانات');return;} const added=[]; rows.forEach(r=>{ added.push(makeInvite({ guestName:r.guestName, phone:r.phone, count:r.count, eventName:event })); }); setInvites(prev=>[...added,...prev]); alert(`تم استيراد ${added.length} دعوة (سيتم سحب الكروت عند إنشاء دعوات جديدة يدوياً فقط).`); } catch(e){console.error(e); alert('تعذر قراءة الملف.');}
+                  try {
+                    let rows=[];
+                    if(/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) rows = await readXLSX(file); else rows = parseCSV(await file.text());
+                    if(!rows.length){ alert('لا توجد بيانات'); return; }
+                    const added = rows.map(r => makeInvite({ guestName:r.guestName, phone:r.phone, count:r.count, eventName:event }));
+                    setInvites(prev => [...added, ...prev]);
+                    alert(`تم استيراد ${added.length} دعوة (سحب الكروت يتم عند إنشاء دعوات جديدة يدويًا).`);
+                  } catch(e){ console.error(e); alert('تعذر قراءة الملف.'); }
                 }} />
               )}
             </main>
@@ -350,21 +313,11 @@
         );
       }
 
-      function Stat({ label, value }) {
-        return (
-          <div className="card p-4">
-            <p className="text-neutral-400 text-sm">{label}</p>
-            <p className="text-2xl font-extrabold mt-1">{value}</p>
-          </div>
-        );
-      }
+      function Stat({ label, value }){ return (<div className="card p-4"><p className="text-neutral-400 text-sm">{label}</p><p className="text-2xl font-extrabold mt-1">{value}</p></div>); }
+      function NavBtn(key,label,onClick,active){ return <button onClick={onClick} className={`btn ${active===key? 'btn-primary' : 'btn-ghost'}`}>{label}</button>; }
 
-      function NavBtn(key,label,onClick,active){
-        return <button onClick={onClick} className={`btn ${active===key? 'btn-primary' : 'btn-ghost'}`}>{label}</button>;
-      }
-
-      function InviteTable({ invites, onMark, onDelete }) {
-        if (!invites.length) return <div className="text-neutral-400 text-sm">لا توجد دعوات بعد.</div>;
+      function InviteTable({ invites, onMark, onDelete }){
+        if(!invites.length) return <div className="text-neutral-400 text-sm">لا توجد دعوات بعد.</div>;
         return (
           <div className="overflow-x-auto">
             <table className="w-full text-right">
@@ -374,6 +327,7 @@
                   <th>الجوال</th>
                   <th>عدد الكروت</th>
                   <th>الباركود</th>
+                  <th>رقم الكرت</th>
                   <th>الحالة</th>
                   <th>إجراءات</th>
                 </tr>
@@ -386,13 +340,12 @@
                     <td>{inv.count}</td>
                     <td>
                       {inv.qrDataUrl ? (
-                        <a className="link" href={inv.qrDataUrl} download={inv.qrName || 'qr.png'} title="تحميل الباركود">
+                        <a className="link" href={inv.qrDataUrl} download={inv.qrName || 'qr.png'} title="تنزيل الباركود">
                           <img className="thumb" src={inv.qrDataUrl} alt="QR" />
                         </a>
-                      ) : (
-                        <span className="chip">—</span>
-                      )}
+                      ) : (<span className="chip">—</span>)}
                     </td>
+                    <td>{inv.qrNumber || '—'}</td>
                     <td>
                       <span className={`chip ${inv.status==='new'?'':''} ${inv.status==='sent'?'!bg-blue-600 !text-white':''} ${inv.status==='reminded'?'!bg-purple-600 !text-white':''} ${inv.status==='attended'?'!bg-green-600 !text-white':''}`}>
                         {inv.status==='new'? 'جديدة' : inv.status==='sent'? 'مُرسلة' : inv.status==='reminded'? 'مُذكّر' : 'حضر'}
@@ -413,20 +366,20 @@
         );
       }
 
-      function NewInviteForm({ onCreate, forcedEventName, cardsRemaining }) {
+      function NewInviteForm({ onCreate, forcedEventName, cardsRemaining }){
         const [guestName, setGuestName] = useState("");
         const [phone, setPhone] = useState("");
         const [count, setCount] = useState(1);
         const [eventName, setEventName] = useState(forcedEventName || "");
 
-        useEffect(()=>{ if (forcedEventName) setEventName(forcedEventName); }, [forcedEventName]);
+        useEffect(()=>{ if(forcedEventName) setEventName(forcedEventName); }, [forcedEventName]);
 
         const importFromContacts = async () => {
           try {
             const supported = "contacts" in navigator && "select" in (navigator.contacts || {});
-            if (!supported) { alert("قد لا يدعم متصفحك استيراد جهات الاتصال. جرّب كروم على أندرويد."); return; }
+            if(!supported){ alert("قد لا يدعم متصفحك استيراد جهات الاتصال. جرّب كروم على أندرويد."); return; }
             const contacts = await navigator.contacts.select(["name","tel"], { multiple:false });
-            if (contacts && contacts[0]) {
+            if(contacts && contacts[0]){
               const c = contacts[0];
               setGuestName((c.name && c.name[0]) || "");
               setPhone((c.tel && c.tel[0]) || "");
@@ -435,8 +388,8 @@
         };
 
         const create = () => {
-          if (!guestName || !phone) { alert("يرجى إدخال الاسم ورقم الهاتف"); return; }
-          if (cardsRemaining <= 0) { alert("لا توجد كروت باركود متاحة. ارفعها أولاً من تبويب الاستيراد."); return; }
+          if(!guestName || !phone){ alert("يرجى إدخال الاسم ورقم الهاتف"); return; }
+          if(cardsRemaining <= 0){ alert("لا توجد كروت باركود متاحة. ارفعها أولاً من تبويب الاستيراد."); return; }
           onCreate({ guestName, phone, count, eventName });
           setGuestName(""); setPhone(""); setCount(1);
         };
@@ -451,7 +404,6 @@
                   <span className="text-xs text-neutral-400">* يعمل غالبًا على كروم/أندرويد</span>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm mb-1">الاسم</label>
                 <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="اسم الضيف" />
@@ -466,10 +418,9 @@
               </div>
               <div>
                 <label className="block text-sm mb-1">اسم الحدث</label>
-                <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="مثال: زفاف خالد" readOnly={Boolean(forcedEventName)} title={forcedEventName ? "يتم تحديده من شاشة الدخول" : ""} />
+                <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="مثال: زفاف خالد" readOnly={Boolean(forcedEventName)} />
                 <p className="text-xs text-neutral-400 mt-1">الكروت المتاحة حالياً: {cardsRemaining}</p>
               </div>
-
               <div className="md:col-span-2 flex items-center gap-2">
                 <button className="btn btn-primary" onClick={create}>إضافة الدعوة (سحب كرت)</button>
               </div>
@@ -478,63 +429,64 @@
         );
       }
 
-      function ImportCenter({ qrCards, setQrCards, onImportPeopleFile }) {
+      function ImportCenter({ qrCards, setQrCards, onImportPeopleFile }){
         const peopleInput = useRef(null);
         const qrInput = useRef(null);
 
-        const onPeoplePick = (e)=>{ const f=e.target.files?.[0]; if (f) onImportPeopleFile(f); e.target.value=""; };
+        const onPeoplePick = (e)=>{ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=""; };
 
         const onQrPick = async (e) => {
-          const files = Array.from(e.target.files || []);
-          if (!files.length) return;
-          // نقرأ كل الباركودات كـ DataURL ونضيفها للمخزن
-          const readAsDataURL = (file) => new Promise((res, rej) => {
-            const fr = new FileReader();
-            fr.onload = () => res({ name:file.name, dataUrl: fr.result });
-            fr.onerror = rej;
-            fr.readAsDataURL(file);
-          });
+          const files = Array.from(e.target.files||[]);
+          if(!files.length) return;
           try {
-            const results = await Promise.all(files.map(readAsDataURL));
-            const items = results.map(r => ({ id: Date.now()+"_"+Math.random().toString(36).slice(2,8), name:r.name, dataUrl:r.dataUrl, used:false, assignedTo:null }));
-            setQrCards(prev => [...items, ...prev]);
-            alert(`تم تحميل ${items.length} باركود إلى المخزن`);
-          } catch (e) { console.error(e); alert('تعذر قراءة الملفات'); }
+            const results = await Promise.all(files.map(readFileWithMeta));
+            // بناء مجموعات لمنع التكرار: حسب البصمة وحسب رقم الكرت إن وُجد
+            const existing = loadQRCardsFromState();
+            const hashSet = new Set(existing.map(c=>c.contentHash));
+            const numSet  = new Set(existing.map(c=>c.cardNumber).filter(Boolean));
+
+            const toAdd = [];
+            for(const r of results){
+              if(hashSet.has(r.contentHash)) continue; // نفس المحتوى
+              if(r.cardNumber && numSet.has(r.cardNumber)) continue; // نفس رقم الكرت
+              toAdd.push({ id: Date.now()+"_"+Math.random().toString(36).slice(2,8), name:r.name, dataUrl:r.dataUrl, used:false, cardNumber:r.cardNumber, contentHash:r.contentHash });
+              hashSet.add(r.contentHash);
+              if(r.cardNumber) numSet.add(r.cardNumber);
+            }
+
+            if(toAdd.length){
+              setQrCards(prev => [...toAdd, ...prev]);
+              alert(`تم تحميل ${toAdd.length} باركود (تم منع التكرار بالمحتوى ورقم الكرت)`);
+            } else {
+              alert('كل الملفات التي رفعتها مكررة حسب المحتوى/رقم الكرت');
+            }
+          } catch(err){ console.error(err); alert('تعذر قراءة الملفات'); }
           e.target.value = "";
         };
 
-        const clearUsed = () => {
-          if (!confirm('حذف العلامة "مستخدم" لكل الباركودات؟')) return;
-          setQrCards(prev => prev.map(c => ({ ...c, used:false, assignedTo:null })));
-        };
+        // قراءة الحالة الحالية للباركودات (مع الحقول الكاملة) من state المُمرَّر
+        function loadQRCardsFromState(){ return qrCards || []; }
 
-        const purgeAll = () => {
-          if (!confirm('مسح جميع الباركودات المخزنة لهذا الحدث؟')) return;
-          setQrCards([]);
-        };
+        const clearUsed = () => { if(confirm('إعادة تعيين حالة جميع الكروت إلى "متاح"؟')) setQrCards(prev => prev.map(c=>({ ...c, used:false }))); };
+        const purgeAll  = () => { if(confirm('مسح جميع الكروت المخزنة لهذا الحدث؟')) setQrCards([]); };
 
         return (
           <div className="grid md:grid-cols-2 gap-4 mt-3">
             <div className="card p-6">
-              <h3 className="font-bold">تحميل كل الباركود من الجهاز</h3>
-              <p className="text-xs text-neutral-400 mt-1">ارفع صور الباركود (PNG/JPG/SVG/PDF*). سيتم حفظها داخل الصفحة لاستخدامها لاحقاً. (*قد لا تُعرض مصغّرات PDF في كل المتصفحات).</p>
+              <h3 className="font-bold">تحميل كل الباركود من الجهاز (منع التكرار)</h3>
+              <p className="text-xs text-neutral-400 mt-1">المسموح: PNG / JPG / SVG / PDF*. سيتم تخزينها محليًا مع التحقق من التكرار عبر **المحتوى** و**رقم الكرت** (إن وُجد في اسم الملف).</p>
               <div className="mt-3 flex gap-2">
                 <button className="btn btn-primary" onClick={()=>qrInput.current?.click()}>اختيار ملفات باركود</button>
                 <input ref={qrInput} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,application/pdf" multiple className="hidden" onChange={onQrPick} />
                 <button className="btn btn-ghost" onClick={clearUsed}>إعادة تعيين الاستخدام</button>
                 <button className="btn btn-ghost" onClick={purgeAll}>مسح الكل</button>
               </div>
-
-              {/* معرض مصغّرات */}
               <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
                 {qrCards.map(c => (
                   <div key={c.id} className="flex flex-col items-center gap-1">
-                    {c.dataUrl?.startsWith('data:image') ? (
-                      <img className="thumb" src={c.dataUrl} alt={c.name} title={c.name} />
-                    ) : (
-                      <a className="thumb flex items-center justify-center text-xs" href={c.dataUrl} target="_blank" rel="noreferrer">ملف</a>
-                    )}
-                    <span className={`text-[10px] ${c.used? 'text-yellow-400' : 'text-neutral-400'}`}>{c.used? 'مستخدم' : 'متاح'}</span>
+                    {c.dataUrl?.startsWith('data:image') ? (<img className="thumb" src={c.dataUrl} alt={c.name} title={c.name} />) : (<a className="thumb flex items-center justify-center text-xs" href={c.dataUrl} target="_blank" rel="noreferrer">ملف</a>)}
+                    <span className="text-[10px] text-neutral-400">{c.cardNumber ? `#${c.cardNumber}` : 'بدون رقم'}</span>
+                    <span className={`text-[10px] ${c.used? 'text-yellow-400' : 'text-neutral-500'}`}>{c.used? 'مستخدم' : 'متاح'}</span>
                   </div>
                 ))}
               </div>
@@ -547,13 +499,15 @@
                 <button className="btn btn-ghost" onClick={()=>peopleInput.current?.click()}>اختيار ملف</button>
                 <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={onPeoplePick} />
               </div>
-              <p className="text-xs text-neutral-400 mt-3">ملاحظة: سحب الكرت يتم عند إنشاء الدعوة من تبويب "دعوة جديدة" فقط لضمان مطابقة العدد للكروت المتاحة.</p>
+              <p className="text-xs text-neutral-400 mt-3">ملاحظة: سحب الكرت يتم عند إنشاء الدعوة يدويًا في تبويب "دعوة جديدة" لضمان التطابق مع المخزون.</p>
             </div>
           </div>
         );
+
+        function onPeoplePick(e){ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=""; }
       }
 
-      function SendCenter({ invites, onSend, onBulk }) {
+      function SendCenter({ invites, onSend, onBulk }){
         const [filter, setFilter] = useState("");
         const list = invites
           .filter(i => i.status === "new" || i.status === "reminded")
@@ -565,19 +519,15 @@
               <input className="w-full md:w-80 rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} />
               <button disabled={!list.length} className="btn btn-primary" onClick={()=>onBulk(list)}>إرسال جماعي ({list.length})</button>
             </div>
-            {!list.length ? (
-              <p className="text-neutral-400 text-sm">لا توجد عناصر جاهزة للإرسال الآن.</p>
-            ) : (
+            {!list.length ? (<p className="text-neutral-400 text-sm">لا توجد عناصر جاهزة للإرسال الآن.</p>) : (
               <div className="grid md:grid-cols-2 gap-3">
                 {list.map(inv => (
                   <div key={inv.id} className="card p-4 space-y-2">
                     <p><b>{inv.guestName}</b> — <span dir="ltr">{inv.phone}</span></p>
-                    <p className="text-sm text-neutral-400">كروت: {inv.count}</p>
-                    {inv.qrDataUrl && (
-                      <a className="link" href={inv.qrDataUrl} download={inv.qrName || 'qr.png'}>تنزيل الباركود</a>
-                    )}
+                    <p className="text-sm text-neutral-400">كروت: {inv.count} {inv.qrNumber? `• كرت #${inv.qrNumber}` : ''}</p>
+                    {inv.qrDataUrl && (<a className="link" href={inv.qrDataUrl} download={inv.qrName||'qr.png'}>تنزيل الباركود</a>)}
                     <div className="flex gap-2 justify-end">
-                      <button className="btn btn-primary" onClick={()=>onSend(inv)}>إرسال فردي</button>
+                      <button className="btn btn-primary" onClick={()=>onSend(inv)}>إرسال فردي (نص)</button>
                     </div>
                   </div>
                 ))}
@@ -587,9 +537,16 @@
         );
       }
 
+      // ============ الجذر ============
+      function Root(){
+        const [event, setEvent] = useState(()=>{ try { return JSON.parse(localStorage.getItem(LS_AUTH)||"null")?.event || ""; } catch { return ""; } });
+        if(!event) return <AuthView onAuthed={setEvent}/>;
+        return <EventApp event={event} onLogout={()=>{ localStorage.removeItem(LS_AUTH); setEvent(""); }} />;
+      }
+
       // رندر
       const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<App />);
+      root.render(<Root />);
     </script>
   </body>
 </html>
