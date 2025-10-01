@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>بوابة الدعوات | نسخة مستقرة (منع الشاشة السوداء)</title>
+    <title>بوابة الدعوات | تعدد الكروت + الاستيراد + حفظ حسب الحدث</title>
 
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,7 +15,7 @@
     <!-- Babel (JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- SheetJS (اختياري) -->
+    <!-- SheetJS لقراءة Excel/CSV -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
@@ -38,91 +38,95 @@
     <script type="text/babel">
       const { useState, useEffect, useMemo, useRef } = React;
 
-      // ======= استقرار التخزين =======
+      // ======= Safe storage & constants =======
       const SafeStorage = (() => {
         try { const t='__probe__'; localStorage.setItem(t,'1'); localStorage.removeItem(t); return localStorage; } catch(e){
           const mem = {}; return { getItem:k=>mem[k]??null, setItem:(k,v)=>{mem[k]=String(v)}, removeItem:k=>{delete mem[k]} };
         }
       })();
-      const trySetItem = (k,v) => { try { SafeStorage.setItem(k,v); return true; } catch(e){ console.warn('Storage save failed',k,e); return false; } };
+      const trySet = (k,v)=>{ try { SafeStorage.setItem(k,v); return true; } catch(e){ console.warn('Storage failed',k,e); return false; } };
 
-      // ======= مفاتيح التخزين =======
-      const LS_EVENTS = "hormez_events_meta";    // { [eventName]: { password } }
-      const LS_AUTH   = "hormez_auth_event";     // { event }
-      const LS_INV    = (event)=>`hormez_invites::${event}`; // دعوات
-      const LS_QR     = (event)=>`hormez_qrcards::${event}`; // ميتاداتا للباركود فقط
-      const LS_QR_VOL = (event)=>`hormez_qrimgs_volatile::${event}`; // علم بأن الصور في الذاكرة
+      const LS_EVENTS = 'hormez_events_meta'; // { [eventName]: { password } }
+      const LS_AUTH   = 'hormez_auth_event';  // { event }
+      const LS_INV    = (ev)=>`hormez_invites::${ev}`; // invites
+      const LS_QR     = (ev)=>`hormez_qrcards::${ev}`; // qr meta (no image)
 
-      // ======= كاش صور الباركود (في الذاكرة) =======
+      // صور الباركود تُحفظ في الذاكرة فقط لتجنّب حدود localStorage
       const QRDataCache = new Map(); // id -> dataUrl
 
-      // ======= أدوات =======
-      const normalizePhone = (p)=>String(p||'').replace(/\D/g,'');
-      const hashString = (str)=>{ let h=5381,i=str.length; while(i){ h=(h*33) ^ str.charCodeAt(--i);} return (h>>>0).toString(36); };
-
-      const makeInvite = ({ guestName, phone, count, eventName, qr }) => ({
-        id: Date.now()+"_"+Math.random().toString(36).slice(2,8),
-        guestName: (guestName||'').trim(),
-        phone: normalizePhone(phone),
-        count: Math.max(1, Number(count||1)),
-        eventName: (eventName||'بدون اسم حدث').trim(),
-        status: 'new',
-        createdAt: new Date().toISOString(),
-        qrId: qr?.id || null,
-        qrName: qr?.name || null,
-        qrNumber: qr?.cardNumber || null,
-      });
-      const computeStats = (invites)=>({
-        total: invites.length,
-        sent: invites.filter(i=>['sent','reminded','attended'].includes(i.status)).length,
-        attended: invites.filter(i=>i.status==='attended').length,
-      });
+      // ======= utils =======
+      const normalizePhone=(p)=>String(p||'').replace(/\D/g,'');
+      const hashString=(str)=>{ let h=5381,i=str.length; while(i){ h=(h*33)^str.charCodeAt(--i);} return (h>>>0).toString(36); };
 
       const openWhatsApp = (phone, message) => {
         const digits = normalizePhone(phone); if(!digits){ alert('رقم الهاتف غير صالح'); return; }
         const url = `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-        try { const w = window.open(url,'_blank','noopener,noreferrer'); if(!w) alert('قد يكون مانع النوافذ مفعّل. افتح الرابط يدويًا:\n'+url); }
-        catch(e){ alert('تعذر فتح واتساب. انسخ الرابط يدويًا:\n'+url); }
+        try { const w=window.open(url,'_blank','noopener,noreferrer'); if(!w) alert('مُانع النوافذ قد يمنع الفتح. افتح الرابط يدويًا:\n'+url); }
+        catch{ alert('تعذر فتح واتساب. انسخ الرابط يدويًا:\n'+url); }
       };
 
-      const saveInvites = (event, invites)=> trySetItem(LS_INV(event), JSON.stringify(invites));
-      const loadInvites = (event)=>{ try { const s=SafeStorage.getItem(LS_INV(event)); return s? JSON.parse(s): []; } catch { return []; } };
+      const saveInvites=(ev,arr)=>trySet(LS_INV(ev), JSON.stringify(arr));
+      const loadInvites=(ev)=>{ try{ const s=SafeStorage.getItem(LS_INV(ev)); return s? JSON.parse(s):[]; }catch{return [];} };
+      const saveQRCards=(ev,arr)=>{ const meta=arr.map(({id,name,used,cardNumber,contentHash})=>({id,name,used,cardNumber,contentHash})); trySet(LS_QR(ev), JSON.stringify(meta)); };
+      const loadQRCards=(ev)=>{ try{ const s=SafeStorage.getItem(LS_QR(ev)); return s? JSON.parse(s):[]; }catch{return [];} };
 
-      // نحفظ فقط الميتاداتا من الباركود (بدون الصورة)
-      const saveQRCards = (event, cards) => {
-        const metaOnly = cards.map(({id,name,used,cardNumber,contentHash})=>({id,name,used,cardNumber,contentHash}));
-        const ok = trySetItem(LS_QR(event), JSON.stringify(metaOnly));
-        if(!ok) alert('مساحة التخزين ممتلئة. سيتم حفظ الميتاداتا فقط وقد تفقد الصور بعد إعادة التحميل.');
-      };
-      const loadQRCards = (event)=>{ try { const s=SafeStorage.getItem(LS_QR(event)); return s? JSON.parse(s): []; } catch { return []; } };
+      // invite factory (يدعم عدة كروت)
+      const makeInvite=({guestName,phone,count,eventName,qrList=[]})=>({
+        id: Date.now()+"_"+Math.random().toString(36).slice(2,8),
+        guestName:(guestName||'').trim(),
+        phone: normalizePhone(phone),
+        count: Math.max(1, Number(count||1)),
+        eventName:(eventName||'بدون اسم حدث').trim(),
+        status: 'new', createdAt:new Date().toISOString(),
+        qrIds: qrList.map(q=>q.id),
+        qrId: qrList[0]?.id || null,
+        qrName: qrList[0]?.name || null,
+        qrNumber: qrList[0]?.cardNumber || null,
+      });
+      const computeStats=(inv)=>({ total:inv.length, sent:inv.filter(i=>['sent','reminded','attended'].includes(i.status)).length, attended:inv.filter(i=>i.status==='attended').length });
 
+      // ======= file readers =======
       function readFileWithMeta(file){
         return new Promise((resolve,reject)=>{
           const fr = new FileReader();
           fr.onload = ()=>{
             const dataUrl = fr.result; const name=file.name||'qr';
-            const m = name.match(/(\d{3,})/); const cardNumber = m? m[1] : null;
+            const m = name.match(/(\d{3,})/); const cardNumber = m? m[1]: null;
             const contentHash = hashString(String(dataUrl));
             const id = Date.now()+"_"+Math.random().toString(36).slice(2,8);
-            QRDataCache.set(id, dataUrl); // صورة في الذاكرة فقط
-            resolve({ id, name, cardNumber, contentHash });
+            QRDataCache.set(id, dataUrl);
+            resolve({ id, name, used:false, cardNumber, contentHash });
           };
-          fr.onerror = reject; fr.readAsDataURL(file);
+          fr.onerror=reject; fr.readAsDataURL(file);
         });
       }
+      function parseCSV(text){
+        const lines=text.trim().split(/\r?\n/).filter(Boolean); if(!lines.length) return [];
+        const first=lines[0].split(',').map(s=>s.trim().toLowerCase());
+        const hasHeader=['name','phone','count','event'].some(k=>first.includes(k));
+        const body = hasHeader? lines.slice(1): lines;
+        return body.map(line=>{ const [a,b,c,d]=line.split(',').map(x=>x?.trim()??''); return { guestName:a||'', phone:b||'', count:Math.max(1,Number(c||1)), eventName:d||'' }; });
+      }
+      async function readXLSX(file){
+        const data=await file.arrayBuffer(); const wb=XLSX.read(data,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]]; const arr=XLSX.utils.sheet_to_json(ws,{header:1});
+        const rows=arr.filter(r=>r && r.length); if(!rows.length) return [];
+        const first=rows[0].map(v=>String(v||'').trim().toLowerCase());
+        const hasHeader=['name','phone','count','event'].some(k=>first.includes(k));
+        const body=hasHeader? rows.slice(1): rows;
+        return body.map(r=>{ const [a,b,c,d]=r; return { guestName:String(a||'').trim(), phone:String(b||'').trim(), count:Math.max(1,Number(c||1)), eventName:String(d||'').trim()}; });
+      }
 
-      // ========= مصادقة =========
-      const getEventMeta = ()=>{ try { return JSON.parse(SafeStorage.getItem(LS_EVENTS)||'{}'); } catch { return {}; } };
-      const setEventMeta = (m)=>{ trySetItem(LS_EVENTS, JSON.stringify(m)); };
+      // ======= auth by event =======
+      const getEventMeta=()=>{ try{return JSON.parse(SafeStorage.getItem(LS_EVENTS)||'{}');}catch{return {};} };
+      const setEventMeta=(m)=>trySet(LS_EVENTS, JSON.stringify(m));
 
       function AuthView({ onAuthed }){
-        const [eventName,setEventName] = useState('');
-        const [password,setPassword] = useState('');
-        const [err,setErr] = useState('');
-        const login = ()=>{
+        const [eventName,setEventName]=useState(''); const [password,setPassword]=useState(''); const [err,setErr]=useState('');
+        const login=()=>{
           setErr(''); const name=eventName.trim(); if(!name){ setErr('ادخل اسم الحدث'); return; }
-          const meta = getEventMeta(); const entry = meta[name];
-          if(!entry){ meta[name] = { password }; setEventMeta(meta); SafeStorage.setItem(LS_AUTH, JSON.stringify({event:name})); onAuthed(name); return; }
+          const meta=getEventMeta(); const entry=meta[name];
+          if(!entry){ meta[name]={password}; setEventMeta(meta); SafeStorage.setItem(LS_AUTH, JSON.stringify({event:name})); onAuthed(name); return; }
           if((entry.password||'')!==password){ setErr('كلمة المرور غير صحيحة لهذا الحدث'); return; }
           SafeStorage.setItem(LS_AUTH, JSON.stringify({event:name})); onAuthed(name);
         };
@@ -149,41 +153,63 @@
       }
 
       function App(){
-        const [event,setEvent] = useState(()=>{ try { return JSON.parse(SafeStorage.getItem(LS_AUTH)||'null')?.event || ''; } catch { return ''; } });
+        const [event,setEvent]=useState(()=>{ try { return JSON.parse(SafeStorage.getItem(LS_AUTH)||'null')?.event || ''; } catch { return ''; } });
         if(!event) return <AuthView onAuthed={setEvent}/>;
         return <EventApp event={event} onLogout={()=>{ SafeStorage.removeItem(LS_AUTH); setEvent(''); }} />;
       }
 
       function EventApp({ event, onLogout }){
-        const [invites, setInvites] = useState(()=>loadInvites(event));
-        const [qrCards, setQrCards] = useState(()=>loadQRCards(event));
-        const [active, setActive] = useState('home');
-        const stats = useMemo(()=>computeStats(invites), [invites]);
+        const [invites,setInvites]=useState(()=>loadInvites(event));
+        const [qrCards,setQrCards]=useState(()=>loadQRCards(event));
+        const [active,setActive]=useState('home');
+        const stats=useMemo(()=>computeStats(invites),[invites]);
 
-        useEffect(()=>{ saveInvites(event, invites); }, [event, invites]);
-        useEffect(()=>{ saveQRCards(event, qrCards); }, [event, qrCards]);
+        useEffect(()=>{ saveInvites(event,invites); },[event,invites]);
+        useEffect(()=>{ saveQRCards(event,qrCards); },[event,qrCards]);
 
-        const changePassword = ()=>{
+        const changePassword=()=>{
           const meta=getEventMeta(); const entry=meta[event]||{password:''};
           const current=prompt('ادخل كلمة المرور الحالية:',''); if((entry.password||'')!==(current||'')) { alert('كلمة المرور الحالية غير صحيحة'); return; }
           const next=prompt('ادخل كلمة المرور الجديدة:',''); if(!next) return; meta[event]={password:next}; setEventMeta(meta); alert('تم تغيير كلمة المرور لهذا الحدث');
         };
 
-        const takeNextQrCard = ()=>{ const idx=qrCards.findIndex(c=>!c.used); if(idx===-1) return null; const card={...qrCards[idx]}; const next=[...qrCards]; next[idx]={...card, used:true}; setQrCards(next); return card; };
-        const returnQrToPool = (qrId)=>{ if(!qrId) return; setQrCards(prev=>prev.map(c=>c.id===qrId? {...c, used:false}: c)); };
-
-        const addInvite = ({ guestName, phone, count, eventName })=>{
-          const qr = takeNextQrCard(); if(!qr){ alert('لا توجد كروت باركود متاحة. ارفعها من تبويب "استيراد" أولاً.'); return; }
-          const inv = makeInvite({ guestName, phone, count, eventName:eventName||event, qr }); setInvites(prev=>[inv, ...prev]);
+        // تخصيص عدة كروت للدعوة
+        const takeNextQrCards=(k)=>{
+          const available=qrCards.filter(c=>!c.used);
+          if(available.length<k) return null;
+          const chosen=available.slice(0,k);
+          const next=qrCards.map(c=> chosen.find(x=>x.id===c.id)? { ...c, used:true }: c);
+          setQrCards(next);
+          return chosen.map(c=>({ ...c }));
         };
-        const deleteInvite = (id)=>{ setInvites(prev=>{ const inv=prev.find(x=>x.id===id); if(inv?.qrId) returnQrToPool(inv.qrId); return prev.filter(x=>x.id!==id); }); };
-        const markStatus = (id,status)=> setInvites(prev=> prev.map(i=> i.id===id? {...i, status}: i));
-
-        const sendText = (inv)=>{
-          const msg = `مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد الكروت للمرافقين: ${inv.count}\n\nملاحظة: قم بتنزيل صورة الباركود من النظام وإرسالها.`;
-          openWhatsApp(inv.phone, msg); markStatus(inv.id,'sent');
+        const returnQrToPool=(ids=[])=>{
+          const list=Array.isArray(ids)? ids: (ids? [ids]: []);
+          if(!list.length) return;
+          setQrCards(prev=> prev.map(c=> list.includes(c.id)? { ...c, used:false }: c));
         };
-        const bulkSend = (list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
+
+        const addInvite=({guestName,phone,count,eventName})=>{
+          const k=Math.max(1, Number(count||1));
+          const qrList=takeNextQrCards(k);
+          if(!qrList){ alert('لا توجد كروت كافية حسب العدد المُدخل. قم بتحميل المزيد.'); return; }
+          const inv=makeInvite({ guestName, phone, count:k, eventName:eventName||event, qrList });
+          setInvites(prev=>[inv, ...prev]);
+        };
+        const deleteInvite=(id)=>{
+          setInvites(prev=>{
+            const inv=prev.find(x=>x.id===id);
+            if(inv?.qrIds?.length) returnQrToPool(inv.qrIds);
+            else if(inv?.qrId) returnQrToPool([inv.qrId]);
+            return prev.filter(x=>x.id!==id);
+          });
+        };
+        const markStatus=(id,status)=> setInvites(prev=> prev.map(i=> i.id===id? { ...i, status }: i));
+
+        const sendText=(inv)=>{
+          const msg=`مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد كروت المرافقين: ${inv.count}\n\nقم بتنزيل صورة الباركود من النظام وإرسالها.`;
+          openWhatsApp(inv.phone,msg); markStatus(inv.id,'sent');
+        };
+        const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
 
         const cardsRemaining = qrCards.filter(c=>!c.used).length;
         const bulkCandidates = invites.filter(i=> i.status==='new' || i.status==='reminded');
@@ -206,7 +232,7 @@
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
                     <h2 className="text-xl md:text-2xl font-bold">إدارة الدعوات</h2>
-                    <p className="text-neutral-400">ارفع مجموعة الباركود أولاً، ثم أنشئ الدعوات ليتم سحب كرت تلقائياً من المخزون مع منع التكرار.</p>
+                    <p className="text-neutral-400">ارفع مجموعة الباركود أولاً، ثم أنشئ الدعوات ليتم سحب عدد الكروت المدخل تلقائياً من المخزون مع منع التكرار.</p>
                   </div>
                   <span className="chip">الجاهزة للإرسال: {bulkCandidates.length}</span>
                 </div>
@@ -224,7 +250,6 @@
                 {NavBtn('new','دعوة جديدة',()=>setActive('new'),active)}
                 {NavBtn('send','الإرسال',()=>setActive('send'),active)}
                 {NavBtn('import','استيراد',()=>setActive('import'),active)}
-                {NavBtn('diag','تشخيص',()=>setActive('diag'),active)}
               </div>
 
               {active==='home' && (
@@ -242,10 +267,21 @@
               )}
 
               {active==='import' && (
-                <ImportCenter qrCards={qrCards} setQrCards={setQrCards} event={event} />
+                <ImportCenter qrCards={qrCards} setQrCards={setQrCards} onImportPeopleFile={async (file)=>{
+                  try {
+                    let rows=[];
+                    if(/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) rows = await readXLSX(file); else rows = parseCSV(await file.text());
+                    if(!rows.length){ alert('لا توجد بيانات'); return; }
+                    const added = rows.map(r => ({ guestName:r.guestName, phone:r.phone, count:r.count, eventName:event }));
+                    // لا نسحب الكروت تلقائيًا للاستيراد الجماعي؛ يتم السحب عند إنشاء دعوة من النموذج لضمان التوافر
+                    setInvites(prev => [
+                      ...added.map(x=> makeInvite({ ...x, qrList: [] })),
+                      ...prev
+                    ]);
+                    alert(`تم استيراد ${added.length} سجل. يمكنك فتح "دعوة جديدة" لإنشاء مخصص مع سحب الكروت.`);
+                  } catch(e){ console.error(e); alert('تعذر قراءة الملف.'); }
+                }} />
               )}
-
-              {active==='diag' && (<DiagPanel event={event} />)}
             </main>
           </div>
         );
@@ -265,7 +301,6 @@
                   <th>الجوال</th>
                   <th>عدد الكروت</th>
                   <th>الباركود</th>
-                  <th>رقم الكرت</th>
                   <th>الحالة</th>
                   <th>إجراءات</th>
                 </tr>
@@ -277,13 +312,17 @@
                     <td dir="ltr">{inv.phone}</td>
                     <td>{inv.count}</td>
                     <td>
-                      {(inv.qrId && QRDataCache.get(inv.qrId)) ? (
-                        <a className="link" href={QRDataCache.get(inv.qrId)} download={inv.qrName || 'qr.png'} title="تنزيل الباركود">
-                          <img className="thumb" src={QRDataCache.get(inv.qrId)} alt="QR" />
-                        </a>
+                      {inv.qrId && QRDataCache.get(inv.qrId) ? (
+                        <div className="flex items-center gap-2">
+                          <a className="link" href={QRDataCache.get(inv.qrId)} download={inv.qrName||'qr.png'} title="تنزيل أول باركود">
+                            <img className="thumb" src={QRDataCache.get(inv.qrId)} alt="QR" />
+                          </a>
+                          {Array.isArray(inv.qrIds) && inv.qrIds.length>1 && (
+                            <span className="chip text-xs">+{inv.qrIds.length-1} إضافية</span>
+                          )}
+                        </div>
                       ) : (<span className="chip">—</span>)}
                     </td>
-                    <td>{inv.qrNumber || '—'}</td>
                     <td>
                       <span className={`chip ${inv.status==='new'?'':''} ${inv.status==='sent'?'!bg-blue-600 !text-white':''} ${inv.status==='reminded'?'!bg-purple-600 !text-white':''} ${inv.status==='attended'?'!bg-green-600 !text-white':''}`}>
                         {inv.status==='new'? 'جديدة' : inv.status==='sent'? 'مُرسلة' : inv.status==='reminded'? 'مُذكّر' : 'حضر'}
@@ -305,15 +344,42 @@
       }
 
       function NewInviteForm({ onCreate, forcedEventName, cardsRemaining }){
-        const [guestName, setGuestName] = useState('');
-        const [phone, setPhone] = useState('');
-        const [count, setCount] = useState(1);
-        const [eventName, setEventName] = useState(forcedEventName || '');
+        const [guestName,setGuestName]=useState('');
+        const [phone,setPhone]=useState('');
+        const [count,setCount]=useState(1);
+        const [eventName,setEventName]=useState(forcedEventName||'');
         useEffect(()=>{ if(forcedEventName) setEventName(forcedEventName); },[forcedEventName]);
-        const create = ()=>{ if(!guestName || !phone){ alert('يرجى إدخال الاسم ورقم الهاتف'); return; } if(cardsRemaining<=0){ alert('لا توجد كروت باركود متاحة. ارفعها أولاً من تبويب الاستيراد.'); return; } onCreate({ guestName, phone, count, eventName }); setGuestName(''); setPhone(''); setCount(1); };
+
+        const importFromContacts = async () => {
+          try {
+            const supported = 'contacts' in navigator && 'select' in (navigator.contacts||{});
+            if(!supported){ alert('قد لا يدعم متصفحك استيراد جهات الاتصال. جرّب كروم على أندرويد.'); return; }
+            const contacts = await navigator.contacts.select(['name','tel'], { multiple:false });
+            if(contacts && contacts[0]){
+              const c = contacts[0];
+              setGuestName((c.name && c.name[0]) || '');
+              setPhone((c.tel && c.tel[0]) || '');
+            }
+          } catch { alert('تعذر الوصول لجهات الاتصال'); }
+        };
+
+        const create=()=>{
+          if(!guestName || !phone){ alert('يرجى إدخال الاسم ورقم الهاتف'); return; }
+          if(cardsRemaining <= 0){ alert('لا توجد كروت باركود متاحة. ارفعها أولاً من تبويب الاستيراد.'); return; }
+          onCreate({ guestName, phone, count, eventName });
+          setGuestName(''); setPhone(''); setCount(1);
+        };
+
         return (
           <div className="card p-6 mt-3">
             <div className="grid md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="mb-1 inline-block text-sm">استيراد من سجل الهاتف</label>
+                <div className="flex gap-2">
+                  <button className="btn btn-ghost" onClick={importFromContacts}>سجل الهاتف</button>
+                  <span className="text-xs text-neutral-400">* يعمل غالبًا على كروم/أندرويد</span>
+                </div>
+              </div>
               <div>
                 <label className="block text-sm mb-1">الاسم</label>
                 <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="اسم الضيف" />
@@ -332,72 +398,75 @@
                 <p className="text-xs text-neutral-400 mt-1">الكروت المتاحة حالياً: {cardsRemaining}</p>
               </div>
               <div className="md:col-span-2 flex items-center gap-2">
-                <button className="btn btn-primary" onClick={create}>إضافة الدعوة (سحب كرت)</button>
+                <button className="btn btn-primary" onClick={create}>إضافة الدعوة (سحب {""}{count} كرت)</button>
               </div>
             </div>
           </div>
         );
       }
 
-      function ImportCenter({ qrCards, setQrCards, event }){
-        const qrInput = useRef(null);
-        const onQrPick = async (e)=>{
-          const files = Array.from(e.target.files||[]); if(!files.length) return;
-          try {
+      function ImportCenter({ qrCards, setQrCards, onImportPeopleFile }){
+        const peopleInput=useRef(null); const qrInput=useRef(null);
+        const handlePeoplePick=(e)=>{ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=''; };
+        const onQrPick=async (e)=>{
+          const files=Array.from(e.target.files||[]); if(!files.length) return;
+          try{
             const BATCH=25; let added=0;
             for(let i=0;i<files.length;i+=BATCH){
-              const slice = files.slice(i,i+BATCH);
-              const results = await Promise.all(slice.map(readFileWithMeta));
-              const existing = qrCards; // ميتاداتا حالية
-              const hashSet = new Set(existing.map(c=>c.contentHash));
-              const numSet  = new Set(existing.map(c=>c.cardNumber).filter(Boolean));
-              const toAdd = [];
-              for(const r of results){
-                if(hashSet.has(r.contentHash)) continue;
-                if(r.cardNumber && numSet.has(r.cardNumber)) continue;
-                toAdd.push({ id:r.id, name:r.name, used:false, cardNumber:r.cardNumber, contentHash:r.contentHash });
-                hashSet.add(r.contentHash); if(r.cardNumber) numSet.add(r.cardNumber);
-              }
+              const slice=files.slice(i,i+BATCH);
+              const results=await Promise.all(slice.map(readFileWithMeta));
+              const existing=qrCards; const hashSet=new Set(existing.map(c=>c.contentHash)); const numSet=new Set(existing.map(c=>c.cardNumber).filter(Boolean));
+              const toAdd=[];
+              for(const r of results){ if(hashSet.has(r.contentHash)) continue; if(r.cardNumber && numSet.has(r.cardNumber)) continue; toAdd.push(r); hashSet.add(r.contentHash); if(r.cardNumber) numSet.add(r.cardNumber); }
               if(toAdd.length){ setQrCards(prev=>[...toAdd, ...prev]); added+=toAdd.length; }
-              await new Promise(res=>setTimeout(res,0)); // أعد الرسم
+              await new Promise(res=>setTimeout(res,0));
             }
-            if(added){ trySetItem(LS_QR_VOL(event),'1'); alert(`تم تحميل ${added} باركود (بدون تكرار).`); }
-            else { alert('كل الملفات التي رفعتها مكررة.'); }
-          } catch(err){ console.error(err); alert('تعذر قراءة الملفات'); }
+            alert(added? `تم تحميل ${added} باركود (بدون تكرار).` : 'كل الملفات مكررة.');
+          }catch(err){ console.error(err); alert('تعذر قراءة الملفات'); }
           e.target.value='';
         };
-        const clearUsed = ()=>{ if(confirm('إعادة تعيين حالة جميع الكروت إلى "متاح"؟')) setQrCards(prev=>prev.map(c=>({...c, used:false}))); };
-        const purgeAll  = ()=>{ if(confirm('مسح جميع الكروت المخزنة لهذا الحدث؟')) setQrCards([]); };
+        const clearUsed=()=>{ if(confirm('إعادة تعيين حالة جميع الكروت إلى "متاح"؟')) setQrCards(prev=>prev.map(c=>({...c,used:false}))); };
+        const purgeAll =()=>{ if(confirm('مسح جميع الكروت المخزنة لهذا الحدث؟')) setQrCards([]); };
         return (
-          <div className="card p-6 mt-3">
-            <h3 className="font-bold">تحميل كل الباركود من الجهاز (منع التكرار)</h3>
-            <p className="text-xs text-neutral-400 mt-1">سيتم حفظ <b>الصور في الذاكرة</b> لتجنّب امتلاء التخزين. سيتم حفظ الميتاداتا فقط.</p>
-            <div className="mt-3 flex gap-2">
-              <button className="btn btn-primary" onClick={()=>qrInput.current?.click()}>اختيار ملفات باركود</button>
-              <input ref={qrInput} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,application/pdf" multiple className="hidden" onChange={onQrPick} />
-              <button className="btn btn-ghost" onClick={clearUsed}>إعادة تعيين الاستخدام</button>
-              <button className="btn btn-ghost" onClick={purgeAll}>مسح الكل</button>
+          <div className="grid md:grid-cols-2 gap-4 mt-3">
+            <div className="card p-6">
+              <h3 className="font-bold">تحميل كل الباركود من الجهاز (منع التكرار)</h3>
+              <p className="text-xs text-neutral-400 mt-1">الصيغ: PNG / JPG / SVG / PDF*. يتم حفظ الصور في الذاكرة فقط، بينما تُحفظ الميتاداتا محليًا.</p>
+              <div className="mt-3 flex gap-2">
+                <button className="btn btn-primary" onClick={()=>qrInput.current?.click()}>اختيار ملفات باركود</button>
+                <input ref={qrInput} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,application/pdf" multiple className="hidden" onChange={onQrPick} />
+                <button className="btn btn-ghost" onClick={clearUsed}>إعادة تعيين الاستخدام</button>
+                <button className="btn btn-ghost" onClick={purgeAll}>مسح الكل</button>
+              </div>
+              <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
+                {qrCards.map(c=> (
+                  <div key={c.id} className="flex flex-col items-center gap-1">
+                    {QRDataCache.get(c.id)
+                      ? (<img className="thumb" src={QRDataCache.get(c.id)} alt={c.name} title={c.name} />)
+                      : (<div className="thumb flex items-center justify-center text-[10px] text-neutral-500">صورة مؤقتة</div>)}
+                    <span className="text-[10px] text-neutral-400">{c.cardNumber ? `#${c.cardNumber}` : 'بدون رقم'}</span>
+                    <span className={`text-[10px] ${c.used? 'text-yellow-400' : 'text-neutral-500'}`}>{c.used? 'مستخدم' : 'متاح'}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
-              {qrCards.map(c=> (
-                <div key={c.id} className="flex flex-col items-center gap-1">
-                  {QRDataCache.get(c.id) ? (
-                    <img className="thumb" src={QRDataCache.get(c.id)} alt={c.name} title={c.name} />
-                  ) : (
-                    <div className="thumb flex items-center justify-center text-[10px] text-neutral-500">صورة مؤقتة</div>
-                  )}
-                  <span className="text-[10px] text-neutral-400">{c.cardNumber ? `#${c.cardNumber}` : 'بدون رقم'}</span>
-                  <span className={`text-[10px] ${c.used? 'text-yellow-400' : 'text-neutral-500'}`}>{c.used? 'مستخدم' : 'متاح'}</span>
-                </div>
-              ))}
+
+            <div className="card p-6">
+              <h3 className="font-bold">تحميل الأسماء والأرقام وعدد الكروت (CSV / XLSX)</h3>
+              <p className="text-xs text-neutral-400 mt-1">صيغة الأعمدة: <code>name,phone,count[,event]</code> مع ترويسة اختيارية.</p>
+              <div className="mt-3 flex gap-2">
+                <button className="btn btn-ghost" onClick={()=>peopleInput.current?.click()}>اختيار ملف</button>
+                <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handlePeoplePick} />
+              </div>
+              <p className="text-xs text-neutral-400 mt-3">* الاستيراد الجماعي لا يسحب الكروت تلقائيًا؛ السحب يتم عند إنشاء دعوة من النموذج.</p>
             </div>
           </div>
         );
       }
 
       function SendCenter({ invites, onSend, onBulk }){
-        const [filter,setFilter] = useState('');
-        const list = invites.filter(i=> i.status==='new' || i.status==='reminded')
+        const [filter,setFilter]=useState('');
+        const list=invites.filter(i=> i.status==='new' || i.status==='reminded')
           .filter(i=> [i.guestName,i.phone,i.eventName].some(f=> (f||'').toLowerCase().includes(filter.toLowerCase())));
         return (
           <div className="card p-6 mt-3">
@@ -412,9 +481,9 @@
                 {list.map(inv => (
                   <div key={inv.id} className="card p-4 space-y-2">
                     <p><b>{inv.guestName}</b> — <span dir="ltr">{inv.phone}</span></p>
-                    <p className="text-sm text-neutral-400">كروت: {inv.count} {inv.qrNumber? `• كرت #${inv.qrNumber}` : ''}</p>
+                    <p className="text-sm text-neutral-400">كروت للمرافقين: {inv.count}</p>
                     {inv.qrId && QRDataCache.get(inv.qrId) && (
-                      <a className="link" href={QRDataCache.get(inv.qrId)} download={inv.qrName||'qr.png'}>تنزيل الباركود</a>
+                      <a className="link" href={QRDataCache.get(inv.qrId)} download={inv.qrName||'qr.png'}>تنزيل أول باركود</a>
                     )}
                     <div className="flex gap-2 justify-end">
                       <button className="btn btn-primary" onClick={()=>onSend(inv)}>إرسال فردي (نص)</button>
@@ -427,36 +496,8 @@
         );
       }
 
-      function DiagPanel({ event }){
-        const [rows,setRows] = useState([]);
-        useEffect(()=>{
-          const r=[];
-          // React/DOM
-          r.push({k:'React موجود', ok: !!window.React});
-          r.push({k:'ReactDOM موجود', ok: !!window.ReactDOM});
-          // تخزين
-          try { SafeStorage.setItem('__t','x'); const v=SafeStorage.getItem('__t'); SafeStorage.removeItem('__t'); r.push({k:'التخزين يعمل', ok: v==='x'}); } catch(e){ r.push({k:'التخزين يعمل', ok:false}); }
-          // حجم دعوة
-          const example = makeInvite({ guestName:'T', phone:'050', count:1, eventName:'E', qr:{id:'q1',name:'x',cardNumber:'1'} });
-          r.push({k:'إنشاء دعوة', ok: example.qrId==='q1' && !('qrDataUrl' in example)});
-          setRows(r);
-        },[]);
-        return (
-          <div className="card p-6 mt-3">
-            <h3 className="font-bold mb-3">تشخيص سريع</h3>
-            <ul className="space-y-2">
-              {rows.map((t,i)=> (
-                <li key={i} className={`p-2 rounded border ${t.ok? 'border-green-700 bg-green-900/20' : 'border-red-700 bg-red-900/20'}`}>
-                  <b>{t.k}</b> — {t.ok? 'نجح' : 'فشل'}
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      }
-
       function Root(){
-        const [event,setEvent] = useState(()=>{ try { return JSON.parse(SafeStorage.getItem(LS_AUTH)||'null')?.event || ''; } catch { return ''; } });
+        const [event,setEvent]=useState(()=>{ try { return JSON.parse(SafeStorage.getItem(LS_AUTH)||'null')?.event || ''; } catch { return ''; } });
         if(!event) return <AuthView onAuthed={setEvent}/>;
         return <EventApp event={event} onLogout={()=>{ SafeStorage.removeItem(LS_AUTH); setEvent(''); }} />;
       }
