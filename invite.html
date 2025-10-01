@@ -433,7 +433,7 @@
         const peopleInput = useRef(null);
         const qrInput = useRef(null);
 
-        const onPeoplePick = (e)=>{ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=""; };
+        const handlePeoplePick = (e)=>{ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=""; };
 
         const onQrPick = async (e) => {
           const files = Array.from(e.target.files||[]);
@@ -497,14 +497,12 @@
               <p className="text-xs text-neutral-400 mt-1">صيغة الأعمدة: <code>name,phone,count[,event]</code> مع ترويسة اختيارية.</p>
               <div className="mt-3 flex gap-2">
                 <button className="btn btn-ghost" onClick={()=>peopleInput.current?.click()}>اختيار ملف</button>
-                <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={onPeoplePick} />
+                <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handlePeoplePick} />
               </div>
               <p className="text-xs text-neutral-400 mt-3">ملاحظة: سحب الكرت يتم عند إنشاء الدعوة يدويًا في تبويب "دعوة جديدة" لضمان التطابق مع المخزون.</p>
             </div>
           </div>
         );
-
-        function onPeoplePick(e){ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=""; }
       }
 
       function SendCenter({ invites, onSend, onBulk }){
@@ -547,6 +545,18 @@
       // رندر
       const root = ReactDOM.createRoot(document.getElementById('root'));
       root.render(<Root />);
+
+// --- اختبارات بسيطة للتأكد من أن الأساسيات تعمل (تظهر في وحدة التحكم) ---
+try {
+  console.assert(typeof React !== 'undefined', 'React لم يُحمّل');
+  console.assert(typeof ReactDOM !== 'undefined', 'ReactDOM لم يُحمّل');
+  localStorage.setItem('__test','ok');
+  console.assert(localStorage.getItem('__test') === 'ok', 'localStorage لا يعمل');
+  localStorage.removeItem('__test');
+  console.log('%cاختبارات التهيئة: نجحت','color:#22c55e');
+} catch (e) {
+  console.warn('اختبارات التهيئة: فشلت', e);
+}
     </script>
   </body>
 </html>
