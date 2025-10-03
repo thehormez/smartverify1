@@ -1,552 +1,475 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>بوابة الدعوات | حفظ دائم للباركود + إرسال الصورة</title>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hormez Security — Client Invite Portal</title>
+  <style>
+    /* =====================================
+       Hormez UI — Luxury Black & Gold Theme
+       Clean layout, clear hierarchy, pro cards
+       ===================================== */
+    :root{
+      --bg:#0b0c0f;          /* خلفية داكنة فاخرة */
+      --panel:#12141a;       /* لوحات أساسية */
+      --panel-2:#171a21;     /* لوحات ثانوية */
+      --stroke:#262a35;      /* حدود خفيفة */
+      --text:#f2f5f9;        /* نص أساسي */
+      --muted:#9aa3b2;       /* نص ثانوي */
+      --gold-1:#f7e29c;      /* ذهبي فاتح */
+      --gold-2:#caa24b;      /* ذهبي رئيسي */
+      --gold-3:#8a6b2a;      /* ذهبي داكن */
+      --accent:#2f81ff;      /* أزرق مساعد للروابط */
+      --ok:#16a34a;          /* نجاح */
+      --danger:#ef4444;      /* خطأ */
+      --warn:#f59e0b;        /* تحذير */
+      --radius-xl:18px;
+      --radius-lg:14px;
+      --radius:12px;
+      --shadow: 0 10px 30px rgba(0,0,0,.35), 0 2px 0 rgba(255,255,255,.02) inset;
+      --glow: 0 0 0 1px #000, 0 0 0 1px var(--stroke) inset, 0 30px 60px rgba(0,0,0,.55);
+      --pad:16px;
+    }
 
-        <script src="https://cdn.tailwindcss.com"></script>
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Kufi Arabic", "Noto Sans Arabic", Arial, sans-serif; background:var(--bg); color:var(--text);}
 
-        <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    /* ===== Shell ===== */
+    .shell{max-width:1200px; margin:auto; padding:20px}
+    .topbar{display:flex; gap:16px; align-items:center; justify-content:space-between; margin-bottom:18px}
+    .brand{display:flex; gap:14px; align-items:center}
+    .logo{width:42px; height:42px; border-radius:12px; background: radial-gradient(120% 120% at 20% 15%, #ffffff26, #0000), linear-gradient(135deg,#1b1e26,#0c0f14); border:1px solid var(--stroke); display:grid; place-items:center; box-shadow:var(--shadow)}
+    .logo span{font-weight:900; letter-spacing:.5px; background: linear-gradient(180deg,var(--gold-1), var(--gold-2), var(--gold-3)); -webkit-background-clip:text; background-clip:text; color:transparent}
+    .title h1{font-size:clamp(18px,2.4vw,26px); margin:0}
+    .title .sub{color:var(--muted); font-size:12px}
 
-        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    .badge{background:linear-gradient(135deg, #1a1d25, #12141a); border:1px solid var(--stroke); color:var(--gold-1); padding:8px 12px; border-radius:10px; box-shadow:var(--shadow)}
 
-        <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    /* ===== Grid ===== */
+    .grid{display:grid; gap:18px}
+    .cols-2{grid-template-columns: 1.2fr .8fr}
+    @media (max-width: 1030px){.cols-2{grid-template-columns:1fr}}
 
-    <style>
-      /* الأنماط العامة للهيكل والتصميم الداكن */
-      * { box-sizing: border-box; }
-      body { background:#0A0A0A; color:#E5E7EB; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Naskh Arabic UI", Arial, sans-serif; }
-      .card { background:#1F2937; border:1px solid #374151; border-radius:12px; transition: box-shadow 0.3s ease; }
-      .card:hover { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
-      .btn { border-radius:8px; padding:.5rem 1rem; transition: all .2s ease; font-weight: 500; }
-      .btn-primary { background:#FACC15; color:#1F2937; border-color:#FACC15; }
-      .btn-primary:hover { background:#EAB308; }
-      .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-      .btn-secondary { background:#374151; color:#E5E7EB; }
-      .btn-secondary:hover { background:#4B5563; }
-      .chip { border-radius:9999px; padding:.2rem .75rem; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
-      
-      /* ألوان حالات الدعوات */
-      .chip-new { background: #4B5563; color: #D1D5DB; }
-      .chip-sent { background: #2563EB; color: #FFFFFF; }
-      .chip-attended { background: #10B981; color: #FFFFFF; }
-      
-      /* تصميم مربع الإحصائيات (Stat Card) - احترافي ومُلوّن */
-      .stat-card {
-        border: none; padding: 1.5rem; border-radius: 12px; overflow: hidden; position: relative; 
-        /* خلفية متناسقة مع اللون الأساسي */
-        background-color: #1F2937; 
-        border: 1px solid #374151;
-      }
-      .stat-card .label { color: currentColor; font-weight: 500; opacity: 0.8; }
-      .stat-card .value { font-size: 2.25rem; font-weight: 800; margin-top: 0.25rem; }
-      .stat-total { color: #FACC15; border-left: 5px solid #FACC15; }
-      .stat-sent { color: #3B82F6; border-left: 5px solid #3B82F6; }
-      .stat-attended { color: #10B981; border-left: 5px solid #10B981; }
-      .stat-remaining { color: #F97316; border-left: 5px solid #F97316; }
+    /* ===== Cards ===== */
+    .card{background:linear-gradient(180deg, #141822, #10131a); border:1px solid var(--stroke); border-radius:var(--radius-xl); padding:18px; box-shadow:var(--glow)}
+    .card h2{margin:0 0 12px; font-size:18px}
+    .section{display:grid; gap:12px}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
 
-      /* صور الباركود */
-      .thumb { width:56px; height:56px; object-fit:contain; border:1px solid #4B5563; border-radius:8px; background:#111827; }
+    /* ===== Inputs ===== */
+    label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px 0}
+    .input, .select, .area{width:100%; background:#0d1016; color:var(--text); border:1px solid var(--stroke); border-radius:12px; padding:12px 14px; outline:none; transition: .2s}
+    .input:focus, .select:focus, .area:focus{border-color: var(--gold-2); box-shadow:0 0 0 3px rgba(202,162,75,.15)}
+    .input[readonly]{opacity:.75}
 
-      /* شريط التنقل (Tabs) */
-      .tab-container { border-bottom: 2px solid #374151; }
-      .tab-button {
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-        color: #9CA3AF;
-        transition: color 0.2s ease, border-bottom 0.2s ease;
-        border-bottom: 2px solid transparent;
-      }
-      .tab-button.active {
-        color: #FACC15; /* لون التمييز */
-        border-bottom: 2px solid #FACC15;
-      }
-      
-      /* تحسينات الجدول */
-      table th, table td { padding:.8rem .6rem; text-align: right; }
-      table th { color: #9CA3AF; font-weight: 600; border-bottom: 1px solid #374151; }
-      .table-row:nth-child(even) { background-color: #111827; }
-      .table-row:hover { background-color: #2D3748 !important; }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
+    /* ===== Buttons ===== */
+    .btn{border:0; padding:11px 14px; border-radius:12px; cursor:pointer; font-weight:600; transition: .2s; box-shadow:var(--shadow)}
+    .btn:active{transform: translateY(1px)}
+    .btn.gold{background:linear-gradient(135deg, var(--gold-1), var(--gold-2)); color:#191308}
+    .btn.ghost{background:#0e1117; color:var(--text); border:1px solid var(--stroke)}
+    .btn.primary{background:#2f81ff; color:white}
+    .btn.warn{background:linear-gradient(135deg,#20170a,#18120a); color:var(--gold-1); border:1px solid #3a2a11}
+    .btn.danger{background:linear-gradient(135deg,#2b0e0e,#1a0a0a); color:#fecaca; border:1px solid #3b1515}
 
-    <script type="text/babel">
-      const { useState, useEffect, useMemo, useRef } = React;
+    /* ===== Stats ===== */
+    .stats{display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px}
+    .stat{background:linear-gradient(180deg,#0e1219,#0b0e14); border:1px dashed var(--stroke); border-radius:14px; padding:12px; text-align:center}
+    .stat .label{font-size:12px; color:var(--muted)}
+    .stat .value{font-size:20px; font-weight:800; letter-spacing:.3px}
 
-      // ===== مفاتيح التخزين المحلي (حسب الحدث) =====
-      const LS_EVENTS = "hormez_events_meta";    // { [eventName]: { password } }
-      const LS_AUTH   = "hormez_auth_event";     // { event }
-      const LS_MSG    = (event) => `hormez_whatsapp_msg::${event}`; // رسالة واتساب المخصصة
-      const LS_INV    = (event) => `hormez_invites::${event}`;    // الدعوات لكل حدث
-      const LS_QR     = (event) => `hormez_qrcards::${event}`;    // ميتاداتا الكروت لكل حدث
+    /* ===== Table ===== */
+    .table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:12px; border:1px solid var(--stroke); box-shadow:var(--glow)}
+    .table th{background:linear-gradient(180deg,#151922,#0e1117); color:var(--gold-1); font-weight:700}
+    .table th, .table td{padding:12px; border-bottom:1px solid var(--stroke); text-align:start; font-size:14px}
+    .pill{display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; background:#0f131a; border:1px solid var(--stroke); margin:0 6px 6px 0}
 
-      // ===== أدوات مساعدة (نفسها من الكود السابق) =====
-      const normalizePhone = (p) => String(p || "").replace(/\D/g, "");
-      function hashString(str){ let h=5381, i=str.length; while(i){ h=(h*33) ^ str.charCodeAt(--i);} return (h>>>0).toString(36); }
-      
-      // دالة لتصدير البيانات إلى CSV
-      function exportToCSV(data, filename) {
-        const headers = Object.keys(data[0]);
-        const csv = [
-          headers.join(','),
-          ...data.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] || '')).join(','))
-        ].join('\n');
-        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename || 'data.csv';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      }
+    /* ===== Dropzone ===== */
+    .drop{border:1.5px dashed var(--stroke); border-radius:14px; padding:16px; background:linear-gradient(180deg,#0d1016,#0b0d12); text-align:center; transition:.2s}
+    .drop.drag{border-color:var(--gold-2); box-shadow:0 0 0 3px rgba(202,162,75,.15)}
 
-      // ===== IndexedDB لحفظ صور الباركود دائماً (نفسها من الكود السابق) =====
-      const DB_NAME = 'hormez_qr_db';
-      const DB_STORE = 'qr_images';
-      function openDB(){
-        return new Promise((res,rej)=>{
-          const req = indexedDB.open(DB_NAME, 1);
-          req.onupgradeneeded = ()=>{ const db=req.result; if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE); };
-          req.onsuccess = ()=>res(req.result);
-          req.onerror   = ()=>rej(req.error);
-        });
-      }
-      async function idbPut(id, blob){ const db=await openDB(); return new Promise((res,rej)=>{ const tx=db.transaction(DB_STORE,'readwrite'); tx.objectStore(DB_STORE).put(blob, id); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
-      async function idbGet(id){ const db=await openDB(); return new Promise((res,rej)=>{ const tx=db.transaction(DB_STORE,'readonly'); const r=tx.objectStore(DB_STORE).get(id); r.onsuccess=()=>res(r.result||null); r.onerror=()=>rej(r.error); }); }
-      function dataURLToBlob(dataUrl){ const [h,b]=dataUrl.split(','); const mime=(h.match(/data:(.*?);base64/)||[])[1]||'image/png'; const bin=atob(b); const arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i); return new Blob([arr],{type:mime}); }
-      const URLCache = new Map(); // id -> objectURL
-      async function getObjectURLForQr(id){ if(!id) return null; if(URLCache.has(id)) return URLCache.get(id); const blob=await idbGet(id); if(!blob) return null; const url=URL.createObjectURL(blob); URLCache.set(id,url); return url; }
-      function useQrObjectURL(id){ const [url,setUrl]=React.useState(null); React.useEffect(()=>{ let alive=true; getObjectURLForQr(id).then(u=>{ if(alive) setUrl(u); }); return ()=>{ alive=false; }; },[id]); return url; }
+    /* ===== Preview Modal (Card style) ===== */
+    .modal{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); backdrop-filter:saturate(110%) blur(8px); padding:20px}
+    .modal.open{display:flex}
+    .modal .panel{width:min(680px, 100%); background:linear-gradient(180deg,#141824,#0f131b); border:1px solid var(--stroke); border-radius:18px; box-shadow:var(--glow); padding:18px}
+    .qr-preview{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+    .qr-box{background:#fff; padding:10px; border-radius:12px; box-shadow:0 6px 30px rgba(0,0,0,.35)}
 
-      // ===== إنشاء دعوة وحساب الإحصائيات (نفسها من الكود السابق) =====
-      const makeInvite = ({ guestName, phone, count, eventName, qr }) => ({
-        id: Date.now() + "_" + Math.random().toString(36).slice(2, 8),
-        guestName: (guestName || "").trim(),
-        phone: normalizePhone(phone),
-        count: Math.max(1, Number(count || 1)),
-        eventName: (eventName || "بدون اسم حدث").trim(),
-        status: "new", // new | sent | reminded | attended
-        createdAt: new Date().toISOString(),
-        qrId: qr?.id || null,
-        qrName: qr?.name || null,
-        qrNumber: qr?.cardNumber || null,
-      });
-      const computeStats = (invites) => ({
-        total: invites.length,
-        sent: invites.filter(i => ["sent","reminded","attended"].includes(i.status)).length,
-        attended: invites.filter(i => i.status === "attended").length,
-      });
+    /* ===== Footer ===== */
+    .footer{color:var(--muted); font-size:12px; margin-top:14px; text-align:center; opacity:.9}
 
-      // ===== WhatsApp / مشاركة بالصورة (نفسها من الكود السابق) =====
-      const openWhatsApp = (phone, message) => {
-        const digits = normalizePhone(phone); if (!digits) { alert("رقم الهاتف غير صالح"); return; }
-        const url = `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-        const w = window.open(url, "_blank", "noopener,noreferrer");
-        if(!w) alert('قد يكون مانع النوافذ مفعل. افتح هذا الرابط يدويًا:\n'+url);
-      };
-      async function shareImageWithText(phone, message, qrId){
-        try {
-          const blob = await idbGet(qrId);
-          if(!blob){ alert('لم يتم العثور على صورة الباركود في التخزين.'); return false; }
-          const file = new File([blob], 'qr.png', { type: blob.type || 'image/png' });
-          if(navigator.canShare && navigator.canShare({ files:[file] })){
-            await navigator.share({ files:[file], text: message });
-            return true;
-          }
-          // fallback: تنزيل الصورة وفتح واتساب للنص
-          const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='qr.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-          openWhatsApp(phone, message + '\n\n(تم تنزيل صورة الباركود للتو — أرفقها يدويًا في واتساب)');
-          return true;
-        } catch(e){ console.error(e); alert('تعذر مشاركة الصورة. سيتم فتح واتساب للنص فقط.'); openWhatsApp(phone, message); return false; }
-      }
+    /* Utility */
+    .muted{color:var(--muted)}
+    .hidden{display:none !important}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"><span>HS</span></div>
+        <div class="title">
+          <h1>Hormez Security — بوابة إرسال الدعوات</h1>
+          <div class="sub">Client Invite Portal · Persistent QR (IndexedDB) · Gold/Black UI</div>
+        </div>
+      </div>
+      <div class="badge">يحفظ تلقائيًا لكل فعالية</div>
+    </div>
 
-      // ===== تخزين الدعوات والميتاداتا محلياً (نفسها من الكود السابق) =====
-      const saveInvites = (event, invites) => localStorage.setItem(LS_INV(event), JSON.stringify(invites));
-      const loadInvites = (event) => { try { const s = localStorage.getItem(LS_INV(event)); return s ? JSON.parse(s) : []; } catch { return []; } };
-      const saveQRCards = (event, cards) => localStorage.setItem(LS_QR(event), JSON.stringify(cards.map(({id,name,used,cardNumber,contentHash})=>({id,name,used,cardNumber,contentHash}))));
-      const loadQRCards = (event) => { try { const s = localStorage.getItem(LS_QR(event)); return s ? JSON.parse(s) : []; } catch { return []; } };
-      const saveWhatsAppMsg = (event, msg) => localStorage.setItem(LS_MSG(event), msg);
-      const loadWhatsAppMsg = (event) => localStorage.getItem(LS_MSG(event)) || 'مرحبا [الاسم]\n\nيشرفنا دعوتك لحضور الفعالية: [الحدث]\nعدد الكروت للمرافقين: [العدد]';
-      function getEventMeta(){ try { return JSON.parse(localStorage.getItem(LS_EVENTS)||"{}"); } catch { return {}; } }
-      function setEventMeta(meta){ localStorage.setItem(LS_EVENTS, JSON.stringify(meta)); }
+    <!-- Main Grid -->
+    <div class="grid cols-2">
+      <!-- Settings Card -->
+      <section class="card section" id="eventCard">
+        <h2>إعدادات الفعالية</h2>
+        <div class="grid" style="grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px">
+          <div>
+            <label>اسم الفعالية</label>
+            <input class="input" id="eventName" placeholder="مثال: زفاف خالد" />
+          </div>
+          <div>
+            <label>رمز الفعالية (للتسلسل)</label>
+            <input class="input" id="eventCode" placeholder="مثال: KH" />
+          </div>
+          <div>
+            <label>الرصيد الإجمالي للكروت</label>
+            <input type="number" min="0" class="input" id="balanceTotal" placeholder="أدخل العدد" />
+          </div>
+          <div>
+            <label>آخر تسلسل مُستخدم</label>
+            <input class="input" id="lastSeq" readonly />
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn gold" id="saveEvent">حفظ الإعدادات</button>
+          <button class="btn ghost" id="resetEvent">تهيئة الفعالية (لا يحذف السجل)</button>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <div class="label">إجمالي الرصيد</div>
+            <div class="value" id="sTotal">0</div>
+          </div>
+          <div class="stat">
+            <div class="label">المحجوز (تم توليده/إرساله)</div>
+            <div class="value" id="sUsed">0</div>
+          </div>
+          <div class="stat">
+            <div class="label">المتبقّي</div>
+            <div class="value" id="sLeft">0</div>
+          </div>
+        </div>
+      </section>
 
-      // ===== قراءة ملفات (نفسها من الكود السابق) =====
-      async function readFileWithMetaIDB(file){
-        const dataUrl = await new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file); });
-        const name = file.name || 'qr';
-        const m = name.match(/(\d{3,})/); const cardNumber = m? m[1] : null;
-        const contentHash = hashString(String(dataUrl));
-        const id = Date.now()+"_"+Math.random().toString(36).slice(2,8);
-        await idbPut(id, dataURLToBlob(dataUrl));
-        return { id, name, used:false, cardNumber, contentHash };
-      }
-      function parseCSV(text){
-        const lines = text.trim().split(/\r?\n/).filter(Boolean); if(!lines.length) return [];
-        const first = lines[0].split(',').map(s=>s.trim().toLowerCase());
-        const hasHeader = ['name','phone','count','event'].some(k=>first.includes(k));
-        const body = hasHeader? lines.slice(1) : lines;
-        return body.map(line=>{ const [a,b,c,d]=line.split(',').map(x=>x?.trim()??''); return { guestName:a||'', phone:b||'', count:Math.max(1,Number(c||1)), eventName:d||'' }; });
-      }
-      async function readXLSX(file){
-        const data=await file.arrayBuffer(); const wb=XLSX.read(data,{type:'array'});
-        const ws=wb.Sheets[wb.SheetNames[0]]; const arr=XLSX.utils.sheet_to_json(ws,{header:1});
-        const rows=arr.filter(r=>r && r.length); if(!rows.length) return [];
-        const first=rows[0].map(v=>String(v||'').trim().toLowerCase());
-        const hasHeader=['name','phone','count','event'].some(k=>first.includes(k));
-        const body=hasHeader? rows.slice(1): rows;
-        return body.map(r=>{ const [a,b,c,d]=r; return { guestName:String(a||'').trim(), phone:String(b||'').trim(), count:Math.max(1,Number(c||1)), eventName:String(d||'').trim()}; });
-      }
+      <!-- New Invite Card -->
+      <section class="card section">
+        <h2>دعوة جديدة</h2>
+        <div class="grid" style="grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px">
+          <div>
+            <label>الاسم</label>
+            <input class="input" id="guestName" placeholder="اسم الضيف" />
+          </div>
+          <div>
+            <label>رقم الهاتف (مع مفتاح الدولة)</label>
+            <input class="input" id="guestPhone" placeholder="9715XXXXXXXX" />
+          </div>
+          <div>
+            <label>عدد الكروت للمرافقين (يشمل الضيف)</label>
+            <input type="number" min="1" value="1" class="input" id="guestTickets" />
+          </div>
+          <div>
+            <label>ملاحظة (اختياري)</label>
+            <input class="input" id="guestNote" placeholder="VIP، عائلة العريس…" />
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn primary" id="pickContact">استيراد من سجل الهاتف</button>
+          <button class="btn gold" id="createInvite">توليد & إرسال</button>
+          <button class="btn ghost" id="previewFirst">معاينة الكرت الأول</button>
+        </div>
+        <div class="muted" style="font-size:12px">في الأجهزة الداعمة لـ <b>Contact Picker API</b> و <b>Web Share API</b> سيتم الاستيراد والمشاركة مباشرة. بخلاف ذلك، يتم فتح واتساب مع النص وتنزيل الصورة محليًا.</div>
+      </section>
+    </div>
 
-      // ========= مكون المصادقة (AuthView) - نفسه من الكود السابق =========
-      function AuthView({ onAuthed }){
-        const [eventName, setEventName] = useState("");
-        const [password, setPassword]   = useState("");
-        const [err, setErr]             = useState("");
-        const login = () => {
-          setErr("");
-          const name = eventName.trim(); if(!name){ setErr("ادخل اسم الحدث"); return; }
-          const meta = getEventMeta(); const entry = meta[name];
-          if(!entry){ meta[name] = { password }; setEventMeta(meta); localStorage.setItem(LS_AUTH, JSON.stringify({event:name})); onAuthed(name); return; }
-          if((entry.password||"") !== password){ setErr("كلمة المرور غير صحيحة لهذا الحدث"); return; }
-          localStorage.setItem(LS_AUTH, JSON.stringify({event:name})); onAuthed(name);
-        };
-        return (
-          <div className="min-h-screen flex items-center justify-center p-6">
-            <div className="card w-full max-w-md p-6">
-              <h1 className="text-center text-2xl font-black mb-6 text-yellow-400">تسجيل الدخول بالحدث</h1>
-              {err && <div className="mb-3 text-sm text-red-300 bg-red-600/20 border border-red-600/40 p-2 rounded">{err}</div>}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm mb-1 text-gray-400">اسم الحدث</label>
-                  <input className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" placeholder="مثلاً: زفاف خالد" value={eventName} onChange={e=>setEventName(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1 text-gray-400">كلمة المرور</label>
-                  <input type="password" className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
-                  <p className="text-xs text-gray-500 mt-1">إذا كان الحدث جديدًا، ستُسجّل هذه الكلمة له.</p>
-                </div>
-                <button onClick={login} className="btn btn-primary w-full font-bold">دخول</button>
-              </div>
-            </div>
-          </div>
-        );
-      }
+    <!-- Import CSV -->
+    <section class="card section" style="margin-top:8px">
+      <h2>استيراد قائمة الضيوف (CSV)</h2>
+      <div class="drop" id="dropZone">
+        اسحب ملف CSV هنا أو <label for="csvFile" style="text-decoration:underline; cursor:pointer; color:var(--gold-1)">اختر ملفًا</label>
+        <input id="csvFile" type="file" accept=".csv" hidden />
+      </div>
+      <div class="muted" style="font-size:12px">صيغة الأعمدة: <b>Name, Phone, Tickets</b>. سيُشارك الكرت الأول تلقائيًا لأول صف فقط لتفادي الإزعاج، والباقي متاح للتنزيل.</div>
+    </section>
 
-      // ========= التطبيق الرئيسي للحدث (EventApp) =========
-      function EventApp({ event, onLogout }){
-        const [invites, setInvites] = useState(()=>loadInvites(event));
-        const [qrCards, setQrCards] = useState(()=>loadQRCards(event));
-        const [whatsAppMsg, setWhatsAppMsg] = useState(()=>loadWhatsAppMsg(event));
-        const [active, setActive]   = useState("home"); // التحكم في التبويبات
-        const stats = useMemo(()=>computeStats(invites), [invites]);
+    <!-- Invites Table -->
+    <section class="card section">
+      <h2>سجل الدعوات</h2>
+      <table class="table" id="invitesTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>الضيف</th>
+            <th>الهاتف</th>
+            <th>الكروت</th>
+            <th>الأكواد</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
 
-        // حفظ البيانات
-        useEffect(()=>{ saveInvites(event, invites); }, [event, invites]);
-        useEffect(()=>{ saveQRCards(event, qrCards); }, [event, qrCards]);
-        useEffect(()=>{ saveWhatsAppMsg(event, whatsAppMsg); }, [event, whatsAppMsg]);
+    <div class="footer">© 2025 — Hormez Security. واجهة فاخرة (أسود/ذهبي)، حفظ محلي، جاهزة للجوال.</div>
+  </div>
 
-        // الدوال المساعدة (نفسها من الكود السابق)
-        const changePassword = () => { /* ... */ }; // (حذفت التفاصيل لتوفير المساحة، لكنها موجودة في الكود الكامل)
-        const takeNextQrCard = () => { /* ... */ };
-        const returnQrToPool = (qrId) => { /* ... */ };
-        const addInvite = ({ guestName, phone, count, eventName }) => {
-          const qr = takeNextQrCard();
-          if(!qr){ alert("لا توجد كروت باركود متاحة. ارفعها من تبويب \"الاستيراد\" أولاً."); return; }
-          const inv = makeInvite({ guestName, phone, count, eventName: eventName||event, qr });
-          setInvites(prev => [inv, ...prev]);
-        };
-        const deleteInvite = (id) => {
-          if(!confirm("هل أنت متأكد من حذف هذه الدعوة وإعادة الكرت إلى قائمة المتاحين؟")) return;
-          setInvites(prev => {
-            const inv = prev.find(x=>x.id===id);
-            if(inv?.qrId) returnQrToPool(inv.qrId);
-            return prev.filter(x=>x.id!==id);
-          });
-        };
-        const markStatus = (id, status) => setInvites(prev => prev.map(i => i.id===id ? { ...i, status } : i));
-        const prepareMessage = (inv, template) => { /* ... */ };
-        const sendText = async (inv) => { /* ... */ };
-        const bulkSend = (list) => { /* ... */ };
-        const exportInvites = () => { /* ... */ };
-        const cardsRemaining = qrCards.filter(c=>!c.used).length;
-        const bulkCandidates = invites.filter(i=> i.status==="new" || i.status==="reminded");
+  <!-- QRCode CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
-        return (
-          <div className="min-h-screen flex flex-col">
-            {/* الشريط العلوي (Header) الثابت - يحتوي على اللوجو واسم الحدث ورصيد الكروت */}
-            <header className="sticky top-0 z-20 bg-gray-900 border-b border-gray-700 px-4 py-3 shadow-lg">
-              <div className="max-w-6xl mx-auto flex items-center justify-between">
-                {/* اللوجو (يمكنك استبدال هذا برمز أو صورة حقيقية) */}
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl font-black text-yellow-500">
-                    B
-                  </span>
-                  {/* اسم الحدث في المنتصف العلوي */}
-                  <span className="font-extrabold text-xl text-white">إدارة حدث: <span className="text-yellow-400">{event}</span></span>
-                </div>
-                
-                {/* رصيد الكروت + أزرار الإدارة */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-400">رصيد الكروت:</span>
-                    <span className="chip bg-green-600/70 text-white">المتاح: {cardsRemaining}</span>
-                    <span className="chip bg-gray-600/70 text-gray-300">الإجمالي: {qrCards.length}</span>
-                  </div>
-                  <button className="btn btn-secondary text-sm" onClick={onLogout}>خروج</button>
-                </div>
-              </div>
-            </header>
+  <script>
+  /* =====================================
+     IndexedDB & Core State
+     ===================================== */
+  const DB_NAME = 'hormez_invites_db';
+  const DB_VER  = 1;
+  const STORE_SETTINGS = 'settings';
+  const STORE_INVITES  = 'invites';
+  const STORE_QR       = 'qr_images';
 
-            <main className="max-w-6xl mx-auto w-full p-4 md:p-8 flex-grow">
-              
-              {/* لوحة الإحصائيات (Stat Cards) */}
-              <div className="card p-6 mb-6">
-                <h2 className="text-2xl font-bold mb-4">ملخص الإحصائيات</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Stat label="إجمالي الدعوات" value={stats.total} className="stat-total" />
-                  <Stat label="الدعوات المُرسلة" value={stats.sent} className="stat-sent" />
-                  <Stat label="الحضور" value={stats.attended} className="stat-attended" />
-                  <Stat label="المرشحون للإرسال" value={bulkCandidates.length} className="stat-remaining" />
-                </div>
-              </div>
+  const $  = s=> document.querySelector(s);
+  const $$ = s=> Array.from(document.querySelectorAll(s));
+  const pad = (n,w=3)=> String(n).padStart(w,'0');
 
-              {/* شريط التبويبات (Tabs) */}
-              <div className="tab-container flex gap-1 mb-6">
-                {TabBtn("home","قائمة الدعوات",()=>setActive("home"),active)}
-                {TabBtn("new","دعوة جديدة",()=>setActive("new"),active)}
-                {TabBtn("send","مركز الإرسال",()=>setActive("send"),active)}
-                {TabBtn("import","استيراد الكروت والقوائم",()=>setActive("import"),active)}
-              </div>
+  let gdb;
+  let settings = { eventName:'', eventCode:'', balanceTotal:0, lastSeq:0 };
+  let currentEventKey = '';
 
-              {/* محتوى التبويبات */}
-              {active === "home" && (
-                <div className="card p-6">
-                  <div className="mb-4 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-gray-200">الدعوات المُسجَّلة</h3>
-                    <button className="btn btn-secondary text-sm" onClick={exportInvites}>تصدير إلى CSV</button>
-                  </div>
-                  <InviteTable 
-                    invites={invites} 
-                    onDelete={deleteInvite} 
-                    onStatusChange={markStatus} 
-                  />
-                </div>
-              )}
+  function openDB(){
+    return new Promise((resolve, reject)=>{
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = ()=>{
+        const db = req.result;
+        if(!db.objectStoreNames.contains(STORE_SETTINGS)) db.createObjectStore(STORE_SETTINGS);
+        if(!db.objectStoreNames.contains(STORE_INVITES)){
+          const s = db.createObjectStore(STORE_INVITES, { keyPath:'id' });
+          s.createIndex('by_event','eventKey');
+        }
+        if(!db.objectStoreNames.contains(STORE_QR)){
+          const q = db.createObjectStore(STORE_QR, { keyPath:'code' });
+          q.createIndex('by_event','eventKey');
+        }
+      };
+      req.onsuccess = ()=> resolve(req.result);
+      req.onerror   = ()=> reject(req.error);
+    });
+  }
+  const tx = (db, store, mode='readonly')=> db.transaction(store, mode).objectStore(store);
 
-              {active === "new" && (
-                <NewInviteForm onCreate={addInvite} forcedEventName={event} cardsRemaining={cardsRemaining} />
-              )}
+  function makeEventKey(){
+    return (settings.eventCode||'EVT').toUpperCase()+ '|' + (settings.eventName||'EVENT');
+  }
+  function normalizePhone(p){ return String(p||'').replace(/\D+/g,''); }
 
-              {active === "send" && (
-                <SendCenter 
-                  event={event} 
-                  invites={invites} 
-                  onSend={sendText} 
-                  onBulk={bulkSend} 
-                  whatsAppMsg={whatsAppMsg}
-                  setWhatsAppMsg={setWhatsAppMsg}
-                />
-              )}
+  async function saveSettings(){ gdb=gdb||await openDB(); return new Promise((res,rej)=>{ const r=tx(gdb,STORE_SETTINGS,'readwrite').put(settings,'event_settings'); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); }
+  async function loadSettings(){
+    gdb=gdb||await openDB();
+    const st = await new Promise((res,rej)=>{ const r=tx(gdb,STORE_SETTINGS).get('event_settings'); r.onsuccess=()=>res(r.result||null); r.onerror=()=>rej(r.error); });
+    if(st) settings=st;
+    currentEventKey=makeEventKey();
+    // Fill UI
+    $('#eventName').value=settings.eventName||'';
+    $('#eventCode').value=settings.eventCode||'';
+    $('#balanceTotal').value=settings.balanceTotal||'';
+    updateStatsUI();
+    await refreshTable();
+  }
 
-              {active === "import" && (
-                <ImportCenter qrCards={qrCards} setQrCards={setQrCards} />
-              )}
-            </main>
-          </div>
-        );
-      }
-      
-      // مكونات مساعدة بسيطة للتخطيط والتنقل (Tabs)
-      function Stat({ label, value, className }){ return (<div className={`card stat-card ${className}`}><p className="label">{label}</p><p className="value">{value}</p></div>); }
-      function TabBtn(key,label,onClick,active){ return <button onClick={onClick} className={`tab-button ${active===key? 'active' : ''}`}>{label}</button>; }
+  async function computeUsed(){
+    gdb=gdb||await openDB();
+    return new Promise((res)=>{
+      const c = tx(gdb,STORE_INVITES).index('by_event').openCursor(IDBKeyRange.only(currentEventKey));
+      let sum=0; c.onsuccess=(e)=>{ const cur=e.target.result; if(cur){ sum += (cur.value.tickets||0); cur.continue(); } else res(sum); };
+      c.onerror=()=>res(0);
+    });
+  }
 
-      // ========= مكونات الشاشات الفرعية (تم اختصارها هنا لعدم تكرارها) =========
+  function updateStatsUI(){
+    $('#sTotal').textContent = settings.balanceTotal;
+    computeUsed().then(used=>{ $('#sUsed').textContent = used; $('#sLeft').textContent = Math.max(0, settings.balanceTotal - used); });
+    $('#lastSeq').value = settings.lastSeq;
+  }
 
-      // مكون جدول الدعوات (InviteTable) - تم تحديث أنماط الصفوف لتكون أكثر تناسقًا
-      function InviteTable({ invites, onDelete, onStatusChange }){
-        if(!invites.length) return <div className="text-gray-400 text-sm p-4 card mt-3">لا توجد دعوات بعد.</div>;
-        return (
-          <div className="overflow-x-auto rounded-lg border border-gray-700">
-            <table className="w-full text-right table-auto border-collapse">
-              <thead>
-                <tr className="text-gray-400 text-sm bg-gray-700/50">
-                  <th>الاسم</th><th>الجوال</th><th>العدد</th><th>الباركود</th><th>رقم الكرت</th><th>الحالة</th>
-                  <th className="text-center">تغيير الحالة</th><th className="text-center">حذف</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invites.map(inv => (
-                  <tr key={inv.id} className="table-row bg-gray-800/80">
-                    <td>{inv.guestName}</td>
-                    <td dir="ltr">{inv.phone}</td>
-                    <td>{inv.count}</td>
-                    <td>{inv.qrId ? <InlineThumb qrId={inv.qrId} qrName={inv.qrName} /> : (<span className="chip bg-gray-600/50 text-gray-300">لا يوجد</span>)}</td>
-                    <td>{inv.qrNumber || '—'}</td>
-                    <td>
-                      <span className={`chip ${inv.status==='new'? 'chip-new' : inv.status==='sent'? 'chip-sent' : inv.status==='reminded'? 'chip-sent' : 'chip-attended'}`}>
-                        {inv.status==='new'? 'جديدة' : inv.status==='sent'? 'مُرسلة' : inv.status==='reminded'? 'مُذكّر' : 'حضر'}
-                      </span>
-                    </td>
-                    <td className="text-center">
-                      <div className="flex flex-col gap-1 w-20 mx-auto">
-                        <button className="btn !bg-green-600/80 hover:!bg-green-700/90 text-white !p-1 !text-xs !rounded-md" onClick={()=>onStatusChange(inv.id, 'attended')}>حضر</button>
-                        <button className="btn !bg-blue-600/80 hover:!bg-blue-700/90 text-white !p-1 !text-xs !rounded-md" onClick={()=>onStatusChange(inv.id, 'sent')}>أرسل</button>
-                      </div>
-                    </td>
-                    <td className="text-center">
-                      <button className="btn !bg-red-600/60 hover:!bg-red-700/70 text-white !p-1 !text-xs !rounded-md" onClick={()=>onDelete(inv.id)}>حذف</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-      }
+  function nextSequence(){ settings.lastSeq += 1; return settings.lastSeq; }
+  const codeFor = (idx)=>{ const seq=pad(nextSequence()); const base=(settings.eventCode||'EVT').toUpperCase()+ '_' + seq; return idx>1? `${base}-${idx}` : base; };
 
-      // مكون QrThumb
-      function InlineThumb({ qrId, qrName }){ /* ... */ }
+  function textTemplate({name,eventName,code}){
+    return `دعوة ${name}\nفعالية: ${eventName}\nالباركود: ${code}\nيرجى إبراز الباركود عند الدخول.`;
+  }
+  function waLink(phone, text){ const p=normalizePhone(phone); return `https://wa.me/${p}?text=${encodeURIComponent(text)}`; }
 
-      // مكون NewInviteForm
-      function NewInviteForm({ onCreate, forcedEventName, cardsRemaining }){
-        /* ... تم اختصار المكون (موجود في الكود الكامل بالأسفل) ... */
-        const [guestName, setGuestName] = useState("");
-        const [phone, setPhone] = useState("");
-        const [count, setCount] = useState(1);
-        const [eventName, setEventName] = useState(forcedEventName || "");
-        useEffect(()=>{ if(forcedEventName) setEventName(forcedEventName); }, [forcedEventName]);
-        const importFromContacts = async () => { /* ... */ };
-        const create = () => { /* ... */ 
-          if(!guestName || !phone){ alert("يرجى إدخال الاسم ورقم الهاتف"); return; }
-          if(cardsRemaining <= 0){ alert("لا توجد كروت باركود متاحة. ارفعها أولاً من تبويب الاستيراد."); return; }
-          onCreate({ guestName, phone, count, eventName });
-          setGuestName(""); setPhone(""); setCount(1);
-        };
-        return (
-          <div className="card p-6">
-            <h3 className="font-bold mb-4 text-xl text-yellow-400">إنشاء دعوة فردية</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <button className="btn btn-secondary text-sm" onClick={importFromContacts}>استيراد من سجل الهاتف</button>
-                <span className="text-xs text-gray-500 mr-2">* (كروم/أندرويد)</span>
-              </div>
-              <div><label className="block text-sm mb-1 text-gray-400">الاسم</label><input className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="اسم الضيف" /></div>
-              <div><label className="block text-sm mb-1 text-gray-400">رقم الهاتف</label><input className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="05xxxxxxxx" /></div>
-              <div><label className="block text-sm mb-1 text-gray-400">عدد الكروت للمرافقين</label><input type="number" min="1" className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" value={count} onChange={e=>setCount(Number(e.target.value || 1))} /></div>
-              <div>
-                <label className="block text-sm mb-1 text-gray-400">اسم الحدث</label>
-                <input className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="مثال: زفاف خالد" readOnly={Boolean(forcedEventName)} />
-              </div>
-              <div className="md:col-span-2 flex items-center gap-2 mt-2">
-                <button className="btn btn-primary font-bold" disabled={cardsRemaining <= 0} onClick={create}>إضافة الدعوة (سحب كرت)</button>
-              </div>
-            </div>
-          </div>
-        );
-      }
+  async function generateQRToBlob(text){
+    try{
+      const canvas=document.createElement('canvas');
+      await QRCode.toCanvas(canvas, text, { errorCorrectionLevel:'M', margin:2, scale:6 });
+      return await new Promise(res=> canvas.toBlob(res,'image/png'));
+    }catch(_){ return new Blob([`QR: ${text}`], {type:'text/plain'}); }
+  }
 
-      // مكون SendCenter
-      function SendCenter({ event, invites, onSend, onBulk, whatsAppMsg, setWhatsAppMsg }){
-        /* ... تم اختصار المكون (موجود في الكود الكامل بالأسفل) ... */
-        const [filter, setFilter] = useState("");
-        const previewMessage = (template) => { /* ... */ };
-        const list = invites.filter(i => i.status === "new" || i.status === "reminded").filter(i => [i.guestName, i.phone, i.eventName].some(f => (f || "").toLowerCase().includes(filter.toLowerCase())));
+  async function storeQR(code, blob){
+    gdb=gdb||await openDB();
+    const rec={ code, blob, eventKey:currentEventKey, ts:Date.now() };
+    return new Promise((res,rej)=>{ const r=tx(gdb,STORE_QR,'readwrite').put(rec); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); });
+  }
 
-        return (
-          <div className="space-y-6">
-            <div className="card p-6">
-              <h3 className="font-bold mb-3 text-xl text-yellow-400">تخصيص رسالة واتساب</h3>
-              <textarea className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 min-h-[120px] text-white" value={whatsAppMsg} onChange={e => setWhatsAppMsg(e.target.value)} placeholder="محتوى الرسالة" />
-              <p className="text-xs text-gray-500 mt-2">استخدم: <code>[الاسم]</code>، <code>[الحدث]</code>، <code>[العدد]</code>. سيتم إرفاق صورة الباركود.</p>
-              <div className="mt-3 p-3 bg-gray-700/50 rounded-lg border border-gray-600">
-                <p className="text-sm font-medium mb-1 text-yellow-300">معاينة الرسالة:</p>
-                <p className="whitespace-pre-wrap text-sm text-gray-200">{previewMessage(whatsAppMsg)}</p>
-              </div>
-            </div>
-            <div className="card p-6">
-              <h3 className="font-bold mb-3 text-xl text-yellow-400">المرشحون للإرسال</h3>
-              <div className="flex flex-wrap items-center gap-3 mb-4">
-                <input className="w-full md:w-80 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} />
-                <button disabled={!list.length} className="btn btn-primary font-bold" onClick={()=>onBulk(list)}>إرسال جماعي ({list.length})</button>
-              </div>
-              {!list.length ? (<p className="text-gray-400 text-sm p-4 bg-gray-800 rounded-lg">لا توجد عناصر جاهزة للإرسال حالياً.</p>) : (
-                <div className="grid md:grid-cols-2 gap-4">
-                  {list.map(inv => (<div key={inv.id} className="card p-4 space-y-2 bg-gray-800/80 border-blue-500/50 border">
-                      <div className="flex justify-between items-start"><p className="font-bold text-lg text-yellow-300">{inv.guestName}</p><span dir="ltr" className="text-sm text-gray-300">{inv.phone}</span></div>
-                      <p className="text-sm text-gray-400">كروت: {inv.count} {inv.qrNumber? `• كرت #${inv.qrNumber}` : ''}</p>
-                      {inv.qrId && <InlineThumb qrId={inv.qrId} qrName={inv.qrName} />}
-                      <div className="pt-2 flex justify-end">
-                        <button className="btn btn-primary !text-sm" onClick={()=>onSend(inv)}>إرسال الآن (صورة + نص)</button>
-                      </div>
-                    </div>))}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      }
+  async function saveInvite(inv){ gdb=gdb||await openDB(); return new Promise((res,rej)=>{ const r=tx(gdb,STORE_INVITES,'readwrite').put(inv); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); }
+  async function readInvite(id){ gdb=gdb||await openDB(); return new Promise((res,rej)=>{ const r=tx(gdb,STORE_INVITES).get(id); r.onsuccess=()=>res(r.result||null); r.onerror=()=>rej(r.error); }); }
+  async function deleteInvite(id){ gdb=gdb||await openDB(); return new Promise((res,rej)=>{ const r=tx(gdb,STORE_INVITES,'readwrite').delete(id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); }
+  async function getQRBlob(code){ gdb=gdb||await openDB(); return new Promise((res)=>{ const r=tx(gdb,STORE_QR).get(code); r.onsuccess=()=>res(r.result?.blob||null); r.onerror=()=>res(null); }); }
 
-      // مكون ImportCenter
-      function ImportCenter({ qrCards, setQrCards }){
-        /* ... تم اختصار المكون (موجود في الكود الكامل بالأسفل) ... */
-        const qrInput = useRef(null);
-        const peopleInput = useRef(null);
-        const onQrPick = async (e) => { /* ... */ };
-        const handlePeoplePick = async (e) => { /* ... */ };
-        const clearUsed = ()=>{ if(confirm('إعادة تعيين حالة جميع الكروت إلى "متاح"؟')) setQrCards(prev=>prev.map(c=>({...c, used:false}))); };
-        const purgeAll  = ()=>{ if(confirm('مسح جميع الكروت المخزنة لهذا الحدث؟ سيؤدي هذا إلى فقدان جميع صور الباركود لهذا الحدث من جهازك. هل أنت متأكد؟')) setQrCards([]); };
+  async function refreshTable(){
+    gdb=gdb||await openDB();
+    const tbody=$('#invitesTable tbody'); tbody.innerHTML='';
+    const idx=tx(gdb,STORE_INVITES).index('by_event');
+    const req=idx.openCursor(IDBKeyRange.only(currentEventKey));
+    let i=1;
+    req.onsuccess=async (e)=>{
+      const cur=e.target.result;
+      if(cur){
+        const v=cur.value; const tr=document.createElement('tr');
+        const codes=(v.codes||[]).map(c=>`<span class=\"pill\">${c}</span>`).join('');
+        tr.innerHTML=`
+          <td>${i++}</td>
+          <td>${v.name||''}</td>
+          <td>${v.phone||''}</td>
+          <td>${v.tickets||0}</td>
+          <td>${codes}</td>
+          <td>
+            <button class=\"btn ghost\" data-action=\"share-first\" data-id=\"${v.id}\">مشاركة الأول</button>
+            <button class=\"btn ghost\" data-action=\"download-all\" data-id=\"${v.id}\">تنزيل الكل</button>
+            <button class=\"btn danger\" data-action=\"delete\" data-id=\"${v.id}\">حذف</button>
+          </td>`;
+        tbody.appendChild(tr);
+        cur.continue();
+      }
+    }
+  }
 
-        return (
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="card p-6">
-              <h3 className="font-bold text-xl text-yellow-400">تحميل كروت الباركود (صور)</h3>
-              <p className="text-xs text-gray-400 mt-1">الصور تُحفظ دائمًا داخل IndexedDB. المجموع: {qrCards.length}</p>
-              <div className="mt-4 flex gap-2 flex-wrap">
-                <button className="btn btn-primary font-bold" onClick={()=>qrInput.current?.click()}>اختيار ملفات باركود</button>
-                <input ref={qrInput} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,application/pdf" multiple className="hidden" onChange={onQrPick} />
-                <button className="btn btn-secondary text-sm" onClick={clearUsed}>إعادة تعيين الاستخدام</button>
-                <button className="btn bg-red-600/60 hover:bg-red-700/70 text-white text-sm" onClick={purgeAll}>مسح الكروت</button>
-              </div>
-              <div className="mt-6 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3 max-h-96 overflow-y-auto p-2 bg-gray-900/50 rounded-lg">
-                {qrCards.map(c => (<QrThumb key={c.id} card={c} />))}
-              </div>
-            </div>
-            <div className="card p-6">
-              <h3 className="font-bold text-xl text-yellow-400">تحميل قائمة المدعوين (CSV / XLSX)</h3>
-              <p className="text-xs text-gray-400 mt-1">صيغة الأعمدة: <code>name,phone,count[,event]</code></p>
-              <div className="mt-4 flex gap-2">
-                <button className="btn btn-secondary" onClick={()=>peopleInput.current?.click()}>اختيار ملف CSV / Excel</button>
-                <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handlePeoplePick} />
-              </div>
-              <p className="text-xs text-gray-500 mt-3">* ملاحظة: هذا الاستيراد لا يسحب الكروت تلقائيًا. استخدم "دعوة جديدة" لربط الكروت.</p>
-            </div>
-          </div>
-        );
-      }
+  async function downloadBlob(filename, blob){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 2000); }
 
-      // مكون QrThumb
-      function QrThumb({ card }){
-        const url = useQrObjectURL(card.id);
-        return (
-          <div className="flex flex-col items-center gap-1 p-2 bg-gray-800/60 rounded-lg">
-            {url ? (<a href={url} download={card.name||'qr.png'}><img className="thumb" src={url} alt={card.name} title={card.name} /></a>) : (<div className="thumb flex items-center justify-center text-[10px] text-gray-500">…</div>)}
-            <span className="text-[10px] font-medium text-gray-400">{card.cardNumber ? `#${card.cardNumber}` : 'بدون رقم'}</span>
-            <span className={`text-[10px] ${card.used? 'text-red-400 font-bold' : 'text-green-400 font-bold'}`}>{card.used? 'مُستخدَم' : 'مُتاح'}</span>
-          </div>
-        );
-      }
+  async function shareOrDownloadFirst(inv){
+    if(!inv || !inv.codes?.length) return;
+    const code=inv.codes[0];
+    const blob=await getQRBlob(code);
+    const text=textTemplate({ name:inv.name, eventName:settings.eventName, code });
+    if(navigator.canShare && blob){
+      try{ const file=new File([blob], `${code}.png`, {type:'image/png'}); await navigator.share({ files:[file], text }); return; }catch(_){ /* fallback */ }
+    }
+    const link=waLink(inv.phone, text); window.open(link,'_blank');
+    if(blob) downloadBlob(`${code}.png`, blob);
+  }
+  async function downloadAll(inv){ for(const code of inv.codes||[]){ const b=await getQRBlob(code); if(b) await downloadBlob(`${code}.png`, b); } }
 
-      function Root(){
-        const [event, setEvent] = useState(()=>{ try { return JSON.parse(localStorage.getItem(LS_AUTH)||"null")?.event || ""; } catch { return ""; } });
-        if(!event) return <AuthView onAuthed={setEvent}/>;
-        return <EventApp event={event} onLogout={()=>{ localStorage.removeItem(LS_AUTH); setEvent(""); }} />;
-      }
+  function persistForm(){ const snap={ guestName:$('#guestName').value, guestPhone:$('#guestPhone').value, guestTickets:$('#guestTickets').value, guestNote:$('#guestNote').value }; localStorage.setItem('formSnap:'+currentEventKey, JSON.stringify(snap)); }
+  function restoreForm(){ const raw=localStorage.getItem('formSnap:'+currentEventKey); if(raw){ try{ const s=JSON.parse(raw); Object.entries(s).forEach(([k,v])=>{ const el=document.getElementById(k); if(el) el.value=v; }); }catch(_){ } } }
 
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<Root />);
-    </script>
-  </body>
+  /* =====================================
+     UI Events
+     ===================================== */
+  $('#saveEvent').addEventListener('click', async ()=>{
+    settings.eventName=$('#eventName').value.trim();
+    settings.eventCode=$('#eventCode').value.trim();
+    settings.balanceTotal=parseInt($('#balanceTotal').value||'0',10)||0;
+    currentEventKey=makeEventKey();
+    await saveSettings(); updateStatsUI(); restoreForm(); await refreshTable();
+  });
+  $('#resetEvent').addEventListener('click', async ()=>{
+    settings={ eventName:'', eventCode:'', balanceTotal:0, lastSeq:0 };
+    $('#eventName').value=''; $('#eventCode').value=''; $('#balanceTotal').value='';
+    await saveSettings(); currentEventKey=makeEventKey(); updateStatsUI(); await refreshTable();
+  });
+
+  $$('#eventCard input').forEach(el=> el.addEventListener('input', ()=>{ if(el.id!=='balanceTotal') persistForm(); }));
+  $$('#guestName, #guestPhone, #guestTickets, #guestNote').forEach(el=> el.addEventListener('input', persistForm));
+
+  $('#pickContact').addEventListener('click', async ()=>{
+    try{
+      if(navigator.contacts && navigator.contacts.select){
+        const res=await navigator.contacts.select(['name','tel'], {multiple:false});
+        if(res && res[0]){
+          const c=res[0]; const nm=Array.isArray(c.name)? c.name[0] : (c.name||''); const tel=Array.isArray(c.tel)? c.tel[0] : (c.tel||'');
+          $('#guestName').value=nm||''; $('#guestPhone').value=tel||''; persistForm();
+        }
+      }else{ alert('جهازك لا يدعم استيراد جهات الاتصال مباشرة — استخدم ملف CSV.'); }
+    }catch(_){ alert('تعذر الوصول لدفتر العناوين — تأكد من الأذونات.'); }
+  });
+
+  $('#createInvite').addEventListener('click', async ()=>{
+    const name=$('#guestName').value.trim();
+    const phone=normalizePhone($('#guestPhone').value);
+    const note=$('#guestNote').value.trim();
+    let tickets=parseInt($('#guestTickets').value||'1',10)||1; if(tickets<1) tickets=1;
+    if(!name || !phone){ alert('الرجاء إدخال الاسم ورقم الهاتف'); return; }
+
+    const used=await computeUsed();
+    if(used + tickets > settings.balanceTotal){ if(!confirm('عدد الكروت يتجاوز الرصيد المتبقي. هل تريد المتابعة؟')) return; }
+
+    const codes=[];
+    for(let i=1;i<=tickets;i++){ const c=codeFor(i); codes.push(c); const blob=await generateQRToBlob(c); await storeQR(c, blob); }
+    await saveSettings(); updateStatsUI();
+
+    const inv={ id:crypto.randomUUID(), name, phone, note, tickets, codes, eventKey:currentEventKey, ts:Date.now() };
+    await saveInvite(inv); await refreshTable();
+
+    await shareOrDownloadFirst(inv);
+    alert('تم توليد الدعوة ومشاركة الكرت الأول. باقي الصور متاحة للتنزيل من السجل.');
+  });
+
+  // Preview Modal
+  const modal = (()=>{ const el=document.createElement('div'); el.className='modal'; el.innerHTML=`<div class=\"panel\"><h2 style=\"margin:0 0 10px\">معاينة الكرت الأول</h2><div class=\"qr-preview\" id=\"previewArea\"></div><div class=\"row\" style=\"margin-top:12px; justify-content:flex-end\"><button class=\"btn ghost\" id=\"closePreview\">إغلاق</button></div></div>`; document.body.appendChild(el); return el; })();
+  function openModal(){ modal.classList.add('open'); }
+  function closeModal(){ modal.classList.remove('open'); }
+  document.addEventListener('click', (e)=>{ if(e.target.id==='closePreview' || e.target===modal) closeModal(); });
+
+  $('#previewFirst').addEventListener('click', async ()=>{
+    const name=$('#guestName').value.trim()||'ضيف';
+    const seq=settings.lastSeq + 1; const base=(settings.eventCode||'EVT').toUpperCase() + '_' + pad(seq);
+    const area=document.getElementById('previewArea'); area.innerHTML='';
+    const box=document.createElement('div'); box.className='qr-box'; const cv=document.createElement('canvas'); box.appendChild(cv); area.appendChild(box);
+    try{ await QRCode.toCanvas(cv, base, { errorCorrectionLevel:'M', margin:2, scale:6 }); }catch(_){ box.textContent=base; }
+    const meta=document.createElement('div'); meta.className='muted'; meta.style.marginTop='6px'; meta.innerHTML=`${name} — سيتم توليد الأكواد بدءًا من <b style=\"color:var(--gold-1)\">${base}</b>`; area.appendChild(meta);
+    openModal();
+  });
+
+  // Table actions
+  $('#invitesTable').addEventListener('click', async (e)=>{
+    const b=e.target.closest('button'); if(!b) return; const id=b.getAttribute('data-id'); const action=b.getAttribute('data-action'); const inv=await readInvite(id); if(!inv) return;
+    if(action==='share-first'){ await shareOrDownloadFirst(inv); }
+    else if(action==='download-all'){ await downloadAll(inv); }
+    else if(action==='delete'){ if(confirm('حذف هذه الدعوة؟')){ await deleteInvite(id); await refreshTable(); updateStatsUI(); } }
+  });
+
+  // CSV Import
+  const dropZone=$('#dropZone');
+  dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.classList.add('drag'); });
+  dropZone.addEventListener('dragleave', ()=> dropZone.classList.remove('drag'));
+  dropZone.addEventListener('drop', e=>{ e.preventDefault(); dropZone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+  $('#csvFile').addEventListener('change', e=> handleFiles(e.target.files));
+
+  function handleFiles(files){ if(!files || !files.length) return; const f=files[0]; const reader=new FileReader(); reader.onload=async ()=>{ const rows=parseCSV(reader.result); const header=rows[0]||[]; const iName=header.findIndex(h=> /name/i.test(h)); const iPhone=header.findIndex(h=> /phone|mobile|tel/i.test(h)); const iTix=header.findIndex(h=> /tickets|count|qty/i.test(h)); if(iName===-1||iPhone===-1){ alert('CSV يجب أن يحتوي الأعمدة: Name, Phone, Tickets'); return; }
+      for(let r=1; r<rows.length; r++){
+        const row=rows[r]; if(!row || row.length<2) continue;
+        const name=(row[iName]||'').trim(); if(!name) continue;
+        const phone=normalizePhone(row[iPhone]||''); if(!phone) continue;
+        const tickets=Math.max(1, parseInt(row[iTix]||'1',10)||1);
+        const codes=[]; for(let i=1;i<=tickets;i++){ const c=codeFor(i); codes.push(c); const blob=await generateQRToBlob(c); await storeQR(c, blob); }
+        await saveSettings(); const inv={ id:crypto.randomUUID(), name, phone, note:'', tickets, codes, eventKey:currentEventKey, ts:Date.now() };
+        await saveInvite(inv); if(r===1){ await shareOrDownloadFirst(inv); }
+      }
+      updateStatsUI(); await refreshTable(); alert('تم استيراد القائمة وإنشاء الدعوات.'); };
+    reader.readAsText(f, 'utf-8'); }
+
+  function parseCSV(text){ const rows=[]; let row=[]; let cell=''; let q=false; for(let i=0;i<text.length;i++){ const ch=text[i]; if(q){ if(ch==='"'){ if(text[i+1]==='"'){ cell+='"'; i++; } else{ q=false; } } else{ cell+=ch; } } else { if(ch==='"'){ q=true; } else if(ch===','){ row.push(cell); cell=''; } else if(ch==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; } else if(ch==='\r'){ } else { cell+=ch; } } } row.push(cell); rows.push(row); return rows.filter(r=> r.some(c=> String(c).trim()!==''); }
+
+  // Init
+  loadSettings().then(()=> restoreForm());
+  </script>
+</body>
 </html>
