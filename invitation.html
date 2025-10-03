@@ -206,6 +206,20 @@
           openWhatsApp(inv.phone,msg); markStatus(inv.id,'sent');
         };
         const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
+        
+        const handleImportPeopleFile = async (file)=>{
+          try {
+            let rows=[];
+            if(/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) rows = await readXLSX(file); else rows = parseCSV(await file.text());
+            if(!rows.length){ alert('لا توجد بيانات'); return; }
+            const added = rows.map(r => ({ guestName:r.guestName, phone:r.phone, count:r.count, eventName:event }));
+            setInvites(prev => [
+              ...added.map(x=> makeInvite({ ...x, qrList: [] })),
+              ...prev
+            ]);
+            alert(`تم استيراد ${added.length} سجل. يمكنك الآن سحب الكروت المخصصة لهم بشكل فردي من نموذج "دعوة جديدة" أو يدويًا من جدول الدعوات.`);
+          } catch(e){ console.error(e); alert('تعذر قراءة الملف.'); }
+        };
 
         const cardsRemaining = qrCards.filter(c=>!c.used).length;
         const bulkCandidates = invites.filter(i=> i.status==='new' || i.status==='reminded');
@@ -255,7 +269,12 @@
               )}
 
               {active==='new' && (
-                <NewInviteForm onCreate={addInvite} forcedEventName={event} cardsRemaining={cardsRemaining} />
+                <NewInviteForm 
+                  onCreate={addInvite} 
+                  forcedEventName={event} 
+                  cardsRemaining={cardsRemaining} 
+                  onImportPeopleFile={handleImportPeopleFile} // تمرير الدالة الجديدة
+                />
               )}
 
               {active==='send' && (
@@ -263,20 +282,7 @@
               )}
 
               {active==='import' && (
-                <ImportCenter qrCards={qrCards} setQrCards={setQrCards} onImportPeopleFile={async (file)=>{
-                  try {
-                    let rows=[];
-                    if(/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) rows = await readXLSX(file); else rows = parseCSV(await file.text());
-                    if(!rows.length){ alert('لا توجد بيانات'); return; }
-                    const added = rows.map(r => ({ guestName:r.guestName, phone:r.phone, count:r.count, eventName:event }));
-                    // لا نسحب الكروت تلقائيًا للاستيراد الجماعي؛ يتم السحب عند إنشاء دعوة من النموذج لضمان التوافر
-                    setInvites(prev => [
-                      ...added.map(x=> makeInvite({ ...x, qrList: [] })),
-                      ...prev
-                    ]);
-                    alert(`تم استيراد ${added.length} سجل. يمكنك فتح "دعوة جديدة" لإنشاء مخصص مع سحب الكروت.`);
-                  } catch(e){ console.error(e); alert('تعذر قراءة الملف.'); }
-                }} />
+                <ImportCenter qrCards={qrCards} setQrCards={setQrCards} onImportPeopleFile={handleImportPeopleFile} />
               )}
             </main>
           </div>
@@ -339,11 +345,12 @@
         );
       }
 
-      function NewInviteForm({ onCreate, forcedEventName, cardsRemaining }){
+      function NewInviteForm({ onCreate, forcedEventName, cardsRemaining, onImportPeopleFile }){
         const [guestName,setGuestName]=useState('');
         const [phone,setPhone]=useState('');
         const [count,setCount]=useState(1);
         const [eventName,setEventName]=useState(forcedEventName||'');
+        const peopleInput=useRef(null); // Ref for new import button
         useEffect(()=>{ if(forcedEventName) setEventName(forcedEventName); },[forcedEventName]);
 
         const importFromContacts = async () => {
@@ -359,6 +366,12 @@
           } catch { alert('تعذر الوصول لجهات الاتصال'); }
         };
 
+        const handlePeoplePick=(e)=>{ 
+          const f=e.target.files?.[0]; 
+          if(f) onImportPeopleFile(f); 
+          e.target.value=''; 
+        };
+
         const create=()=>{
           if(!guestName || !phone){ alert('يرجى إدخال الاسم ورقم الهاتف'); return; }
           if(cardsRemaining <= 0){ alert('لا توجد كروت باركود متاحة. ارفعها أولاً من تبويب الاستيراد.'); return; }
@@ -370,10 +383,14 @@
           <div className="card p-6 mt-3">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="mb-1 inline-block text-sm">استيراد من سجل الهاتف</label>
-                <div className="flex gap-2">
+                <label className="mb-1 inline-block text-sm">استيراد سريع للبيانات</label>
+                <div className="flex flex-wrap gap-2">
                   <button className="btn btn-ghost" onClick={importFromContacts}>سجل الهاتف</button>
-                  <span className="text-xs text-neutral-400">* يعمل غالبًا على كروم/أندرويد</span>
+                  {/* START: ADDED IMPORT FILE BUTTON */}
+                  <button className="btn btn-ghost" onClick={()=>peopleInput.current?.click()}>استيراد من ملف (CSV/XLSX)</button>
+                  <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handlePeoplePick} />
+                  {/* END: ADDED IMPORT FILE BUTTON */}
+                  <span className="text-xs text-neutral-400 self-center">* الاستيراد يُضيف السجلات فقط، والسحب يتم عند "إضافة الدعوة"</span>
                 </div>
               </div>
               <div>
