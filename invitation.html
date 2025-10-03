@@ -16,17 +16,53 @@
 
     <style>
       * { box-sizing: border-box; }
-      body { background:#0a0a0a; color:#eee; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Naskh Arabic UI", Arial, sans-serif; }
-      .card { background:#111418; border:1px solid #23262b; border-radius:16px; }
-      .btn { border-radius:14px; padding:.6rem 1rem; border:1px solid #2a2d33; transition: all .2s ease; }
-      .btn-primary { background:#facc15; color:#111; border-color:#facc15; }
-      .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-      .btn-ghost { background:#1a1e24; color:#e6e6e6; }
-      .chip { background:#1c2128; color:#c9c9c9; border-radius:10px; padding:.25rem .6rem; border:1px solid #2a2d33; font-size: 0.75rem; }
-      table th, table td { padding:.6rem .4rem; }
-      .thumb { width:56px; height:56px; object-fit:contain; border:1px solid #2a2d33; border-radius:8px; background:#0f1318; }
-      a.link { color:#93c5fd; }
-      code { background:#0f1318; padding:.2rem .35rem; border-radius:6px; border:1px solid #23262b }
+      body { background:#0A0A0A; color:#E5E7EB; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Naskh Arabic UI", Arial, sans-serif; }
+      .card { background:#1F2937; border:1px solid #374151; border-radius:12px; transition: box-shadow 0.3s ease; }
+      .card:hover { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
+      .btn { border-radius:8px; padding:.5rem 1rem; transition: all .2s ease; font-weight: 500; }
+      .btn-primary { background:#FACC15; color:#1F2937; border-color:#FACC15; }
+      .btn-primary:hover { background:#EAB308; }
+      .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+      .btn-secondary { background:#374151; color:#E5E7EB; }
+      .btn-secondary:hover { background:#4B5563; }
+      .chip { border-radius:9999px; padding:.2rem .75rem; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+      .chip-status { background: #374151; color: #E5E7EB; }
+      .chip-new { background: #4B5563; color: #D1D5DB; }
+      .chip-sent { background: #2563EB; color: #FFFFFF; }
+      .chip-attended { background: #10B981; color: #FFFFFF; }
+      .chip-reminded { background: #9333EA; color: #FFFFFF; }
+      table th, table td { padding:.8rem .6rem; text-align: right; }
+      table th { color: #9CA3AF; font-weight: 600; border-bottom: 1px solid #374151; }
+      .thumb { width:56px; height:56px; object-fit:contain; border:1px solid #4B5563; border-radius:8px; background:#111827; }
+      a.link { color:#93C5FD; }
+      code { background:#111827; padding:.2rem .35rem; border-radius:4px; border:1px solid #374151; font-size: 0.85rem; }
+      
+      /* تصميم مربع الإحصائيات (Stat Card) */
+      .stat-card {
+        border: none;
+        padding: 1.5rem;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+      }
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background-color: currentColor; /* يستخدم لون النص المخصص */
+        opacity: 0.1;
+        z-index: 0;
+      }
+      .stat-card p { position: relative; z-index: 1; }
+      .stat-card .label { color: currentColor; font-weight: 500; }
+      .stat-card .value { font-size: 2.25rem; font-weight: 800; margin-top: 0.25rem; }
+      
+      /* ألوان خاصة لبطاقات الإحصائيات */
+      .stat-total { color: #FACC15; }
+      .stat-sent { color: #3B82F6; }
+      .stat-attended { color: #10B981; }
+      .stat-remaining { color: #F97316; }
+      
     </style>
   </head>
   <body>
@@ -176,17 +212,17 @@
         return (
           <div className="min-h-screen flex items-center justify-center p-6">
             <div className="card w-full max-w-md p-6">
-              <h1 className="text-center text-2xl font-black mb-6">تسجيل الدخول بالحدث</h1>
+              <h1 className="text-center text-2xl font-black mb-6 text-yellow-400">تسجيل الدخول بالحدث</h1>
               {err && <div className="mb-3 text-sm text-red-300 bg-red-600/20 border border-red-600/40 p-2 rounded">{err}</div>}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm mb-1">اسم الحدث</label>
-                  <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="مثلاً: زفاف خالد" value={eventName} onChange={e=>setEventName(e.target.value)} />
+                  <label className="block text-sm mb-1 text-gray-400">اسم الحدث</label>
+                  <input className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" placeholder="مثلاً: زفاف خالد" value={eventName} onChange={e=>setEventName(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-sm mb-1">كلمة المرور</label>
-                  <input type="password" className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
-                  <p className="text-xs text-neutral-400 mt-1">إذا كان الحدث جديدًا، ستُسجّل هذه الكلمة له.</p>
+                  <label className="block text-sm mb-1 text-gray-400">كلمة المرور</label>
+                  <input type="password" className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
+                  <p className="text-xs text-gray-500 mt-1">إذا كان الحدث جديدًا، ستُسجّل هذه الكلمة له.</p>
                 </div>
                 <button onClick={login} className="btn btn-primary w-full font-bold">دخول</button>
               </div>
@@ -291,14 +327,14 @@
 
         return (
           <div>
-            <header className="sticky top-0 z-20 card px-4 py-3 flex items-center justify-between">
+            <header className="sticky top-0 z-20 bg-gray-900 border-b border-gray-700 px-4 py-3 flex items-center justify-between shadow-lg">
               <div className="flex items-center gap-2">
-                <span className="font-black">لوحة حدث: <span className="text-yellow-400">{event}</span></span>
+                <span className="font-black text-lg">لوحة حدث: <span className="text-yellow-400">{event}</span></span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="chip">الكروت المخزنة: {qrCards.length} • المتاح: {cardsRemaining}</span>
-                <button className="btn btn-ghost" onClick={changePassword}>تغيير كلمة المرور</button>
-                <button className="btn btn-ghost" onClick={onLogout}>خروج</button>
+                <span className="chip chip-status">الكروت: {qrCards.length} • المتاح: {cardsRemaining}</span>
+                <button className="btn btn-secondary text-sm" onClick={changePassword}>تغيير كلمة المرور</button>
+                <button className="btn btn-secondary text-sm" onClick={onLogout}>خروج</button>
               </div>
             </header>
 
@@ -306,31 +342,31 @@
               <div className="card p-6">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
-                    <h2 className="text-xl md:text-2xl font-bold">إدارة الدعوات</h2>
-                    <p className="text-neutral-400">ارفع مجموعة الباركود أولاً (تُحفظ الصور في IndexedDB دائمًا)، ثم أنشئ الدعوات ليتم سحب كرت تلقائياً من المخزون.</p>
+                    <h2 className="text-2xl font-bold">إدارة الدعوات</h2>
+                    <p className="text-gray-400 text-sm">ارفع الباركود أولاً (يُحفظ دائمًا)، ثم أنشئ الدعوات ليتم سحب كرت تلقائياً.</p>
                   </div>
-                  <span className="chip">الجاهزة للإرسال: {bulkCandidates.length}</span>
+                  <span className="chip bg-blue-600 text-white">الجاهزة للإرسال: {bulkCandidates.length}</span>
                 </div>
-                <div className="my-4 h-px bg-[#23262b]" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <Stat label="إجمالي الدعوات" value={stats.total} />
-                  <Stat label="الدعوات المُرسلة" value={stats.sent} />
-                  <Stat label="الحضور" value={stats.attended} />
-                  <Stat label="الكروت المتبقية" value={cardsRemaining} />
+                <div className="my-5 h-px bg-gray-700" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Stat label="إجمالي الدعوات" value={stats.total} className="stat-total" />
+                  <Stat label="الدعوات المُرسلة" value={stats.sent} className="stat-sent" />
+                  <Stat label="الحضور" value={stats.attended} className="stat-attended" />
+                  <Stat label="الكروت المتبقية" value={cardsRemaining} className="stat-remaining" />
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-2 mt-4">
-                {NavBtn("home","الصفحة الرئيسية",()=>setActive("home"),active)}
-                {NavBtn("new","دعوة جديدة",()=>setActive("new"),active)}
-                {NavBtn("send","الإرسال",()=>setActive("send"),active)}
-                {NavBtn("import","استيراد",()=>setActive("import"),active)}
+                {NavBtn("home","قائمة الدعوات",()=>setActive("home"),active)}
+                {NavBtn("new","إنشاء دعوة",()=>setActive("new"),active)}
+                {NavBtn("send","مركز الإرسال",()=>setActive("send"),active)}
+                {NavBtn("import","استيراد الكروت",()=>setActive("import"),active)}
               </div>
 
               {active === "home" && (
-                <div className="card p-6 mt-3">
-                  <div className="mb-4">
-                    <button className="btn btn-ghost text-sm" onClick={exportInvites}>تصدير الدعوات إلى CSV</button>
+                <div className="card p-6 mt-4">
+                  <div className="mb-4 flex justify-end">
+                    <button className="btn btn-secondary text-sm" onClick={exportInvites}>تصدير الدعوات إلى CSV</button>
                   </div>
                   <InviteTable 
                     invites={invites} 
@@ -363,50 +399,63 @@
         );
       }
 
-      function Stat({ label, value }){ return (<div className="card p-4"><p className="text-neutral-400 text-sm">{label}</p><p className="text-2xl font-extrabold mt-1">{value}</p></div>); }
-      function NavBtn(key,label,onClick,active){ return <button onClick={onClick} className={`btn ${active===key? 'btn-primary' : 'btn-ghost'}`}>{label}</button>; }
+      // تحديث مكون Stat ليستخدم التصميم الاحترافي الجديد
+      function Stat({ label, value, className }){ 
+        return (
+          <div className={`card stat-card ${className}`}>
+            <p className="label">{label}</p>
+            <p className="value">{value}</p>
+          </div>
+        ); 
+      }
+      function NavBtn(key,label,onClick,active){ return <button onClick={onClick} className={`btn ${active===key? 'btn-primary' : 'btn-secondary'}`}>{label}</button>; }
 
       function InviteTable({ invites, onDelete, onStatusChange }){
-        if(!invites.length) return <div className="text-neutral-400 text-sm">لا توجد دعوات بعد.</div>;
+        if(!invites.length) return <div className="text-gray-400 text-sm p-4 card mt-3">لا توجد دعوات بعد.</div>;
         return (
           <div className="overflow-x-auto">
-            <table className="w-full text-right table-auto">
+            <table className="w-full text-right table-auto border-separate border-spacing-y-2">
               <thead>
-                <tr className="text-neutral-400 text-sm border-b border-[#23262b]">
+                <tr className="text-gray-400 text-sm">
                   <th>الاسم</th>
                   <th>الجوال</th>
                   <th>العدد</th>
                   <th>الباركود</th>
                   <th>رقم الكرت</th>
                   <th>الحالة</th>
-                  <th>إجراء</th>
-                  <th>حذف</th>
+                  <th className="text-center">تغيير الحالة</th>
+                  <th className="text-center">حذف</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-gray-800/50 rounded-lg">
                 {invites.map(inv => (
-                  <tr key={inv.id} className="border-b border-[#1a1e24] align-top">
+                  <tr key={inv.id} className="bg-gray-800/80 hover:bg-gray-700/80 transition duration-150">
                     <td>{inv.guestName}</td>
                     <td dir="ltr">{inv.phone}</td>
                     <td>{inv.count}</td>
                     <td>
-                      {inv.qrId ? <InlineThumb qrId={inv.qrId} qrName={inv.qrName} /> : (<span className="chip">—</span>)}
+                      {inv.qrId ? <InlineThumb qrId={inv.qrId} qrName={inv.qrName} /> : (<span className="chip chip-status">—</span>)}
                     </td>
                     <td>{inv.qrNumber || '—'}</td>
                     <td>
-                      <span className={`chip ${inv.status==='new'?'':''} ${inv.status==='sent'?'!bg-blue-600 !text-white':''} ${inv.status==='reminded'?'!bg-purple-600 !text-white':''} ${inv.status==='attended'?'!bg-green-600 !text-white':''}`}>
+                      <span className={`chip ${
+                        inv.status==='new'? 'chip-new' : 
+                        inv.status==='sent'? 'chip-sent' : 
+                        inv.status==='reminded'? 'chip-reminded' : 
+                        'chip-attended'
+                        }`}>
                         {inv.status==='new'? 'جديدة' : inv.status==='sent'? 'مُرسلة' : inv.status==='reminded'? 'مُذكّر' : 'حضر'}
                       </span>
                     </td>
-                    <td>
-                      <div className="flex flex-col gap-1 w-20">
-                        <button className="btn btn-ghost !p-1 !text-xs !rounded-lg" onClick={()=>onStatusChange(inv.id, 'attended')}>حضر</button>
-                        <button className="btn btn-ghost !p-1 !text-xs !rounded-lg" onClick={()=>onStatusChange(inv.id, 'sent')}>أرسل</button>
-                        <button className="btn btn-ghost !p-1 !text-xs !rounded-lg" onClick={()=>onStatusChange(inv.id, 'new')}>جديدة</button>
+                    <td className="text-center">
+                      <div className="flex flex-col gap-1 w-20 mx-auto">
+                        <button className="btn !bg-green-600/80 hover:!bg-green-700/90 text-white !p-1 !text-xs !rounded-md" onClick={()=>onStatusChange(inv.id, 'attended')}>حضر</button>
+                        <button className="btn !bg-blue-600/80 hover:!bg-blue-700/90 text-white !p-1 !text-xs !rounded-md" onClick={()=>onStatusChange(inv.id, 'sent')}>أرسل</button>
+                        <button className="btn btn-secondary !p-1 !text-xs !rounded-md" onClick={()=>onStatusChange(inv.id, 'new')}>جديدة</button>
                       </div>
                     </td>
-                    <td>
-                      <button className="btn btn-ghost !p-1 !text-xs !rounded-lg !bg-red-900/40 hover:!bg-red-800/60" onClick={()=>onDelete(inv.id)}>حذف</button>
+                    <td className="text-center">
+                      <button className="btn !bg-red-600/60 hover:!bg-red-700/70 text-white !p-1 !text-xs !rounded-md" onClick={()=>onDelete(inv.id)}>حذف</button>
                     </td>
                   </tr>
                 ))}
@@ -418,9 +467,9 @@
 
       function InlineThumb({ qrId, qrName }){
         const url = useQrObjectURL(qrId);
-        if(!url) return <span className="chip">—</span>;
+        if(!url) return <span className="chip chip-status">—</span>;
         return (
-          <a className="link" href={url} download={qrName||'qr.png'} title="تنزيل الباركود">
+          <a className="link block" href={url} download={qrName||'qr.png'} title="تنزيل الباركود">
             <img className="thumb" src={url} alt="QR" />
           </a>
         );
@@ -455,34 +504,34 @@
         };
 
         return (
-          <div className="card p-6 mt-3">
+          <div className="card p-6 mt-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="mb-1 inline-block text-sm">استيراد من سجل الهاتف</label>
+                <label className="mb-1 inline-block text-sm text-gray-400">استيراد من سجل الهاتف</label>
                 <div className="flex gap-2">
-                  <button className="btn btn-ghost" onClick={importFromContacts}>سجل الهاتف</button>
-                  <span className="text-xs text-neutral-400">* يعمل غالبًا على كروم/أندرويد</span>
+                  <button className="btn btn-secondary" onClick={importFromContacts}>سجل الهاتف</button>
+                  <span className="text-xs text-gray-500 flex items-center">* يعمل غالبًا على كروم/أندرويد</span>
                 </div>
               </div>
               <div>
-                <label className="block text-sm mb-1">الاسم</label>
-                <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="اسم الضيف" />
+                <label className="block text-sm mb-1 text-gray-400">الاسم</label>
+                <input className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="اسم الضيف" />
               </div>
               <div>
-                <label className="block text-sm mb-1">رقم الهاتف</label>
-                <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="05xxxxxxxx" />
+                <label className="block text-sm mb-1 text-gray-400">رقم الهاتف</label>
+                <input className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="05xxxxxxxx" />
               </div>
               <div>
-                <label className="block text-sm mb-1">عدد الكروت للمرافقين</label>
-                <input type="number" min="1" className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={count} onChange={e=>setCount(Number(e.target.value || 1))} />
+                <label className="block text-sm mb-1 text-gray-400">عدد الكروت للمرافقين</label>
+                <input type="number" min="1" className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" value={count} onChange={e=>setCount(Number(e.target.value || 1))} />
               </div>
               <div>
-                <label className="block text-sm mb-1">اسم الحدث</label>
-                <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="مثال: زفاف خالد" readOnly={Boolean(forcedEventName)} />
-                <p className="text-xs text-neutral-400 mt-1">الكروت المتاحة حالياً: {cardsRemaining}</p>
+                <label className="block text-sm mb-1 text-gray-400">اسم الحدث</label>
+                <input className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="مثال: زفاف خالد" readOnly={Boolean(forcedEventName)} />
+                <p className="text-xs text-gray-500 mt-1">الكروت المتاحة حالياً: <span className="font-bold text-yellow-500">{cardsRemaining}</span></p>
               </div>
-              <div className="md:col-span-2 flex items-center gap-2">
-                <button className="btn btn-primary" onClick={create}>إضافة الدعوة (سحب كرت)</button>
+              <div className="md:col-span-2 flex items-center gap-2 mt-2">
+                <button className="btn btn-primary font-bold" disabled={cardsRemaining <= 0} onClick={create}>إضافة الدعوة (سحب كرت)</button>
               </div>
             </div>
           </div>
@@ -525,29 +574,29 @@
         const purgeAll  = ()=>{ if(confirm('مسح جميع الكروت المخزنة لهذا الحدث؟ سيؤدي هذا إلى فقدان جميع صور الباركود لهذا الحدث من جهازك. هل أنت متأكد؟')) setQrCards([]); };
 
         return (
-          <div className="grid md:grid-cols-2 gap-4 mt-3">
+          <div className="grid md:grid-cols-2 gap-4 mt-4">
             <div className="card p-6">
-              <h3 className="font-bold">تحميل كل الباركود من الجهاز (منع التكرار)</h3>
-              <p className="text-xs text-neutral-400 mt-1">الصور تُحفظ دائمًا داخل IndexedDB، والميتاداتا تحفظ محليًا.</p>
-              <div className="mt-3 flex gap-2 flex-wrap">
-                <button className="btn btn-primary" onClick={()=>qrInput.current?.click()}>اختيار ملفات باركود</button>
+              <h3 className="font-bold text-xl text-yellow-400">تحميل كروت الباركود (صور)</h3>
+              <p className="text-xs text-gray-400 mt-1">الصور تُحفظ دائمًا داخل IndexedDB.</p>
+              <div className="mt-4 flex gap-2 flex-wrap">
+                <button className="btn btn-primary font-bold" onClick={()=>qrInput.current?.click()}>اختيار ملفات باركود</button>
                 <input ref={qrInput} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,application/pdf" multiple className="hidden" onChange={onQrPick} />
-                <button className="btn btn-ghost" onClick={clearUsed}>إعادة تعيين الاستخدام</button>
-                <button className="btn btn-ghost !bg-red-900/40 hover:!bg-red-800/60" onClick={purgeAll}>مسح الكل</button>
+                <button className="btn btn-secondary" onClick={clearUsed}>إعادة تعيين الاستخدام</button>
+                <button className="btn bg-red-600/60 hover:bg-red-700/70 text-white" onClick={purgeAll}>مسح الكل</button>
               </div>
-              <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
+              <div className="mt-6 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
                 {qrCards.map(c => (<QrThumb key={c.id} card={c} />))}
               </div>
             </div>
 
             <div className="card p-6">
-              <h3 className="font-bold">تحميل الأسماء والأرقام وعدد الدعوات (CSV / XLSX)</h3>
-              <p className="text-xs text-neutral-400 mt-1">صيغة الأعمدة: <code>name,phone,count[,event]</code> مع ترويسة اختيارية.</p>
-              <div className="mt-3 flex gap-2">
-                <button className="btn btn-ghost" onClick={()=>peopleInput.current?.click()}>اختيار ملف</button>
+              <h3 className="font-bold text-xl text-yellow-400">تحميل قائمة المدعوين (CSV / XLSX)</h3>
+              <p className="text-xs text-gray-400 mt-1">صيغة الأعمدة: <code>name,phone,count[,event]</code> مع ترويسة اختيارية.</p>
+              <div className="mt-4 flex gap-2">
+                <button className="btn btn-secondary" onClick={()=>peopleInput.current?.click()}>اختيار ملف CSV / Excel</button>
                 <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handlePeoplePick} />
               </div>
-              <p className="text-xs text-neutral-400 mt-3">* هذا الاستيراد لا يسحب الكروت تلقائيًا.</p>
+              <p className="text-xs text-gray-500 mt-3">* هذا الاستيراد لا يسحب الكروت تلقائيًا. استخدم "إنشاء دعوة" لربط الكروت.</p>
             </div>
           </div>
         );
@@ -556,10 +605,10 @@
       function QrThumb({ card }){
         const url = useQrObjectURL(card.id);
         return (
-          <div className="flex flex-col items-center gap-1">
-            {url ? (<img className="thumb" src={url} alt={card.name} title={card.name} />) : (<div className="thumb flex items-center justify-center text-[10px] text-neutral-500">…</div>)}
-            <span className="text-[10px] text-neutral-400">{card.cardNumber ? `#${card.cardNumber}` : 'بدون رقم'}</span>
-            <span className={`text-[10px] ${card.used? 'text-yellow-400' : 'text-neutral-500'}`}>{card.used? 'مستخدم' : 'متاح'}</span>
+          <div className="flex flex-col items-center gap-1 p-2 bg-gray-800/60 rounded-lg">
+            {url ? (<img className="thumb" src={url} alt={card.name} title={card.name} />) : (<div className="thumb flex items-center justify-center text-[10px] text-gray-500">…</div>)}
+            <span className="text-[10px] font-medium text-gray-400">{card.cardNumber ? `#${card.cardNumber}` : 'بدون رقم'}</span>
+            <span className={`text-[10px] ${card.used? 'text-red-400 font-bold' : 'text-green-400 font-bold'}`}>{card.used? 'مُستخدَم' : 'مُتاح'}</span>
           </div>
         );
       }
@@ -580,41 +629,44 @@
           .filter(i => [i.guestName, i.phone, i.eventName].some(f => (f || "").toLowerCase().includes(filter.toLowerCase())));
 
         return (
-          <div className="mt-3 space-y-4">
+          <div className="mt-4 space-y-4">
             {/* جزء تخصيص الرسالة */}
             <div className="card p-6">
-              <h3 className="font-bold mb-3">تخصيص رسالة واتساب</h3>
+              <h3 className="font-bold mb-3 text-xl text-yellow-400">تخصيص رسالة واتساب</h3>
               <textarea 
-                className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2 min-h-[120px]" 
+                className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 min-h-[120px] text-white" 
                 value={whatsAppMsg} 
                 onChange={e => setWhatsAppMsg(e.target.value)} 
                 placeholder="محتوى الرسالة"
               />
-              <p className="text-xs text-neutral-400 mt-2">يمكنك استخدام المتغيرات التالية: <code>[الاسم]</code>، <code>[الحدث]</code>، <code>[العدد]</code>. سيتم إرفاق صورة الباركود تلقائيًا (إن وجدت).</p>
-              <div className="mt-3 p-3 bg-neutral-800/50 rounded-lg">
-                <p className="text-sm font-medium mb-1">معاينة الرسالة:</p>
-                <p className="whitespace-pre-wrap text-sm">{previewMessage(whatsAppMsg)}</p>
+              <p className="text-xs text-gray-500 mt-2">استخدم: <code>[الاسم]</code>، <code>[الحدث]</code>، <code>[العدد]</code>. سيتم إرفاق صورة الباركود.</p>
+              <div className="mt-3 p-3 bg-gray-700/50 rounded-lg border border-gray-600">
+                <p className="text-sm font-medium mb-1 text-yellow-300">معاينة الرسالة:</p>
+                <p className="whitespace-pre-wrap text-sm text-gray-200">{previewMessage(whatsAppMsg)}</p>
               </div>
             </div>
 
             {/* جزء الإرسال الفعلي */}
             <div className="card p-6">
-              <h3 className="font-bold mb-3">قائمة الإرسال</h3>
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <input className="w-full md:w-80 rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} />
-                <button disabled={!list.length} className="btn btn-primary" onClick={()=>onBulk(list)}>إرسال جماعي ({list.length})</button>
+              <h3 className="font-bold mb-3 text-xl text-yellow-400">المرشحون للإرسال</h3>
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <input className="w-full md:w-80 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white" placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} />
+                <button disabled={!list.length} className="btn btn-primary font-bold" onClick={()=>onBulk(list)}>إرسال جماعي ({list.length})</button>
               </div>
               {!list.length ? (
-                <p className="text-neutral-400 text-sm">لا توجد عناصر جاهزة للإرسال الآن.</p>
+                <p className="text-gray-400 text-sm p-4 bg-gray-800 rounded-lg">لا توجد عناصر جاهزة للإرسال حالياً.</p>
               ) : (
-                <div className="grid md:grid-cols-2 gap-3">
+                <div className="grid md:grid-cols-2 gap-4">
                   {list.map(inv => (
-                    <div key={inv.id} className="card p-4 space-y-2">
-                      <p><b>{inv.guestName}</b> — <span dir="ltr">{inv.phone}</span></p>
-                      <p className="text-sm text-neutral-400">كروت: {inv.count} {inv.qrNumber? `• كرت #${inv.qrNumber}` : ''}</p>
+                    <div key={inv.id} className="card p-4 space-y-2 bg-gray-800/80 border-blue-500/50 border">
+                      <div className="flex justify-between items-start">
+                        <p className="font-bold text-lg text-yellow-300">{inv.guestName}</p>
+                        <span dir="ltr" className="text-sm text-gray-300">{inv.phone}</span>
+                      </div>
+                      <p className="text-sm text-gray-400">كروت: {inv.count} {inv.qrNumber? `• كرت #${inv.qrNumber}` : ''}</p>
                       {inv.qrId && <InlineThumb qrId={inv.qrId} qrName={inv.qrName} />}
-                      <div className="flex gap-2 justify-end">
-                        <button className="btn btn-primary" onClick={()=>onSend(inv)}>إرسال (صورة + نص إن أمكن)</button>
+                      <div className="pt-2 flex justify-end">
+                        <button className="btn btn-primary !text-sm" onClick={()=>onSend(inv)}>إرسال الآن (صورة + نص)</button>
                       </div>
                     </div>
                   ))}
@@ -633,19 +685,6 @@
 
       const root = ReactDOM.createRoot(document.getElementById('root'));
       root.render(<Root />);
-
-      // اختبارات سريعة
-      try {
-        console.assert(typeof React !== 'undefined', 'React لم يُحمّل');
-        console.assert(typeof ReactDOM !== 'undefined', 'ReactDOM لم يُحمّل');
-        localStorage.setItem('__test','ok');
-        console.assert(localStorage.getItem('__test') === 'ok', 'localStorage لا يعمل');
-        localStorage.removeItem('__test');
-        console.log('%cاختبارات التهيئة: نجحت','color:#22c55e');
-      } catch (e) {
-        console.warn('اختبارات التهيئة: فشلت', e);
-      }
     </script>
   </body>
 </html>
-
