@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Client Invite Portal – Cards Pool + Image Share</title>
+  <style>
+    :root{
+      --bg:#0f0f13; --card:#17171d; --muted:#9aa0a6; --text:#e6e9ef; --gold:#c9a34a; --accent:#2d7ff9; --danger:#ef4444; --ok:#10b981;
+    }
+    html, body{height:100%}
+    body{margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Kufi Arabic", "Noto Sans Arabic", Arial, sans-serif; background:var(--bg); color:var(--text)}
+    .container{max-width:1100px; margin:24px auto; padding:0 16px}
+    .grid{display:grid; gap:16px}
+    .cols-2{grid-template-columns: repeat(2, minmax(0,1fr))}
+    @media (max-width: 900px){.cols-2{grid-template-columns: 1fr}}
+    .card{background:var(--card); border:1px solid #23232a; border-radius:16px; padding:16px}
+    h1{font-size:clamp(20px,2.2vw,28px); margin:0 0 6px;}
+    h2{font-size:18px; margin:0 0 10px}
+    label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
+    input, select, button, textarea{font:inherit}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .input{background:#0d0d11; border:1px solid #2a2a33; color:var(--text); border-radius:12px; padding:10px 12px}
+    .input[readonly]{opacity:.7}
+    .btn{border:0; padding:10px 14px; border-radius:12px; cursor:pointer}
+    .btn.gold{background:linear-gradient(135deg, #e9d28b, #b88a2a); color:#1a1406; font-weight:700}
+    .btn.primary{background:#2d7ff9; color:white}
+    .btn.ghost{background:transparent; border:1px solid #2a2a33; color:var(--text)}
+    .btn.danger{background:var(--danger); color:white}
+    .stat{background: #121218; border:1px dashed #2a2a33; padding:10px 12px; border-radius:12px; text-align:center}
+    .stat .v{display:block; font-weight:700; font-size:18px}
+    .muted{color:var(--muted)}
+    .table{width:100%; border-collapse:collapse}
+    .table th, .table td{padding:10px; border-bottom:1px solid #23232a; text-align:start}
+    .pill{padding:2px 8px; border-radius:999px; font-size:12px; background:#1c1c24; border:1px solid #2a2a33}
+    .drop{border:1px dashed #2a2a33; padding:14px; border-radius:12px; text-align:center; background:#101016}
+    .footer{opacity:.7; font-size:12px; margin-top:8px}
+    .brand{display:flex; align-items:center; gap:12px}
+    .brand .logo{width:38px; height:38px; border-radius:10px; background: radial-gradient(circle at 30% 20%, #fff6, #0000), linear-gradient(135deg, #2a2a2f, #0c0c10); border:1px solid #2a2a33; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--gold)}
+    .badge{border:1px solid #2a2a33; padding:6px 8px; border-radius:8px; font-size:12px; background:#121219}
+    .qr-preview{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+    .qr-box{background:#fff; padding:8px; border-radius:8px}
+    .hidden{display:none !important}
+    .tag{display:inline-block; padding:3px 8px; border-radius:999px; border:1px solid #2a2a33; background:#121219; font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row" style="justify-content:space-between; margin-bottom:14px">
+      <div class="brand">
+        <div class="logo">HS</div>
+        <div>
+          <h1>HORMEZ SECURITY • بوابة العميل لإرسال الدعوات</h1>
+          <div class="muted" style="font-size:12px">Cards Pool • No duplicates • Multi-share</div>
+        </div>
+      </div>
+      <div class="badge">يحفظ تلقائيًا لكل فعالية (IndexedDB)</div>
+    </div>
+
+    <div class="grid cols-2">
+      <section class="card" id="eventCard">
+        <h2>إعدادات الفعالية</h2>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:10px">
+          <div>
+            <label>اسم الفعالية</label>
+            <input class="input" id="eventName" placeholder="مثال: زفاف خالد" />
+          </div>
+          <div>
+            <label>رمز الفعالية (للتسمية)</label>
+            <input class="input" id="eventCode" placeholder="مثال: KH" />
+          </div>
+          <div>
+            <label>رصيد الكروت (من مخزون الصور)</label>
+            <input class="input" id="balanceTotal" readonly />
+          </div>
+          <div>
+            <label>آخر تسلسل داخلي</label>
+            <input class="input" id="lastSeq" readonly />
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <span class="tag" id="poolInfo">مخزون الصور: 0 متاح</span>
+          <button class="btn ghost" id="recountPool">تحديث الرصيد</button>
+          <button class="btn gold" id="saveEvent">حفظ</button>
+          <button class="btn ghost" id="resetEvent">تهيئة</button>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <div class="stat" style="flex:1"><span class="muted">إجمالي المخزون</span><span class="v" id="sTotal">0</span></div>
+          <div class="stat" style="flex:1"><span class="muted">المستخدم</span><span class="v" id="sUsed">0</span></div>
+          <div class="stat" style="flex:1"><span class="muted">المتبقّي</span><span class="v" id="sLeft">0</span></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>دعوة جديدة</h2>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:10px">
+          <div><label>الاسم</label><input class="input" id="guestName" placeholder="اسم الضيف" /></div>
+          <div><label>الهاتف</label><input class="input" id="guestPhone" placeholder="مثال: 9715XXXXXXXX" /></div>
+          <div><label>عدد الكروت</label><input type="number" min="1" value="1" class="input" id="guestTickets" /></div>
+          <div><label>ملاحظة</label><input class="input" id="guestNote" placeholder="VIP …" /></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary" id="pickContact">استيراد من سجل الهاتف</button>
+          <button class="btn ghost" id="importSingle">استيراد ضيف عبر ملف</button>
+          <input id="singleFile" type="file" accept=".csv,.txt,.json" hidden />
+          <button class="btn gold" id="createInvite">توليد & إرسال</button>
+          <button class="btn ghost" id="clearForm">حذف الضيف قبل الإرسال</button>
+          <button class="btn ghost" id="previewFirst">معاينة</button>
+        </div>
+        <div class="footer">• يمنع تكرار نفس الرقم في نفس الفعالية • السحب يتم من مخزون الصور بعدد المرافقين</div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:16px">
+      <h2>استيراد كروت الدعوات (صور)</h2>
+      <div class="drop">
+        ارفع صور الكروت (PNG/JPG). سيُستخدم اسم الملف كرمز الكرت (KH_001.png ⇒ KH_001)
+        <div class="row" style="margin-top:8px">
+          <input id="cardsInput" type="file" accept="image/*" multiple />
+          <button class="btn ghost" id="importCardsBtn">استيراد & حفظ</button>
+        </div>
+      </div>
+      <div class="footer">هذه الصور هي الرصيد الفعلي الذي يُسحب منه.</div>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <h2>استيراد قائمة الضيوف (CSV)</h2>
+      <div class="drop" id="dropZone">
+        اسحب CSV هنا أو <label for="csvFile" style="text-decoration:underline; cursor:pointer">اختر ملفًا</label>
+        <input id="csvFile" type="file" accept=".csv" hidden />
+      </div>
+      <div class="footer">الأعمدة: Name, Phone, Tickets — سيتم السحب من المخزون المتاح فقط.</div>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <h2>سجل الدعوات</h2>
+      <table class="table" id="invitesTable">
+        <thead><tr><th>#</th><th>الضيف</th><th>الهاتف</th><th>الكروت</th><th>الأكواد</th><th>الإجراءات</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="card hidden" id="previewCard">
+      <h2>معاينة الكرت الأول</h2>
+      <div class="qr-preview" id="previewArea"></div>
+      <div class="row" style="margin-top:10px"><button class="btn ghost" id="closePreview">إغلاق</button></div>
+    </section>
+
+    <div class="footer">© 2025 • Hormez Security – Cards Pool Edition</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script>
+  const DB_NAME = 'hormez_invites_db';
+  const DB_VER  = 2; // new store
+  const STORE_SETTINGS = 'settings';
+  const STORE_INVITES  = 'invites';
+  const STORE_QR       = 'qr_images';
+  const STORE_POOL     = 'card_pool';
+
+  function openDB(){
+    return new Promise((resolve, reject)=>{
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = ()=>{
+        const db = req.result;
+        if(!db.objectStoreNames.contains(STORE_SETTINGS)) db.createObjectStore(STORE_SETTINGS);
+        if(!db.objectStoreNames.contains(STORE_INVITES)){
+          const s = db.createObjectStore(STORE_INVITES, { keyPath:'id' });
+          s.createIndex('by_event','eventKey');
+        }
+        if(!db.objectStoreNames.contains(STORE_QR)){
+          const q = db.createObjectStore(STORE_QR, { keyPath:'code' });
+          q.createIndex('by_event','eventKey');
+        }
+        if(!db.objectStoreNames.contains(STORE_POOL)){
+          const p = db.createObjectStore(STORE_POOL, { keyPath:'code' });
+          p.createIndex('by_event','eventKey');
+          p.createIndex('by_used','used');
+        }
+      };
+      req.onsuccess = ()=> resolve(req.result);
+      req.onerror   = ()=> reject(req.error);
+    });
+  }
+  const tx = (db, store, mode='readonly')=> db.transaction(store, mode).objectStore(store);
+
+  const $ = s=> document.querySelector(s);
+  const $$ = s=> Array.from(document.querySelectorAll(s));
+  const pad = (n,w=3)=> String(n).padStart(w,'0');
+
+  let gdb; let settings={eventName:'',eventCode:'',balanceTotal:0,lastSeq:0}; let currentEventKey='';
+  function makeEventKey(){ return (settings.eventCode||'EVT').toUpperCase()+'|'+(settings.eventName||'EVENT'); }
+  function normalizePhone(p){ return String(p||'').replace(/\D+/g,''); }
+
+  async function poolCounts(){ gdb=gdb||await openDB(); return await new Promise(res=>{ const c=tx(gdb,STORE_POOL).index('by_event').openCursor(IDBKeyRange.only(currentEventKey)); let total=0,used=0; c.onsuccess=e=>{ const cur=e.target.result; if(cur){ total++; if(cur.value.used) used++; cur.continue(); } else res({total,used,left:Math.max(0,total-used)}); }; c.onerror=()=>res({total:0,used:0,left:0}); }); }
+  async function computeUsedTickets(){ gdb=gdb||await openDB(); return await new Promise(res=>{ const s=tx(gdb,STORE_INVITES).index('by_event').openCursor(IDBKeyRange.only(currentEventKey)); let t=0; s.onsuccess=e=>{ const cur=e.target.result; if(cur){ t+=(cur.value.tickets||0); cur.continue(); } else res(t); }; s.onerror=()=>res(0); }); }
+
+  function updateStatsUI(){ poolCounts().then(c=>{ $('#sTotal').textContent=c.total; computeUsedTickets().then(u=>{ $('#sUsed').textContent=u; $('#sLeft').textContent=Math.max(0,c.total-u); $('#balanceTotal').value=c.total; $('#poolInfo').textContent=`مخزون الصور: ${c.left} متاح`; }); }); $('#lastSeq').value=settings.lastSeq; }
+
+  async function loadSettings(){ gdb=gdb||await openDB(); const st=await new Promise((res,rej)=>{ const r=tx(gdb,STORE_SETTINGS).get('event_settings'); r.onsuccess=()=>res(r.result||null); r.onerror=()=>rej(r.error); }); if(st) settings=st; currentEventKey=makeEventKey(); $('#eventName').value=settings.eventName||''; $('#eventCode').value=settings.eventCode||''; updateStatsUI(); await refreshTable(); }
+  async function saveSettings(){ gdb=gdb||await openDB(); await new Promise((res,rej)=>{ const r=tx(gdb,STORE_SETTINGS,'readwrite').put(settings,'event_settings'); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); }
+
+  function nextSequence(){ settings.lastSeq+=1; return settings.lastSeq; }
+  function codeFor(idx){ const seq=pad(nextSequence()); const base=(settings.eventCode||'EVT').toUpperCase()+'_'+seq; return idx>1?`${base}-${idx}`:base; }
+
+  function textTemplate({name,eventName,code,plusN}){ const add=plusN&&plusN>0?` +${plusN}`:''; return `دعوة ${name}\nفعالية: ${eventName}\nالباركود: ${code}${add}\nيرجى إبراز الباركود عند الدخول.`; }
+  function waLink(phone,text){ const p=normalizePhone(phone); return `https://wa.me/${p}?text=${encodeURIComponent(text)}`; }
+
+  async function getPoolBlob(code){ gdb=gdb||await openDB(); return await new Promise(res=>{ const r=tx(gdb,STORE_POOL).get(code); r.onsuccess=()=>res(r.result?.blob||null); r.onerror=()=>res(null); }); }
+  async function markPoolUsed(codes){ gdb=gdb||await openDB(); await Promise.all(codes.map(code=> new Promise(res=>{ const s=tx(gdb,STORE_POOL,'readwrite'); const g=s.get(code); g.onsuccess=()=>{ const v=g.result; if(v){ v.used=true; s.put(v).onsuccess=()=>res(); } else res(); }; g.onerror=()=>res(); }))); }
+  async function takeFromPool(n){ gdb=gdb||await openDB(); return await new Promise(res=>{ const idx=tx(gdb,STORE_POOL).index('by_event').openCursor(IDBKeyRange.only(currentEventKey)); const picked=[]; idx.onsuccess=e=>{ const cur=e.target.result; if(cur && picked.length<n){ const v=cur.value; if(!v.used) picked.push(v.code); cur.continue(); } else res(picked); }; idx.onerror=()=>res([]); }); }
+
+  async function saveInvite(inv){ gdb=gdb||await openDB(); await new Promise((res,rej)=>{ const r=tx(gdb,STORE_INVITES,'readwrite').put(inv); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); }
+  async function readInvite(id){ gdb=gdb||await openDB(); return await new Promise((res,rej)=>{ const r=tx(gdb,STORE_INVITES).get(id); r.onsuccess=()=>res(r.result||null); r.onerror=()=>rej(r.error); }); }
+  async function deleteInvite(id){ gdb=gdb||await openDB(); await new Promise((res,rej)=>{ const r=tx(gdb,STORE_INVITES,'readwrite').delete(id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); await refreshTable(); updateStatsUI(); }
+  async function getAnyBlobForCode(code){ const b=await getPoolBlob(code); if(b) return b; gdb=gdb||await openDB(); return await new Promise(res=>{ const r=tx(gdb,STORE_QR).get(code); r.onsuccess=()=>res(r.result?.blob||null); r.onerror=()=>res(null); }); }
+  async function downloadBlob(filename,blob){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(url),3000); }
+
+  async function shareFirstAndOfferRest(inv){
+    if(!inv || !inv.codes?.length) return;
+    const first=inv.codes[0]; const rest=inv.codes.slice(1);
+    const blobF=await getAnyBlobForCode(first);
+    const text=textTemplate({name:inv.name,eventName:settings.eventName,code:first,plusN:rest.length});
+    if(navigator.canShare && blobF){ try{ const file=new File([blobF],`${first}.png`,{type:'image/png'}); await navigator.share({files:[file],text}); }catch(_){} }
+    else { const link=waLink(inv.phone,text); window.open(link,'_blank'); if(blobF) downloadBlob(`${first}.png`,blobF); }
+    if(rest.length){ const more=confirm(`تم إرسال/تحضير الأول. لديك ${rest.length} صور إضافية، تنزيلها الآن؟`); if(more){ for(const c of rest){ const b=await getAnyBlobForCode(c); if(b) await downloadBlob(`${c}.png`,b); } } }
+  }
+
+  async function refreshTable(){ gdb=gdb||await openDB(); const tbody=$('#invitesTable tbody'); tbody.innerHTML=''; const idx=tx(gdb,STORE_INVITES).index('by_event'); const req=idx.openCursor(IDBKeyRange.only(currentEventKey)); let i=1; req.onsuccess=async e=>{ const cur=e.target.result; if(cur){ const v=cur.value; const tr=document.createElement('tr'); const codesHtml=(v.codes||[]).map(c=>`<span class="pill">${c}</span>`).join(' '); tr.innerHTML=`<td>${i++}</td><td>${v.name||''}</td><td>${v.phone||''}</td><td>${v.tickets||0}</td><td>${codesHtml}</td><td><button class="btn ghost" data-action="share-first" data-id="${v.id}">مشاركة الأول</button> <button class="btn ghost" data-action="download-all" data-id="${v.id}">تنزيل الكل</button> <button class="btn danger" data-action="delete" data-id="${v.id}">حذف</button></td>`; tbody.appendChild(tr); cur.continue(); } } }
+
+  // Importers
+  $('#importSingle').addEventListener('click', ()=> $('#singleFile').click());
+  $('#singleFile').addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const text=await f.text(); try{ if(f.name.endsWith('.json')){ const j=JSON.parse(text); $('#guestName').value=j.name||''; $('#guestPhone').value=j.phone||''; $('#guestTickets').value=j.tickets||1; $('#guestNote').value=j.note||''; } else { const [line]=text.split(/\r?\n/).filter(Boolean); const [nm,ph,tix,note]=(line||'').split(','); $('#guestName').value=(nm||'').trim(); $('#guestPhone').value=(ph||'').trim(); $('#guestTickets').value=parseInt(tix||'1',10)||1; $('#guestNote').value=(note||'').trim(); } alert('تم استيراد بيانات الضيف من الملف.'); }catch(_){ alert('تعذّر قراءة الملف.'); } });
+
+  $('#importCardsBtn').addEventListener('click', async ()=>{ const files=$('#cardsInput').files; if(!files||!files.length){ alert('اختر صور الكروت أولًا'); return; } gdb=gdb||await openDB(); const store=tx(gdb,STORE_POOL,'readwrite'); let added=0, skipped=0; for(const file of files){ const code=(file.name||'').replace(/\.[^.]+$/,''); const blob=new Blob([await file.arrayBuffer()],{type:file.type||'image/png'}); await new Promise(res=>{ const g=store.get(code); g.onsuccess=()=>{ if(g.result){ skipped++; res(); } else { store.put({code,blob,used:false,eventKey:currentEventKey,ts:Date.now()}).onsuccess=()=>{ added++; res(); }; } }; g.onerror=()=>res(); }); } updateStatsUI(); alert(`تم الاستيراد: ${added}، تم تخطي: ${skipped}`); });
+
+  // Form events
+  $('#saveEvent').addEventListener('click', async ()=>{ settings.eventName=$('#eventName').value.trim(); settings.eventCode=$('#eventCode').value.trim(); currentEventKey=makeEventKey(); await saveSettings(); updateStatsUI(); await refreshTable(); });
+  $('#recountPool').addEventListener('click', updateStatsUI);
+  $('#resetEvent').addEventListener('click', async ()=>{ settings.eventName=''; settings.eventCode=''; settings.lastSeq=0; $('#eventName').value=''; $('#eventCode').value=''; await saveSettings(); currentEventKey=makeEventKey(); updateStatsUI(); await refreshTable(); });
+  $('#clearForm').addEventListener('click', ()=>{ $('#guestName').value=''; $('#guestPhone').value=''; $('#guestTickets').value='1'; $('#guestNote').value=''; });
+
+  async function isDuplicatePhone(phone){ gdb=gdb||await openDB(); return await new Promise(res=>{ const idx=tx(gdb,STORE_INVITES).index('by_event').openCursor(IDBKeyRange.only(currentEventKey)); let found=false; idx.onsuccess=e=>{ const cur=e.target.result; if(cur){ if(cur.value.phone===phone){ found=true; res(true); } else cur.continue(); } else res(found); }; idx.onerror=()=>res(false); }); }
+
+  $('#createInvite').addEventListener('click', async ()=>{ const name=$('#guestName').value.trim(); const phone=normalizePhone($('#guestPhone').value); const note=$('#guestNote').value.trim(); let tickets=parseInt($('#guestTickets').value||'1',10)||1; if(!name||!phone){ alert('أدخل الاسم ورقم الهاتف'); return; } if(tickets<1) tickets=1; if(await isDuplicatePhone(phone)){ alert('هذا الرقم مسجل مسبقًا لهذه الفعالية'); return; } const avail=(await poolCounts()).left; if(avail<tickets){ alert(`المخزون لا يكفي. المتاح: ${avail}`); return; } const codes=await takeFromPool(tickets); if(codes.length<tickets){ alert('تعذر السحب من المخزون'); return; } await markPoolUsed(codes); settings.lastSeq+=1; await saveSettings(); const inv={id:crypto.randomUUID(), name, phone, note, tickets, codes, eventKey:currentEventKey, ts:Date.now()}; await saveInvite(inv); await refreshTable(); updateStatsUI(); await shareFirstAndOfferRest(inv); });
+
+  $('#previewFirst').addEventListener('click', async ()=>{ const area=$('#previewArea'); area.innerHTML=''; const counts=await poolCounts(); if(counts.left>0){ const code=(await takeFromPool(1))[0]; const b=await getPoolBlob(code); if(b){ const url=URL.createObjectURL(b); const img=new Image(); img.src=url; img.style.maxWidth='220px'; img.className='qr-box'; area.appendChild(img); const meta=document.createElement('div'); meta.className='muted'; meta.innerHTML=`أول كرت متاح: <b>${code}</b>`; area.appendChild(meta); } } else { const seq=settings.lastSeq+1; const code=(settings.eventCode||'EVT').toUpperCase()+"_"+pad(seq); const box=document.createElement('div'); box.className='qr-box'; const cv=document.createElement('canvas'); box.appendChild(cv); area.appendChild(box); try{ await QRCode.toCanvas(cv, code, {errorCorrectionLevel:'M', margin:2, scale:6}); }catch(_){ box.textContent=code; } const meta=document.createElement('div'); meta.className='muted'; meta.innerHTML=`لا يوجد مخزون صور — عرض رمز احتياطي: <b>${code}</b>`; area.appendChild(meta); } $('#previewCard').classList.remove('hidden'); });
+  $('#closePreview').addEventListener('click', ()=> $('#previewCard').classList.add('hidden'));
+
+  $('#invitesTable').addEventListener('click', async (e)=>{ const b=e.target.closest('button'); if(!b) return; const id=b.getAttribute('data-id'); const action=b.getAttribute('data-action'); const inv=await readInvite(id); if(!inv) return; if(action==='share-first'){ await shareFirstAndOfferRest(inv); } else if(action==='download-all'){ for(const code of inv.codes||[]){ const blob=await getAnyBlobForCode(code); if(blob) await downloadBlob(`${code}.png`, blob); } } else if(action==='delete'){ if(confirm('حذف هذه الدعوة؟')) await deleteInvite(id); } });
+
+  const dropZone=$('#dropZone');
+  dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.style.borderColor='#2d7ff9'; });
+  dropZone.addEventListener('dragleave', ()=> dropZone.style.borderColor='#2a2a33');
+  dropZone.addEventListener('drop', e=>{ e.preventDefault(); dropZone.style.borderColor='#2a2a33'; handleGuestCSV(e.dataTransfer.files); });
+  $('#csvFile').addEventListener('change', e=> handleGuestCSV(e.target.files));
+
+  async function handleGuestCSV(files){ if(!files||!files.length) return; const f=files[0]; const reader=new FileReader(); reader.onload=async ()=>{ const rows=parseCSV(reader.result); const header=rows[0]||[]; const iName=header.findIndex(h=>/name/i.test(h)); const iPhone=header.findIndex(h=>/phone|mobile|tel/i.test(h)); const iTix=header.findIndex(h=>/tickets|count|qty/i.test(h)); if(iName===-1||iPhone===-1){ alert('CSV يجب أن يحتوي الأعمدة: Name, Phone, Tickets'); return; } for(let r=1;r<rows.length;r++){ const row=rows[r]; if(!row||row.length<2) continue; const name=(row[iName]||'').trim(); if(!name) continue; const phone=normalizePhone(row[iPhone]||''); if(!phone) continue; const tickets=Math.max(1, parseInt(row[iTix]||'1',10)||1); if(await isDuplicatePhone(phone)) continue; const avail=(await poolCounts()).left; if(avail<tickets) break; const codes=await takeFromPool(tickets); await markPoolUsed(codes); const inv={id:crypto.randomUUID(), name, phone, note:'', tickets, codes, eventKey:currentEventKey, ts:Date.now()}; await saveInvite(inv); if(r===1){ await shareFirstAndOfferRest(inv); } } updateStatsUI(); await refreshTable(); alert('تم استيراد القائمة وإنشاء الدعوات حسب المتاح.'); }; reader.readAsText(f, 'utf-8'); }
+
+  function parseCSV(text){ const rows=[]; let row=[]; let cell=''; let q=false; for(let i=0;i<text.length;i++){ const ch=text[i]; if(q){ if(ch==='"'){ if(text[i+1]==='"'){ cell+='"'; i++; } else { q=false; } } else { cell+=ch; } } else { if(ch==='"'){ q=true; } else if(ch===','){ row.push(cell); cell=''; } else if(ch==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; } else if(ch==='\r'){ } else { cell+=ch; } } } row.push(cell); rows.push(row); return rows.filter(r=> r.some(c=> String(c).trim()!==''); }
+
+  loadSettings();
+  </script>
+</body>
+</html>
