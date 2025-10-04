@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>بوابة الدعوات | مزامنة كاملة (Firestore + Storage)</title>
+    <title>بوابة الدعوات | مزامنة Firestore فقط</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -17,7 +17,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script> 
     <style>
       * { box-sizing: border-box; }
       body { background:#0a0a0a; color:#eee; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Naskh Arabic UI", Arial, sans-serif; }
@@ -43,7 +42,7 @@
         apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
         authDomain: "hormez-inv.firebaseapp.com",
         projectId: "hormez-inv",
-        storageBucket: "hormez-inv.appspot.com",
+        // تم حذف storageBucket
         messagingSenderId: "747519941805",
         appId: "1:747519941805:web:468fada2492700e9da3a24"
       };
@@ -51,7 +50,7 @@
       const app = firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
       const db = firebase.firestore();
-      const storage = firebase.storage(); 
+      // تم حذف const storage = firebase.storage(); 
 
       const getEventDoc = (uid, eventName, type) => db.collection('USERS').doc(uid).collection('EVENTS').doc(eventName).collection(type).doc('data');
       // END: FIREBASE CONFIG & INIT
@@ -66,12 +65,17 @@
 
       const LS_EVENTS = 'hormez_events_meta';
       const LS_AUTH   = 'hormez_auth_event';
+      const LS_QR_CACHE = 'hormez_qr_cache'; // كاش محلي للـ QR
 
       // مسح كلمة المرور القديمة عند الطلب
       SafeStorage.removeItem(LS_EVENTS); 
 
-      // QRDataCache الآن يخزن id -> publicURL
-      const QRDataCache = new Map(); 
+      // QRDataCache الآن يخزن id -> dataURL (للتخزين المحلي المؤقت)
+      const QRDataCache = new Map(JSON.parse(SafeStorage.getItem(LS_QR_CACHE) || '[]')); 
+      
+      const updateQrCache = () => {
+        SafeStorage.setItem(LS_QR_CACHE, JSON.stringify(Array.from(QRDataCache.entries())));
+      };
 
       // ======= utils =======
       const normalizePhone=(p)=>String(p||'').replace(/\D/g,'');
@@ -84,41 +88,41 @@
         catch{ alert('تعذر فتح واتساب. انسخ الرابط يدويًا:\n'+url); }
       };
 
-      // NEW: Utility for Firebase Storage Upload
-      // **تأخذ الملف من الجهاز وترفعه مباشرة إلى Storage**
-      const uploadFileToStorage = async (file, uid, eventName) => {
-          const fileExtension = file.name.split('.').pop();
-          const path = `${uid}/${eventName}/qrcodes/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${fileExtension}`;
-          const storageRef = storage.ref(path);
-          // هنا يتم استخدام put() لرفع الملف الخام (File/Blob)
-          const snapshot = await storageRef.put(file); 
-          const url = await snapshot.ref.getDownloadURL();
-          return { url, path };
-      };
+      // تم حذف: uploadFileToStorage
       
-      // NEW: Utility for reading file metadata (now uses storage path/URL)
-      function getQrMetadata(file, storagePath, publicUrl){
+      // NEW: Utility for reading file metadata (now uses local Data URL)
+      // *تستخدم FileReader لقراءة الصورة محليًا (بدون رفع سحابي)*
+      function getQrMetadata(file, dataUrl){
         const name=file.name||'qr';
         const m = name.match(/(\d{3,})/); const cardNumber = m? m[1]: null;
-        // نستخدم مسار التخزين كهاش للتأكد من التفرد
-        const contentHash = hashString(String(storagePath)); 
+        // نستخدم محتوى الملف كهاش للتأكد من التفرد
+        const contentHash = hashString(dataUrl); 
         const id = Date.now()+"_"+Math.random().toString(36).slice(2,8);
 
-        // تخزين الرابط العام للصورة في الكاش
-        QRDataCache.set(id, publicUrl);
-
-        return { id, name, used:false, cardNumber, contentHash, storagePath, publicUrl };
+        // تخزين رابط البيانات في الكاش المحلي
+        QRDataCache.set(id, dataUrl);
+        updateQrCache(); // حفظ الكاش محليا
+        
+        // تم حذف storagePath و publicUrl
+        return { id, name, used:false, cardNumber, contentHash }; 
       }
+      
+      const readFileAsDataURL = (file) => {
+          return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+          });
+      };
 
-      // FIREBASE: Save/Load Functions (بدون تغيير)
+
+      // FIREBASE: Save/Load Functions 
       const saveToFirestore = async (uid, eventName, type, data, successMessage) => {
         try {
           const docRef = getEventDoc(uid, eventName, type);
-          const dataToSave = type === 'QRCARDS' 
-            ? data.map(({ publicUrl, ...rest }) => rest)
-            : data;
-
-          await docRef.set({ data: dataToSave, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+          // لا يوجد تعديل خاص بـ QRCARDS لأنها لا تحتوي على publicUrl أو storagePath الآن
+          await docRef.set({ data: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
           if(successMessage) alert(successMessage);
           return true;
         } catch (e) {
@@ -135,24 +139,7 @@
           if (doc.exists) {
             let loadedData = doc.data().data || [];
             
-            // Reconstruct publicUrl for QR cards 
-            if (type === 'QRCARDS') {
-                // نستخدم Promise.all لطلب جميع روابط التحميل بكفاءة
-                await Promise.all(loadedData.map(async (card) => {
-                    if (card.storagePath && !QRDataCache.has(card.id)) {
-                        try {
-                            const url = await storage.ref(card.storagePath).getDownloadURL();
-                            card.publicUrl = url;
-                            QRDataCache.set(card.id, url);
-                        } catch(e) {
-                            console.warn(`Failed to get URL for ${card.storagePath}:`, e);
-                            card.publicUrl = null;
-                        }
-                    } else if (QRDataCache.has(card.id)) {
-                        card.publicUrl = QRDataCache.get(card.id);
-                    }
-                }));
-            }
+            // لا حاجة لطلب الروابط من Storage
             return loadedData;
           }
           return [];
@@ -163,7 +150,7 @@
         }
       };
       
-      // ... (بقية الدوال المساعدة والدوال الأخرى)
+      // ... (بقية الدوال المساعدة والدوال الأخرى لم تتغير)
       
       const makeInvite=({guestName,phone,count,eventName,qrList=[]})=>({
         id: Date.now()+"_"+Math.random().toString(36).slice(2,8),
@@ -202,6 +189,7 @@
         const [err,setErr]=useState('');
         const [loading, setLoading] = useState(false);
 
+        // ... (دالة login تبقى كما هي)
         const login=async ()=>{
           setErr(''); setLoading(true);
           const name=eventName.trim(); if(!name){ setErr('ادخل اسم الحدث'); setLoading(false); return; }
@@ -349,8 +337,9 @@
         };
         const markStatus=(id,status)=> setInvites(prev=> prev.map(i=> i.id===id? { ...i, status }: i)); 
 
+        // تم تعديل دالة sendText لعرض تحذير بدلاً من توجيه التنزيل السحابي
         const sendText=(inv)=>{
-          const msg=`مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد كروت المرافقين: ${inv.count}\n\nقم بتنزيل صورة الباركود من النظام وإرسالها.`;
+          const msg=`مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد كروت المرافقين: ${inv.count}\n\n⚠️ ملاحظة: نظراً لإلغاء المزامنة السحابية للصور، يجب عليك إرسال صورة الباركود يدوياً إلى الضيف.`;
           openWhatsApp(inv.phone,msg); markStatus(inv.id,'sent');
         };
         const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
@@ -396,7 +385,7 @@
                 <span className="font-black">لوحة حدث: <span className="text-yellow-400">{event}</span></span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="chip">الكروت المتاحة سحابياً: {cardsRemaining}</span>
+                <span className="chip">الكروت المتاحة محلياً: {cardsRemaining}</span>
                 <button className="btn btn-ghost" onClick={changePassword}>تغيير كلمة المرور</button>
                 <button className="btn btn-ghost" onClick={onLogout}>خروج</button>
               </div>
@@ -406,8 +395,8 @@
               <div className="card p-6">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
-                    <h2 className="text-xl md:text-2xl font-bold">إدارة الدعوات (سحابي)</h2>
-                    <p className="text-neutral-400">البيانات وصور الكروت تُحفظ وتُزامَن الآن عبر الإنترنت (Firebase).</p>
+                    <h2 className="text-xl md:text-2xl font-bold">إدارة الدعوات (مزامنة بيانات فقط)</h2>
+                    <p className="text-neutral-400">البيانات النصية فقط تُحفظ سحابياً. كروت الباركود تُحفظ **محلياً** ولا تُزامن بين الأجهزة.</p>
                   </div>
                   <span className="chip">الجاهزة للإرسال: {bulkCandidates.length}</span>
                 </div>
@@ -447,7 +436,7 @@
               )}
 
               {active==='import' && (
-                <ImportCenter qrCards={qrCards} setQrCards={setQrCards} onImportPeopleFile={handleImportPeopleFile} uid={uid} event={event} />
+                <ImportCenter qrCards={qrCards} setQrCards={setQrCards} onImportPeopleFile={handleImportPeopleFile} />
               )}
             </main>
           </div>
@@ -481,7 +470,8 @@
                     <td>
                       {inv.qrId && QRDataCache.get(inv.qrId) ? (
                         <div className="flex items-center gap-2">
-                          <a className="link" href={QRDataCache.get(inv.qrId)} download={inv.qrName||'qr.png'} title="تنزيل أول باركود (سحابي)">
+                          {/* استخدام الرابط المحلي للتنزيل */}
+                          <a className="link" href={QRDataCache.get(inv.qrId)} download={`${inv.qrName||'qr'}-${inv.qrNumber||''}.png`} title="تنزيل أول باركود (محلي)">
                             <img className="thumb" src={QRDataCache.get(inv.qrId)} alt="QR" />
                           </a>
                           {Array.isArray(inv.qrIds) && inv.qrIds.length>1 && (
@@ -582,13 +572,13 @@
         );
       }
 
-      function ImportCenter({ qrCards, setQrCards, onImportPeopleFile, uid, event }){
+      function ImportCenter({ qrCards, setQrCards, onImportPeopleFile }){
         const peopleInput=useRef(null); const qrInput=useRef(null);
         const [uploading, setUploading] = useState(false);
 
         const handlePeoplePick=(e)=>{ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=''; };
         
-        // **هذه هي الدالة الرئيسية لرفع الصور من الجهاز**
+        // **هذه هي الدالة الرئيسية لقراءة الصور محلياً (بدون رفع سحابي)**
         const onQrPick=async (e)=>{
           const files=Array.from(e.target.files||[]); if(!files.length) return;
           setUploading(true);
@@ -601,13 +591,13 @@
             
             for(const file of files){
                 try {
-                    // 1. **يتم أخذ الملف من جهازك (Input File) ورفعه إلى Firebase Storage**
-                    const { url, path } = await uploadFileToStorage(file, uid, event);
+                    // 1. قراءة الملف محلياً كـ Data URL
+                    const dataUrl = await readFileAsDataURL(file); 
                     
                     // 2. الحصول على البيانات الوصفية للكارت
-                    const r = getQrMetadata(file, path, url); 
+                    const r = getQrMetadata(file, dataUrl); 
                     
-                    // 3. فحص التكرار (بناءً على مسار التخزين)
+                    // 3. فحص التكرار (بناءً على محتوى الملف)
                     if(hashSet.has(r.contentHash)) continue;
                     if(r.cardNumber && numSet.has(r.cardNumber)) continue;
 
@@ -615,22 +605,22 @@
                     hashSet.add(r.contentHash); 
                     if(r.cardNumber) numSet.add(r.cardNumber); 
 
-                } catch(uploadError) {
-                    console.error(`Failed to upload file ${file.name}:`, uploadError);
+                } catch(readError) {
+                    console.error(`Failed to read file ${file.name}:`, readError);
                 }
             }
             
             if(toAdd.length){ 
               setQrCards(prev=>[...toAdd, ...prev]); 
               addedCount = toAdd.length;
-              alert(`تم تحميل ${addedCount} باركود ومزامنتها سحابياً (بدون تكرار).`);
+              alert(`تم تحميل ${addedCount} باركود وحفظها محلياً (بدون تكرار).`);
             } else {
-              alert('كل الملفات مكررة أو حدث خطأ أثناء الرفع.');
+              alert('كل الملفات مكررة أو حدث خطأ أثناء القراءة.');
             }
 
           }catch(err){ 
             console.error(err); 
-            alert('تعذر قراءة الملفات أو الرفع السحابي.'); 
+            alert('تعذر قراءة الملفات.'); 
           }
           setUploading(false);
           e.target.value='';
@@ -638,38 +628,41 @@
 
         const clearUsed=()=>{ if(confirm('إعادة تعيين حالة جميع الكروت إلى "متاح"؟')) setQrCards(prev=>prev.map(c=>({...c,used:false}))); };
         const purgeAll =()=>{ 
-            if(confirm('مسح جميع الكروت المخزنة لهذا الحدث من Firestore و Storage؟')) {
+            if(confirm('مسح جميع الكروت المخزنة لهذا الحدث من Firestore والذاكرة المحلية؟')) {
                 setQrCards([]); 
-                // يفضل مسح الملفات من Storage أيضاً، لكن هذا يتطلب عملية إضافية ومعقدة.
-                alert('تم مسح بيانات الكروت من Firestore. يرجى مراجعة Firebase Storage لمسح الملفات الفعلية.');
+                QRDataCache.clear(); // مسح الكاش المحلي للصور
+                updateQrCache();
+                alert('تم مسح بيانات الكروت من Firestore والذاكرة المحلية.');
             }
         };
         
-        const cardsWithUrls = qrCards.map(c => ({
+        // لا نحتاج لـ cardsWithUrls الآن، فقط نستخدم الكاش المحلي
+        const cardsToDisplay = qrCards.map(c => ({
             ...c,
-            publicUrl: QRDataCache.get(c.id) || null
+            // نستخدم الكاش المحلي مباشرة
+            dataUrl: QRDataCache.get(c.id) || null
         }));
 
 
         return (
           <div className="grid md:grid-cols-2 gap-4 mt-3">
             <div className="card p-6">
-              <h3 className="font-bold">تحميل كل الباركود من الجهاز (مزامنة سحابية)</h3>
-              <p className="text-xs text-neutral-400 mt-1">يتم رفع الصور إلى **Firebase Storage** ثم حفظ الميتاداتا في **Firestore** للمزامنة الكاملة.</p>
+              <h3 className="font-bold">تحميل كل الباركود من الجهاز (حفظ محلي فقط)</h3>
+              <p className="text-xs text-neutral-400 mt-1">يتم حفظ الصور **محلياً** ولا تُزامن بين الأجهزة. الـ ID فقط يُزامن مع الدعوات.</p>
               <div className="mt-3 flex gap-2">
                 <button disabled={uploading} className="btn btn-primary" onClick={()=>qrInput.current?.click()}>
-                    {uploading ? 'جاري الرفع...' : 'اختيار ملفات باركود'}
+                    {uploading ? 'جاري القراءة...' : 'اختيار ملفات باركود'}
                 </button>
                 <input ref={qrInput} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml" multiple className="hidden" onChange={onQrPick} />
                 <button className="btn btn-ghost" onClick={clearUsed}>إعادة تعيين الاستخدام</button>
                 <button className="btn btn-ghost" onClick={purgeAll}>مسح الكل</button>
               </div>
               <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
-                {cardsWithUrls.map(c=> (
+                {cardsToDisplay.map(c=> (
                   <div key={c.id} className="flex flex-col items-center gap-1">
-                    {c.publicUrl
-                      ? (<img className="thumb" src={c.publicUrl} alt={c.name} title={c.name} />)
-                      : (<div className="thumb flex items-center justify-center text-[10px] text-neutral-500">جاري التحميل...</div>)}
+                    {c.dataUrl
+                      ? (<img className="thumb" src={c.dataUrl} alt={c.name} title={c.name} />)
+                      : (<div className="thumb flex items-center justify-center text-[10px] text-neutral-500">غير متوفر محلياً</div>)}
                     <span className="text-[10px] text-neutral-400">{c.cardNumber ? `#${c.cardNumber}` : 'بدون رقم'}</span>
                     <span className={`text-[10px] ${c.used? 'text-yellow-400' : 'text-neutral-500'}`}>{c.used? 'مستخدم' : 'متاح'}</span>
                   </div>
@@ -709,7 +702,7 @@
                     <p><b>{inv.guestName}</b> — <span dir="ltr">{inv.phone}</span></p>
                     <p className="text-sm text-neutral-400">كروت للمرافقين: {inv.count}</p>
                     {inv.qrId && QRDataCache.get(inv.qrId) && (
-                      <a className="link" href={QRDataCache.get(inv.qrId)} download={inv.qrName||'qr.png'}>تنزيل أول باركود</a>
+                      <a className="link" href={QRDataCache.get(inv.qrId)} download={`${inv.qrName||'qr'}-${inv.qrNumber||''}.png`}>تنزيل أول باركود (محلي)</a>
                     )}
                     <div className="flex gap-2 justify-end">
                       <button className="btn btn-primary" onClick={()=>onSend(inv)}>إرسال فردي (نص)</button>
@@ -721,7 +714,7 @@
           </div>
         );
       }
-
+      
       function Root(){
         const [authData,setAuthData]=useState(()=>{ 
           try {
