@@ -158,8 +158,8 @@
         
         // ⚠️ تعديل يدوي هنا
         // ----------------------------------------------------
-        const FIXED_EVENT_NAME = "زفاف سعيد"; 
-        const FIXED_PASSWORD = "6666"; // تعيين كلمة مرور ثابتة للدخول
+        const FIXED_EVENT_NAME = "زفاف عبدالله"; // ضع اسم الحدث هنا
+        const FIXED_PASSWORD = "123"; // ضع كلمة المرور هنا
         // ----------------------------------------------------
 
         const [eventName, setEventName] = useState(FIXED_EVENT_NAME);
@@ -336,13 +336,19 @@
                 const text = await readFileAsText(file);
                 const importedData = JSON.parse(text);
 
-                if (confirm(`هل أنت متأكد من استيراد بيانات الحدث '${importedData.eventName}'؟ سيؤدي هذا إلى مسح البيانات الحالية محليًا واستبدالها بالبيانات الجديدة.`)) {
+                // ⚠️ تحسين: التأكد من وجود المفاتيح الأساسية قبل المتابعة
+                if (!importedData || (!importedData.invites && !importedData.qrCards)) {
+                    alert('فشل في الاستيراد: ملف JSON غير مكتمل أو لا يحتوي على بيانات الدعوات والكروت الأساسية.');
+                    return;
+                }
+
+                if (confirm(`هل أنت متأكد من استيراد بيانات الحدث '${importedData.eventName || 'مُستورد'}'؟ سيؤدي هذا إلى مسح البيانات الحالية محليًا واستبدالها بالبيانات الجديدة.`)) {
                     
                     // 1. تحديث الكروت
                     const importedQrCards = Array.isArray(importedData.qrCards) ? importedData.qrCards : [];
                     setQrCards(importedQrCards);
 
-                    // 2. تحديث الكاش (محتوى الصور)
+                    // 2. تحديث الكاش (محتوى الصور - وهي الأهم لظهور الباركود)
                     const importedCache = new Map(importedData.qrDataCache || []);
                     QRDataCache.clear();
                     importedCache.forEach((v, k) => QRDataCache.set(k, v));
@@ -352,7 +358,7 @@
                     const importedInvites = Array.isArray(importedData.invites) ? importedData.invites : [];
                     setInvites(importedInvites);
 
-                    // 4. تحديث اسم الحدث (لن يتم التحديث في هذه النسخة لأن الاسم ثابت في الكود)
+                    // 4. تحديث اسم الحدث (لن يتم التحديث هنا لأنه ثابت في الكود حالياً)
                     
                     alert(`تم الاستيراد بنجاح! تم تحميل ${importedInvites.length} دعوة و ${importedQrCards.length} كرت.`);
                     
@@ -361,9 +367,11 @@
 
             } catch (e) {
                 console.error("Failed to import JSON data:", e);
-                alert('فشل في قراءة ملف JSON. تأكد من أنه ملف التصدير الصحيح وغير تالف.');
+                // رسالة خطأ أكثر تحديداً
+                alert('فشل في قراءة ملف JSON. تأكد من أنه ملف التصدير الصحيح وغير تالف (قد تكون المشكلة في تنسيق الملف).');
             }
         };
+
 
         const cardsRemaining = qrCards.filter(c=>!c.used).length;
         const bulkCandidates = invites.filter(i=> i.status==='new' || i.status==='reminded');
@@ -615,8 +623,7 @@
                 QRDataCache.clear(); 
                 updateQrCache();
                 SafeStorage.removeItem(LS_INVITES);
-                // لم يعد مسح الاسم وكلمة المرور من الذاكرة ضرورياً
-                alert('تم مسح جميع بيانات الكروت والدعوات من الذاكرة المحلية لهذا الجهاز.');
+                alert('تم مسح جميع بيانات الكروت والدعوات من الذاكرة المحلية لهذا الجهاز. (اسم الحدث وكلمة المرور ما زالت ثابتة في الكود).');
                 window.location.reload(); 
             }
         };
@@ -631,7 +638,7 @@
           <div className="grid md:grid-cols-2 gap-4 mt-3">
             <div className="card p-6 md:col-span-2">
                 <h3 className="font-bold">تصدير/استيراد بيانات الحدث (نقل بين الأجهزة)</h3>
-                <p className="text-xs text-neutral-400 mt-1">يُستخدم هذا لإنشاء نسخة احتياطية أو نقل جميع بيانات الدعوات والكروت المُخصصة إلى جهاز آخر.</p>
+                <p className="text-xs text-neutral-400 mt-1">يُستخدم هذا لإنشاء نسخة احتياطية أو نقل جميع بيانات الدعوات والكروت المُخصصة إلى جهاز آخر. **هذا الملف يشمل الكاش الخاص بالباركود.**</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                     <button className="btn btn-primary" onClick={onExportData}>تصدير البيانات كـ JSON</button>
                     <button className="btn btn-ghost" onClick={()=>jsonInput.current?.click()}>استيراد بيانات JSON</button>
