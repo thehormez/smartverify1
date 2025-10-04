@@ -44,10 +44,8 @@
       const LS_INVITES = 'hormez_invites';
       const LS_QR_CARDS = 'hormez_qr_cards';
       const LS_QR_CACHE = 'hormez_qr_cache'; 
-      const LS_EVENT_NAME = 'hormez_event_name';
-      const LS_PASSWORD = 'hormez_password'; // مفتاح جديد لكلمة المرور
-
-      // دالة التحميل الأولي من الذاكرة المحلية
+      // LS_EVENT_NAME و LS_PASSWORD لم تعد تستخدم هنا، بل يتم تعيينها يدويا.
+      
       const loadInitialData = (key, defaultValue = []) => {
         try {
           const data = JSON.parse(SafeStorage.getItem(key));
@@ -58,7 +56,6 @@
         }
       };
 
-      // يتم تحميل الكاش المحلي للصور
       const QRDataCache = new Map(JSON.parse(SafeStorage.getItem(LS_QR_CACHE) || '[]')); 
       
       const updateQrCache = () => {
@@ -84,7 +81,6 @@
         const contentHash = hashString(dataUrl); 
         const id = Date.now()+"_"+Math.random().toString(36).slice(2,8);
 
-        // محاولة حفظ البيانات في الكاش، مع الأخذ في الاعتبار أن الذاكرة المحلية محدودة
         try {
             QRDataCache.set(id, dataUrl);
             updateQrCache();
@@ -159,60 +155,50 @@
       }
 
       function App(){
-        // نحمل القيمة المخزنة لاسم الحدث وكلمة المرور
-        const storedEventName = SafeStorage.getItem(LS_EVENT_NAME) || '';
-        const storedPassword = SafeStorage.getItem(LS_PASSWORD) || '';
         
-        const [eventName, setEventName] = useState(storedEventName);
-        const [password, setPassword] = useState(storedPassword); 
-        const [isLoggedIn, setIsLoggedIn] = useState(!!storedEventName); // نعتمد على القيمة المخزنة في البداية
+        // ⚠️ تعديل يدوي هنا
+        // ----------------------------------------------------
+        const FIXED_EVENT_NAME = "زفاف سعيد"; 
+        const FIXED_PASSWORD = "6666"; // تعيين كلمة مرور ثابتة للدخول
+        // ----------------------------------------------------
+
+        const [eventName, setEventName] = useState(FIXED_EVENT_NAME);
+        const [password, setPassword] = useState(''); // فقط لأغراض الإدخال في الواجهة
+        const [isLoggedIn, setIsLoggedIn] = useState(false);
 
         const login = () => {
-          const name = eventName.trim();
-          if (!name) { alert('ادخل اسم الحدث'); return; }
-
-          // التحقق من كلمة المرور (إذا كانت موجودة في الذاكرة)
-          const currentStoredPassword = SafeStorage.getItem(LS_PASSWORD) || '';
-          if (currentStoredPassword && password !== currentStoredPassword) {
+          if (!eventName) { alert('يجب تعيين اسم الحدث يدويا داخل الكود.'); return; }
+          if (password !== FIXED_PASSWORD) {
               alert('كلمة المرور غير صحيحة.');
               return;
           }
-          
-          // حفظ اسم الحدث وكلمة المرور الجديدة/المُعدّلة في الذاكرة المحلية
-          SafeStorage.setItem(LS_EVENT_NAME, name);
-          SafeStorage.setItem(LS_PASSWORD, password); 
-
+          // لا نحتاج لحفظ EventName أو Password في Local Storage هنا
           setIsLoggedIn(true);
         };
         
-        // عند تسجيل الخروج، نمسح اسم الحدث فقط
         const logout = () => {
-          SafeStorage.removeItem(LS_EVENT_NAME);
-          // لا نمسح الباسورد إلا إذا أراد المستخدم، للحفاظ عليه كـ "تذكير"
           setIsLoggedIn(false);
-          // نعيد ضبط الـ State لتظهر شاشة الدخول بالقيم المخزنة سابقاً
-          setEventName(SafeStorage.getItem(LS_EVENT_NAME) || '');
-          setPassword(SafeStorage.getItem(LS_PASSWORD) || '');
+          setPassword('');
         };
         
         if (!isLoggedIn) {
           return (
             <div className="min-h-screen flex items-center justify-center p-6">
               <div className="card w-full max-w-md p-6">
-                <h1 className="text-center text-2xl font-black mb-6">تحديد اسم الحدث (محلي)</h1>
-                <p className="text-sm text-neutral-400 mb-4">يُرجى إدخال اسم الحدث وتعيين كلمة مرور (اختياري) للدخول.</p>
+                <h1 className="text-center text-2xl font-black mb-6">الدخول للوحة التحكم</h1>
+                <p className="text-sm text-neutral-400 mb-4">اسم الحدث ثابت ومُعيّن في الكود: **{eventName}**.</p>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm mb-1">اسم الحدث</label>
-                    <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="مثلاً: زفاف خالد" value={eventName} onChange={e=>setEventName(e.target.value)} />
+                    <label className="block text-sm mb-1">اسم الحدث (معيّن يدوياً)</label>
+                    <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2 text-neutral-400" value={eventName} readOnly />
                   </div>
                   <div>
-                    <label className="block text-sm mb-1">كلمة المرور (اختياري/تحديث)</label>
+                    <label className="block text-sm mb-1">كلمة المرور المطلوبة</label>
                     <input type="password" className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
-                    <p className="text-xs text-neutral-400 mt-1">إذا كانت كلمة مرور مخزنة مسبقاً، يجب إدخالها للدخول. يمكنك تعيين كلمة مرور جديدة من هنا والضغط على دخول لحفظها.</p>
+                    <p className="text-xs text-neutral-400 mt-1">يجب إدخال كلمة المرور المُعيّنة يدوياً في الكود للدخول.</p>
                   </div>
                   <button onClick={login} className="btn btn-primary w-full font-bold">
-                    دخول (محلي)
+                    دخول
                   </button>
                 </div>
               </div>
@@ -236,8 +222,6 @@
         useEffect(()=>{ saveInvites(invites); },[invites, saveInvites]);
         useEffect(()=>{ saveQRCards(qrCards); },[qrCards, saveQRCards]);
         
-        // تمت إزالة دالة changePassword حيث يتم التعديل من شاشة الدخول
-
         const takeNextQrCards=(k)=>{
           const available=qrCards.filter(c=>!c.used);
           if(available.length<k) return null;
@@ -368,13 +352,9 @@
                     const importedInvites = Array.isArray(importedData.invites) ? importedData.invites : [];
                     setInvites(importedInvites);
 
-                    // 4. تحديث اسم الحدث
-                    if (importedData.eventName && importedData.eventName !== event) {
-                         SafeStorage.setItem(LS_EVENT_NAME, importedData.eventName);
-                         SafeStorage.removeItem(LS_PASSWORD); // يجب على المستخدم إدخال كلمة المرور مجدداً للجهاز الجديد
-                    }
+                    // 4. تحديث اسم الحدث (لن يتم التحديث في هذه النسخة لأن الاسم ثابت في الكود)
                     
-                    alert(`تم الاستيراد بنجاح! تم تحميل ${importedInvites.length} دعوة و ${importedQrCards.length} كرت. يرجى إعادة تحميل الصفحة لتطبيق اسم الحدث الجديد.`);
+                    alert(`تم الاستيراد بنجاح! تم تحميل ${importedInvites.length} دعوة و ${importedQrCards.length} كرت.`);
                     
                     window.location.reload(); 
                 }
@@ -396,7 +376,7 @@
               </div>
               <div className="flex items-center gap-2">
                 <span className="chip">الكروت المتاحة محلياً: {cardsRemaining}</span>
-                <button className="btn btn-ghost" onClick={() => onLogout()}>خروج/تعديل الإعدادات</button>
+                <button className="btn btn-ghost" onClick={() => onLogout()}>خروج/تغيير كلمة المرور</button>
               </div>
             </header>
 
@@ -635,9 +615,8 @@
                 QRDataCache.clear(); 
                 updateQrCache();
                 SafeStorage.removeItem(LS_INVITES);
-                SafeStorage.removeItem(LS_EVENT_NAME);
-                SafeStorage.removeItem(LS_PASSWORD);
-                alert('تم مسح جميع بيانات الكروت والدعوات وكلمة المرور من الذاكرة المحلية لهذا الجهاز.');
+                // لم يعد مسح الاسم وكلمة المرور من الذاكرة ضرورياً
+                alert('تم مسح جميع بيانات الكروت والدعوات من الذاكرة المحلية لهذا الجهاز.');
                 window.location.reload(); 
             }
         };
