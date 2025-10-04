@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>بوابة الدعوات | مزامنة Firestore فقط</title>
+    <title>بوابة الدعوات | يعمل محليًا بالكامل</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -14,9 +14,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
       * { box-sizing: border-box; }
       body { background:#0a0a0a; color:#eee; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Naskh Arabic UI", Arial, sans-serif; }
@@ -37,45 +34,37 @@
     <script type="text/babel">
       const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
-      // START: FIREBASE CONFIG & INIT
-      const firebaseConfig = {
-        apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-        authDomain: "hormez-inv.firebaseapp.com",
-        projectId: "hormez-inv",
-        // تم حذف storageBucket
-        messagingSenderId: "747519941805",
-        appId: "1:747519941805:web:468fada2492700e9da3a24"
-      };
-
-      const app = firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-      const db = firebase.firestore();
-      // تم حذف const storage = firebase.storage(); 
-
-      const getEventDoc = (uid, eventName, type) => db.collection('USERS').doc(uid).collection('EVENTS').doc(eventName).collection(type).doc('data');
-      // END: FIREBASE CONFIG & INIT
-
-      // ======= Safe storage & constants =======
+      // START: LOCAL STORAGE HANDLERS
       const SafeStorage = (() => {
         try { const t='__probe__'; localStorage.setItem(t,'1'); localStorage.removeItem(t); return localStorage; } catch(e){
           const mem = {}; return { getItem:k=>mem[k]??null, setItem:(k,v)=>{mem[k]=String(v)}, removeItem:k=>{delete mem[k]} };
         }
       })();
-      const trySet = (k,v)=>{ try { SafeStorage.setItem(k,v); return true; } catch(e){ console.warn('Storage failed',k,e); return false; } };
 
-      const LS_EVENTS = 'hormez_events_meta';
-      const LS_AUTH   = 'hormez_auth_event';
-      const LS_QR_CACHE = 'hormez_qr_cache'; // كاش محلي للـ QR
+      const LS_INVITES = 'hormez_invites';
+      const LS_QR_CARDS = 'hormez_qr_cards';
+      const LS_QR_CACHE = 'hormez_qr_cache'; 
+      const LS_EVENT_NAME = 'hormez_event_name';
 
-      // مسح كلمة المرور القديمة عند الطلب
-      SafeStorage.removeItem(LS_EVENTS); 
+      // دالة التحميل الأولي من الذاكرة المحلية
+      const loadInitialData = (key, defaultValue = []) => {
+        try {
+          const data = JSON.parse(SafeStorage.getItem(key));
+          return Array.isArray(data) ? data : defaultValue;
+        } catch (e) {
+          console.warn(`Failed to load data for ${key}.`, e);
+          return defaultValue;
+        }
+      };
 
-      // QRDataCache الآن يخزن id -> dataURL (للتخزين المحلي المؤقت)
+      // يتم تحميل الكاش المحلي للصور
       const QRDataCache = new Map(JSON.parse(SafeStorage.getItem(LS_QR_CACHE) || '[]')); 
       
       const updateQrCache = () => {
         SafeStorage.setItem(LS_QR_CACHE, JSON.stringify(Array.from(QRDataCache.entries())));
       };
+      
+      // END: LOCAL STORAGE HANDLERS
 
       // ======= utils =======
       const normalizePhone=(p)=>String(p||'').replace(/\D/g,'');
@@ -87,23 +76,16 @@
         try { const w=window.open(url,'_blank','noopener,noreferrer'); if(!w) alert('مُانع النوافذ قد يمنع الفتح. افتح الرابط يدويًا:\n'+url); }
         catch{ alert('تعذر فتح واتساب. انسخ الرابط يدويًا:\n'+url); }
       };
-
-      // تم حذف: uploadFileToStorage
       
-      // NEW: Utility for reading file metadata (now uses local Data URL)
-      // *تستخدم FileReader لقراءة الصورة محليًا (بدون رفع سحابي)*
       function getQrMetadata(file, dataUrl){
         const name=file.name||'qr';
         const m = name.match(/(\d{3,})/); const cardNumber = m? m[1]: null;
-        // نستخدم محتوى الملف كهاش للتأكد من التفرد
         const contentHash = hashString(dataUrl); 
         const id = Date.now()+"_"+Math.random().toString(36).slice(2,8);
 
-        // تخزين رابط البيانات في الكاش المحلي
         QRDataCache.set(id, dataUrl);
-        updateQrCache(); // حفظ الكاش محليا
+        updateQrCache();
         
-        // تم حذف storagePath و publicUrl
         return { id, name, used:false, cardNumber, contentHash }; 
       }
       
@@ -116,42 +98,6 @@
           });
       };
 
-
-      // FIREBASE: Save/Load Functions 
-      const saveToFirestore = async (uid, eventName, type, data, successMessage) => {
-        try {
-          const docRef = getEventDoc(uid, eventName, type);
-          // لا يوجد تعديل خاص بـ QRCARDS لأنها لا تحتوي على publicUrl أو storagePath الآن
-          await docRef.set({ data: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-          if(successMessage) alert(successMessage);
-          return true;
-        } catch (e) {
-          console.error(`Error saving ${type} data:`, e);
-          alert('فشل في حفظ البيانات السحابية: ' + e.message);
-          return false;
-        }
-      };
-
-      const loadFromFirestore = async (uid, eventName, type) => {
-        try {
-          const docRef = getEventDoc(uid, eventName, type);
-          const doc = await docRef.get();
-          if (doc.exists) {
-            let loadedData = doc.data().data || [];
-            
-            // لا حاجة لطلب الروابط من Storage
-            return loadedData;
-          }
-          return [];
-        } catch (e) {
-          console.error(`Error loading ${type} data:`, e);
-          alert('فشل في تحميل البيانات السحابية: ' + e.message);
-          return [];
-        }
-      };
-      
-      // ... (بقية الدوال المساعدة والدوال الأخرى لم تتغير)
-      
       const makeInvite=({guestName,phone,count,eventName,qrList=[]})=>({
         id: Date.now()+"_"+Math.random().toString(36).slice(2,8),
         guestName:(guestName||'').trim(),
@@ -183,128 +129,80 @@
         return body.map(r=>{ const [a,b,c,d]=r; return { guestName:String(a||'').trim(), phone:String(b||'').trim(), count:Math.max(1,Number(c||1)), eventName:String(d||'').trim()}; });
       }
 
-      function AuthView({ onAuthed }){
-        const [eventName,setEventName]=useState('');
-        const [password,setPassword]=useState('');
-        const [err,setErr]=useState('');
-        const [loading, setLoading] = useState(false);
+      // تم حذف AuthView واستبدالها بتحميل مباشر
+      
+      function App(){
+        // تحميل اسم الحدث من الذاكرة المحلية
+        const [eventName, setEventName] = useState(SafeStorage.getItem(LS_EVENT_NAME) || '');
+        const [password, setPassword] = useState(''); // لم تعد تُستخدم للمصادقة لكن يمكن استخدامها محلياً
+        const [isLoggedIn, setIsLoggedIn] = useState(!!eventName);
 
-        // ... (دالة login تبقى كما هي)
-        const login=async ()=>{
-          setErr(''); setLoading(true);
-          const name=eventName.trim(); if(!name){ setErr('ادخل اسم الحدث'); setLoading(false); return; }
-
-          try {
-            let userCredential = auth.currentUser;
-            if (!userCredential) {
-              userCredential = await auth.signInAnonymously();
-            }
-            const uid = userCredential.uid;
-
-            const meta=getEventMeta(); const entry=meta[name];
-            if(!entry){
-              meta[name]={password}; setEventMeta(meta);
-            } else if((entry.password||'')!==password){
-              setErr('كلمة المرور غير صحيحة لهذا الحدث');
-              setLoading(false);
-              return;
-            }
-
-            SafeStorage.setItem(LS_AUTH, JSON.stringify({event:name, uid}));
-            onAuthed(name, uid);
-          } catch(e) {
-            console.error(e);
-            setErr('فشل في المصادقة السحابية: ' + e.message);
-          } finally {
-            setLoading(false);
-          }
+        const login = () => {
+          const name = eventName.trim();
+          if (!name) { alert('ادخل اسم الحدث'); return; }
+          SafeStorage.setItem(LS_EVENT_NAME, name);
+          setIsLoggedIn(true);
         };
 
-        return (
-          <div className="min-h-screen flex items-center justify-center p-6">
-            <div className="card w-full max-w-md p-6">
-              <h1 className="text-center text-2xl font-black mb-6">تسجيل الدخول بالحدث</h1>
-              {err && <div className="mb-3 text-sm text-red-300 bg-red-600/20 border border-red-600/40 p-2 rounded">{err}</div>}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm mb-1">اسم الحدث</label>
-                  <input disabled={loading} className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="مثلاً: زفاف خالد" value={eventName} onChange={e=>setEventName(e.target.value)} />
+        const logout = () => {
+          SafeStorage.removeItem(LS_EVENT_NAME);
+          setIsLoggedIn(false);
+          setEventName('');
+        };
+        
+        if (!isLoggedIn) {
+          return (
+            <div className="min-h-screen flex items-center justify-center p-6">
+              <div className="card w-full max-w-md p-6">
+                <h1 className="text-center text-2xl font-black mb-6">تحديد اسم الحدث (محلي)</h1>
+                <p className="text-sm text-neutral-400 mb-4">لن يتم مزامنة أي بيانات سحابياً.</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm mb-1">اسم الحدث</label>
+                    <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="مثلاً: زفاف خالد" value={eventName} onChange={e=>setEventName(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">كلمة المرور (اختياري)</label>
+                    <input type="password" className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
+                    <p className="text-xs text-neutral-400 mt-1">تُستخدم فقط كتذكير على هذا الجهاز.</p>
+                  </div>
+                  <button onClick={login} className="btn btn-primary w-full font-bold">
+                    دخول (محلي)
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm mb-1">كلمة المرور</label>
-                  <input disabled={loading} type="password" className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
-                  <p className="text-xs text-neutral-400 mt-1">يجب استخدام نفس الكلمة على جميع الأجهزة للمزامنة. (تُخزن محلياً)</p>
-                </div>
-                <button onClick={login} disabled={loading} className="btn btn-primary w-full font-bold">
-                  {loading ? 'جاري الاتصال...' : 'دخول'}
-                </button>
               </div>
             </div>
-          </div>
-        );
-      }
-
-      function App(){
-        const [authData,setAuthData]=useState(()=>{
-          try {
-            const data = JSON.parse(SafeStorage.getItem(LS_AUTH)||'null');
-            if (data?.event && data?.uid) return data;
-          } catch {}
-          return { event: '', uid: '' };
-        });
-
-        const onAuthed = (event, uid) => setAuthData({ event, uid });
-
-        if(!authData.event || !authData.uid) return <AuthView onAuthed={onAuthed}/>;
+          );
+        }
         
-        return <EventApp event={authData.event} uid={authData.uid} onLogout={()=>{ SafeStorage.removeItem(LS_AUTH); setAuthData({ event: '', uid: '' }); }} />;
+        // تمرير اسم الحدث مباشرة إلى EventApp
+        return <EventApp event={eventName} onLogout={logout} />;
       }
 
-      function EventApp({ event, uid, onLogout }){
-        const [invites,setInvites]=useState(null); 
-        const [qrCards,setQrCards]=useState(null); 
+
+      function EventApp({ event, onLogout }){
+        // تحميل البيانات مباشرة من الذاكرة المحلية
+        const [invites,setInvites]=useState(() => loadInitialData(LS_INVITES)); 
+        const [qrCards,setQrCards]=useState(() => loadInitialData(LS_QR_CARDS)); 
         const [active,setActive]=useState('home');
-        const stats=useMemo(()=>invites ? computeStats(invites) : {total:0, sent:0, attended:0},[invites]);
+        const stats=useMemo(()=>computeStats(invites),[invites]);
 
-        const saveInvites = useCallback((arr, message) => saveToFirestore(uid, event, 'INVITES', arr, message), [uid, event]);
-        const saveQRCards = useCallback((arr, message) => saveToFirestore(uid, event, 'QRCARDS', arr, message), [uid, event]);
+        // وظائف الحفظ التي أصبحت تخزن محليًا فقط
+        const saveInvites = useCallback((arr) => SafeStorage.setItem(LS_INVITES, JSON.stringify(arr)), []);
+        const saveQRCards = useCallback((arr) => SafeStorage.setItem(LS_QR_CARDS, JSON.stringify(arr)), []);
         
+        // الحفظ التلقائي عند التغيير
         useEffect(()=>{
-          let isMounted = true;
-          const loadData = async () => {
-            const loadedQRCards = await loadFromFirestore(uid, event, 'QRCARDS'); 
-            const loadedInvites = await loadFromFirestore(uid, event, 'INVITES');
-
-            if (isMounted) {
-              setInvites(loadedInvites);
-              setQrCards(loadedQRCards);
-            }
-          };
-          loadData();
-          return () => { isMounted = false; };
-        }, [uid, event]);
-
-        useEffect(()=>{
-          if(invites !== null) {
-            saveInvites(invites);
-          }
+          saveInvites(invites);
         },[invites, saveInvites]);
         
         useEffect(()=>{
-          if(qrCards !== null) {
-            saveQRCards(qrCards);
-          }
+          saveQRCards(qrCards);
         },[qrCards, saveQRCards]);
 
         const changePassword=()=>{
-          const meta=getEventMeta(); const entry=meta[event]||{password:''};
-          const current=prompt('ادخل كلمة المرور الحالية:',''); if((entry.password||'')!==(current||'')) { alert('كلمة المرور الحالية غير صحيحة'); return; }
-          const next=prompt('ادخل كلمة المرور الجديدة:',''); if(!next) return; meta[event]={password:next}; setEventMeta(meta); alert('تم تغيير كلمة المرور لهذا الحدث');
+          alert('هذه الدالة غير فعالة في الوضع المحلي. كلمة المرور تُستخدم فقط كتذكير.');
         };
-
-        if(invites === null || qrCards === null) {
-          return <div className="min-h-screen flex items-center justify-center"><div className="text-xl font-bold">جاري تحميل البيانات السحابية...</div></div>;
-        }
 
         const takeNextQrCards=(k)=>{
           const available=qrCards.filter(c=>!c.used);
@@ -337,9 +235,8 @@
         };
         const markStatus=(id,status)=> setInvites(prev=> prev.map(i=> i.id===id? { ...i, status }: i)); 
 
-        // تم تعديل دالة sendText لعرض تحذير بدلاً من توجيه التنزيل السحابي
         const sendText=(inv)=>{
-          const msg=`مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد كروت المرافقين: ${inv.count}\n\n⚠️ ملاحظة: نظراً لإلغاء المزامنة السحابية للصور، يجب عليك إرسال صورة الباركود يدوياً إلى الضيف.`;
+          const msg=`مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد كروت المرافقين: ${inv.count}\n\n⚠️ ملاحظة: يجب عليك إرسال صورة الباركود يدوياً إلى الضيف.`;
           openWhatsApp(inv.phone,msg); markStatus(inv.id,'sent');
         };
         const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
@@ -395,8 +292,8 @@
               <div className="card p-6">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
-                    <h2 className="text-xl md:text-2xl font-bold">إدارة الدعوات (مزامنة بيانات فقط)</h2>
-                    <p className="text-neutral-400">البيانات النصية فقط تُحفظ سحابياً. كروت الباركود تُحفظ **محلياً** ولا تُزامن بين الأجهزة.</p>
+                    <h2 className="text-xl md:text-2xl font-bold">إدارة الدعوات (يعمل محلياً فقط)</h2>
+                    <p className="text-neutral-400">جميع البيانات والكروت تُحفظ على هذا الجهاز فقط ولا تُزامَن سحابياً.</p>
                   </div>
                   <span className="chip">الجاهزة للإرسال: {bulkCandidates.length}</span>
                 </div>
@@ -470,7 +367,6 @@
                     <td>
                       {inv.qrId && QRDataCache.get(inv.qrId) ? (
                         <div className="flex items-center gap-2">
-                          {/* استخدام الرابط المحلي للتنزيل */}
                           <a className="link" href={QRDataCache.get(inv.qrId)} download={`${inv.qrName||'qr'}-${inv.qrNumber||''}.png`} title="تنزيل أول باركود (محلي)">
                             <img className="thumb" src={QRDataCache.get(inv.qrId)} alt="QR" />
                           </a>
@@ -578,7 +474,6 @@
 
         const handlePeoplePick=(e)=>{ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=''; };
         
-        // **هذه هي الدالة الرئيسية لقراءة الصور محلياً (بدون رفع سحابي)**
         const onQrPick=async (e)=>{
           const files=Array.from(e.target.files||[]); if(!files.length) return;
           setUploading(true);
@@ -591,13 +486,9 @@
             
             for(const file of files){
                 try {
-                    // 1. قراءة الملف محلياً كـ Data URL
                     const dataUrl = await readFileAsDataURL(file); 
-                    
-                    // 2. الحصول على البيانات الوصفية للكارت
                     const r = getQrMetadata(file, dataUrl); 
                     
-                    // 3. فحص التكرار (بناءً على محتوى الملف)
                     if(hashSet.has(r.contentHash)) continue;
                     if(r.cardNumber && numSet.has(r.cardNumber)) continue;
 
@@ -628,18 +519,16 @@
 
         const clearUsed=()=>{ if(confirm('إعادة تعيين حالة جميع الكروت إلى "متاح"؟')) setQrCards(prev=>prev.map(c=>({...c,used:false}))); };
         const purgeAll =()=>{ 
-            if(confirm('مسح جميع الكروت المخزنة لهذا الحدث من Firestore والذاكرة المحلية؟')) {
+            if(confirm('مسح جميع الكروت المخزنة من الذاكرة المحلية؟')) {
                 setQrCards([]); 
-                QRDataCache.clear(); // مسح الكاش المحلي للصور
+                QRDataCache.clear(); 
                 updateQrCache();
-                alert('تم مسح بيانات الكروت من Firestore والذاكرة المحلية.');
+                alert('تم مسح جميع بيانات الكروت من الذاكرة المحلية لهذا الجهاز.');
             }
         };
         
-        // لا نحتاج لـ cardsWithUrls الآن، فقط نستخدم الكاش المحلي
         const cardsToDisplay = qrCards.map(c => ({
             ...c,
-            // نستخدم الكاش المحلي مباشرة
             dataUrl: QRDataCache.get(c.id) || null
         }));
 
@@ -648,7 +537,7 @@
           <div className="grid md:grid-cols-2 gap-4 mt-3">
             <div className="card p-6">
               <h3 className="font-bold">تحميل كل الباركود من الجهاز (حفظ محلي فقط)</h3>
-              <p className="text-xs text-neutral-400 mt-1">يتم حفظ الصور **محلياً** ولا تُزامن بين الأجهزة. الـ ID فقط يُزامن مع الدعوات.</p>
+              <p className="text-xs text-neutral-400 mt-1">يتم حفظ الصور **محلياً** ولا تُزامن. لن تظهر على أي جهاز آخر.</p>
               <div className="mt-3 flex gap-2">
                 <button disabled={uploading} className="btn btn-primary" onClick={()=>qrInput.current?.click()}>
                     {uploading ? 'جاري القراءة...' : 'اختيار ملفات باركود'}
@@ -715,24 +604,8 @@
         );
       }
       
-      function Root(){
-        const [authData,setAuthData]=useState(()=>{ 
-          try {
-            const data = JSON.parse(SafeStorage.getItem(LS_AUTH)||'null');
-            if (data?.event && data?.uid) return data;
-          } catch {}
-          return { event: '', uid: '' };
-        });
-
-        const onAuthed = (event, uid) => setAuthData({ event, uid });
-
-        if(!authData.event || !authData.uid) return <AuthView onAuthed={onAuthed}/>;
-        
-        return <EventApp event={authData.event} uid={authData.uid} onLogout={()=>{ SafeStorage.removeItem(LS_AUTH); setAuthData({ event: '', uid: '' }); }} />;
-      }
-
       const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<Root />);
+      root.render(<App />);
     </script>
   </body>
 </html>
