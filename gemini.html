@@ -17,7 +17,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script> <style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script> 
+    <style>
       * { box-sizing: border-box; }
       body { background:#0a0a0a; color:#eee; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Naskh Arabic UI", Arial, sans-serif; }
       .card { background:#111418; border:1px solid #23262b; border-radius:16px; }
@@ -50,7 +51,7 @@
       const app = firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
       const db = firebase.firestore();
-      const storage = firebase.storage(); // Initialize Firebase Storage
+      const storage = firebase.storage(); 
 
       const getEventDoc = (uid, eventName, type) => db.collection('USERS').doc(uid).collection('EVENTS').doc(eventName).collection(type).doc('data');
       // END: FIREBASE CONFIG & INIT
@@ -66,12 +67,10 @@
       const LS_EVENTS = 'hormez_events_meta';
       const LS_AUTH   = 'hormez_auth_event';
 
-      // --- START: FULFILL USER REQUEST ---
-      // Delete local password protection data (hormez_events_meta) to force a new password entry
+      // مسح كلمة المرور القديمة عند الطلب
       SafeStorage.removeItem(LS_EVENTS); 
-      // --- END: FULFILL USER REQUEST ---
 
-      // QRDataCache now stores id -> publicURL
+      // QRDataCache الآن يخزن id -> publicURL
       const QRDataCache = new Map(); 
 
       // ======= utils =======
@@ -86,12 +85,13 @@
       };
 
       // NEW: Utility for Firebase Storage Upload
+      // **تأخذ الملف من الجهاز وترفعه مباشرة إلى Storage**
       const uploadFileToStorage = async (file, uid, eventName) => {
           const fileExtension = file.name.split('.').pop();
           const path = `${uid}/${eventName}/qrcodes/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${fileExtension}`;
           const storageRef = storage.ref(path);
-          // Use put() on the raw file
-          const snapshot = await storageRef.put(file);
+          // هنا يتم استخدام put() لرفع الملف الخام (File/Blob)
+          const snapshot = await storageRef.put(file); 
           const url = await snapshot.ref.getDownloadURL();
           return { url, path };
       };
@@ -100,20 +100,20 @@
       function getQrMetadata(file, storagePath, publicUrl){
         const name=file.name||'qr';
         const m = name.match(/(\d{3,})/); const cardNumber = m? m[1]: null;
-        const contentHash = hashString(String(storagePath)); // Hash the storage path/URL for uniqueness check
+        // نستخدم مسار التخزين كهاش للتأكد من التفرد
+        const contentHash = hashString(String(storagePath)); 
         const id = Date.now()+"_"+Math.random().toString(36).slice(2,8);
 
-        // Cache the URL
+        // تخزين الرابط العام للصورة في الكاش
         QRDataCache.set(id, publicUrl);
 
         return { id, name, used:false, cardNumber, contentHash, storagePath, publicUrl };
       }
 
-      // FIREBASE: Save/Load Functions
+      // FIREBASE: Save/Load Functions (بدون تغيير)
       const saveToFirestore = async (uid, eventName, type, data, successMessage) => {
         try {
           const docRef = getEventDoc(uid, eventName, type);
-          // Remove publicUrl from qrcards before saving to Firestore to reduce document size (since we rely on Storage URL)
           const dataToSave = type === 'QRCARDS' 
             ? data.map(({ publicUrl, ...rest }) => rest)
             : data;
@@ -135,12 +135,12 @@
           if (doc.exists) {
             let loadedData = doc.data().data || [];
             
-            // Reconstruct publicUrl for QR cards if we need it (optional for display)
+            // Reconstruct publicUrl for QR cards 
             if (type === 'QRCARDS') {
-                for (const card of loadedData) {
+                // نستخدم Promise.all لطلب جميع روابط التحميل بكفاءة
+                await Promise.all(loadedData.map(async (card) => {
                     if (card.storagePath && !QRDataCache.has(card.id)) {
                         try {
-                            // Get the public download URL from storage path
                             const url = await storage.ref(card.storagePath).getDownloadURL();
                             card.publicUrl = url;
                             QRDataCache.set(card.id, url);
@@ -148,8 +148,10 @@
                             console.warn(`Failed to get URL for ${card.storagePath}:`, e);
                             card.publicUrl = null;
                         }
+                    } else if (QRDataCache.has(card.id)) {
+                        card.publicUrl = QRDataCache.get(card.id);
                     }
-                }
+                }));
             }
             return loadedData;
           }
@@ -160,8 +162,9 @@
           return [];
         }
       };
-
-      // invite factory
+      
+      // ... (بقية الدوال المساعدة والدوال الأخرى)
+      
       const makeInvite=({guestName,phone,count,eventName,qrList=[]})=>({
         id: Date.now()+"_"+Math.random().toString(36).slice(2,8),
         guestName:(guestName||'').trim(),
@@ -176,7 +179,6 @@
       });
       const computeStats=(inv)=>({ total:inv.length, sent:inv.filter(i=>['sent','reminded','attended'].includes(i.status)).length, attended:inv.filter(i=>i.status==='attended').length });
 
-      // ======= file readers (simplified) =======
       function parseCSV(text){
         const lines=text.trim().split(/\r?\n/).filter(Boolean); if(!lines.length) return [];
         const first=lines[0].split(',').map(s=>s.trim().toLowerCase());
@@ -193,10 +195,6 @@
         const body=hasHeader? rows.slice(1): rows;
         return body.map(r=>{ const [a,b,c,d]=r; return { guestName:String(a||'').trim(), phone:String(b||'').trim(), count:Math.max(1,Number(c||1)), eventName:String(d||'').trim()}; });
       }
-
-      // ======= auth by event =======
-      const getEventMeta=()=>{ try{return JSON.parse(SafeStorage.getItem(LS_EVENTS)||'{}');}catch{return {};} };
-      const setEventMeta=(m)=>trySet(LS_EVENTS, JSON.stringify(m));
 
       function AuthView({ onAuthed }){
         const [eventName,setEventName]=useState('');
@@ -283,11 +281,9 @@
         const saveInvites = useCallback((arr, message) => saveToFirestore(uid, event, 'INVITES', arr, message), [uid, event]);
         const saveQRCards = useCallback((arr, message) => saveToFirestore(uid, event, 'QRCARDS', arr, message), [uid, event]);
         
-        // Initial Data Load (Runs once on mount)
         useEffect(()=>{
           let isMounted = true;
           const loadData = async () => {
-            // Load QR Cards first to populate the QRDataCache with URLs
             const loadedQRCards = await loadFromFirestore(uid, event, 'QRCARDS'); 
             const loadedInvites = await loadFromFirestore(uid, event, 'INVITES');
 
@@ -300,14 +296,12 @@
           return () => { isMounted = false; };
         }, [uid, event]);
 
-        // Effect to save invites whenever the invites state changes
         useEffect(()=>{
           if(invites !== null) {
             saveInvites(invites);
           }
         },[invites, saveInvites]);
         
-        // Effect to save qrCards whenever the qrCards state changes
         useEffect(()=>{
           if(qrCards !== null) {
             saveQRCards(qrCards);
@@ -594,6 +588,7 @@
 
         const handlePeoplePick=(e)=>{ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=''; };
         
+        // **هذه هي الدالة الرئيسية لرفع الصور من الجهاز**
         const onQrPick=async (e)=>{
           const files=Array.from(e.target.files||[]); if(!files.length) return;
           setUploading(true);
@@ -606,13 +601,13 @@
             
             for(const file of files){
                 try {
-                    // 1. Upload to Firebase Storage
+                    // 1. **يتم أخذ الملف من جهازك (Input File) ورفعه إلى Firebase Storage**
                     const { url, path } = await uploadFileToStorage(file, uid, event);
                     
-                    // 2. Get QR Metadata
+                    // 2. الحصول على البيانات الوصفية للكارت
                     const r = getQrMetadata(file, path, url); 
                     
-                    // 3. Check for duplicates (using the storage path hash)
+                    // 3. فحص التكرار (بناءً على مسار التخزين)
                     if(hashSet.has(r.contentHash)) continue;
                     if(r.cardNumber && numSet.has(r.cardNumber)) continue;
 
@@ -645,14 +640,13 @@
         const purgeAll =()=>{ 
             if(confirm('مسح جميع الكروت المخزنة لهذا الحدث من Firestore و Storage؟')) {
                 setQrCards([]); 
-                // Note: The actual files in Storage are now orphans, but cleaning them up requires a much more complex backend task. We only clear Firestore here.
-                alert('تم مسح بيانات الكروت من Firestore. قد تبقى الصور في Firebase Storage.');
+                // يفضل مسح الملفات من Storage أيضاً، لكن هذا يتطلب عملية إضافية ومعقدة.
+                alert('تم مسح بيانات الكروت من Firestore. يرجى مراجعة Firebase Storage لمسح الملفات الفعلية.');
             }
         };
         
         const cardsWithUrls = qrCards.map(c => ({
             ...c,
-            // Use the cached URL or fallback to null (loadFromFirestore handles fetching URL on load)
             publicUrl: QRDataCache.get(c.id) || null
         }));
 
