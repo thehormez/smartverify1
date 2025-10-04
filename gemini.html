@@ -80,9 +80,7 @@
       function getQrMetadata(file, dataUrl){
         const name=file.name||'qr';
         const m = name.match(/(\d{3,})/); const cardNumber = m? m[1]: null;
-        // نستخدم هاش محتوى الصورة كمعيار رئيسي للـ ID
         const contentHash = hashString(dataUrl); 
-        // ID فريد
         const id = Date.now()+"_"+Math.random().toString(36).slice(2,8);
 
         QRDataCache.set(id, dataUrl);
@@ -97,6 +95,15 @@
               reader.onload = () => resolve(reader.result);
               reader.onerror = reject;
               reader.readAsDataURL(file);
+          });
+      };
+      
+      const readFileAsText = (file) => {
+          return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsText(file);
           });
       };
 
@@ -129,6 +136,19 @@
         const hasHeader=['name','phone','count','event'].some(k=>first.includes(k));
         const body=hasHeader? rows.slice(1): rows;
         return body.map(r=>{ const [a,b,c,d]=r; return { guestName:String(a||'').trim(), phone:String(b||'').trim(), count:Math.max(1,Number(c||1)), eventName:String(d||'').trim()}; });
+      }
+      
+      function downloadJSON(data, filename) {
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
 
       function App(){
@@ -192,7 +212,6 @@
 
         const changePassword=()=>{ alert('هذه الدالة غير فعالة في الوضع المحلي. كلمة المرور تُستخدم فقط كتذكير.'); };
         
-        // دالة سحب الكروت وتحديث حالة استخدامها
         const takeNextQrCards=(k)=>{
           const available=qrCards.filter(c=>!c.used);
           if(available.length<k) return null;
@@ -230,7 +249,6 @@
         };
         const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
         
-        // تم تعديل هذه الدالة لتطبيق الكروت تلقائياً وتصحيح معايير التكرار
         const handleImportPeopleFile = async (file)=>{
           try {
             let rows=[];
@@ -290,6 +308,56 @@
             alert(`تم استيراد ${uniqueAdded.length} سجل. وتم تخصيص ${reservedCards.length} كرت باركود.`);
 
           } catch(e){ console.error(e); alert('تعذر قراءة الملف.'); }
+        };
+
+        const handleExportData = () => {
+            const dataToExport = {
+                eventName: event,
+                invites: invites,
+                qrCards: qrCards,
+                // نحتاج لتضمين محتوى الصور (Data URL) للنقل
+                qrDataCache: Array.from(QRDataCache.entries()) 
+            };
+            const filename = `hormez_export_${event}_${new Date().toISOString().slice(0, 10)}.json`;
+            downloadJSON(dataToExport, filename);
+        };
+
+        const handleImportData = async (file) => {
+            try {
+                const text = await readFileAsText(file);
+                const importedData = JSON.parse(text);
+
+                if (confirm(`هل أنت متأكد من استيراد بيانات الحدث '${importedData.eventName}'؟ سيؤدي هذا إلى مسح البيانات الحالية محليًا واستبدالها بالبيانات الجديدة.`)) {
+                    
+                    // 1. تحديث الكروت
+                    const importedQrCards = Array.isArray(importedData.qrCards) ? importedData.qrCards : [];
+                    setQrCards(importedQrCards);
+
+                    // 2. تحديث الكاش (محتوى الصور)
+                    const importedCache = new Map(importedData.qrDataCache || []);
+                    QRDataCache.clear();
+                    importedCache.forEach((v, k) => QRDataCache.set(k, v));
+                    updateQrCache(); // لحفظ الكاش المحدث في الذاكرة المحلية
+
+                    // 3. تحديث الدعوات
+                    const importedInvites = Array.isArray(importedData.invites) ? importedData.invites : [];
+                    setInvites(importedInvites);
+
+                    // 4. تحديث اسم الحدث
+                    if (importedData.eventName && importedData.eventName !== event) {
+                         SafeStorage.setItem(LS_EVENT_NAME, importedData.eventName);
+                    }
+                    
+                    alert(`تم الاستيراد بنجاح! تم تحميل ${importedInvites.length} دعوة و ${importedQrCards.length} كرت. يرجى إعادة تحميل الصفحة لتطبيق اسم الحدث الجديد إن وجد.`);
+                    
+                    // إعادة التحميل للتأكد من تحديث الواجهة والـ EventName
+                    window.location.reload(); 
+                }
+
+            } catch (e) {
+                console.error("Failed to import JSON data:", e);
+                alert('فشل في قراءة ملف JSON. تأكد من أنه ملف التصدير الصحيح وغير تالف.');
+            }
         };
 
         const cardsRemaining = qrCards.filter(c=>!c.used).length;
@@ -353,7 +421,7 @@
               )}
 
               {active==='import' && (
-                <ImportCenter qrCards={qrCards} setQrCards={setQrCards} onImportPeopleFile={handleImportPeopleFile} />
+                <ImportCenter qrCards={qrCards} setQrCards={setQrCards} onImportPeopleFile={handleImportPeopleFile} onExportData={handleExportData} onImportData={handleImportData} />
               )}
             </main>
           </div>
@@ -488,18 +556,18 @@
         );
       }
 
-      function ImportCenter({ qrCards, setQrCards, onImportPeopleFile }){
-        const peopleInput=useRef(null); const qrInput=useRef(null);
+      function ImportCenter({ qrCards, setQrCards, onImportPeopleFile, onExportData, onImportData }){
+        const peopleInput=useRef(null); const qrInput=useRef(null); const jsonInput=useRef(null);
         const [uploading, setUploading] = useState(false);
 
         const handlePeoplePick=(e)=>{ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=''; };
+        const handleJsonPick=(e)=>{ const f=e.target.files?.[0]; if(f) onImportData(f); e.target.value=''; };
         
         const onQrPick=async (e)=>{
           const files=Array.from(e.target.files||[]); if(!files.length) return;
           setUploading(true);
           try{
             const existing=qrCards; 
-            // ⚠️ الآن نعتمد فقط على محتوى الصورة (contentHash) لمنع التكرار
             const hashSet=new Set(existing.map(c=>c.contentHash)); 
             const toAdd=[];
             let addedCount = 0;
@@ -509,7 +577,6 @@
                     const dataUrl = await readFileAsDataURL(file); 
                     const r = getQrMetadata(file, dataUrl); 
                     
-                    // فحص التكرار: إذا كان محتوى الصورة موجودًا مسبقًا
                     if(hashSet.has(r.contentHash)) continue;
 
                     toAdd.push(r); 
@@ -538,7 +605,6 @@
 
         const clearUsed=()=>{ if(confirm('إعادة تعيين حالة جميع الكروت إلى "متاح"؟')) setQrCards(prev=>prev.map(c=>({...c,used:false}))); };
         
-        // دالة مسح كل البيانات المحلية
         const purgeAll =()=>{ 
             if(confirm('مسح جميع البيانات (الدعوات والكروت) المخزنة محلياً لهذا الحدث؟')) {
                 setQrCards([]); 
@@ -558,8 +624,18 @@
 
         return (
           <div className="grid md:grid-cols-2 gap-4 mt-3">
+            <div className="card p-6 md:col-span-2">
+                <h3 className="font-bold">تصدير/استيراد بيانات الحدث (نقل بين الأجهزة)</h3>
+                <p className="text-xs text-neutral-400 mt-1">يُستخدم هذا لإنشاء نسخة احتياطية أو نقل جميع بيانات الدعوات والكروت المُخصصة إلى جهاز آخر.</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                    <button className="btn btn-primary" onClick={onExportData}>تصدير البيانات كـ JSON</button>
+                    <button className="btn btn-ghost" onClick={()=>jsonInput.current?.click()}>استيراد بيانات JSON</button>
+                    <input ref={jsonInput} type="file" accept=".json" className="hidden" onChange={handleJsonPick} />
+                </div>
+            </div>
+
             <div className="card p-6">
-              <h3 className="font-bold">تحميل كل الباركود من الجهاز (حفظ محلي فقط)</h3>
+              <h3 className="font-bold">تحميل كروت الباركود (صور)</h3>
               <p className="text-xs text-neutral-400 mt-1">يتم حفظ الصور **محلياً** ولا تُزامن. لن تظهر على أي جهاز آخر.</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button disabled={uploading} className="btn btn-primary" onClick={()=>qrInput.current?.click()}>
