@@ -80,7 +80,9 @@
       function getQrMetadata(file, dataUrl){
         const name=file.name||'qr';
         const m = name.match(/(\d{3,})/); const cardNumber = m? m[1]: null;
+        // نستخدم هاش محتوى الصورة كمعيار رئيسي للـ ID
         const contentHash = hashString(dataUrl); 
+        // ID فريد
         const id = Date.now()+"_"+Math.random().toString(36).slice(2,8);
 
         QRDataCache.set(id, dataUrl);
@@ -129,12 +131,9 @@
         return body.map(r=>{ const [a,b,c,d]=r; return { guestName:String(a||'').trim(), phone:String(b||'').trim(), count:Math.max(1,Number(c||1)), eventName:String(d||'').trim()}; });
       }
 
-      // تم حذف AuthView واستبدالها بتحميل مباشر
-      
       function App(){
-        // تحميل اسم الحدث من الذاكرة المحلية
         const [eventName, setEventName] = useState(SafeStorage.getItem(LS_EVENT_NAME) || '');
-        const [password, setPassword] = useState(''); // لم تعد تُستخدم للمصادقة لكن يمكن استخدامها محلياً
+        const [password, setPassword] = useState(''); 
         const [isLoggedIn, setIsLoggedIn] = useState(!!eventName);
 
         const login = () => {
@@ -175,35 +174,25 @@
           );
         }
         
-        // تمرير اسم الحدث مباشرة إلى EventApp
         return <EventApp event={eventName} onLogout={logout} />;
       }
 
 
       function EventApp({ event, onLogout }){
-        // تحميل البيانات مباشرة من الذاكرة المحلية
         const [invites,setInvites]=useState(() => loadInitialData(LS_INVITES)); 
         const [qrCards,setQrCards]=useState(() => loadInitialData(LS_QR_CARDS)); 
         const [active,setActive]=useState('home');
         const stats=useMemo(()=>computeStats(invites),[invites]);
 
-        // وظائف الحفظ التي أصبحت تخزن محليًا فقط
         const saveInvites = useCallback((arr) => SafeStorage.setItem(LS_INVITES, JSON.stringify(arr)), []);
         const saveQRCards = useCallback((arr) => SafeStorage.setItem(LS_QR_CARDS, JSON.stringify(arr)), []);
         
-        // الحفظ التلقائي عند التغيير
-        useEffect(()=>{
-          saveInvites(invites);
-        },[invites, saveInvites]);
+        useEffect(()=>{ saveInvites(invites); },[invites, saveInvites]);
+        useEffect(()=>{ saveQRCards(qrCards); },[qrCards, saveQRCards]);
+
+        const changePassword=()=>{ alert('هذه الدالة غير فعالة في الوضع المحلي. كلمة المرور تُستخدم فقط كتذكير.'); };
         
-        useEffect(()=>{
-          saveQRCards(qrCards);
-        },[qrCards, saveQRCards]);
-
-        const changePassword=()=>{
-          alert('هذه الدالة غير فعالة في الوضع المحلي. كلمة المرور تُستخدم فقط كتذكير.');
-        };
-
+        // دالة سحب الكروت وتحديث حالة استخدامها
         const takeNextQrCards=(k)=>{
           const available=qrCards.filter(c=>!c.used);
           if(available.length<k) return null;
@@ -241,34 +230,65 @@
         };
         const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
         
+        // تم تعديل هذه الدالة لتطبيق الكروت تلقائياً وتصحيح معايير التكرار
         const handleImportPeopleFile = async (file)=>{
           try {
             let rows=[];
             if(/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) rows = await readXLSX(file); else rows = parseCSV(await file.text());
             if(!rows.length){ alert('لا توجد بيانات'); return; }
+            
             const added = rows.map(r => ({ guestName:r.guestName, phone:r.phone, count:r.count, eventName:event }));
             
-            const existingPhones = new Set(invites.map(i => i.phone));
+            // 1. تصفية البيانات المكررة بناءً على رقم الهاتف
+            const existingPhones = new Set(invites.map(i => normalizePhone(i.phone)));
             const uniqueAdded = added.filter(x => {
-              if (existingPhones.has(normalizePhone(x.phone))) {
+              const normalizedPhone = normalizePhone(x.phone);
+              if (existingPhones.has(normalizedPhone)) {
                 console.warn(`Skipping duplicate phone: ${x.phone} for ${x.guestName}`);
                 return false;
               }
-              existingPhones.add(normalizePhone(x.phone));
+              existingPhones.add(normalizedPhone);
               return true;
             });
 
-            if(uniqueAdded.length < added.length) {
-              alert(`تم استيراد ${uniqueAdded.length} سجل فريد. تم تجاهل ${added.length - uniqueAdded.length} سجل مكرر بناءً على رقم الهاتف.`);
-            } else {
-              alert(`تم استيراد ${uniqueAdded.length} سجل.`);
+            if (!uniqueAdded.length) {
+              alert('لم يتم استيراد أي سجلات فريدة. جميعها مكررة.');
+              return;
             }
 
-            setInvites(prev => [
-              ...uniqueAdded.map(x=> makeInvite({ ...x, qrList: [] })),
-              ...prev
-            ]);
+            // 2. حساب إجمالي الكروت المطلوبة
+            const totalNeededCards = uniqueAdded.reduce((sum, item) => sum + Math.max(1, Number(item.count || 1)), 0);
+            const cardsRemaining = qrCards.filter(c=>!c.used).length;
             
+            let reservedCards = [];
+            
+            if (totalNeededCards > cardsRemaining) {
+              alert(`تحذير: لا تتوفر كروت باركود كافية. مطلوب ${totalNeededCards} كرت، المتاح ${cardsRemaining}. سيتم إضافة الدعوات بدون كروت.`);
+            } else {
+              // 3. سحب الكروت المطلوبة وتحديث رصيد الكروت
+              reservedCards = takeNextQrCards(totalNeededCards);
+            }
+            
+            let cardIndex = 0;
+            const newInvites = uniqueAdded.map(x => {
+                const k = Math.max(1, Number(x.count || 1));
+                let qrListForInvite = [];
+
+                if (reservedCards.length > 0) {
+                    // تخصيص الكروت من الكروت المسحوبة
+                    qrListForInvite = reservedCards.slice(cardIndex, cardIndex + k);
+                    cardIndex += k;
+                }
+                
+                // إنشاء الدعوة مع الكروت المرفقة
+                return makeInvite({ ...x, count: k, qrList: qrListForInvite });
+            });
+
+            // 4. دمج الدعوات الجديدة
+            setInvites(prev => [...newInvites, ...prev]);
+            
+            alert(`تم استيراد ${uniqueAdded.length} سجل. وتم تخصيص ${reservedCards.length} كرت باركود.`);
+
           } catch(e){ console.error(e); alert('تعذر قراءة الملف.'); }
         };
 
@@ -479,8 +499,8 @@
           setUploading(true);
           try{
             const existing=qrCards; 
+            // ⚠️ الآن نعتمد فقط على محتوى الصورة (contentHash) لمنع التكرار
             const hashSet=new Set(existing.map(c=>c.contentHash)); 
-            const numSet=new Set(existing.map(c=>c.cardNumber).filter(Boolean));
             const toAdd=[];
             let addedCount = 0;
             
@@ -489,12 +509,11 @@
                     const dataUrl = await readFileAsDataURL(file); 
                     const r = getQrMetadata(file, dataUrl); 
                     
+                    // فحص التكرار: إذا كان محتوى الصورة موجودًا مسبقًا
                     if(hashSet.has(r.contentHash)) continue;
-                    if(r.cardNumber && numSet.has(r.cardNumber)) continue;
 
                     toAdd.push(r); 
                     hashSet.add(r.contentHash); 
-                    if(r.cardNumber) numSet.add(r.cardNumber); 
 
                 } catch(readError) {
                     console.error(`Failed to read file ${file.name}:`, readError);
@@ -518,12 +537,16 @@
         };
 
         const clearUsed=()=>{ if(confirm('إعادة تعيين حالة جميع الكروت إلى "متاح"؟')) setQrCards(prev=>prev.map(c=>({...c,used:false}))); };
+        
+        // دالة مسح كل البيانات المحلية
         const purgeAll =()=>{ 
-            if(confirm('مسح جميع الكروت المخزنة من الذاكرة المحلية؟')) {
+            if(confirm('مسح جميع البيانات (الدعوات والكروت) المخزنة محلياً لهذا الحدث؟')) {
                 setQrCards([]); 
                 QRDataCache.clear(); 
                 updateQrCache();
-                alert('تم مسح جميع بيانات الكروت من الذاكرة المحلية لهذا الجهاز.');
+                SafeStorage.removeItem(LS_INVITES);
+                alert('تم مسح جميع بيانات الكروت والدعوات من الذاكرة المحلية لهذا الجهاز.');
+                window.location.reload(); 
             }
         };
         
@@ -538,13 +561,13 @@
             <div className="card p-6">
               <h3 className="font-bold">تحميل كل الباركود من الجهاز (حفظ محلي فقط)</h3>
               <p className="text-xs text-neutral-400 mt-1">يتم حفظ الصور **محلياً** ولا تُزامن. لن تظهر على أي جهاز آخر.</p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <button disabled={uploading} className="btn btn-primary" onClick={()=>qrInput.current?.click()}>
                     {uploading ? 'جاري القراءة...' : 'اختيار ملفات باركود'}
                 </button>
                 <input ref={qrInput} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml" multiple className="hidden" onChange={onQrPick} />
                 <button className="btn btn-ghost" onClick={clearUsed}>إعادة تعيين الاستخدام</button>
-                <button className="btn btn-ghost" onClick={purgeAll}>مسح الكل</button>
+                <button className="btn btn-ghost !bg-red-700/20 !text-red-400" onClick={purgeAll}>مسح كل بيانات الحدث محلياً</button>
               </div>
               <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
                 {cardsToDisplay.map(c=> (
@@ -561,12 +584,12 @@
 
             <div className="card p-6">
               <h3 className="font-bold">تحميل الأسماء والأرقام وعدد الكروت (CSV / XLSX)</h3>
-              <p className="text-xs text-neutral-400 mt-1">يتم الآن رفض التكرار لنفس رقم الهاتف في ملف الاستيراد.</p>
+              <p className="text-xs text-neutral-400 mt-1">سيتم الآن سحب الكروت وتخصيصها تلقائياً عند الاستيراد.</p>
               <div className="mt-3 flex gap-2">
                 <button className="btn btn-ghost" onClick={()=>peopleInput.current?.click()}>اختيار ملف</button>
                 <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handlePeoplePick} />
               </div>
-              <p className="text-xs text-neutral-400 mt-3">* الاستيراد الجماعي لا يسحب الكروت تلقائيًا؛ السحب يتم عند إنشاء دعوة من النموذج.</p>
+              <p className="text-xs text-yellow-400 mt-3">* ملاحظة: إذا لم تتوفر كروت كافية، سيتم إضافة الضيوف بدون كروت.</p>
             </div>
           </div>
         );
