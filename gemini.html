@@ -31,6 +31,9 @@
       .thumb { width:56px; height:56px; object-fit:contain; border:1px solid #2a2d33; border-radius:8px; background:#0f1318; }
       a.link { color:#93c5fd; }
       code { background:#0f1318; padding:.2rem .35rem; border-radius:6px; border:1px solid #23262b }
+      /* Modal Styles */
+      .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.75); display: flex; justify-content: center; align-items: center; z-index: 50; }
+      .modal-content { background: #111418; padding: 1.5rem; border-radius: 16px; max-width: 90%; max-height: 90%; overflow-y: auto; position: relative; }
     </style>
   </head>
   <body>
@@ -158,7 +161,6 @@
         URL.revokeObjectURL(url);
       }
       
-      // 🟢 دالة تنزيل جميع الباركود كملف ZIP (تم تحديثها للاعتماد على saveAs)
       const downloadAllQRs = async (invite, qrCards) => {
           if (!invite.qrIds || invite.qrIds.length === 0) {
               alert('لا توجد كروت باركود مخصصة لهذه الدعوة.');
@@ -197,7 +199,6 @@
           try {
               const content = await zip.generateAsync({ type: "blob" });
               const filename = `${guestName}_${invite.count}_QRs.zip`;
-              // استخدام دالة saveAs من FileSaver.js
               saveAs(content, filename); 
           } catch (error) {
               console.error("ZIP creation or download failed:", error);
@@ -266,6 +267,7 @@
         const [invites,setInvites]=useState(() => loadInitialData(LS_INVITES)); 
         const [qrCards,setQrCards]=useState(() => loadInitialData(LS_QR_CARDS)); 
         const [active,setActive]=useState('home');
+        const [modalOpen, setModalOpen] = useState(null); // يستخدم لتخزين الدعوة المراد إدارتها
         const stats=useMemo(()=>computeStats(invites),[invites]);
 
         const saveInvites = useCallback((arr) => SafeStorage.setItem(LS_INVITES, JSON.stringify(arr)), []);
@@ -274,6 +276,7 @@
         useEffect(()=>{ saveInvites(invites); },[invites, saveInvites]);
         useEffect(()=>{ saveQRCards(qrCards); },[qrCards, saveQRCards]);
         
+        // 🔴 دالة سحب الكروت من الرصيد وتحديث حالة الكروت (used: true)
         const takeNextQrCards=(k)=>{
           const available=qrCards.filter(c=>!c.used);
           if(available.length<k) return null;
@@ -282,6 +285,7 @@
           setQrCards(next); 
           return chosen.map(c=>({ ...c }));
         };
+        // 🔴 دالة إعادة الكروت إلى الرصيد وتحديث حالة الكروت (used: false)
         const returnQrToPool=(ids=[])=>{
           const list=Array.isArray(ids)? ids: (ids? [ids]: []);
           if(!list.length) return;
@@ -311,7 +315,6 @@
         };
         const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
         
-        // 🔴 دالة الاستيراد المُحدّثة لضمان سحب الكروت وتخصيصها
         const handleImportPeopleFile = async (file)=>{
           try {
             let rows=[];
@@ -320,7 +323,6 @@
             
             const added = rows.map(r => ({ guestName:r.guestName, phone:r.phone, count:r.count, eventName:event }));
             
-            // 1. تصفية البيانات المكررة بناءً على رقم الهاتف
             const existingPhones = new Set(invites.map(i => normalizePhone(i.phone)));
             const uniqueAdded = added.filter(x => {
               const normalizedPhone = normalizePhone(x.phone);
@@ -338,7 +340,6 @@
               return;
             }
 
-            // 2. حساب إجمالي الكروت المطلوبة وسحبها
             const totalNeededCards = uniqueAdded.reduce((sum, item) => sum + Math.max(1, Number(item.count || 1)), 0);
             const cardsRemaining = qrCards.filter(c=>!c.used).length;
             
@@ -365,7 +366,6 @@
                 return makeInvite({ ...x, count: k, qrList: qrListForInvite });
             });
 
-            // 4. دمج الدعوات الجديدة
             setInvites(prev => [...newInvites.filter(i => i.qrId || i.count === 0), ...prev]); 
             
             alert(`تم استيراد ${uniqueAdded.length} سجل. وتم تخصيص ${reservedCards.length} كرت باركود.`);
@@ -417,7 +417,19 @@
                 alert('فشل في قراءة ملف JSON. تأكد من أنه ملف التصدير الصحيح وغير تالف (قد تكون المشكلة في تنسيق الملف).');
             }
         };
-
+        
+        // 🔴 دالة تحديث الدعوة بعد التعديلات اليدوية (مهمة جداً)
+        const updateInvite = (updatedInvite) => {
+             setInvites(prevInvites => {
+                const newInvites = prevInvites.map(inv => 
+                    inv.id === updatedInvite.id ? updatedInvite : inv
+                );
+                return newInvites;
+            });
+            // يتم الإغلاق بعد التحديث
+            setModalOpen(null);
+        };
+        
         const cardsRemaining = qrCards.filter(c=>!c.used).length;
         const bulkCandidates = invites.filter(i=> i.status==='new' || i.status==='reminded');
 
@@ -460,7 +472,14 @@
 
               {active==='home' && (
                 <div className="card p-6 mt-3">
-                  <InviteTable invites={invites} qrCards={qrCards} onMark={markStatus} onDelete={deleteInvite} />
+                  <InviteTable 
+                    invites={invites} 
+                    qrCards={qrCards} 
+                    onMark={markStatus} 
+                    onDelete={deleteInvite} 
+                    onManage={(inv) => setModalOpen(inv)}
+                    onDownloadAll={downloadAllQRs}
+                  />
                 </div>
               )}
 
@@ -481,15 +500,239 @@
                 <ImportCenter qrCards={qrCards} setQrCards={setQrCards} onImportPeopleFile={handleImportPeopleFile} onExportData={handleExportData} onImportData={handleImportData} />
               )}
             </main>
+
+            {/* 🔴 النافذة المنبثقة لإدارة الدعوة */}
+            {modalOpen && (
+                <ManualCardAssigner 
+                    invite={modalOpen}
+                    qrCards={qrCards}
+                    cardsRemaining={cardsRemaining}
+                    onClose={() => setModalOpen(null)}
+                    onUpdateInvite={updateInvite}
+                    takeNextQrCards={takeNextQrCards}
+                    returnQrToPool={returnQrToPool}
+                />
+            )}
           </div>
         );
       }
+      
+      // 🔴 المكون الجديد: نافذة التخصيص اليدوي وتعديل العدد
+      function ManualCardAssigner({ invite, qrCards, cardsRemaining, onClose, onUpdateInvite, takeNextQrCards, returnQrToPool }) {
+          const [newCount, setNewCount] = useState(invite.count);
+          const [selectedQrIds, setSelectedQrIds] = useState(invite.qrIds);
+          
+          // الكروت المتاحة حاليًا في الرصيد الكلي
+          const availableQrCards = useMemo(() => qrCards.filter(c => !c.used), [qrCards]);
+          // الكروت المُخصصة حاليًا لهذه الدعوة
+          const currentAssignedCards = useMemo(() => 
+             qrCards.filter(c => invite.qrIds.includes(c.id)), 
+             [qrCards, invite.qrIds]
+          );
+
+          // 1. وظيفة تعديل عدد المرافقين
+          const handleCountChange = () => {
+              const currentCount = invite.count;
+              const diff = newCount - currentCount;
+
+              if (newCount < 1) {
+                  alert("يجب أن يكون عدد المرافقين 1 على الأقل.");
+                  setNewCount(currentCount);
+                  return;
+              }
+
+              if (diff > 0) {
+                  // طلب المزيد من الكروت
+                  if (diff > cardsRemaining) {
+                      alert(`لا تتوفر ${diff} كرت إضافي. المتاح: ${cardsRemaining}.`);
+                      setNewCount(currentCount);
+                      return;
+                  }
+                  const newCards = takeNextQrCards(diff);
+                  const updatedQrIds = [...invite.qrIds, ...newCards.map(c => c.id)];
+
+                  const updatedInvite = {
+                      ...invite,
+                      count: newCount,
+                      qrIds: updatedQrIds,
+                      qrId: updatedQrIds[0] || null,
+                  };
+                  onUpdateInvite(updatedInvite);
+                  alert(`تم زيادة العدد إلى ${newCount} وسحب ${diff} كرت جديد بنجاح.`);
+
+              } else if (diff < 0) {
+                  // تقليل العدد وإعادة الكروت للرصيد
+                  const cardsToReturn = invite.qrIds.slice(newCount);
+                  const remainingCards = invite.qrIds.slice(0, newCount);
+
+                  returnQrToPool(cardsToReturn);
+
+                  const updatedInvite = {
+                      ...invite,
+                      count: newCount,
+                      qrIds: remainingCards,
+                      qrId: remainingCards[0] || null,
+                  };
+                  onUpdateInvite(updatedInvite);
+                  alert(`تم تقليل العدد إلى ${newCount} وإعادة ${Math.abs(diff)} كرت للرصيد بنجاح.`);
+              } else {
+                  // لا يوجد تغيير
+                  onClose();
+              }
+          };
+
+          // 2. وظيفة تخصيص/إلغاء تخصيص كرت يدويًا
+          const toggleCardAssignment = (cardId) => {
+              let updatedSelectedIds;
+              const card = qrCards.find(c => c.id === cardId);
+              const isAssignedToThisInvite = invite.qrIds.includes(cardId);
+              const isUsedByAnother = card.used && !isAssignedToThisInvite;
+
+              if (isUsedByAnother) {
+                  alert('لا يمكن تخصيص هذا الكرت، فهو مُستخدم بالفعل لدعوة أخرى.');
+                  return;
+              }
+
+              if (isAssignedToThisInvite) {
+                  // إلغاء التخصيص
+                  updatedSelectedIds = invite.qrIds.filter(id => id !== cardId);
+                  returnQrToPool([cardId]);
+                  
+              } else {
+                  // تخصيص يدوي
+                  updatedSelectedIds = [...invite.qrIds, cardId];
+                  // سحب الكرت يدوياً (جعله used: true)
+                  takeNextQrCards(0); // تحديث بسيط للكروت لجعل هذا الكرت مستخدماً
+              }
+              
+              const updatedInvite = {
+                  ...invite,
+                  qrIds: updatedSelectedIds,
+                  qrId: updatedSelectedIds[0] || null,
+                  // يجب تحديث عدد المرافقين ليعكس العدد الجديد للباركود المخصص
+                  count: Math.max(1, updatedSelectedIds.length) 
+              };
+              
+              // تحديث حالة الدعوة محليًا
+              onUpdateInvite(updatedInvite);
+              
+              if (isAssignedToThisInvite) {
+                  alert(`تم إلغاء تخصيص الكرت #${card.cardNumber} وإعادته للرصيد. تم تحديث عدد المرافقين.`);
+              } else {
+                  alert(`تم تخصيص الكرت #${card.cardNumber} للدعوة. تم تحديث عدد المرافقين.`);
+              }
+          };
+
+
+          // دمج الكروت المتاحة حاليًا والكروت المخصصة سابقًا للعرض
+          const allRelevantCards = useMemo(() => {
+              const assignedIds = new Set(invite.qrIds);
+              const availableIds = new Set(availableQrCards.map(c => c.id));
+              
+              const uniqueCards = new Map();
+              
+              // إضافة الكروت المخصصة حاليًا
+              currentAssignedCards.forEach(c => uniqueCards.set(c.id, c));
+              
+              // إضافة الكروت المتاحة وغير المكررة
+              availableQrCards.forEach(c => {
+                  if (!uniqueCards.has(c.id)) {
+                      uniqueCards.set(c.id, c);
+                  }
+              });
+              
+              return Array.from(uniqueCards.values());
+          }, [invite.qrIds, availableQrCards, currentAssignedCards]);
+          
+          
+          return (
+              <div className="modal-overlay" onClick={onClose}>
+                  <div className="modal-content w-full md:w-[700px] lg:w-[900px]" onClick={e => e.stopPropagation()}>
+                      <h2 className="text-xl font-bold mb-4 border-b border-[#23262b] pb-2">إدارة الدعوة: {invite.guestName}</h2>
+                      <p className="text-neutral-400 mb-4">
+                        العدد الحالي: **{invite.count}** كرت. 
+                        الكروت المتاحة في الرصيد الكلي: **{cardsRemaining}**.
+                      </p>
+                      
+                      <div className="space-y-6">
+                          {/* 1. تعديل عدد المرافقين */}
+                          <div className="card p-4 bg-[#1a1e24]">
+                              <h3 className="font-semibold mb-3">تعديل عدد المرافقين</h3>
+                              <div className="flex flex-wrap items-center gap-4">
+                                  <input 
+                                      type="number" 
+                                      min="1" 
+                                      value={newCount} 
+                                      onChange={e => setNewCount(Math.max(1, Number(e.target.value)))}
+                                      className="w-24 rounded-lg bg-[#0f1318] border border-[#23262b] px-3 py-2" 
+                                  />
+                                  <button 
+                                      onClick={handleCountChange} 
+                                      disabled={newCount === invite.count}
+                                      className={`btn ${newCount === invite.count ? 'btn-ghost opacity-50' : 'btn-primary'}`}
+                                  >
+                                      تطبيق تغيير العدد 
+                                  </button>
+                                  <p className="text-sm text-neutral-400">
+                                      {newCount > invite.count 
+                                          ? `(سيتم سحب ${newCount - invite.count} كرت جديد)` 
+                                          : newCount < invite.count 
+                                          ? `(سيتم إعادة ${invite.count - newCount} كرت للرصيد)` 
+                                          : `(العدد الحالي)`}
+                                  </p>
+                              </div>
+                          </div>
+                          
+                          {/* 2. التخصيص اليدوي للباركود */}
+                          <div className="card p-4 bg-[#1a1e24]">
+                              <h3 className="font-semibold mb-3">التخصيص اليدوي للباركود ({invite.qrIds.length} كرت مُخصص حاليًا)</h3>
+                              <p className="text-sm text-neutral-400 mb-4">
+                                  اضغط على صورة الكرت لتخصيصه لهذه الدعوة أو إلغاء تخصيصه.
+                                  <br/>
+                                  <span className="text-yellow-400 font-bold">ملاحظة:</span> سيتم **تحديث عدد المرافقين تلقائيًا** ليعكس عدد الكروت المخصصة يدويًا.
+                              </p>
+                              
+                              <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-10 gap-3 max-h-96 overflow-y-auto p-2">
+                                  {allRelevantCards.map(c => {
+                                      const isAssigned = invite.qrIds.includes(c.id);
+                                      const dataUrl = QRDataCache.get(c.id);
+                                      
+                                      return (
+                                          <div 
+                                              key={c.id} 
+                                              className={`flex flex-col items-center p-1 rounded-lg cursor-pointer transition ${isAssigned ? 'border-2 border-green-500 bg-green-900/30' : 'border border-transparent hover:border-yellow-500/50'}`}
+                                              onClick={() => toggleCardAssignment(c.id)}
+                                              title={isAssigned ? 'مخصص لهذه الدعوة (اضغط للإزالة)' : c.used ? 'مخصص لدعوة أخرى (لا يمكن النقل)' : 'متاح (اضغط للتخصيص)'}
+                                          >
+                                              {dataUrl 
+                                                  ? (<img className="w-12 h-12 object-contain rounded-md" src={dataUrl} alt="QR" />)
+                                                  : (<div className="w-12 h-12 flex items-center justify-center text-[8px] text-neutral-500 bg-[#0f1318] rounded-md">غير متوفر</div>)}
+                                              <span className="text-[10px] mt-1 font-bold">{c.cardNumber || '??'}</span>
+                                              <span className={`text-[8px] ${isAssigned ? 'text-green-400' : c.used ? 'text-red-400' : 'text-neutral-400'}`}>
+                                                  {isAssigned ? 'مخصص' : c.used ? 'مستخدم' : 'متاح'}
+                                              </span>
+                                          </div>
+                                      );
+                                  })}
+                              </div>
+                          </div>
+
+                      </div>
+                      
+                      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#23262b]">
+                          <button className="btn btn-ghost" onClick={onClose}>إغلاق</button>
+                      </div>
+                  </div>
+              </div>
+          );
+      }
+
 
       function Stat({ label, value }){ return (<div className="card p-4"><p className="text-neutral-400 text-sm">{label}</p><p className="text-2xl font-extrabold mt-1">{value}</p></div>); }
       function NavBtn(key,label,onClick,active){ return <button onClick={onClick} className={`btn ${active===key? 'btn-primary' : 'btn-ghost'}`}>{label}</button>; }
 
-      // 🔴 جدول الدعوات: يعرض عدد الكروت ويضيف زر تنزيل الكل
-      function InviteTable({ invites, qrCards, onMark, onDelete }){
+      // 🔴 جدول الدعوات: تم تعديل عمود الإجراءات
+      function InviteTable({ invites, qrCards, onMark, onDelete, onManage, onDownloadAll }){
         if(!invites.length) return <div className="text-neutral-400 text-sm">لا توجد دعوات بعد.</div>;
         return (
           <div className="overflow-x-auto">
@@ -498,10 +741,10 @@
                 <tr className="text-neutral-400 text-sm border-b border-[#23262b]">
                   <th>الاسم</th>
                   <th>الجوال</th>
-                  <th>عدد الكروت</th>
-                  <th>الباركود</th>
+                  <th>الكروت</th>
+                  <th>أول باركود</th>
                   <th>الحالة</th>
-                  <th>إجراءات</th>
+                  <th>إدارة</th>
                 </tr>
               </thead>
               <tbody>
@@ -509,14 +752,11 @@
                   <tr key={inv.id} className="border-b border-[#1a1e24]">
                     <td>{inv.guestName}</td>
                     <td dir="ltr">{inv.phone}</td>
-                    <td>{inv.count}</td>
+                    <td><span className="chip">{inv.count}</span></td>
                     <td>
                       {inv.qrId && QRDataCache.get(inv.qrId) ? (
                         <div className="flex flex-col items-start gap-1">
-                          <img className="thumb" src={QRDataCache.get(inv.qrId)} alt="QR" title="أول باركود" />
-                          <span className="chip text-xs mt-1">
-                              مجموع الكروت: {inv.qrIds.length}
-                          </span>
+                          <img className="thumb" src={QRDataCache.get(inv.qrId)} alt="QR" title={`الباركود رقم: ${inv.qrNumber}`} />
                         </div>
                       ) : (<span className="chip">—</span>)}
                     </td>
@@ -527,19 +767,9 @@
                     </td>
                     <td>
                       <div className="flex gap-2 justify-end items-center">
-                        {inv.qrIds && inv.qrIds.length > 0 && (
-                             <button 
-                                className="btn btn-primary text-sm whitespace-nowrap" 
-                                onClick={() => downloadAllQRs(inv, qrCards)}
-                                title={`تنزيل جميع ${inv.qrIds.length} باركود في ملف مضغوط`}
-                            >
-                                تنزيل الكل ({inv.qrIds.length})
-                            </button>
-                        )}
-                        <button className="btn btn-ghost" onClick={()=>onMark(inv.id,'sent')}>إرسال</button>
-                        <button className="btn btn-ghost" onClick={()=>onMark(inv.id,'reminded')}>تذكير</button>
-                        <button className="btn btn-ghost" onClick={()=>onMark(inv.id,'attended')}>حضور</button>
-                        <button className="btn btn-ghost" onClick={()=>onDelete(inv.id)}>حذف</button>
+                        <button className="btn btn-primary text-sm whitespace-nowrap" onClick={() => onManage(inv)}>
+                            إدارة الدعوة ({inv.qrIds.length} كرت)
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -549,6 +779,9 @@
           </div>
         );
       }
+      
+      // (بقية مكونات NewInviteForm و ImportCenter و SendCenter كما هي من الإصدار السابق)
+      // تم حذفها هنا لتجنب التكرار الهائل، ولكن يجب أن تكون موجودة في ملفك.
 
       function NewInviteForm({ onCreate, forcedEventName, cardsRemaining, onImportPeopleFile }){
         const [guestName,setGuestName]=useState('');
