@@ -13,6 +13,9 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
 
     <style>
       * { box-sizing: border-box; }
@@ -117,7 +120,7 @@
         eventName:(eventName||'بدون اسم حدث').trim(),
         status: 'new', createdAt:new Date().toISOString(),
         qrIds: qrList.map(q=>q.id),
-        qrId: qrList[0]?.id || null,
+        qrId: qrList[0]?.id || null, // First QR ID for display/single download
         qrName: qrList[0]?.name || null,
         qrNumber: qrList[0]?.cardNumber || null,
       });
@@ -152,6 +155,57 @@
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
+      
+      // 🟢 الدالة الجديدة لتنزيل جميع الباركود كملف ZIP
+      const downloadAllQRs = async (invite, qrCards) => {
+          if (!invite.qrIds || invite.qrIds.length === 0) {
+              alert('لا توجد كروت باركود مخصصة لهذه الدعوة.');
+              return;
+          }
+
+          const zip = new JSZip();
+          const guestName = invite.guestName.replace(/[^a-z0-9]/gi, '_'); // تنظيف الاسم ليناسب اسم الملف
+          let filesAdded = 0;
+
+          // الحصول على بيانات الكروت من الكاش
+          const cardData = invite.qrIds.map(id => {
+              const dataUrl = QRDataCache.get(id);
+              const card = qrCards.find(c => c.id === id);
+              return { dataUrl, card };
+          }).filter(item => item.dataUrl); // التأكد من أن الصورة موجودة في الكاش
+
+          if (cardData.length === 0) {
+              alert('لم يتم العثور على أي صور باركود في الكاش المحلي.');
+              return;
+          }
+
+          // إضافة كل صورة إلى ملف ZIP
+          cardData.forEach((item, index) => {
+              const dataUrl = item.dataUrl;
+              const cardName = item.card?.cardNumber ? `QR_Card_${item.card.cardNumber}` : `QR_${index + 1}`;
+              const base64Data = dataUrl.split(',')[1];
+              
+              // يتم إضافة الملف كـ Base64
+              zip.file(`${guestName}_${cardName}.png`, base64Data, { base64: true });
+              filesAdded++;
+          });
+
+          if (filesAdded === 0) {
+              alert('لم يتم إضافة أي ملفات. قد تكون هناك مشكلة في البيانات أو الكاش.');
+              return;
+          }
+
+          // توليد وتنزيل ملف ZIP
+          try {
+              const content = await zip.generateAsync({ type: "blob" });
+              const filename = `${guestName}_${invite.count}_QRs.zip`;
+              saveAs(content, filename); // saveAs هي دالة تأتي من المكتبة
+          } catch (error) {
+              console.error("ZIP creation failed:", error);
+              alert('فشل في إنشاء أو تنزيل ملف ZIP.');
+          }
+      };
+
 
       function App(){
         
@@ -257,7 +311,6 @@
         };
         const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
         
-        // 🚨 تم تعديل هذه الدالة لحل مشكلة تخصيص الباركود عند الاستيراد الجماعي
         const handleImportPeopleFile = async (file)=>{
           try {
             let rows=[];
@@ -292,11 +345,9 @@
             
             if (totalNeededCards > cardsRemaining) {
               alert(`تحذير: لا تتوفر كروت باركود كافية. مطلوب ${totalNeededCards} كرت، المتاح ${cardsRemaining}. سيتم إضافة الدعوات بالكروت المتاحة فقط والبقية بدون كروت.`);
-              // سحب جميع الكروت المتاحة فقط
               const allAvailable = qrCards.filter(c=>!c.used);
               reservedCards = takeNextQrCards(allAvailable.length);
             } else {
-              // 3. سحب الكروت المطلوبة وتحديث رصيد الكروت
               reservedCards = takeNextQrCards(totalNeededCards);
             }
             
@@ -306,25 +357,23 @@
                 let qrListForInvite = [];
 
                 if (reservedCards.length > cardIndex) {
-                    // تخصيص الكروت من الكروت المسحوبة
                     qrListForInvite = reservedCards.slice(cardIndex, cardIndex + k);
                     cardIndex += k;
                 }
                 
                 // إنشاء الدعوة مع الكروت المرفقة
-                // العدد الحقيقي للدعوة سيكون مساوياً لعدد الكروت المرفقة إذا كان أقل من المطلوب
                 return makeInvite({ ...x, count: k, qrList: qrListForInvite });
             });
 
             // 4. دمج الدعوات الجديدة
-            setInvites(prev => [...newInvites.filter(i => i.qrId || i.count === 0), ...prev]); // فلترة الدعوات التي لم يتم تخصيص أي كرت لها إذا لم تكن هناك كروت متاحة
+            // نأخذ فقط الدعوات التي تمكنّا من تخصيص كرت واحد على الأقل لها أو التي تم إدخال عدد 0 لها
+            setInvites(prev => [...newInvites.filter(i => i.qrId || i.count === 0), ...prev]); 
             
             alert(`تم استيراد ${uniqueAdded.length} سجل. وتم تخصيص ${reservedCards.length} كرت باركود.`);
 
           } catch(e){ console.error(e); alert('تعذر قراءة الملف.'); }
         };
-        
-        // بقية الدوال (handleExportData, handleImportData) كما هي لضمان سحب JSON كامل...
+
         const handleExportData = () => {
             const dataToExport = {
                 eventName: event,
@@ -415,7 +464,8 @@
 
               {active==='home' && (
                 <div className="card p-6 mt-3">
-                  <InviteTable invites={invites} onMark={markStatus} onDelete={deleteInvite} />
+                  {/* 🟢 تمرير qrCards إلى InviteTable */}
+                  <InviteTable invites={invites} qrCards={qrCards} onMark={markStatus} onDelete={deleteInvite} />
                 </div>
               )}
 
@@ -429,7 +479,7 @@
               )}
 
               {active==='send' && (
-                <SendCenter invites={invites} onSend={sendText} onBulk={bulkSend} />
+                <SendCenter invites={invites} onSend={sendText} />
               )}
 
               {active==='import' && (
@@ -443,7 +493,8 @@
       function Stat({ label, value }){ return (<div className="card p-4"><p className="text-neutral-400 text-sm">{label}</p><p className="text-2xl font-extrabold mt-1">{value}</p></div>); }
       function NavBtn(key,label,onClick,active){ return <button onClick={onClick} className={`btn ${active===key? 'btn-primary' : 'btn-ghost'}`}>{label}</button>; }
 
-      function InviteTable({ invites, onMark, onDelete }){
+      // 🟢 تحديث دالة InviteTable
+      function InviteTable({ invites, qrCards, onMark, onDelete }){
         if(!invites.length) return <div className="text-neutral-400 text-sm">لا توجد دعوات بعد.</div>;
         return (
           <div className="overflow-x-auto">
@@ -466,13 +517,11 @@
                     <td>{inv.count}</td>
                     <td>
                       {inv.qrId && QRDataCache.get(inv.qrId) ? (
-                        <div className="flex items-center gap-2">
-                          <a className="link" href={QRDataCache.get(inv.qrId)} download={`${inv.qrName||'qr'}-${inv.qrNumber||''}.png`} title="تنزيل أول باركود (محلي)">
-                            <img className="thumb" src={QRDataCache.get(inv.qrId)} alt="QR" />
-                          </a>
-                          {Array.isArray(inv.qrIds) && inv.qrIds.length>1 && (
-                            <span className="chip text-xs">+{inv.qrIds.length-1} إضافية</span>
-                          )}
+                        <div className="flex flex-col items-start gap-1">
+                          <img className="thumb" src={QRDataCache.get(inv.qrId)} alt="QR" title="أول باركود" />
+                          <span className="chip text-xs mt-1">
+                              مجموع الكروت: {inv.qrIds.length}
+                          </span>
                         </div>
                       ) : (<span className="chip">—</span>)}
                     </td>
@@ -482,8 +531,17 @@
                       </span>
                     </td>
                     <td>
-                      <div className="flex gap-2 justify-end">
-                        <button className="btn btn-primary" onClick={()=>onMark(inv.id,'sent')}>إرسال</button>
+                      <div className="flex gap-2 justify-end items-center">
+                        {inv.qrIds && inv.qrIds.length > 0 && (
+                             <button 
+                                className="btn btn-primary text-sm whitespace-nowrap" 
+                                onClick={() => downloadAllQRs(inv, qrCards)}
+                                title={`تنزيل جميع ${inv.qrIds.length} باركود في ملف مضغوط`}
+                            >
+                                تنزيل الكل ({inv.qrIds.length})
+                            </button>
+                        )}
+                        <button className="btn btn-ghost" onClick={()=>onMark(inv.id,'sent')}>إرسال</button>
                         <button className="btn btn-ghost" onClick={()=>onMark(inv.id,'reminded')}>تذكير</button>
                         <button className="btn btn-ghost" onClick={()=>onMark(inv.id,'attended')}>حضور</button>
                         <button className="btn btn-ghost" onClick={()=>onDelete(inv.id)}>حذف</button>
