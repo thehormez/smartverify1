@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>بوابة الدعوات | مزامنة محلية + تصدير/استيراد</title>
+    <title>بوابة الدعوات | مزامنة محلية + تصدير/استيراد + تبويب استيراد باركود</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -13,6 +13,9 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
     <style>
       * { box-sizing: border-box; }
       body { background:#0a0a0a; color:#eee; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Naskh Arabic UI", Arial, sans-serif; }
@@ -25,17 +28,17 @@
       .thumb { width:56px; height:56px; object-fit:contain; border:1px solid #2a2d33; border-radius:8px; background:#0f1318; }
       a.link { color:#93c5fd; }
       code { background:#0f1318; padding:.2rem .35rem; border-radius:6px; border:1px solid #23262b }
+      input,button,select { outline: none; }
+      input[type="number"] { direction:ltr; }
     </style>
-      <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
   </head>
   <body>
     <div id="root"></div>
 
     <script type="text/babel">
-      const { useState, useEffect, useMemo, useRef, useCallback } = React;
+      const { useState, useEffect, useMemo, useRef } = React;
 
-      // ======= Safe storage & constants =======
+      // ======= تخزين محلي & ثوابت =======
       const SafeStorage = (() => {
         try { const t='__probe__'; localStorage.setItem(t,'1'); localStorage.removeItem(t); return localStorage; } catch(e){
           const mem = {}; return { getItem:k=>mem[k]??null, setItem:(k,v)=>{mem[k]=String(v)}, removeItem:k=>{delete mem[k]} };
@@ -43,15 +46,15 @@
       })();
       const trySet = (k,v)=>{ try { SafeStorage.setItem(k,v); return true; } catch(e){ console.warn('Storage failed',k,e); return false; } };
 
-      const LS_EVENTS = 'hormez_events_meta';
-      const LS_AUTH   = 'hormez_auth_event';
+      const LS_EVENTS  = 'hormez_events_meta';
+      const LS_AUTH    = 'hormez_auth_event';
       const LS_INVITES = 'hormez_invites';
       const LS_QRCARDS = 'hormez_qrcards';
 
       const getEventMeta = ()=>{ try{ return JSON.parse(SafeStorage.getItem(LS_EVENTS)||'{}'); } catch { return {}; } };
       const setEventMeta = (obj)=>{ trySet(LS_EVENTS, JSON.stringify(obj||{})); };
 
-      const QRDataCache = new Map(); // id -> dataUrl (إن وُجد)
+      const QRDataCache = new Map(); // id -> dataUrl
 
       const normalizePhone=(p)=>String(p||'').replace(/\D/g,'');
       const hashString=(str)=>{ let h=5381,i=str.length; while(i){ h=(h*33)^str.charCodeAt(--i);} return (h>>>0).toString(36); };
@@ -94,6 +97,20 @@
         return body.map(r=>{ const [a,b,c,d]=r; return { guestName:String(a||'').trim(), phone:String(b||'').trim(), count:Math.max(1,Number(c||1)), eventName:String(d||'').trim()}; });
       }
 
+      // ====== قراءة صور الباركود كـ DataURL ======
+      const readFileAsDataURL = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file);
+      });
+      function buildQrMetaFromDataURL(file, dataUrl){
+        const name=file.name||'qr';
+        const m = name.match(/(\d{3,})/); const cardNumber = m? m[1]: null;
+        const contentHash = hashString(String(dataUrl));
+        const id = Date.now()+"_"+Math.random().toString(36).slice(2,8);
+        QRDataCache.set(id, dataUrl);
+        return { id, name, used:false, cardNumber, contentHash, dataUrl };
+      }
+
+      // ====== شاشة الدخول (محلي) ======
       function AuthView({ onAuthed }){
         const [eventName,setEventName]=useState('');
         const [password,setPassword]=useState('');
@@ -105,8 +122,7 @@
           if(!entry){
             meta[name]={password}; setEventMeta(meta);
           } else if((entry.password||'')!==password){
-            setErr('كلمة المرور غير صحيحة لهذا الحدث');
-            return;
+            setErr('كلمة المرور غير صحيحة لهذا الحدث'); return;
           }
           SafeStorage.setItem(LS_AUTH, JSON.stringify({event:name}));
           onAuthed(name);
@@ -128,21 +144,16 @@
       }
 
       function App(){
-        const [authData,setAuthData]=useState(()=>{
-          try { const data = JSON.parse(SafeStorage.getItem(LS_AUTH)||'null'); if (data?.event) return data; } catch {}
-          return { event: '' };
-        });
+        const [authData,setAuthData]=useState(()=>{ try { const d = JSON.parse(SafeStorage.getItem(LS_AUTH)||'null'); if (d?.event) return d; } catch {} return { event: '' }; });
         const onAuthed = (event) => setAuthData({ event });
         if(!authData.event) return <AuthView onAuthed={onAuthed}/>;
         return <EventApp event={authData.event} onLogout={()=>{ SafeStorage.removeItem(LS_AUTH); setAuthData({ event: '' }); }} />;
       }
 
+      // ====== التطبيق ======
       function EventApp({ event, onLogout }){
-        const [invites,setInvites]=useState(()=>{
-          try{ return JSON.parse(SafeStorage.getItem(LS_INVITES)||'[]'); }catch{return []}
-        });
-        const [qrCards,setQrCards]=useState(()=>{
-          try{
+        const [invites,setInvites]=useState(()=>{ try{ return JSON.parse(SafeStorage.getItem(LS_INVITES)||'[]'); }catch{return []} });
+        const [qrCards,setQrCards]=useState(()=>{ try{
             const arr = JSON.parse(SafeStorage.getItem(LS_QRCARDS)||'[]');
             arr.forEach(c=>{ if(c.dataUrl) QRDataCache.set(c.id, c.dataUrl); });
             return arr;
@@ -150,6 +161,9 @@
         });
         const [active,setActive]=useState('home');
         const stats=useMemo(()=>computeStats(invites),[invites]);
+
+        const peopleInput=useRef(null);
+        const qrInput=useRef(null);
 
         useEffect(()=>{ trySet(LS_INVITES, JSON.stringify(invites)); },[invites]);
         useEffect(()=>{ trySet(LS_QRCARDS, JSON.stringify(qrCards)); },[qrCards]);
@@ -160,23 +174,22 @@
           const next=prompt('ادخل كلمة المرور الجديدة:',''); if(!next) return; meta[event]={password:next}; setEventMeta(meta); alert('تم تغيير كلمة المرور لهذا الحدث');
         };
 
+        // سحب أول k كروت متاحة + تعليمها كمستخدمة
         const takeNextQrCards=(k)=>{
           const available=qrCards.filter(c=>!c.used);
           if(available.length<k) return null;
           const chosen=available.slice(0,k);
           const next=qrCards.map(c=> chosen.find(x=>x.id===c.id)? { ...c, used:true }: c);
-          setQrCards(next); 
+          setQrCards(next);
           return chosen.map(c=>({ ...c }));
         };
 
-        const returnQrToPool=(ids=[])=>{
-          setQrCards(prev=> prev.map(c=> ids.includes(c.id)? { ...c, used:false }: c)); 
-        };
+        const returnQrToPool=(ids=[])=>{ setQrCards(prev=> prev.map(c=> ids.includes(c.id)? { ...c, used:false }: c)); };
 
         const addInvite=({guestName,phone,count,eventName})=>{
           const phoneNorm=normalizePhone(phone);
           if(invites.some(i=>i.phone===phoneNorm)) { alert('هذا الرقم موجود مسبقاً.'); return; }
-          const qrList=takeNextQrCards(count);
+          const qrList=takeNextQrCards(Math.max(1, Number(count||1)));
           if(!qrList){ alert('لا توجد كروت كافية.'); return; }
           const inv=makeInvite({ guestName, phone, count, eventName, qrList });
           setInvites(prev=>[inv,...prev]);
@@ -193,14 +206,63 @@
         const markStatus=(id,status)=> setInvites(prev=> prev.map(i=> i.id===id? { ...i, status }: i));
 
         const sendText=(inv)=>{
-          const firstId = inv.qrId || inv.qrIds?.[0];
-          const firstUrl = firstId && QRDataCache.get(firstId);
-          const msg=`مرحبا ${inv.guestName}
-يشرفنا حضورك: ${event}
-عدد المرافقين: ${inv.count}${firstUrl?`
-رابط أول باركود:
-${firstUrl}`:''}`;
+          const ids = inv.qrIds && inv.qrIds.length ? inv.qrIds : (inv.qrId ? [inv.qrId] : []);
+          const links = ids.map(id=> QRDataCache.get(id)).filter(Boolean);
+          const linkLines = links.length ? `\nروابط الباركود:\n${links.join('\n')}` : '';
+          const msg=`مرحبا ${inv.guestName}\nيشرفنا حضورك: ${event}\nعدد المرافقين: ${inv.count}${linkLines}`;
           openWhatsApp(inv.phone,msg); markStatus(inv.id,'sent');
+        };
+
+        // ====== الاستيراد الجماعي للأسماء مع ربط تلقائي للباركود ======
+        const onImportPeopleFile = async (file)=>{
+          try{
+            let rows=[];
+            if(/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) rows = await readXLSX(file);
+            else rows = parseCSV(await file.text());
+            if(!rows.length){ alert('لا توجد بيانات'); return; }
+
+            // تنظيف ومنع التكرار
+            const existingPhones = new Set(invites.map(i=>i.phone));
+            const cleaned = rows
+              .map(r=>({ guestName:r.guestName, phone:normalizePhone(r.phone), count:Math.max(1,Number(r.count||1)), eventName:event }))
+              .filter(r=>{ if(!r.phone) return false; if(existingPhones.has(r.phone)) return false; existingPhones.add(r.phone); return true; });
+
+            if(!cleaned.length){ alert('كل السجلات مكررة أو بدون أرقام.'); return; }
+
+            const totalNeeded = cleaned.reduce((s,r)=> s + r.count, 0);
+            const available = qrCards.filter(c=>!c.used).length;
+            if(available < totalNeeded){
+              if(!confirm(`عدد الكروت المتاحة (${available}) أقل من المطلوب (${totalNeeded}). سيتم ربط ما يتوفر وترك الباقي بلا كروت. متابعة؟`)) return;
+            }
+
+            const newInvites=[];
+            for(const r of cleaned){
+              const qrList = takeNextQrCards(r.count) || [];
+              newInvites.push(makeInvite({ ...r, qrList }));
+            }
+            setInvites(prev=>[...newInvites, ...prev]);
+            alert(`تم استيراد ${newInvites.length} ضيف${newInvites.length!==1?'اً':''} وربط الباركود المتاح تلقائيًا.`);
+          }catch(e){ console.error(e); alert('تعذر قراءة الملف.'); }
+        };
+
+        // ====== استيراد صور الباركود كـ DataURL ======
+        const onQrPick = async (files)=>{
+          const arr = Array.from(files||[]); if(!arr.length) return;
+          const existing=qrCards;
+          const hashSet=new Set(existing.map(c=>c.contentHash));
+          const numSet=new Set(existing.map(c=>c.cardNumber).filter(Boolean));
+          const toAdd=[];
+          for(const f of arr){
+            try{
+              const dataUrl = await readFileAsDataURL(f);
+              const r = buildQrMetaFromDataURL(f, dataUrl);
+              if(hashSet.has(r.contentHash)) continue;
+              if(r.cardNumber && numSet.has(r.cardNumber)) continue;
+              toAdd.push(r); hashSet.add(r.contentHash); if(r.cardNumber) numSet.add(r.cardNumber);
+            }catch(err){ console.error('Failed to read', f.name, err); }
+          }
+          if(toAdd.length){ setQrCards(prev=>[...toAdd, ...prev]); alert(`تمت إضافة ${toAdd.length} باركود.`); }
+          else { alert('الملفات مكررة أو حدث خطأ.'); }
         };
 
         // ====== تصدير/استيراد JSON ======
@@ -264,34 +326,42 @@ ${firstUrl}`:''}`;
           saveAs(blob, `QRCodes_${inv.guestName||'guest'}.zip`);
         };
 
+        // ====== مراجع مدخلات ======
         const importJsonRef = useRef(null);
-        const handlePickImportJSON = (e)=>{ const f=e.target.files?.[0]; e.target.value=''; if(f) handleImportJSON(f); };
-
-        return (
 
         return (
           <div>
             <header className="sticky top-0 z-20 card px-4 py-3 flex items-center justify-between">
-              <span className="font-black">لوحة حدث: <span className="text-yellow-400">{event}</span></span>
+              <div className="flex items-center gap-2">
+                <span className="font-black">لوحة حدث: <span className="text-yellow-400">{event}</span></span>
+              </div>
               <div className="flex items-center gap-2">
                 <span className="chip">الكروت المتاحة: {qrCards.filter(c=>!c.used).length}</span>
-                <button className="btn btn-ghost" onClick={changePassword}>تغيير كلمة المرور</button>
+                <button className="btn btn-ghost" onClick={changePassword}>كلمة المرور</button>
                 <button className="btn btn-ghost" onClick={handleExportJSON}>تصدير JSON</button>
                 <button className="btn btn-ghost" onClick={()=>importJsonRef.current?.click()}>استيراد JSON</button>
-                <input ref={importJsonRef} type="file" accept="application/json,.json" className="hidden" onChange={handlePickImportJSON} />
+                <input ref={importJsonRef} type="file" accept="application/json,.json" className="hidden" onChange={(e)=>{ const f=e.target.files?.[0]; e.target.value=''; if(f) handleImportJSON(f); }} />
                 <button className="btn btn-ghost" onClick={onLogout}>خروج</button>
               </div>
             </header>
+
             <main className="max-w-6xl mx-auto p-4 md:p-8">
-              <div className="flex gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4">
                 <button className={`btn ${active==='home'? 'btn-primary':'btn-ghost'}`} onClick={()=>setActive('home')}>الرئيسية</button>
                 <button className={`btn ${active==='new'? 'btn-primary':'btn-ghost'}`} onClick={()=>setActive('new')}>دعوة جديدة</button>
+                <button className={`btn ${active==='importNames'? 'btn-primary':'btn-ghost'}`} onClick={()=>setActive('importNames')}>استيراد أسماء</button>
+                <button className={`btn ${active==='importQRCodes'? 'btn-primary':'btn-ghost'}`} onClick={()=>setActive('importQRCodes')}>استيراد باركود</button>
+                <button className={`btn ${active==='send'? 'btn-primary':'btn-ghost'}`} onClick={()=>setActive('send')}>الإرسال</button>
               </div>
+
               {active==='home' && (
                 <div className="card p-6">
-                  <p>إجمالي الدعوات: {stats.total}</p>
-                  <p>مرسلة: {stats.sent}</p>
-                  <p>حضور: {stats.attended}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <Stat label="إجمالي الدعوات" value={stats.total} />
+                    <Stat label="الدعوات المُرسلة" value={stats.sent} />
+                    <Stat label="الحضور" value={stats.attended} />
+                    <Stat label="الكروت المتبقية" value={qrCards.filter(c=>!c.used).length} />
+                  </div>
                   <div className="overflow-x-auto mt-4">
                     <table className="w-full text-right">
                       <thead>
@@ -328,8 +398,124 @@ ${firstUrl}`:''}`;
                   </div>
                 </div>
               )}
-              {active==='new' && (<NewInviteForm onCreate={addInvite} forcedEventName={event} cardsRemaining={qrCards.filter(c=>!c.used).length} />)}
+
+              {active==='new' && (
+                <NewInviteForm onCreate={addInvite} forcedEventName={event} cardsRemaining={qrCards.filter(c=>!c.used).length}/>
+              )}
+
+              {active==='importNames' && (
+                <div className="card p-6 mt-3">
+                  <h3 className="font-bold">استيراد أسماء (CSV / XLSX) مع ربط الباركود تلقائيًا</h3>
+                  <p className="text-xs text-neutral-400 mt-1">أعمدة متوقعة: <code>name, phone, count, event</code> (العناوين اختيارية).</p>
+                  <ImportNames onImportPeopleFile={onImportPeopleFile} />
+                </div>
+              )}
+
+              {active==='importQRCodes' && (
+                <div className="card p-6 mt-3">
+                  <h3 className="font-bold">استيراد صور الباركود من الجهاز (PNG/JPG/SVG)</h3>
+                  <p className="text-xs text-neutral-400 mt-1">تُحفظ الصور محليًا كـ DataURL ويُمنع التكرار تلقائيًا.</p>
+                  <ImportQRCards qrCards={qrCards} onPick={onQrPick} />
+                </div>
+              )}
+
+              {active==='send' && (
+                <SendCenter invites={invites} onSend={sendText} />
+              )}
             </main>
+          </div>
+        );
+      }
+
+      // ====== مكوّنات فرعية ======
+      function Stat({ label, value }){ return (<div className="card p-4"><p className="text-neutral-400 text-sm">{label}</p><p className="text-2xl font-extrabold mt-1">{value}</p></div>); }
+
+      function ImportNames({ onImportPeopleFile }){
+        const inputRef=useRef(null);
+        const handlePick=(e)=>{ const f=e.target.files?.[0]; if(f) onImportPeopleFile(f); e.target.value=''; };
+        return (
+          <div className="mt-3 flex gap-2">
+            <button className="btn btn-primary" onClick={()=>inputRef.current?.click()}>اختيار ملف</button>
+            <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handlePick} />
+          </div>
+        );
+      }
+
+      function ImportQRCards({ qrCards, onPick }){
+        const inputRef=useRef(null);
+        return (
+          <>
+            <div className="mt-3 flex gap-2">
+              <button className="btn btn-ghost" onClick={()=>inputRef.current?.click()}>اختيار ملفات</button>
+              <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml" multiple className="hidden"
+                     onChange={(e)=>{ onPick(e.target.files); e.target.value=''; }} />
+              <span className="chip">إجمالي الكروت: {qrCards.length}</span>
+            </div>
+            <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
+              {qrCards.map(c=> (
+                <div key={c.id} className="flex flex-col items-center gap-1">
+                  <img className="thumb" src={QRDataCache.get(c.id)||c.dataUrl} alt={c.name} />
+                  <span className="text-[10px] text-neutral-400">{c.cardNumber?`#${c.cardNumber}`:'بدون رقم'}</span>
+                  <span className={`text-[10px] ${c.used? 'text-yellow-400' : 'text-neutral-500'}`}>{c.used? 'مستخدم' : 'متاح'}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+      }
+
+      function InviteTable({ invites, onMark, onDelete }){
+        if(!invites.length) return <div className="text-neutral-400 text-sm">لا توجد دعوات بعد.</div>;
+        return (
+          <div className="overflow-x-auto">
+            <table className="w-full text-right">
+              <thead>
+                <tr className="text-neutral-400 text-sm border-b border-[#23262b]">
+                  <th>الاسم</th>
+                  <th>الجوال</th>
+                  <th>عدد الكروت</th>
+                  <th>الباركود</th>
+                  <th>الحالة</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invites.map(inv => {
+                  const ids = inv.qrIds && inv.qrIds.length ? inv.qrIds : (inv.qrId ? [inv.qrId] : []);
+                  const n = ids.length;
+                  const first = ids[0];
+                  const url = first && QRDataCache.get(first);
+                  return (
+                    <tr key={inv.id} className="border-b border-[#1a1e24]">
+                      <td>{inv.guestName}</td>
+                      <td dir="ltr">{inv.phone}</td>
+                      <td>{inv.count}</td>
+                      <td>
+                        {url ? (
+                          <div className="flex items-center gap-2">
+                            <img className="thumb" src={url} alt="QR" />
+                            {n>1 && (<span className="chip text-xs">+{n-1} إضافية</span>)}
+                          </div>
+                        ) : (<span className="chip">—</span>)}
+                      </td>
+                      <td>
+                        <span className={`chip ${inv.status==='new'?'':''} ${inv.status==='sent'?'!bg-blue-600 !text-white':''} ${inv.status==='reminded'?'!bg-purple-600 !text-white':''} ${inv.status==='attended'?'!bg-green-600 !text-white':''}`}>
+                          {inv.status==='new'? 'جديدة' : inv.status==='sent'? 'مُرسلة' : inv.status==='reminded'? 'مُذكّر' : 'حضر'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flex gap-2 justify-end">
+                          <button className="btn btn-primary" onClick={()=>onMark(inv.id,'sent')}>إرسال</button>
+                          <button className="btn btn-ghost" onClick={()=>onMark(inv.id,'reminded')}>تذكير</button>
+                          <button className="btn btn-ghost" onClick={()=>onMark(inv.id,'attended')}>حضور</button>
+                          <button className="btn btn-ghost" onClick={()=>onDelete(inv.id)}>حذف</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         );
       }
@@ -339,14 +525,68 @@ ${firstUrl}`:''}`;
         const [phone,setPhone]=useState('');
         const [count,setCount]=useState(1);
         const [eventName,setEventName]=useState(forcedEventName||'');
-        const create=()=>{ if(!guestName||!phone) return; onCreate({ guestName, phone, count, eventName }); setGuestName(''); setPhone(''); setCount(1); };
+        useEffect(()=>{ if(forcedEventName) setEventName(forcedEventName); },[forcedEventName]);
+
+        const create=()=>{
+          if(!guestName || !phone){ alert('يرجى إدخال الاسم ورقم الهاتف'); return; }
+          if(cardsRemaining <= 0){ alert('لا توجد كروت باركود متاحة. ارفعها من تبويب "استيراد باركود".'); return; }
+          onCreate({ guestName, phone, count, eventName });
+          setGuestName(''); setPhone(''); setCount(1);
+        };
+
         return (
           <div className="card p-6 mt-3">
-            <input className="w-full mb-2" placeholder="اسم" value={guestName} onChange={e=>setGuestName(e.target.value)} />
-            <input className="w-full mb-2" placeholder="هاتف" value={phone} onChange={e=>setPhone(e.target.value)} />
-            <input type="number" className="w-full mb-2" value={count} onChange={e=>setCount(Number(e.target.value||1))} />
-            <button className="btn btn-primary" onClick={create}>إضافة</button>
-            <p className="text-xs text-neutral-400 mt-1">الكروت المتاحة: {cardsRemaining}</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm mb-1">الاسم</label>
+                <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="اسم الضيف" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">رقم الهاتف</label>
+                <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="05xxxxxxxx" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">عدد الكروت للمرافقين</label>
+                <input type="number" min="1" className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={count} onChange={e=>setCount(Number(e.target.value||1))} />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">اسم الحدث</label>
+                <input className="w-full rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="مثال: زفاف خالد" readOnly={Boolean(forcedEventName)} />
+                <p className="text-xs text-neutral-400 mt-1">الكروت المتاحة حالياً: {cardsRemaining}</p>
+              </div>
+              <div className="md:col-span-2 flex items-center gap-2">
+                <button className="btn btn-primary" onClick={create}>إضافة الدعوة (سحب {""}{count} كرت)</button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function SendCenter({ invites, onSend }){
+        const [filter,setFilter]=useState('');
+        const list=invites.filter(i=> i.status==='new' || i.status==='reminded')
+          .filter(i=> [i.guestName,i.phone,i.eventName].some(f=> (f||'').toLowerCase().includes(filter.toLowerCase())));
+        return (
+          <div className="card p-6 mt-3">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <input className="w-full md:w-80 rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} />
+              <button disabled={!list.length} className="btn btn-primary" onClick={()=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>onSend(inv), i*350)); }}>إرسال جماعي ({list.length})</button>
+            </div>
+            {!list.length ? (
+              <p className="text-neutral-400 text-sm">لا توجد عناصر جاهزة للإرسال الآن.</p>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-3">
+                {list.map(inv => (
+                  <div key={inv.id} className="card p-4 space-y-2">
+                    <p><b>{inv.guestName}</b> — <span dir="ltr">{inv.phone}</span></p>
+                    <p className="text-sm text-neutral-400">كروت للمرافقين: {inv.count}</p>
+                    <div className="flex gap-2 justify-end">
+                      <button className="btn btn-primary" onClick={()=>onSend(inv)}>إرسال فردي (يتضمن كل الروابط)</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       }
