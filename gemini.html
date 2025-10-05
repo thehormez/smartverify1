@@ -44,7 +44,6 @@
       const LS_INVITES = 'hormez_invites';
       const LS_QR_CARDS = 'hormez_qr_cards';
       const LS_QR_CACHE = 'hormez_qr_cache'; 
-      // LS_EVENT_NAME و LS_PASSWORD لم تعد تستخدم هنا، بل يتم تعيينها يدويا.
       
       const loadInitialData = (key, defaultValue = []) => {
         try {
@@ -158,8 +157,8 @@
         
         // ⚠️ تعديل يدوي هنا
         // ----------------------------------------------------
-        const FIXED_EVENT_NAME = "زفاف خالد"; // ضع اسم الحدث هنا
-        const FIXED_PASSWORD = "7777"; // ضع كلمة المرور هنا
+        const FIXED_EVENT_NAME = "زفاف عبدالله"; // ضع اسم الحدث هنا
+        const FIXED_PASSWORD = "123"; // ضع كلمة المرور هنا
         // ----------------------------------------------------
 
         const [eventName, setEventName] = useState(FIXED_EVENT_NAME);
@@ -172,7 +171,6 @@
               alert('كلمة المرور غير صحيحة.');
               return;
           }
-          // لا نحتاج لحفظ EventName أو Password في Local Storage هنا
           setIsLoggedIn(true);
         };
         
@@ -259,6 +257,7 @@
         };
         const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
         
+        // 🚨 تم تعديل هذه الدالة لحل مشكلة تخصيص الباركود عند الاستيراد الجماعي
         const handleImportPeopleFile = async (file)=>{
           try {
             let rows=[];
@@ -271,6 +270,7 @@
             const existingPhones = new Set(invites.map(i => normalizePhone(i.phone)));
             const uniqueAdded = added.filter(x => {
               const normalizedPhone = normalizePhone(x.phone);
+              if (normalizedPhone.length < 9) return false; // تجاهل الأرقام غير الكاملة
               if (existingPhones.has(normalizedPhone)) {
                 console.warn(`Skipping duplicate phone: ${x.phone} for ${x.guestName}`);
                 return false;
@@ -280,7 +280,7 @@
             });
 
             if (!uniqueAdded.length) {
-              alert('لم يتم استيراد أي سجلات فريدة. جميعها مكررة.');
+              alert('لم يتم استيراد أي سجلات فريدة (قد تكون مكررة أو أرقام الهواتف غير صالحة).');
               return;
             }
 
@@ -291,7 +291,10 @@
             let reservedCards = [];
             
             if (totalNeededCards > cardsRemaining) {
-              alert(`تحذير: لا تتوفر كروت باركود كافية. مطلوب ${totalNeededCards} كرت، المتاح ${cardsRemaining}. سيتم إضافة الدعوات بدون كروت.`);
+              alert(`تحذير: لا تتوفر كروت باركود كافية. مطلوب ${totalNeededCards} كرت، المتاح ${cardsRemaining}. سيتم إضافة الدعوات بالكروت المتاحة فقط والبقية بدون كروت.`);
+              // سحب جميع الكروت المتاحة فقط
+              const allAvailable = qrCards.filter(c=>!c.used);
+              reservedCards = takeNextQrCards(allAvailable.length);
             } else {
               // 3. سحب الكروت المطلوبة وتحديث رصيد الكروت
               reservedCards = takeNextQrCards(totalNeededCards);
@@ -302,24 +305,26 @@
                 const k = Math.max(1, Number(x.count || 1));
                 let qrListForInvite = [];
 
-                if (reservedCards.length > 0) {
+                if (reservedCards.length > cardIndex) {
                     // تخصيص الكروت من الكروت المسحوبة
                     qrListForInvite = reservedCards.slice(cardIndex, cardIndex + k);
                     cardIndex += k;
                 }
                 
                 // إنشاء الدعوة مع الكروت المرفقة
+                // العدد الحقيقي للدعوة سيكون مساوياً لعدد الكروت المرفقة إذا كان أقل من المطلوب
                 return makeInvite({ ...x, count: k, qrList: qrListForInvite });
             });
 
             // 4. دمج الدعوات الجديدة
-            setInvites(prev => [...newInvites, ...prev]);
+            setInvites(prev => [...newInvites.filter(i => i.qrId || i.count === 0), ...prev]); // فلترة الدعوات التي لم يتم تخصيص أي كرت لها إذا لم تكن هناك كروت متاحة
             
             alert(`تم استيراد ${uniqueAdded.length} سجل. وتم تخصيص ${reservedCards.length} كرت باركود.`);
 
           } catch(e){ console.error(e); alert('تعذر قراءة الملف.'); }
         };
-
+        
+        // بقية الدوال (handleExportData, handleImportData) كما هي لضمان سحب JSON كامل...
         const handleExportData = () => {
             const dataToExport = {
                 eventName: event,
@@ -336,7 +341,6 @@
                 const text = await readFileAsText(file);
                 const importedData = JSON.parse(text);
 
-                // ⚠️ تحسين: التأكد من وجود المفاتيح الأساسية قبل المتابعة
                 if (!importedData || (!importedData.invites && !importedData.qrCards)) {
                     alert('فشل في الاستيراد: ملف JSON غير مكتمل أو لا يحتوي على بيانات الدعوات والكروت الأساسية.');
                     return;
@@ -357,8 +361,6 @@
                     // 3. تحديث الدعوات
                     const importedInvites = Array.isArray(importedData.invites) ? importedData.invites : [];
                     setInvites(importedInvites);
-
-                    // 4. تحديث اسم الحدث (لن يتم التحديث هنا لأنه ثابت في الكود حالياً)
                     
                     alert(`تم الاستيراد بنجاح! تم تحميل ${importedInvites.length} دعوة و ${importedQrCards.length} كرت.`);
                     
@@ -367,11 +369,9 @@
 
             } catch (e) {
                 console.error("Failed to import JSON data:", e);
-                // رسالة خطأ أكثر تحديداً
                 alert('فشل في قراءة ملف JSON. تأكد من أنه ملف التصدير الصحيح وغير تالف (قد تكون المشكلة في تنسيق الملف).');
             }
         };
-
 
         const cardsRemaining = qrCards.filter(c=>!c.used).length;
         const bulkCandidates = invites.filter(i=> i.status==='new' || i.status==='reminded');
@@ -540,7 +540,7 @@
                   <button className="btn btn-ghost" onClick={importFromContacts}>سجل الهاتف</button>
                   <button className="btn btn-ghost" onClick={()=>peopleInput.current?.click()}>استيراد من ملف (CSV/XLSX)</button>
                   <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handlePeoplePick} />
-                  <span className="text-xs text-neutral-400 self-center">* الاستيراد يُضيف السجلات فقط، والسحب يتم عند "إضافة الدعوة"</span>
+                  <span className="text-xs text-neutral-400 self-center">* الاستيراد الآن يسحب الكروت تلقائياً</span>
                 </div>
               </div>
               <div>
@@ -677,7 +677,7 @@
                 <button className="btn btn-ghost" onClick={()=>peopleInput.current?.click()}>اختيار ملف</button>
                 <input ref={peopleInput} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handlePeoplePick} />
               </div>
-              <p className="text-xs text-yellow-400 mt-3">* ملاحظة: إذا لم تتوفر كروت كافية، سيتم إضافة الضيوف بدون كروت.</p>
+              <p className="text-xs text-yellow-400 mt-3">* ملاحظة: إذا لم تتوفر كروت كافية، سيتم إضافة الضيوف بالكروت المتاحة فقط.</p>
             </div>
           </div>
         );
