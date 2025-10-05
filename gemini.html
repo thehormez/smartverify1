@@ -16,6 +16,8 @@
     
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
 
     <style>
       * { box-sizing: border-box; }
@@ -66,7 +68,7 @@
       
       // END: LOCAL STORAGE HANDLERS
 
-      // ======= utils =======
+      // ======= UTILS =======
       const normalizePhone=(p)=>String(p||'').replace(/\D/g,'');
       const hashString=(str)=>{ let h=5381,i=str.length; while(i){ h=(h*33)^str.charCodeAt(--i);} return (h>>>0).toString(36); };
 
@@ -120,7 +122,7 @@
         eventName:(eventName||'بدون اسم حدث').trim(),
         status: 'new', createdAt:new Date().toISOString(),
         qrIds: qrList.map(q=>q.id),
-        qrId: qrList[0]?.id || null, // First QR ID for display/single download
+        qrId: qrList[0]?.id || null, 
         qrName: qrList[0]?.name || null,
         qrNumber: qrList[0]?.cardNumber || null,
       });
@@ -156,7 +158,7 @@
         URL.revokeObjectURL(url);
       }
       
-      // 🟢 الدالة الجديدة لتنزيل جميع الباركود كملف ZIP
+      // 🟢 دالة تنزيل جميع الباركود كملف ZIP (تم تحديثها للاعتماد على saveAs)
       const downloadAllQRs = async (invite, qrCards) => {
           if (!invite.qrIds || invite.qrIds.length === 0) {
               alert('لا توجد كروت باركود مخصصة لهذه الدعوة.');
@@ -164,28 +166,25 @@
           }
 
           const zip = new JSZip();
-          const guestName = invite.guestName.replace(/[^a-z0-9]/gi, '_'); // تنظيف الاسم ليناسب اسم الملف
+          const guestName = invite.guestName.replace(/[^a-z0-9]/gi, '_'); 
           let filesAdded = 0;
 
-          // الحصول على بيانات الكروت من الكاش
           const cardData = invite.qrIds.map(id => {
               const dataUrl = QRDataCache.get(id);
               const card = qrCards.find(c => c.id === id);
               return { dataUrl, card };
-          }).filter(item => item.dataUrl); // التأكد من أن الصورة موجودة في الكاش
+          }).filter(item => item.dataUrl); 
 
           if (cardData.length === 0) {
               alert('لم يتم العثور على أي صور باركود في الكاش المحلي.');
               return;
           }
 
-          // إضافة كل صورة إلى ملف ZIP
           cardData.forEach((item, index) => {
               const dataUrl = item.dataUrl;
               const cardName = item.card?.cardNumber ? `QR_Card_${item.card.cardNumber}` : `QR_${index + 1}`;
               const base64Data = dataUrl.split(',')[1];
               
-              // يتم إضافة الملف كـ Base64
               zip.file(`${guestName}_${cardName}.png`, base64Data, { base64: true });
               filesAdded++;
           });
@@ -195,28 +194,29 @@
               return;
           }
 
-          // توليد وتنزيل ملف ZIP
           try {
               const content = await zip.generateAsync({ type: "blob" });
               const filename = `${guestName}_${invite.count}_QRs.zip`;
-              saveAs(content, filename); // saveAs هي دالة تأتي من المكتبة
+              // استخدام دالة saveAs من FileSaver.js
+              saveAs(content, filename); 
           } catch (error) {
-              console.error("ZIP creation failed:", error);
-              alert('فشل في إنشاء أو تنزيل ملف ZIP.');
+              console.error("ZIP creation or download failed:", error);
+              alert('فشل في إنشاء أو تنزيل ملف ZIP. تأكد من أنك أضفت مكتبة FileSaver.js في وسم <head> واستوردت صور الباركود.');
           }
       };
 
 
+      // ======= COMPONENTS =======
       function App(){
         
-        // ⚠️ تعديل يدوي هنا
+        // ⚠️ تعديل يدوي هنا - يرجى تغيير هذه القيم
         // ----------------------------------------------------
         const FIXED_EVENT_NAME = "زفاف عبدالله"; // ضع اسم الحدث هنا
         const FIXED_PASSWORD = "123"; // ضع كلمة المرور هنا
         // ----------------------------------------------------
 
         const [eventName, setEventName] = useState(FIXED_EVENT_NAME);
-        const [password, setPassword] = useState(''); // فقط لأغراض الإدخال في الواجهة
+        const [password, setPassword] = useState('');
         const [isLoggedIn, setIsLoggedIn] = useState(false);
 
         const login = () => {
@@ -311,6 +311,7 @@
         };
         const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
         
+        // 🔴 دالة الاستيراد المُحدّثة لضمان سحب الكروت وتخصيصها
         const handleImportPeopleFile = async (file)=>{
           try {
             let rows=[];
@@ -323,7 +324,7 @@
             const existingPhones = new Set(invites.map(i => normalizePhone(i.phone)));
             const uniqueAdded = added.filter(x => {
               const normalizedPhone = normalizePhone(x.phone);
-              if (normalizedPhone.length < 9) return false; // تجاهل الأرقام غير الكاملة
+              if (normalizedPhone.length < 9) return false;
               if (existingPhones.has(normalizedPhone)) {
                 console.warn(`Skipping duplicate phone: ${x.phone} for ${x.guestName}`);
                 return false;
@@ -337,7 +338,7 @@
               return;
             }
 
-            // 2. حساب إجمالي الكروت المطلوبة
+            // 2. حساب إجمالي الكروت المطلوبة وسحبها
             const totalNeededCards = uniqueAdded.reduce((sum, item) => sum + Math.max(1, Number(item.count || 1)), 0);
             const cardsRemaining = qrCards.filter(c=>!c.used).length;
             
@@ -361,12 +362,10 @@
                     cardIndex += k;
                 }
                 
-                // إنشاء الدعوة مع الكروت المرفقة
                 return makeInvite({ ...x, count: k, qrList: qrListForInvite });
             });
 
             // 4. دمج الدعوات الجديدة
-            // نأخذ فقط الدعوات التي تمكنّا من تخصيص كرت واحد على الأقل لها أو التي تم إدخال عدد 0 لها
             setInvites(prev => [...newInvites.filter(i => i.qrId || i.count === 0), ...prev]); 
             
             alert(`تم استيراد ${uniqueAdded.length} سجل. وتم تخصيص ${reservedCards.length} كرت باركود.`);
@@ -397,17 +396,14 @@
 
                 if (confirm(`هل أنت متأكد من استيراد بيانات الحدث '${importedData.eventName || 'مُستورد'}'؟ سيؤدي هذا إلى مسح البيانات الحالية محليًا واستبدالها بالبيانات الجديدة.`)) {
                     
-                    // 1. تحديث الكروت
                     const importedQrCards = Array.isArray(importedData.qrCards) ? importedData.qrCards : [];
                     setQrCards(importedQrCards);
 
-                    // 2. تحديث الكاش (محتوى الصور - وهي الأهم لظهور الباركود)
                     const importedCache = new Map(importedData.qrDataCache || []);
                     QRDataCache.clear();
                     importedCache.forEach((v, k) => QRDataCache.set(k, v));
                     updateQrCache();
 
-                    // 3. تحديث الدعوات
                     const importedInvites = Array.isArray(importedData.invites) ? importedData.invites : [];
                     setInvites(importedInvites);
                     
@@ -464,7 +460,6 @@
 
               {active==='home' && (
                 <div className="card p-6 mt-3">
-                  {/* 🟢 تمرير qrCards إلى InviteTable */}
                   <InviteTable invites={invites} qrCards={qrCards} onMark={markStatus} onDelete={deleteInvite} />
                 </div>
               )}
@@ -493,7 +488,7 @@
       function Stat({ label, value }){ return (<div className="card p-4"><p className="text-neutral-400 text-sm">{label}</p><p className="text-2xl font-extrabold mt-1">{value}</p></div>); }
       function NavBtn(key,label,onClick,active){ return <button onClick={onClick} className={`btn ${active===key? 'btn-primary' : 'btn-ghost'}`}>{label}</button>; }
 
-      // 🟢 تحديث دالة InviteTable
+      // 🔴 جدول الدعوات: يعرض عدد الكروت ويضيف زر تنزيل الكل
       function InviteTable({ invites, qrCards, onMark, onDelete }){
         if(!invites.length) return <div className="text-neutral-400 text-sm">لا توجد دعوات بعد.</div>;
         return (
@@ -584,7 +579,7 @@
 
         const create=()=>{
           if(!guestName || !phone){ alert('يرجى إدخال الاسم ورقم الهاتف'); return; }
-          if(cardsRemaining <= 0){ alert('لا توجد كروت باركود متاحة. ارفعها أولاً من تبويب الاستيراد.'); return; }
+          if(count > cardsRemaining){ alert(`لا توجد كروت باركود كافية. مطلوب ${count}، المتاح ${cardsRemaining}.`); return; }
           onCreate({ guestName, phone, count, eventName });
           setGuestName(''); setPhone(''); setCount(1);
         };
@@ -640,7 +635,6 @@
             const existing=qrCards; 
             const hashSet=new Set(existing.map(c=>c.contentHash)); 
             const toAdd=[];
-            let addedCount = 0;
             
             for(const file of files){
                 try {
@@ -659,8 +653,7 @@
             
             if(toAdd.length){ 
               setQrCards(prev=>[...toAdd, ...prev]); 
-              addedCount = toAdd.length;
-              alert(`تم تحميل ${addedCount} باركود وحفظها محلياً (بدون تكرار).`);
+              alert(`تم تحميل ${toAdd.length} باركود وحفظها محلياً (بدون تكرار).`);
             } else {
               alert('كل الملفات مكررة أو حدث خطأ أثناء القراءة.');
             }
@@ -696,7 +689,7 @@
           <div className="grid md:grid-cols-2 gap-4 mt-3">
             <div className="card p-6 md:col-span-2">
                 <h3 className="font-bold">تصدير/استيراد بيانات الحدث (نقل بين الأجهزة)</h3>
-                <p className="text-xs text-neutral-400 mt-1">يُستخدم هذا لإنشاء نسخة احتياطية أو نقل جميع بيانات الدعوات والكروت المُخصصة إلى جهاز آخر. **هذا الملف يشمل الكاش الخاص بالباركود.**</p>
+                <p className="text-xs text-neutral-400 mt-1">يُستخدم هذا لإنشاء نسخة احتياطية أو نقل جميع بيانات الدعوات والكروت المُخصصة إلى جهاز آخر.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                     <button className="btn btn-primary" onClick={onExportData}>تصدير البيانات كـ JSON</button>
                     <button className="btn btn-ghost" onClick={()=>jsonInput.current?.click()}>استيراد بيانات JSON</button>
@@ -741,7 +734,7 @@
         );
       }
 
-      function SendCenter({ invites, onSend, onBulk }){
+      function SendCenter({ invites, onSend }){
         const [filter,setFilter]=useState('');
         const list=invites.filter(i=> i.status==='new' || i.status==='reminded')
           .filter(i=> [i.guestName,i.phone,i.eventName].some(f=> (f||'').toLowerCase().includes(filter.toLowerCase())));
@@ -749,7 +742,6 @@
           <div className="card p-6 mt-3">
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <input className="w-full md:w-80 rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} />
-              <button disabled={!list.length} className="btn btn-primary" onClick={()=>onBulk(list)}>إرسال جماعي ({list.length})</button>
             </div>
             {!list.length ? (
               <p className="text-neutral-400 text-sm">لا توجد عناصر جاهزة للإرسال الآن.</p>
@@ -759,9 +751,6 @@
                   <div key={inv.id} className="card p-4 space-y-2">
                     <p><b>{inv.guestName}</b> — <span dir="ltr">{inv.phone}</span></p>
                     <p className="text-sm text-neutral-400">كروت للمرافقين: {inv.count}</p>
-                    {inv.qrId && QRDataCache.get(inv.qrId) && (
-                      <a className="link" href={QRDataCache.get(inv.qrId)} download={`${inv.qrName||'qr'}-${inv.qrNumber||''}.png`}>تنزيل أول باركود (محلي)</a>
-                    )}
                     <div className="flex gap-2 justify-end">
                       <button className="btn btn-primary" onClick={()=>onSend(inv)}>إرسال فردي (نص)</button>
                     </div>
