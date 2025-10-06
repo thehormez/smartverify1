@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز الإرسال الاحترافي للكروت (مع الحفظ والتحميل)</title>
+    <title>مركز الإرسال الاحترافي للكروت (مع التعديل المباشر)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap" rel="stylesheet">
     
@@ -128,7 +128,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
             border-radius: 8px;
             overflow: hidden;
-            width: 100%; /* تأكد من عرض الجدول بالكامل */
+            width: 100%;
         }
         
         th, td { 
@@ -151,7 +151,7 @@
         .alert-error { background-color: #f8d7da; color: var(--danger-color); padding: 10px; border-radius: 5px; margin-top: 15px; border: 1px solid var(--danger-color); }
         .qr-list-cell { font-size: 0.9em; max-width: 250px; word-wrap: break-word; }
         
-        /* تفعيل خاصية التعديل بالنقر */
+        /* تفعيل خاصية التعديل بالنقر لجميع الحقول الأساسية */
         .editable-cell {
             cursor: pointer;
             text-decoration: underline;
@@ -190,7 +190,7 @@
 
     <div class="card-section">
         <h3>2. استيراد صور الباركود (الكروت)</h3>
-        <p>اختر كل ملفات الباركود دفعة واحدة. يتم التوزيع التلقائي **بالترتيب**. **ملاحظة: عند الحفظ والتحميل، يتم حفظ الأكواد كنصوص، وستحتاج لإعادة تحميل الصور في الجهاز الجديد.**</p>
+        <p>اختر كل ملفات الباركود دفعة واحدة. يتم التوزيع التلقائي **بالترتيب**.</p>
         <div style="display: flex; gap: 10px; align-items: center;">
             <input type="file" id="barcodeUpload" accept="image/*" multiple style="flex-grow: 1;">
             <button onclick="loadBarcodes()" class="btn-action">🖼️ استيراد الباركود</button>
@@ -224,7 +224,7 @@
     </div>
 
     <h2>📋 قائمة المدعوين</h2>
-    <p style="text-align: right; color: var(--accent-color); font-weight: bold;">ملاحظة: انقر على رقم "عدد الدعوات الإجمالي" لتعديله يدوياً.</p>
+    <p style="text-align: right; color: var(--accent-color); font-weight: bold;">ملاحظة: انقر على **الاسم** أو **رقم الهاتف** أو **عدد الدعوات** لتعديله يدوياً.</p>
     <table>
         <thead>
             <tr>
@@ -305,9 +305,10 @@
 
 
     // ----------------------------------------------------------------------
-    // 1. وظائف الإدارة والاستيراد
+    // 1. وظائف الإدارة والاستيراد والتعيين
     // ----------------------------------------------------------------------
 
+    // ... (دوال readCSV, readExcel, handleFileUpload, processImportedData كما هي)
     function handleFileUpload() {
         const fileInput = document.getElementById('guestListUpload');
         const file = fileInput.files[0];
@@ -315,9 +316,7 @@
             alert('يرجى اختيار ملف أولاً.');
             return;
         }
-
         const fileExtension = file.name.split('.').pop().toLowerCase();
-
         if (fileExtension === 'csv') {
             readCSV(file);
         } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
@@ -546,11 +545,11 @@
 
 
     // ----------------------------------------------------------------------
-    // 2. وظائف الإرسال والتحميل
+    // 2. وظائف التعديل، الإرسال والتحميل
     // ----------------------------------------------------------------------
 
     /**
-     * **جديد:** تعديل عدد الدعوات الإجمالي لضيف معين.
+     * تعديل عدد الدعوات الإجمالي لضيف معين.
      */
     function editTotalNeeded(internalId) {
         const guest = guests.find(g => g.internalId === internalId);
@@ -569,17 +568,40 @@
 
         if (newTotal === guest.totalNeeded) return; 
 
-        // 1. تحديث العدد
         guest.totalNeeded = newTotal;
-        // 2. إزالة التعيين اليدوي (لضمان إعادة التوزيع التلقائي الصحيح)
         guest.isManuallyAssigned = false; 
 
-        // 3. إعادة التوزيع والعرض
         distributeBarcodesAutomatically();
         renderGuestTable();
         checkQrMismatch();
         alert(`تم تحديث عدد الدعوات لـ ${guest.name} إلى ${newTotal}. تم إعادة توزيع الكروت تلقائيًا.`);
     }
+    
+    /**
+     * **جديد:** تعديل الاسم أو رقم الهاتف لضيف معين.
+     */
+    function editGuestDetails(internalId, field) {
+        const guest = guests.find(g => g.internalId === internalId);
+        if (!guest) return;
+
+        let promptMessage = (field === 'name') ? `أدخل الاسم الجديد لـ ${guest.name}:` : `أدخل رقم الهاتف الجديد لـ ${guest.name} (9665...):`;
+        
+        const newValue = prompt(promptMessage, guest[field]);
+        
+        if (newValue === null || newValue.trim() === "") {
+            alert("التعديل فارغ أو تم إلغاؤه.");
+            return;
+        }
+        
+        if (newValue === guest[field]) return;
+
+        // تحديث الحقل
+        guest[field] = newValue.trim();
+        
+        renderGuestTable();
+        alert(`تم تحديث حقل ${field === 'name' ? 'الاسم' : 'الهاتف'} لـ ${guest.name} بنجاح.`);
+    }
+
 
     async function downloadBarcodeImage(guest) {
         const qrCodeIds = guest.assignedQrIds; 
@@ -677,9 +699,16 @@
         guests.forEach(guest => {
             const row = tableBody.insertRow();
             
-            row.insertCell().textContent = guest.name;
+            // **تعديل: جعل حقل الاسم قابلاً للنقر**
+            const nameCell = row.insertCell();
+            nameCell.innerHTML = `<span 
+                onclick="editGuestDetails(${guest.internalId}, 'name')" 
+                class="editable-cell"
+                title="انقر للتعديل يدوياً">
+                ${guest.name}
+            </span>`;
             
-            // **تعديل: جعل عدد الدعوات قابلاً للنقر والتعديل**
+            // **تعديل: جعل عدد الدعوات قابلاً للنقر**
             const totalNeededCell = row.insertCell();
             totalNeededCell.innerHTML = `<span 
                 onclick="editTotalNeeded(${guest.internalId})" 
@@ -688,7 +717,14 @@
                 ${guest.totalNeeded}
             </span>`;
             
-            row.insertCell().textContent = guest.phone;
+            // **تعديل: جعل حقل رقم الهاتف قابلاً للنقر**
+            const phoneCell = row.insertCell();
+            phoneCell.innerHTML = `<span 
+                onclick="editGuestDetails(${guest.internalId}, 'phone')" 
+                class="editable-cell"
+                title="انقر للتعديل يدوياً">
+                ${guest.phone}
+            </span>`;
             
             const qrCodeCell = row.insertCell();
             qrCodeCell.classList.add('qr-list-cell');
