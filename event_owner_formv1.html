@@ -115,13 +115,15 @@
             color: white; 
         }
 
-        .note {
-            color: #6c757d;
-            font-size: 0.9em;
-            margin-bottom: 15px;
-            padding: 10px;
-            background-color: #f0f0f0;
+        .instructions {
+            padding: 15px;
+            border: 1px solid #d6e9c6;
+            background-color: #f0f8e9;
+            color: #3c763d;
             border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
         }
 
         /* إخفاء حقل الملف الافتراضي */
@@ -134,9 +136,10 @@
 
 <div class="container">
     <h1>صفحة إدخال بيانات المدعوين للحدث</h1>
-    <p class="note">
-        يرجى استخدام زر **"استيراد من سجل الهاتف"** لتسريع العملية، أو قم بإدخال المدعوين يدوياً.
-    </p>
+    
+    <div class="instructions">
+        ✅ اضغط على الزر أدناه ثم اختر **"جهات الاتصال"** من الخيارات التي ستظهر على هاتفك لسحب الأسماء والأرقام مباشرة.
+    </div>
 
     <button onclick="document.getElementById('vcfUpload').click()" class="btn-import">
         📱 استيراد من سجل الهاتف
@@ -144,7 +147,7 @@
     <input type="file" id="vcfUpload" accept=".vcf" onchange="handleVcfFile(this.files)">
 
     <div class="input-section">
-        <h2>إدخال ضيف جديد يدوياً</h2>
+        <h2>أو إدخال ضيف جديد يدوياً</h2>
         <div class="input-grid">
             <input type="text" id="guestName" placeholder="الاسم الكامل (مطلوب)" class="form-control">
             <input type="text" id="guestPhone" placeholder="رقم الهاتف (9665...)" class="form-control">
@@ -191,7 +194,6 @@
         
         totalNeeded = Math.max(1, totalNeeded); 
 
-        // تحديث العداد بناءً على أكبر ID موجود لضمان التتابع بعد الاستيراد
         if (guests.length > 0) {
             guestIdCounter = guests.reduce((max, guest) => Math.max(max, guest.id), 0);
         }
@@ -262,7 +264,7 @@
             };
             reader.readAsText(file);
         } else {
-            alert('خطأ: يرجى اختيار ملف بصيغة VCF فقط. (هذا هو ملف سجل الهاتف)');
+            alert('خطأ: يرجى اختيار ملف جهات اتصال (VCF).');
             document.getElementById('vcfUpload').value = '';
         }
     }
@@ -311,7 +313,7 @@
         });
         
         if (importedContacts.length === 0) {
-            alert('لم يتم العثور على أي أسماء وأرقام هواتف صالحة في ملف سجل الهاتف (VCF).');
+            alert('لم يتم العثور على أي أسماء وأرقام هواتف صالحة في ملف سجل الهاتف.');
             return;
         }
 
