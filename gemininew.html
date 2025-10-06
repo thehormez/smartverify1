@@ -3,81 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز الإرسال اليدوي (تنزيل جميع الكروت)</title>
+    <title>مركز الإرسال الاحترافي للكروت</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <style>
-        body { font-family: Tahoma, Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        h1 { text-align: center; color: #333; margin-bottom: 20px; }
-        h2 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 30px; color: #5d7eaf; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-        th { background-color: #5d7eaf; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        button { padding: 8px 15px; margin: 5px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: background-color 0.3s; }
-        .btn-action { background-color: #FF9800; color: white; }
-        .btn-action:hover { background-color: #e68900; }
+        :root {
+            --primary-color: #3b5998; /* أزرق داكن احترافي */
+            --accent-color: #ff8c00; /* برتقالي/ذهبي للاكشن */
+            --success-color: #28a745; /* أخضر للواتساب */
+            --danger-color: #dc3545; /* أحمر للحذف */
+            --bg-light: #f8f9fa; /* خلفية خفيفة */
+            --text-dark: #343a40; /* لون النص الأساسي */
+        }
+        
+        body { 
+            font-family: 'Noto Sans Arabic', Tahoma, Arial, sans-serif; 
+            background-color: var(--bg-light); 
+            padding: 30px 10px; 
+            color: var(--text-dark);
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            background-color: #ffffff; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
+        }
+        
+        h1 { 
+            text-align: center; 
+            color: var(--primary-color); 
+            margin-bottom: 25px; 
+            border-bottom: 3px solid var(--accent-color);
+            padding-bottom: 15px;
+        }
+        
+        h2 { 
+            color: var(--primary-color); 
+            margin-top: 40px; 
+            font-weight: 700;
+        }
+
+        /* تصميم الكاردات / الحاويات */
+        .card-section {
+            border: 1px solid #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* تصميم المدخلات والأزرار داخل قسم الإضافة اليدوية */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            align-items: center;
+        }
+
+        .form-control, textarea { 
+            padding: 10px; 
+            border: 1px solid #ced4da; 
+            border-radius: 6px; 
+            transition: border-color 0.3s; 
+            box-sizing: border-box;
+            width: 100%;
+        }
+        
+        .form-control:focus, textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(59, 89, 152, 0.25);
+            outline: none;
+        }
+
+        /* تصميم الأزرار */
+        button { 
+            padding: 10px 20px; 
+            margin: 5px 0; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: 700; 
+            transition: all 0.3s ease; 
+            min-width: 120px;
+        }
+
+        .btn-action { background-color: var(--accent-color); color: white; }
+        .btn-action:hover { background-color: #e07b00; transform: translateY(-1px); }
+        
         .btn-qr { background-color: #00bcd4; color: white; }
-        .btn-qr:hover { background-color: #0097a7; }
-        .btn-whatsapp { background-color: #25D366; color: white; }
-        .btn-whatsapp:hover { background-color: #1DA851; }
-        .btn-delete { background-color: #f44336; color: white; }
-        .btn-delete:hover { background-color: #da190b; }
-        .btn-assign { background-color: #3f51b5; color: white; }
-        .btn-assign:hover { background-color: #303f9f; }
-        .alert-error { color: #f44336; font-weight: bold; }
-        textarea { width: 98%; min-height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; margin-bottom: 15px; }
-        .placeholder-note { color: #f44336; font-weight: bold; margin-bottom: 15px; display: block; text-align: right; }
-        .form-control { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn-qr:hover { background-color: #00a0af; transform: translateY(-1px); }
+
+        .btn-whatsapp { background-color: var(--success-color); color: white; }
+        .btn-whatsapp:hover { background-color: #1e7e34; transform: translateY(-1px); }
+        
+        .btn-delete { background-color: var(--danger-color); color: white; }
+        .btn-delete:hover { background-color: #c82333; transform: translateY(-1px); }
+        
+        .btn-assign { background-color: var(--primary-color); color: white; }
+        .btn-assign:hover { background-color: #304e7e; transform: translateY(-1px); }
+
+        /* تصميم الجدول */
+        table { 
+            margin-top: 25px; 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td { 
+            border: none; 
+            border-bottom: 1px solid #dee2e6; 
+            padding: 15px 10px; 
+            vertical-align: middle;
+        }
+        
+        th { 
+            background-color: var(--primary-color); 
+            color: white; 
+            font-weight: 700;
+        }
+        
+        tr:nth-child(even) { background-color: #f8f8fa; }
+        tr:hover { background-color: #e9ecef; }
+
+        .placeholder-note { color: var(--danger-color); font-weight: bold; margin-bottom: 15px; display: block; text-align: right; }
+        .alert-error { background-color: #f8d7da; color: var(--danger-color); padding: 10px; border-radius: 5px; margin-top: 15px; border: 1px solid var(--danger-color); }
+        .qr-list-cell { font-size: 0.9em; max-width: 250px; word-wrap: break-word; }
+        
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>مركز الإرسال اليدوي (تنزيل جميع الكروت)</h1>
+    <h1>مركز الإرسال الاحترافي للكروت</h1>
 
-    <h2>⚙️ إدارة قائمة الضيوف</h2>
+    <h2>⚙️ إدارة القائمة واستيراد الكروت</h2>
 
-    <div style="margin-bottom: 15px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
-        <h3>استيراد القائمة (Excel أو CSV)</h3>
+    <div class="card-section">
+        <h3>1. استيراد قائمة الضيوف</h3>
         <p>يجب أن تكون رؤوس الأعمدة في الملف هي: <strong><code>name</code>, <code>phone</code>, <code>totalNeeded</code> (العدد الإجمالي للدعوات)</strong>.</p>
-        <input type="file" id="guestListUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="margin-bottom: 10px;">
-        <button onclick="handleFileUpload()" class="btn-action">✅ استيراد الأسماء</button>
-        <p>تم تحميل <span id="guestCount">0</span> ضيف.</p>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="file" id="guestListUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="flex-grow: 1;">
+            <button onclick="handleFileUpload()" class="btn-action">✅ استيراد الأسماء</button>
+        </div>
+        <p style="margin-top: 10px; font-weight: bold;">تم تحميل <span id="guestCount">0</span> ضيف.</p>
     </div>
 
-    <div style="margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
-        <h3>🖼️ استيراد صور الباركود</h3>
-        <p>اختر كل ملفات الباركود دفعة واحدة. يتم التوزيع التلقائي **بالترتيب** على الضيوف بعدد الدعوات الإجمالي.</p>
-        <input type="file" id="barcodeUpload" accept="image/*" multiple style="margin-bottom: 10px;">
-        <button onclick="loadBarcodes()" class="btn-action">استيراد الباركود</button>
-        <p>تم استيراد <span id="barcodeCount">0</span> ملف باركود.</p>
-        <p style="color: green; font-weight: bold;">أكواد الباركود المستوردة: <span id="importedQrCodes">لا يوجد</span></p>
+    <div class="card-section">
+        <h3>2. استيراد صور الباركود (الكروت)</h3>
+        <p>اختر كل ملفات الباركود دفعة واحدة. يتم التوزيع التلقائي **بالترتيب**.</p>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="file" id="barcodeUpload" accept="image/*" multiple style="flex-grow: 1;">
+            <button onclick="loadBarcodes()" class="btn-action">🖼️ استيراد الباركود</button>
+        </div>
+        <p style="margin-top: 10px;">تم استيراد <span id="barcodeCount">0</span> ملف باركود.</p>
+        <p style="color: var(--primary-color); font-weight: bold;">أكواد الباركود المستوردة: <span id="importedQrCodes" class="qr-list-cell">لا يوجد</span></p>
         <p class="alert-error" id="qrMismatchAlert" style="display:none;"></p>
     </div>
     
-    <h2>➕ إضافة ضيف يدوياً</h2>
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
-        <input type="text" id="newGuestName" placeholder="الاسم" class="form-control">
-        <input type="text" id="newGuestPhone" placeholder="الهاتف (9665...)" class="form-control">
-        <input type="number" id="newGuestTotalNeeded" placeholder="العدد الإجمالي للدعوات" min="1" value="1" class="form-control">
-        <button onclick="addGuestManually()" class="btn-qr">إضافة الضيف</button>
+    <div class="card-section">
+        <h2>➕ إضافة ضيف يدوياً</h2>
+        <div class="input-grid">
+            <input type="text" id="newGuestName" placeholder="الاسم" class="form-control">
+            <input type="text" id="newGuestPhone" placeholder="الهاتف (9665...)" class="form-control">
+            <input type="number" id="newGuestTotalNeeded" placeholder="العدد الإجمالي للدعوات" min="1" value="1" class="form-control">
+            <button onclick="addGuestManually()" class="btn-assign">إضافة الضيف</button>
+        </div>
     </div>
 
-    <h2>🖊️ تعديل نص رسالة الواتساب التلقائية</h2>
-    <span class="placeholder-note">
-        استخدم المتغيرات: <code>#{{GUEST_NAME}}#</code> (الاسم), <code>#{{TOTAL_COUNT}}#</code> (العدد الإجمالي للدعوات).
-    </span>
-    <textarea id="messageTemplate">
+    <div class="card-section">
+        <h2>🖊️ تعديل نص رسالة الواتساب</h2>
+        <span class="placeholder-note">
+            استخدم المتغيرات: <code>#{{GUEST_NAME}}#</code> (الاسم), <code>#{{TOTAL_COUNT}}#</code> (العدد الإجمالي للدعوات).
+        </span>
+        <textarea id="messageTemplate" class="form-control">
 مرحباً #{{GUEST_NAME}}#،
 نتشرف بدعوتكم لحضور... (مجموع الدعوات: #{{TOTAL_COUNT}}#).
 
 الرجاء مسح أحد أكواد الباركود المرفقة للدخول.
-    </textarea>
+        </textarea>
+    </div>
 
     <h2>📋 قائمة المدعوين</h2>
     <table>
@@ -156,7 +271,6 @@
      * يعالج البيانات المستوردة ويقوم بالتوزيع التلقائي للباركود.
      */
     function processImportedData(data) {
-        // تم تغيير 'companions' إلى 'totalNeeded'
         const requiredFields = ['name', 'phone', 'totalNeeded']; 
         
         if (data.length === 0 || !requiredFields.every(field => 
@@ -175,7 +289,6 @@
             };
             
             internalGuestIdCounter++;
-            // التأكد من أن العدد الإجمالي للدعوات لا يقل عن 1
             const totalNeededCount = Math.max(1, parseInt(getField('totalNeeded')) || 1); 
 
             return {
@@ -183,7 +296,8 @@
                 name: String(getField('name')).trim() || 'N/A',
                 phone: String(getField('phone')).trim() || 'N/A',
                 totalNeeded: totalNeededCount, 
-                assignedQrIds: []
+                assignedQrIds: [],
+                isManuallyAssigned: false
             };
         });
 
@@ -200,7 +314,7 @@
     function addGuestManually() {
         const nameInput = document.getElementById('newGuestName').value;
         const phoneInput = document.getElementById('newGuestPhone').value;
-        const totalNeededInput = document.getElementById('newGuestTotalNeeded').value; // تم تغيير اسم الحقل
+        const totalNeededInput = document.getElementById('newGuestTotalNeeded').value; 
 
         if (!nameInput || !phoneInput) {
             alert('يرجى ملء حقلي الاسم والهاتف على الأقل.');
@@ -216,7 +330,8 @@
             name: nameInput,
             phone: phoneInput,
             totalNeeded: totalNeededCount,
-            assignedQrIds: []
+            assignedQrIds: [],
+            isManuallyAssigned: false
         };
 
         guests.push(newGuest);
@@ -267,7 +382,50 @@
                 document.getElementById('importedQrCodes').textContent = availableQrIds.join(', ');
                 
                 if (loadedCount === files.length) {
-                    // فرز الأكواد المستوردة لضمان التوزيع بالترتيب الصحيح (رقمياً/أبجدياً)
+                    availableQrIds.sort((a, b) => {
+                        const numA = parseInt(a);
+                        const numB = parseInt(b);
+                        if (!isNaN(numA) && !isNaN(numB)) {
+                            return numA - numB;
+                        }
+                        return a.localeCompare(b);
+                    });
+
+                    distributeBarcodesAutomatically();
+                    renderGuestTable();
+                    checkQrMismatch();
+                    alert(`تم استيراد ${loadedCount} كود باركود بنجاح. وتم توزيعهم تلقائيًا على الضيوف بعدد الدعوات المطلوبة.`);
+                }
+            };
+            reader.readAsDataBuffer(file); // استخدام readAsDataURL لتحويل الصورة إلى Base64
+        });
+    }
+    
+    // تصحيح بسيط لوظيفة loadBarcodes
+    function loadBarcodes() {
+        const files = document.getElementById('barcodeUpload').files;
+        if (files.length === 0) {
+            alert('يرجى اختيار ملفات الصور أولاً.');
+            return;
+        }
+
+        barcodeImages = {}; 
+        availableQrIds = []; 
+        let loadedCount = 0;
+        const totalFiles = files.length;
+
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fileNameWithoutExtension = file.name.split('.').slice(0, -1).join(''); 
+                barcodeImages[fileNameWithoutExtension] = e.target.result; 
+                availableQrIds.push(fileNameWithoutExtension); 
+                loadedCount++;
+                document.getElementById('barcodeCount').textContent = loadedCount;
+                
+                document.getElementById('importedQrCodes').textContent = availableQrIds.join(', ');
+                
+                if (loadedCount === totalFiles) {
                     availableQrIds.sort((a, b) => {
                         const numA = parseInt(a);
                         const numB = parseInt(b);
@@ -291,37 +449,29 @@
      * وظيفة التوزيع التلقائي: يتم تخصيص الكروت بعدد الدعوات الإجمالي.
      */
     function distributeBarcodesAutomatically() {
-        // مسح جميع التعيينات التلقائية القديمة والاحتفاظ باليدوية فقط
+        
+        let allUsedQrIds = guests.filter(g => g.isManuallyAssigned).flatMap(g => g.assignedQrIds);
+        
+        let availableForDistribution = availableQrIds.filter(id => !allUsedQrIds.includes(id));
+        
+        // إعادة تعيين الأكواد التلقائية
         guests.forEach(guest => {
-            if (guest.assignedQrIds.length > 0) {
-                // نعتبر أن أي كرت تم تعيينه مسبقًا هو تعيين يدوي ونحتفظ به
-                // ولكن للمرونة، سنعيد التوزيع باستثناء الكروت المخصصة سابقًا
-            }
-            guest.assignedQrIds = []; // نمسح كل التعيينات لإعادة التوزيع من الصفر
-        });
-
-
-        // تجميع كل الأكواد المتاحة للتعيين بالترتيب
-        let usedQrIds = [];
-        guests.forEach(guest => {
-            if (guest.isManuallyAssigned) {
-                usedQrIds.push(...guest.assignedQrIds);
+            if (!guest.isManuallyAssigned) {
+                guest.assignedQrIds = []; 
             }
         });
 
-        let availableForDistribution = availableQrIds.filter(id => !usedQrIds.includes(id));
         let qrIndex = 0;
         
         guests.forEach(guest => {
-            // التوزيع التلقائي فقط للضيوف الذين لم يتم تعيينهم يدويا (أو تم مسح تعيينهم اليدوي)
-            if (!guest.isManuallyAssigned || guest.assignedQrIds.length === 0) {
+            if (!guest.isManuallyAssigned) {
                 const needed = guest.totalNeeded;
                 
                 if (qrIndex + needed <= availableForDistribution.length) {
                     guest.assignedQrIds = availableForDistribution.slice(qrIndex, qrIndex + needed);
                     qrIndex += needed;
                 } else {
-                    guest.assignedQrIds = []; // لا يوجد كروت كافية
+                    guest.assignedQrIds = []; 
                 }
             }
         });
@@ -335,7 +485,7 @@
         if (!currentGuest) return;
 
         const needed = currentGuest.totalNeeded;
-        let promptMessage = `أدخل ${needed} كود باركود مفصولين بفاصلة (,) لـ ${currentGuest.name}: (الحالي: ${currentGuest.assignedQrIds.join(', ') || 'لم يخصص'})\n\n`;
+        let promptMessage = `أدخل ${needed} كود باركود مفصولين بفاصلة (،) لـ ${currentGuest.name}: (الحالي: ${currentGuest.assignedQrIds.join(', ') || 'لم يخصص'})\n\n`;
         promptMessage += `الأكواد المستوردة المتاحة: ${availableQrIds.join(', ')}`;
         
         const newQrIdsStr = prompt(promptMessage, currentGuest.assignedQrIds.join(', '));
@@ -351,7 +501,6 @@
 
         const currentGuestOldIds = currentGuest.assignedQrIds;
         
-        // التحقق من تكرار الأكواد في القائمة (باستثناء أكواد الضيف نفسه)
         const allAssignedIds = guests.flatMap(g => g.assignedQrIds || []).filter(id => !currentGuestOldIds.includes(id));
         for (const newId of newQrIds) {
              if (!barcodeImages[newId]) {
@@ -364,9 +513,9 @@
         }
         
         currentGuest.assignedQrIds = newQrIds;
-        currentGuest.isManuallyAssigned = true; // وضع علامة على أنه تم التعيين يدوياً
+        currentGuest.isManuallyAssigned = true; 
         
-        distributeBarcodesAutomatically(); // إعادة التوزيع التلقائي للكروت المتبقية
+        distributeBarcodesAutomatically(); 
         renderGuestTable();
         checkQrMismatch();
     }
@@ -397,7 +546,6 @@
                 // إزالة رأس البيانات (data:image/png;base64,) للحصول على Base64 النقي
                 const base64Content = base64Data.split(',')[1]; 
                 
-                // إضافة الملف لملف الـ ZIP
                 zip.file(`${qrCodeId}.png`, base64Content, {base64: true});
                 downloadCount++;
             } else {
@@ -410,7 +558,6 @@
              return;
         }
 
-        // إنشاء ملف ZIP وتنزيله
         const zipFileName = `${guest.name}_${guest.totalNeeded}_Cards.zip`;
 
         zip.generateAsync({type:"blob"}).then(function(content) {
@@ -472,46 +619,48 @@
             row.insertCell().textContent = guest.totalNeeded; 
             row.insertCell().textContent = guest.phone;
             
-            // أكواد الباركود المخصصة
             const qrCodeCell = row.insertCell();
+            qrCodeCell.classList.add('qr-list-cell');
             const qrList = guest.assignedQrIds.join(', ');
             qrCodeCell.textContent = qrList || 'لم يخصص';
-            qrCodeCell.style.color = (guest.assignedQrIds.length === guest.totalNeeded) ? '#333' : '#f44336'; 
+            
+            const isFullyAssigned = guest.assignedQrIds.length === guest.totalNeeded;
+            qrCodeCell.style.color = isFullyAssigned ? 'var(--text-dark)' : 'var(--danger-color)'; 
             qrCodeCell.style.fontWeight = 'bold';
+            
+            if (guest.isManuallyAssigned) {
+                 qrCodeCell.style.borderRight = '4px solid var(--accent-color)'; // تمييز التعيين اليدوي
+            }
 
             const actionsCell = row.insertCell();
 
-            // زر تعيين كود الباركود (الإختيار اليدوي)
             const assignButton = document.createElement('button');
             assignButton.textContent = 'تعيين/تغيير الكروت';
             assignButton.className = 'btn-assign';
             assignButton.onclick = () => assignBarcode(guest.internalId); 
             actionsCell.appendChild(assignButton);
             
-            // زر تحميل الباركود (تنزيل ملف ZIP)
             const qrButton = document.createElement('button');
             qrButton.textContent = '💾 سحب الكروت (ZIP)';
             qrButton.className = 'btn-qr';
             qrButton.onclick = () => downloadBarcodeImage(guest); 
             
-            if (guest.assignedQrIds.length < guest.totalNeeded) {
+            if (!isFullyAssigned || !guest.assignedQrIds[0] || !barcodeImages[guest.assignedQrIds[0]]) {
                  qrButton.disabled = true;
                  qrButton.textContent = `🚫 نقص (${guest.totalNeeded - guest.assignedQrIds.length})`;
             }
             actionsCell.appendChild(qrButton);
             
-            // زر إرسال واتساب
             const waButton = document.createElement('button');
             waButton.textContent = '💬 إرسال واتساب';
             waButton.className = 'btn-whatsapp';
             waButton.onclick = () => sendWhatsAppMessage(guest);
             
-            if (guest.assignedQrIds.length < guest.totalNeeded) {
+            if (!isFullyAssigned) {
                  waButton.disabled = true;
             }
             actionsCell.appendChild(waButton);
             
-            // زر الحذف
             const deleteButton = document.createElement('button');
             deleteButton.textContent = '🗑️';
             deleteButton.className = 'btn-delete';
