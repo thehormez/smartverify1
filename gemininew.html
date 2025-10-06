@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز الإرسال الاحترافي للكروت</title>
+    <title>مركز الإرسال الاحترافي للكروت (مع الحفظ والتحميل)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap" rel="stylesheet">
     
@@ -69,6 +69,13 @@
             gap: 15px;
             align-items: center;
         }
+        
+        .event-info-grid {
+             display: grid;
+             grid-template-columns: 2fr 1fr 1fr;
+             gap: 15px;
+             align-items: center;
+        }
 
         .form-control, textarea { 
             padding: 10px; 
@@ -100,6 +107,9 @@
         .btn-action { background-color: var(--accent-color); color: white; }
         .btn-action:hover { background-color: #e07b00; transform: translateY(-1px); }
         
+        .btn-save { background-color: #6c757d; color: white; }
+        .btn-save:hover { background-color: #5a6268; transform: translateY(-1px); }
+        
         .btn-qr { background-color: #00bcd4; color: white; }
         .btn-qr:hover { background-color: #00a0af; transform: translateY(-1px); }
 
@@ -118,6 +128,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
             border-radius: 8px;
             overflow: hidden;
+            width: 100%; /* تأكد من عرض الجدول بالكامل */
         }
         
         th, td { 
@@ -140,6 +151,14 @@
         .alert-error { background-color: #f8d7da; color: var(--danger-color); padding: 10px; border-radius: 5px; margin-top: 15px; border: 1px solid var(--danger-color); }
         .qr-list-cell { font-size: 0.9em; max-width: 250px; word-wrap: break-word; }
         
+        /* تفعيل خاصية التعديل بالنقر */
+        .editable-cell {
+            cursor: pointer;
+            text-decoration: underline;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        
     </style>
 </head>
 <body>
@@ -147,6 +166,16 @@
 <div class="container">
     <h1>مركز الإرسال الاحترافي للكروت</h1>
 
+    <div class="card-section">
+        <h2>🏷️ بيانات الحدث (للحفظ والانتقال)</h2>
+        <div class="event-info-grid">
+            <input type="text" id="eventName" placeholder="أدخل اسم الحدث (مثلاً: زواج علي 2024)" class="form-control">
+            <button onclick="saveData()" class="btn-save">💾 حفظ البيانات (JSON)</button>
+            <input type="file" id="dataUpload" accept=".json" onchange="loadDataFile(this.files[0])" style="display: none;">
+            <button onclick="document.getElementById('dataUpload').click()" class="btn-save" style="background-color: #007bff;">↩️ تحميل بيانات سابقة</button>
+        </div>
+    </div>
+    
     <h2>⚙️ إدارة القائمة واستيراد الكروت</h2>
 
     <div class="card-section">
@@ -161,7 +190,7 @@
 
     <div class="card-section">
         <h3>2. استيراد صور الباركود (الكروت)</h3>
-        <p>اختر كل ملفات الباركود دفعة واحدة. يتم التوزيع التلقائي **بالترتيب**.</p>
+        <p>اختر كل ملفات الباركود دفعة واحدة. يتم التوزيع التلقائي **بالترتيب**. **ملاحظة: عند الحفظ والتحميل، يتم حفظ الأكواد كنصوص، وستحتاج لإعادة تحميل الصور في الجهاز الجديد.**</p>
         <div style="display: flex; gap: 10px; align-items: center;">
             <input type="file" id="barcodeUpload" accept="image/*" multiple style="flex-grow: 1;">
             <button onclick="loadBarcodes()" class="btn-action">🖼️ استيراد الباركود</button>
@@ -195,6 +224,7 @@
     </div>
 
     <h2>📋 قائمة المدعوين</h2>
+    <p style="text-align: right; color: var(--accent-color); font-weight: bold;">ملاحظة: انقر على رقم "عدد الدعوات الإجمالي" لتعديله يدوياً.</p>
     <table>
         <thead>
             <tr>
@@ -216,6 +246,62 @@
     let barcodeImages = {}; 
     let availableQrIds = []; 
     let internalGuestIdCounter = 0; 
+
+
+    // ----------------------------------------------------------------------
+    // 0. وظائف الحفظ والتحميل
+    // ----------------------------------------------------------------------
+
+    function saveData() {
+        const eventName = document.getElementById('eventName').value || 'Unnamed_Event';
+        
+        const dataToSave = {
+            eventName: eventName,
+            guests: guests,
+            availableQrIds: availableQrIds, 
+            internalGuestIdCounter: internalGuestIdCounter,
+            messageTemplate: document.getElementById('messageTemplate').value
+        };
+
+        const jsonString = JSON.stringify(dataToSave, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const fileName = `${eventName}_Data_${new Date().toISOString().slice(0, 10)}.json`;
+        saveAs(blob, fileName);
+        alert(`تم حفظ بيانات الحدث '${eventName}' بنجاح. تذكر أن تعيد استيراد ملفات صور الباركود على الجهاز الجديد.`);
+    }
+
+    function loadDataFile(file) {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const loadedData = JSON.parse(e.target.result);
+                loadData(loadedData);
+                alert(`تم تحميل بيانات الحدث '${loadedData.eventName || 'مجهول'}' بنجاح.`);
+            } catch (error) {
+                alert('خطأ في تحميل الملف: تأكد من أنه ملف JSON صحيح تم حفظه من هذا النظام.');
+                console.error('Loading error:', error);
+            }
+        };
+        reader.readAsText(file);
+    }
+    
+    function loadData(data) {
+        guests = data.guests || [];
+        availableQrIds = data.availableQrIds || [];
+        internalGuestIdCounter = data.internalGuestIdCounter || 0;
+        
+        document.getElementById('eventName').value = data.eventName || '';
+        document.getElementById('messageTemplate').value = data.messageTemplate || document.getElementById('messageTemplate').value;
+
+        barcodeImages = {}; 
+        document.getElementById('barcodeCount').textContent = 0;
+        document.getElementById('importedQrCodes').textContent = availableQrIds.join(', ') || 'لم يتم استيراد الصور بعد';
+        
+        renderGuestTable();
+        checkQrMismatch();
+    }
 
 
     // ----------------------------------------------------------------------
@@ -267,9 +353,6 @@
         reader.readAsArrayBuffer(file);
     }
     
-    /**
-     * يعالج البيانات المستوردة ويقوم بالتوزيع التلقائي للباركود.
-     */
     function processImportedData(data) {
         const requiredFields = ['name', 'phone', 'totalNeeded']; 
         
@@ -308,9 +391,6 @@
         alert(`تم تحميل ${guests.length} ضيف بنجاح. سيتم الآن توزيع ${guests.reduce((sum, g) => sum + g.totalNeeded, 0)} كرت باركود بالترتيب.`);
     }
 
-    /**
-     * يضيف ضيفًا جديدًا من حقول الإدخال اليدوية.
-     */
     function addGuestManually() {
         const nameInput = document.getElementById('newGuestName').value;
         const phoneInput = document.getElementById('newGuestPhone').value;
@@ -344,9 +424,6 @@
         checkQrMismatch();
     }
     
-    /**
-     * يحذف ضيفًا من القائمة.
-     */
     function deleteGuest(internalId) {
         if (confirm('هل أنت متأكد من حذف هذا الضيف؟')) {
             guests = guests.filter(guest => guest.internalId !== internalId);
@@ -356,9 +433,6 @@
         }
     }
 
-    /**
-     * يحمّل صور الباركود ويخزنها في الذاكرة (كـ Base64).
-     */
     function loadBarcodes() {
         const files = document.getElementById('barcodeUpload').files;
         if (files.length === 0) {
@@ -383,7 +457,6 @@
                 document.getElementById('importedQrCodes').textContent = availableQrIds.join(', ');
                 
                 if (loadedCount === totalFiles) {
-                    // فرز الأكواد لضمان التوزيع بالترتيب الصحيح (رقمياً/أبجدياً)
                     availableQrIds.sort((a, b) => {
                         const numA = parseInt(a);
                         const numB = parseInt(b);
@@ -403,16 +476,12 @@
         });
     }
 
-    /**
-     * وظيفة التوزيع التلقائي: يتم تخصيص الكروت بعدد الدعوات الإجمالي.
-     */
     function distributeBarcodesAutomatically() {
         
         let allUsedQrIds = guests.filter(g => g.isManuallyAssigned).flatMap(g => g.assignedQrIds);
         
         let availableForDistribution = availableQrIds.filter(id => !allUsedQrIds.includes(id));
         
-        // مسح التعيينات التلقائية القديمة
         guests.forEach(guest => {
             if (!guest.isManuallyAssigned) {
                 guest.assignedQrIds = []; 
@@ -435,9 +504,6 @@
         });
     }
 
-    /**
-     * يسمح للمستخدم بتعيين كود باركود مختلف يدوياً للضيف.
-     */
     function assignBarcode(internalId) {
         const currentGuest = guests.find(g => g.internalId === internalId);
         if (!currentGuest) return;
@@ -462,7 +528,7 @@
         const allAssignedIds = guests.flatMap(g => g.assignedQrIds || []).filter(id => !currentGuestOldIds.includes(id));
         for (const newId of newQrIds) {
              if (!barcodeImages[newId]) {
-                alert(`تحذير: الكود "${newId}" غير موجود في قائمة الباركود المستوردة!`);
+                alert(`تحذير: الكود "${newId}" غير موجود في قائمة الباركود المستوردة! (ستحتاج لاستيراد صور الكروت)`);
              }
              if (allAssignedIds.includes(newId)) {
                  alert(`خطأ: كود الباركود "${newId}" مُعيّن بالفعل لضيف آخر.`);
@@ -480,14 +546,41 @@
 
 
     // ----------------------------------------------------------------------
-    // 2. وظائف الإرسال والتحميل (محدثة لـ ZIP/PNG)
+    // 2. وظائف الإرسال والتحميل
     // ----------------------------------------------------------------------
 
     /**
-     * وظيفة لتنزيل جميع صور الباركود المخصصة للضيف.
-     * - إذا كان العدد 1: تنزيل كصورة مفردة (.png).
-     * - إذا كان العدد 2 فما فوق: تنزيل في ملف مضغوط (.zip).
+     * **جديد:** تعديل عدد الدعوات الإجمالي لضيف معين.
      */
+    function editTotalNeeded(internalId) {
+        const guest = guests.find(g => g.internalId === internalId);
+        if (!guest) return;
+
+        const newTotalStr = prompt(`أدخل العدد الإجمالي الجديد للدعوات لـ ${guest.name}:`, guest.totalNeeded);
+        
+        if (newTotalStr === null || newTotalStr.trim() === "") return;
+        
+        const newTotal = parseInt(newTotalStr);
+        
+        if (isNaN(newTotal) || newTotal < 1) {
+            alert("يجب إدخال عدد صحيح موجب (1 فما فوق).");
+            return;
+        }
+
+        if (newTotal === guest.totalNeeded) return; 
+
+        // 1. تحديث العدد
+        guest.totalNeeded = newTotal;
+        // 2. إزالة التعيين اليدوي (لضمان إعادة التوزيع التلقائي الصحيح)
+        guest.isManuallyAssigned = false; 
+
+        // 3. إعادة التوزيع والعرض
+        distributeBarcodesAutomatically();
+        renderGuestTable();
+        checkQrMismatch();
+        alert(`تم تحديث عدد الدعوات لـ ${guest.name} إلى ${newTotal}. تم إعادة توزيع الكروت تلقائيًا.`);
+    }
+
     async function downloadBarcodeImage(guest) {
         const qrCodeIds = guest.assignedQrIds; 
         const totalNeeded = guest.totalNeeded;
@@ -496,17 +589,18 @@
              alert('خطأ: لم يتم تعيين أي كرت لهذا الضيف بعد.');
              return;
         }
+        
+        const missingImages = qrCodeIds.filter(id => !barcodeImages[id]);
+        if (missingImages.length > 0) {
+            alert(`خطأ: لم يتم العثور على صور الباركود التالية في الذاكرة: ${missingImages.join(', ')}. يرجى إعادة استيراد ملفات الصور!`);
+            return;
+        }
 
         // 1. حالة الكرت المفرد (PNG)
         if (totalNeeded === 1) {
             const qrCodeId = qrCodeIds[0];
             const base64Data = barcodeImages[qrCodeId];
             
-            if (!base64Data) {
-                alert(`خطأ: لم يتم العثور على صورة لـ كود "${qrCodeId}".`);
-                return;
-            }
-
             const downloadLink = document.createElement('a');
             downloadLink.href = base64Data;
             downloadLink.download = `${guest.name}_${qrCodeId}.png`;
@@ -526,21 +620,12 @@
             const base64Data = barcodeImages[qrCodeId];
             
             if (base64Data) {
-                // إزالة رأس البيانات (data:image/png;base64,) للحصول على Base64 النقي
                 const base64Content = base64Data.split(',')[1]; 
-                
-                // إضافة الملف لملف الـ ZIP باسم الكود
                 zip.file(`${qrCodeId}.png`, base64Content, {base64: true});
                 downloadCount++;
             }
         }
 
-        if (downloadCount === 0) {
-             alert('لم يتم العثور على أي كروت قابلة للتنزيل لهذا الضيف. يرجى التأكد من استيرادها.');
-             return;
-        }
-
-        // إنشاء ملف ZIP وتنزيله
         const zipFileName = `${guest.name}_${guest.totalNeeded}_Cards.zip`;
 
         zip.generateAsync({type:"blob"}).then(function(content) {
@@ -549,9 +634,6 @@
         });
     }
 
-    /**
-     * التحقق من عدم تطابق عدد الكروت المستوردة مع المطلوبة.
-     */
     function checkQrMismatch() {
         const requiredCount = guests.reduce((sum, g) => sum + g.totalNeeded, 0);
         const availableCount = availableQrIds.length;
@@ -568,9 +650,6 @@
         }
     }
 
-    /**
-     * وظيفة لفتح محادثة واتساب مع رسالة مُعدَّة مسبقاً.
-     */
     function sendWhatsAppMessage(guest) {
         if (guest.assignedQrIds.length === 0) {
              alert('لا يمكن إرسال الرسالة: لم يتم تعيين كروت لهذا الضيف.');
@@ -599,7 +678,16 @@
             const row = tableBody.insertRow();
             
             row.insertCell().textContent = guest.name;
-            row.insertCell().textContent = guest.totalNeeded; 
+            
+            // **تعديل: جعل عدد الدعوات قابلاً للنقر والتعديل**
+            const totalNeededCell = row.insertCell();
+            totalNeededCell.innerHTML = `<span 
+                onclick="editTotalNeeded(${guest.internalId})" 
+                class="editable-cell"
+                title="انقر للتعديل يدوياً">
+                ${guest.totalNeeded}
+            </span>`;
+            
             row.insertCell().textContent = guest.phone;
             
             const qrCodeCell = row.insertCell();
@@ -634,9 +722,14 @@
                 qrButton.textContent = '💾 سحب الكروت (ZIP)';
             }
             
-            if (!isFullyAssigned || !guest.assignedQrIds[0] || !barcodeImages[guest.assignedQrIds[0]]) {
+            const isImageLoaded = guest.assignedQrIds[0] && barcodeImages[guest.assignedQrIds[0]];
+            
+            if (!isFullyAssigned || !isImageLoaded) {
                  qrButton.disabled = true;
                  qrButton.textContent = `🚫 نقص (${guest.totalNeeded - guest.assignedQrIds.length})`;
+                 if (isFullyAssigned && !isImageLoaded) {
+                    qrButton.textContent = '🚫 الصور غير مستوردة';
+                 }
             }
             actionsCell.appendChild(qrButton);
             
