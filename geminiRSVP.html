@@ -56,13 +56,10 @@
       const loadInitialData = (key, defaultValue = []) => {
         try {
           const data = JSON.parse(SafeStorage.getItem(key));
-          // إضافة 'declined' إلى قائمة الحالات لتجنب مشاكل العرض
           const loadedData = Array.isArray(data) ? data : defaultValue;
-          // للتوافق مع التعديل الجديد: إذا كانت الدعوة قديمة وليس بها qrIds، نستخدم qrId
           return loadedData.map(inv => ({
               ...inv,
               qrIds: inv.qrIds || (inv.qrId ? [inv.qrId] : []),
-              // إضافة حقول جديدة إذا لم تكن موجودة
               status: inv.status || 'new', 
               count: inv.count || 1 
           }));
@@ -83,6 +80,26 @@
       // ======= UTILS =======
       const normalizePhone=(p)=>String(p||'').replace(/\D/g,'');
       const hashString=(str)=>{ let h=5381,i=str.length; while(i){ h=(h*33)^str.charCodeAt(--i);} return (h>>>0).toString(36); };
+      
+      // ⚠️ يجب تغيير هذا الرقم إلى رقمك الخاص الذي سيستقبل الردود
+      const ADMIN_PHONE_NUMBER = "9665xxxxxxxx"; // مثال: 966555123456
+
+      // 🟢 دالة لتوليد رابط الرد عبر الواتساب
+      const generateWhatsappLink = (inviteId, action, guestName) => {
+          // الرسالة يجب أن تحتوي على رمز سري يسهل البحث عنه في الواتساب
+          const secretTag = `RSVP-${inviteId}`;
+          let message = `*رد الدعوة:* ${secretTag}\n\n`;
+          
+          if (action === 'confirm') {
+              message += `الضيف: *${guestName}*\nيؤكد حضوره ببطاقة الباركود.\n\n\n(هذه رسالة تأكيد إلكترونية، لا تحتاج للرد)`;
+          } else if (action === 'decline') {
+              message += `الضيف: *${guestName}*\nيعتذر عن الحضور، يرجى إلغاء الدعوة.\n\n\n(هذه رسالة اعتذار إلكترونية، لا تحتاج للرد)`;
+          }
+
+          const url = `https://wa.me/${ADMIN_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+          return url;
+      };
+
 
       const openWhatsApp = (phone, message) => {
         const digits = normalizePhone(phone); if(!digits){ alert('رقم الهاتف غير صالح'); return; }
@@ -138,13 +155,13 @@
         qrName: qrList[0]?.name || null,
         qrNumber: qrList[0]?.cardNumber || null,
       });
-      // 🟢 إضافة حالة 'declined' للحساب
+      
       const computeStats=(inv)=>({ 
           total:inv.length, 
           sent:inv.filter(i=>['sent','reminded','confirmed','attended'].includes(i.status)).length, 
           attended:inv.filter(i=>i.status==='attended').length,
           declined:inv.filter(i=>i.status==='declined').length,
-          active:inv.filter(i=>!['declined'].includes(i.status)).length, // الدعوات التي لم يتم إلغاؤها
+          active:inv.filter(i=>!['declined'].includes(i.status)).length, 
       });
 
       function parseCSV(text){
@@ -322,30 +339,31 @@
           });
         };
         
-        // 🔴 دالة تحديث الحالة (مُعدّلة لإلغاء تخصيص الكروت عند الاعتذار)
         const markStatus=(id,status)=>{
              setInvites(prev=>{
                 const inviteToUpdate = prev.find(i => i.id === id);
                 if (!inviteToUpdate) return prev;
 
-                // 🟢 إذا كانت الحالة اعتذار، يتم إرجاع جميع الكروت للرصيد المتاح
                 if (status === 'declined') {
                     if (inviteToUpdate.qrIds.length > 0) {
                         returnQrToPool(inviteToUpdate.qrIds);
                     }
                 } 
-                // 🟢 إذا كانت الحالة هي "إعادة تفعيل" أو أي حالة نشطة أخرى، يجب إعادة سحب الكروت
-                // (هذا ليس سيناريو عملي، لكنه حماية إذا تم تغيير الحالة يدوياً من declined إلى new)
-                // يفضل التعامل مع هذه الحالة عبر زر "إدارة الدعوة" وسحب الكروت يدوياً
                 
                 return prev.map(i => i.id===id? { ...i, status }: i);
              });
         }
         
+        // 🟢 دالة إرسال الرسالة المُحدَّثة مع روابط الرد
         const sendText=(inv)=>{
-          const msg=`مرحبا ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: ${event}\nعدد كروت المرافقين: ${inv.count}\n\n⚠️ ملاحظة: يجب عليك إرسال صورة الباركود يدوياً إلى الضيف.`;
+          const confirmLink = generateWhatsappLink(inv.id, 'confirm', inv.guestName);
+          const declineLink = generateWhatsappLink(inv.id, 'decline', inv.guestName);
+
+          const msg=`مرحباً ${inv.guestName}\n\nيشرفنا دعوتك لحضور الفعالية: *${event}*.\n\nعدد كروت المرافقين: *${inv.count}*\n\nيرجى إرسال صورة الباركود المرفقة للحضور.\n\n*الرجاء تأكيد حضورك أو اعتذارك بالضغط على أحد الروابط أدناه:*\n\n✅ *أؤكد حضوري:*\n${confirmLink}\n\n❌ *أعتذر عن الحضور:*\n${declineLink}\n\nشكراً لك.`;
+          
           openWhatsApp(inv.phone,msg); markStatus(inv.id,'sent');
         };
+        
         const bulkSend=(list)=>{ if(!confirm(`سيتم فتح ${list.length} رسالة/تبويب. قد يمنع المتصفح بعضها. متابعة؟`)) return; list.forEach((inv,i)=> setTimeout(()=>sendText(inv), i*350)); };
         
         const handleImportPeopleFile = async (file)=>{
@@ -462,7 +480,6 @@
         };
         
         const cardsRemaining = qrCards.filter(c=>!c.used).length;
-        // 🟢 نعدل المرشحين للإرسال لاستبعاد المعتذرين
         const bulkCandidates = invites.filter(i=> (i.status==='new' || i.status==='reminded') && i.status !== 'declined');
 
         return (
@@ -492,7 +509,7 @@
                   <Stat label="الدعوات النشطة" value={stats.active} />
                   <Stat label="الحضور المؤكد" value={stats.sent} />
                   <Stat label="الحضور الفعلي" value={stats.attended} />
-                  <Stat label="اعتذار/ملغاة" value={stats.declined} /> {/* 🟢 إضافة الإعتذار */}
+                  <Stat label="اعتذار/ملغاة" value={stats.declined} /> 
                 </div>
               </div>
 
@@ -525,7 +542,7 @@
               )}
 
               {active==='send' && (
-                <SendCenter invites={invites} onSend={sendText} />
+                <SendCenter invites={invites} onSend={sendText} onMark={markStatus} />
               )}
 
               {active==='import' && (
@@ -542,26 +559,23 @@
                     onUpdateInvite={updateInvite}
                     takeNextQrCards={takeNextQrCards}
                     returnQrToPool={returnQrToPool}
-                    onMarkStatus={markStatus} // 🟢 تمرير دالة تحديث الحالة
+                    onMarkStatus={markStatus} 
                 />
             )}
           </div>
         );
       }
       
-      // 🔴 المكون الجديد: نافذة التخصيص اليدوي وتعديل العدد (تم تحديثه)
+      
       function ManualCardAssigner({ invite, qrCards, cardsRemaining, onClose, onUpdateInvite, takeNextQrCards, returnQrToPool, onMarkStatus }) {
           const [newCount, setNewCount] = useState(invite.count);
           
-          // الكروت المتاحة حاليًا في الرصيد الكلي
           const availableQrCards = useMemo(() => qrCards.filter(c => !c.used), [qrCards]);
-          // الكروت المُخصصة حاليًا لهذه الدعوة
           const currentAssignedCards = useMemo(() => 
              qrCards.filter(c => invite.qrIds.includes(c.id)), 
              [qrCards, invite.qrIds]
           );
 
-          // 1. وظيفة تعديل عدد المرافقين
           const handleCountChange = () => {
               const currentCount = invite.count;
               const diff = newCount - currentCount;
@@ -579,7 +593,6 @@
               }
 
               if (diff > 0) {
-                  // طلب المزيد من الكروت
                   if (diff > cardsRemaining) {
                       alert(`لا تتوفر ${diff} كرت إضافي. المتاح: ${cardsRemaining}.`);
                       setNewCount(currentCount);
@@ -599,7 +612,6 @@
                   alert(`تم زيادة العدد إلى ${newCount} وسحب ${diff} كرت جديد بنجاح.`);
 
               } else if (diff < 0) {
-                  // تقليل العدد وإعادة الكروت للرصيد
                   const cardsToReturn = invite.qrIds.slice(newCount);
                   const remainingCards = invite.qrIds.slice(0, newCount);
 
@@ -615,12 +627,10 @@
                   onUpdateInvite(updatedInvite);
                   alert(`تم تقليل العدد إلى ${newCount} وإعادة ${Math.abs(diff)} كرت للرصيد بنجاح.`);
               } else {
-                  // لا يوجد تغيير
                   onClose();
               }
           };
 
-          // 2. وظيفة تخصيص/إلغاء تخصيص كرت يدويًا
           const toggleCardAssignment = (cardId) => {
               const card = qrCards.find(c => c.id === cardId);
               const isAssignedToThisInvite = invite.qrIds.includes(cardId);
@@ -640,18 +650,13 @@
               let successMessage = '';
 
               if (isAssignedToThisInvite) {
-                  // إلغاء التخصيص
                   updatedQrIds = invite.qrIds.filter(id => id !== cardId);
                   returnQrToPool([cardId]);
                   successMessage = `تم إلغاء تخصيص الكرت #${card.cardNumber} وإعادته للرصيد.`;
                   
               } else {
-                  // تخصيص يدوي
                   updatedQrIds = [...invite.qrIds, cardId];
-                  // سحب الكرت يدوياً (جعل حالته used: true)
-                  onMarkStatus(cardId, 'used'); // تحديث الكرت لجعله مستخدماً
-                  
-                  // تحديث الـ qrCards يدوياً لجعل الكرت مستخدماً
+                   // تحديث الـ qrCards يدوياً لجعل الكرت مستخدماً
                    setQrCards(prev=> prev.map(c=> c.id === cardId ? { ...c, used:true } : c));
                   successMessage = `تم تخصيص الكرت #${card.cardNumber} للدعوة.`;
               }
@@ -666,13 +671,11 @@
                   count: newCountValue 
               };
               
-              // تحديث حالة الدعوة محليًا
               onUpdateInvite(updatedInvite);
               setNewCount(newCountValue);
               alert(`${successMessage} تم تحديث عدد المرافقين تلقائيًا إلى ${newCountValue}.`);
           };
           
-          // 3. تحديث حالة الدعوة (حضر/اعتذر/أرسل)
           const handleStatusUpdate = (status) => {
               if (status === 'declined' && invite.status !== 'declined') {
                   if (!confirm(`هل أنت متأكد من إلغاء هذه الدعوة (${invite.guestName}) وإعادة ${invite.qrIds.length} كرت للرصيد؟`)) {
@@ -857,7 +860,7 @@
         );
       }
       
-      // (بقية مكونات NewInviteForm و ImportCenter و SendCenter كما هي من الإصدار السابق)
+      // (بقية مكونات NewInviteForm و ImportCenter كما هي من الإصدار السابق)
       function NewInviteForm({ onCreate, forcedEventName, cardsRemaining, onImportPeopleFile }){
         const [guestName,setGuestName]=useState('');
         const [phone,setPhone]=useState('');
@@ -1042,16 +1045,42 @@
         );
       }
 
-      function SendCenter({ invites, onSend }){
+      function SendCenter({ invites, onSend, onMark }){
         const [filter,setFilter]=useState('');
-        // 🟢 استثناء المعتذرين من قائمة الإرسال
         const list=invites.filter(i=> (i.status==='new' || i.status==='reminded') && i.status !== 'declined')
           .filter(i=> [i.guestName,i.phone,i.eventName].some(f=> (f||'').toLowerCase().includes(filter.toLowerCase())));
+        
+        // 🟢 دالة فتح البحث في واتساب
+        const openAdminWhatsappSearch = () => {
+             // بما أن جميع الردود تبدأ بـ "RSVP-"
+            const searchTag = encodeURIComponent("RSVP-"); 
+            const url = `https://wa.me/search?query=${searchTag}`;
+            try { window.open(url,'_blank','noopener,noreferrer'); }
+            catch { alert('تعذر فتح نافذة واتساب الجديدة للبحث. ابحث يدوياً في واتساب عن: RSVP-'); }
+        };
+
         return (
           <div className="card p-6 mt-3">
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <input className="w-full md:w-80 rounded-xl bg-[#0f1318] border border-[#23262b] px-3 py-2" placeholder="بحث بالاسم أو الرقم" value={filter} onChange={e=>setFilter(e.target.value)} />
             </div>
+            
+            {/* 🟢 قسم الردود */}
+            <div className="card p-4 bg-[#1a1e24] mb-4">
+                 <h3 className="font-bold mb-2">تأكيد الردود الآلية</h3>
+                 <p className="text-sm text-neutral-400 mb-3">
+                    بعد إرسال الدعوة، يتم الرد بتأكيد أو اعتذار عبر رسالة واتساب تصلك أنت (برقم الإدارة المُعيّن في الكود).
+                 </p>
+                 <div className="flex flex-wrap gap-2">
+                    <button className="btn btn-primary" onClick={openAdminWhatsappSearch}>
+                        افتح بحث واتساب لردود RSVP
+                    </button>
+                    <p className="text-sm text-yellow-400 self-center">
+                        ابحث عن الرسالة التي تحتوي على `RSVP-[رقم الدعوة]` ثم قم بتحديث حالة الدعوة يدوياً في الجدول أعلاه.
+                    </p>
+                 </div>
+            </div>
+
             {!list.length ? (
               <p className="text-neutral-400 text-sm">لا توجد عناصر جاهزة للإرسال الآن.</p>
             ) : (
@@ -1061,7 +1090,7 @@
                     <p><b>{inv.guestName}</b> — <span dir="ltr">{inv.phone}</span></p>
                     <p className="text-sm text-neutral-400">كروت للمرافقين: {inv.count}</p>
                     <div className="flex gap-2 justify-end">
-                      <button className="btn btn-primary" onClick={()=>onSend(inv)}>إرسال فردي (نص)</button>
+                      <button className="btn btn-primary" onClick={()=>onSend(inv)}>إرسال الدعوة والروابط</button>
                     </div>
                   </div>
                 ))}
