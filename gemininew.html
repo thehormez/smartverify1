@@ -369,49 +369,6 @@
         barcodeImages = {}; 
         availableQrIds = []; 
         let loadedCount = 0;
-
-        Array.from(files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const fileNameWithoutExtension = file.name.split('.').slice(0, -1).join(''); 
-                barcodeImages[fileNameWithoutExtension] = e.target.result; 
-                availableQrIds.push(fileNameWithoutExtension); 
-                loadedCount++;
-                document.getElementById('barcodeCount').textContent = loadedCount;
-                
-                document.getElementById('importedQrCodes').textContent = availableQrIds.join(', ');
-                
-                if (loadedCount === files.length) {
-                    availableQrIds.sort((a, b) => {
-                        const numA = parseInt(a);
-                        const numB = parseInt(b);
-                        if (!isNaN(numA) && !isNaN(numB)) {
-                            return numA - numB;
-                        }
-                        return a.localeCompare(b);
-                    });
-
-                    distributeBarcodesAutomatically();
-                    renderGuestTable();
-                    checkQrMismatch();
-                    alert(`تم استيراد ${loadedCount} كود باركود بنجاح. وتم توزيعهم تلقائيًا على الضيوف بعدد الدعوات المطلوبة.`);
-                }
-            };
-            reader.readAsDataBuffer(file); // استخدام readAsDataURL لتحويل الصورة إلى Base64
-        });
-    }
-    
-    // تصحيح بسيط لوظيفة loadBarcodes
-    function loadBarcodes() {
-        const files = document.getElementById('barcodeUpload').files;
-        if (files.length === 0) {
-            alert('يرجى اختيار ملفات الصور أولاً.');
-            return;
-        }
-
-        barcodeImages = {}; 
-        availableQrIds = []; 
-        let loadedCount = 0;
         const totalFiles = files.length;
 
         Array.from(files).forEach(file => {
@@ -426,6 +383,7 @@
                 document.getElementById('importedQrCodes').textContent = availableQrIds.join(', ');
                 
                 if (loadedCount === totalFiles) {
+                    // فرز الأكواد لضمان التوزيع بالترتيب الصحيح (رقمياً/أبجدياً)
                     availableQrIds.sort((a, b) => {
                         const numA = parseInt(a);
                         const numB = parseInt(b);
@@ -454,7 +412,7 @@
         
         let availableForDistribution = availableQrIds.filter(id => !allUsedQrIds.includes(id));
         
-        // إعادة تعيين الأكواد التلقائية
+        // مسح التعيينات التلقائية القديمة
         guests.forEach(guest => {
             if (!guest.isManuallyAssigned) {
                 guest.assignedQrIds = []; 
@@ -522,20 +480,45 @@
 
 
     // ----------------------------------------------------------------------
-    // 2. وظائف الإرسال والتحميل
+    // 2. وظائف الإرسال والتحميل (محدثة لـ ZIP/PNG)
     // ----------------------------------------------------------------------
 
     /**
-     * وظيفة لتنزيل جميع صور الباركود المخصصة للضيف في ملف ZIP.
+     * وظيفة لتنزيل جميع صور الباركود المخصصة للضيف.
+     * - إذا كان العدد 1: تنزيل كصورة مفردة (.png).
+     * - إذا كان العدد 2 فما فوق: تنزيل في ملف مضغوط (.zip).
      */
     async function downloadBarcodeImage(guest) {
         const qrCodeIds = guest.assignedQrIds; 
+        const totalNeeded = guest.totalNeeded;
         
         if (qrCodeIds.length === 0) {
              alert('خطأ: لم يتم تعيين أي كرت لهذا الضيف بعد.');
              return;
         }
 
+        // 1. حالة الكرت المفرد (PNG)
+        if (totalNeeded === 1) {
+            const qrCodeId = qrCodeIds[0];
+            const base64Data = barcodeImages[qrCodeId];
+            
+            if (!base64Data) {
+                alert(`خطأ: لم يتم العثور على صورة لـ كود "${qrCodeId}".`);
+                return;
+            }
+
+            const downloadLink = document.createElement('a');
+            downloadLink.href = base64Data;
+            downloadLink.download = `${guest.name}_${qrCodeId}.png`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            alert(`تم تنزيل الكرت المفرد (${qrCodeId}.png) بنجاح.`);
+            return;
+        }
+
+        // 2. حالة الكروت المتعددة (ZIP)
+        
         const zip = new JSZip();
         let downloadCount = 0;
 
@@ -546,10 +529,9 @@
                 // إزالة رأس البيانات (data:image/png;base64,) للحصول على Base64 النقي
                 const base64Content = base64Data.split(',')[1]; 
                 
+                // إضافة الملف لملف الـ ZIP باسم الكود
                 zip.file(`${qrCodeId}.png`, base64Content, {base64: true});
                 downloadCount++;
-            } else {
-                 console.warn(`الكرت ${qrCodeId}.png غير موجود في الذاكرة.`);
             }
         }
 
@@ -558,11 +540,12 @@
              return;
         }
 
+        // إنشاء ملف ZIP وتنزيله
         const zipFileName = `${guest.name}_${guest.totalNeeded}_Cards.zip`;
 
         zip.generateAsync({type:"blob"}).then(function(content) {
             saveAs(content, zipFileName);
-            alert(`تم تنزيل ${downloadCount} كرت بنجاح في ملف: ${zipFileName}`);
+            alert(`تم تنزيل ${downloadCount} كرت بنجاح في ملف مضغوط: ${zipFileName}`);
         });
     }
 
@@ -629,7 +612,7 @@
             qrCodeCell.style.fontWeight = 'bold';
             
             if (guest.isManuallyAssigned) {
-                 qrCodeCell.style.borderRight = '4px solid var(--accent-color)'; // تمييز التعيين اليدوي
+                 qrCodeCell.style.borderRight = '4px solid var(--accent-color)'; 
             }
 
             const actionsCell = row.insertCell();
@@ -641,9 +624,15 @@
             actionsCell.appendChild(assignButton);
             
             const qrButton = document.createElement('button');
-            qrButton.textContent = '💾 سحب الكروت (ZIP)';
             qrButton.className = 'btn-qr';
             qrButton.onclick = () => downloadBarcodeImage(guest); 
+
+            // تحديث نص الزر حسب عدد الدعوات
+            if (guest.totalNeeded === 1) {
+                qrButton.textContent = '💾 سحب الكرت (PNG)';
+            } else {
+                qrButton.textContent = '💾 سحب الكروت (ZIP)';
+            }
             
             if (!isFullyAssigned || !guest.assignedQrIds[0] || !barcodeImages[guest.assignedQrIds[0]]) {
                  qrButton.disabled = true;
