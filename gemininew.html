@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز الإرسال اليدوي (مع دعم Excel)</title>
+    <title>مركز الإرسال اليدوي (توزيع آلي/يدوي للكروت)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -24,6 +24,8 @@
         .btn-whatsapp:hover { background-color: #1DA851; }
         .btn-delete { background-color: #f44336; color: white; }
         .btn-delete:hover { background-color: #da190b; }
+        .btn-assign { background-color: #3f51b5; color: white; }
+        .btn-assign:hover { background-color: #303f9f; }
         textarea { width: 98%; min-height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; margin-bottom: 15px; }
         .placeholder-note { color: #f44336; font-weight: bold; margin-bottom: 15px; display: block; text-align: right; }
         .form-control { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
@@ -32,13 +34,13 @@
 <body>
 
 <div class="container">
-    <h1>مركز الإرسال اليدوي (مع دعم Excel)</h1>
+    <h1>مركز الإرسال اليدوي (توزيع آلي/يدوي للكروت)</h1>
 
     <h2>⚙️ إدارة قائمة الضيوف</h2>
 
     <div style="margin-bottom: 15px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
         <h3>استيراد القائمة (Excel أو CSV)</h3>
-        <p>يجب أن تكون رؤوس الأعمدة (Headers) في الملف هي: <strong><code>name</code>, <code>phone</code>, <code>companions</code></strong>.</p>
+        <p>يجب أن تكون رؤوس الأعمدة في الملف هي: <strong><code>name</code>, <code>phone</code>, <code>companions</code></strong>.</p>
         <input type="file" id="guestListUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="margin-bottom: 10px;">
         <button onclick="handleFileUpload()" class="btn-action">✅ استيراد الأسماء</button>
         <p>تم تحميل <span id="guestCount">0</span> ضيف.</p>
@@ -46,10 +48,11 @@
 
     <div style="margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
         <h3>🖼️ استيراد صور الباركود</h3>
-        <p>اختر كل ملفات الباركود دفعة واحدة. يجب أن يكون اسم الملف هو **رقم ID الضيف** (مثلاً: <code>1001.png</code>).</p>
+        <p>اختر كل ملفات الباركود دفعة واحدة. يتم التوزيع التلقائي **بالترتيب** على الضيوف.</p>
         <input type="file" id="barcodeUpload" accept="image/*" multiple style="margin-bottom: 10px;">
         <button onclick="loadBarcodes()" class="btn-action">استيراد الباركود</button>
         <p>تم استيراد <span id="barcodeCount">0</span> ملف باركود.</p>
+        <p style="color: green; font-weight: bold;">أكواد الباركود المستوردة: <span id="importedQrCodes">لا يوجد</span></p>
     </div>
     
     <h2>➕ إضافة ضيف يدوياً</h2>
@@ -75,10 +78,10 @@
     <table>
         <thead>
             <tr>
-                <th>الـ ID (اسم ملف الباركود)</th>
                 <th>اسم الضيف</th>
                 <th>عدد المرافقين</th>
                 <th>رقم الهاتف</th>
+                <th>كود الباركود المخصص</th>
                 <th>الإجراءات</th>
             </tr>
         </thead>
@@ -90,10 +93,12 @@
 
 <script>
     let guests = [];
-    let barcodeImages = {}; 
-    
-    // يحافظ على الرقم التسلسلي الأخير لتوليد IDs فريدة عند الإدخال اليدوي
-    let lastGuestId = 1000;
+    let barcodeImages = {}; // كائن يخزن بيانات الصور (المفتاح: اسم الملف بدون امتداد)
+    let availableQrIds = []; // مصفوفة لتخزين مفاتيح الباركود المستوردة
+
+    // يتم استخدام ID تسلسلي داخلي فقط لتسهيل الحذف والتعيين اليدوي
+    let internalGuestIdCounter = 0; 
+
 
     // ----------------------------------------------------------------------
     // 1. وظائف الإدارة والاستيراد
@@ -110,8 +115,7 @@
             return;
         }
 
-        const fileName = file.name;
-        const fileExtension = fileName.split('.').pop().toLowerCase();
+        const fileExtension = file.name.split('.').pop().toLowerCase();
 
         if (fileExtension === 'csv') {
             readCSV(file);
@@ -122,9 +126,6 @@
         }
     }
 
-    /**
-     * يقرأ ملف CSV باستخدام PapaParse
-     */
     function readCSV(file) {
         Papa.parse(file, {
             header: true,
@@ -138,19 +139,13 @@
         });
     }
 
-    /**
-     * يقرأ ملف Excel باستخدام SheetJS
-     */
     function readExcel(file) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            // نفترض أن البيانات موجودة في أول ورقة عمل (Sheet)
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
-            
-            // تحويل البيانات إلى تنسيق JSON (Array of Objects)
             const importedData = XLSX.utils.sheet_to_json(worksheet);
             processImportedData(importedData);
         };
@@ -158,35 +153,44 @@
     }
     
     /**
-     * يعالج البيانات المستوردة من CSV أو Excel
+     * يعالج البيانات المستوردة ويقوم بالتوزيع التلقائي للباركود.
      */
     function processImportedData(data) {
-        const requiredFields = ['name', 'phone', 'companions'];
-        if (data.length === 0 || !requiredFields.every(field => Object.keys(data[0]).some(key => key.toLowerCase() === field))) {
+        const requiredFields = ['name', 'phone', 'companions']; 
+        
+        if (data.length === 0 || !requiredFields.every(field => 
+            Object.keys(data[0]).some(key => key.toLowerCase() === field.toLowerCase())
+        )) {
             alert('خطأ: البيانات المستوردة لا تحتوي على جميع الأعمدة المطلوبة (name, phone, companions).');
             return;
         }
 
-        let newGuests = data.map((guest, index) => {
-            // توحيد أسماء الأعمدة (خاصة مع Excel الذي قد يغير التهجئة)
-            const guestData = {
-                name: guest.Name || guest.name || 'N/A',
-                phone: guest.Phone || guest.phone || 'N/A',
-                companions: parseInt(guest.Companions || guest.companions) || 0,
+        // إعادة ضبط العداد الداخلي والضيوف
+        internalGuestIdCounter = 0;
+        
+        let newGuests = data.map((guest) => {
+            const getField = (field) => {
+                const key = Object.keys(guest).find(k => k.toLowerCase() === field.toLowerCase());
+                return key ? guest[key] : 'N/A';
             };
             
-            // تحديث الـ ID الأخير وتوليد ID فريد
-            lastGuestId = Math.max(lastGuestId, 1000) + 1;
+            // توليد ID داخلي فريد فقط للحذف والتعيين
+            internalGuestIdCounter++;
+
             return {
-                id: `${lastGuestId}`,
-                ...guestData
+                internalId: internalGuestIdCounter,
+                name: String(getField('name')).trim() || 'N/A',
+                phone: String(getField('phone')).trim() || 'N/A',
+                companions: parseInt(getField('companions')) || 0,
+                assignedQrId: null // سيتم تعيينه لاحقًا أو يدوياً
             };
         });
 
-        // استبدال القائمة بالبيانات الجديدة
         guests = newGuests;
+        // بعد تحميل الضيوف، نقوم بإعادة توزيع الباركود
+        distributeBarcodesAutomatically();
         renderGuestTable();
-        alert(`تم تحميل ${guests.length} ضيف بنجاح. تبدأ الـ IDs من ${guests[0].id}.`);
+        alert(`تم تحميل ${guests.length} ضيف بنجاح. سيتم الآن توزيع أكواد الباركود المستوردة بالترتيب.`);
     }
 
     /**
@@ -201,20 +205,22 @@
             alert('يرجى ملء حقلي الاسم والهاتف على الأقل.');
             return;
         }
-
-        lastGuestId = Math.max(lastGuestId, 1000) + 1; // توليد ID جديد
         
+        internalGuestIdCounter++;
+
         const newGuest = {
-            id: `${lastGuestId}`,
+            internalId: internalGuestIdCounter,
             name: nameInput,
             phone: phoneInput,
             companions: parseInt(companionsInput) || 0,
+            assignedQrId: null // سيتم تعيينه يدويًا أو تلقائيًا (إذا لم يكن هناك ضيوف آخرون)
         };
 
         guests.push(newGuest);
+        // التوزيع التلقائي للباركود غير المخصص
+        distributeBarcodesAutomatically();
         renderGuestTable();
 
-        // مسح الحقول
         document.getElementById('newGuestName').value = '';
         document.getElementById('newGuestPhone').value = '';
         document.getElementById('newGuestCompanions').value = '0';
@@ -223,13 +229,13 @@
     /**
      * يحذف ضيفًا من القائمة.
      */
-    function deleteGuest(guestId) {
+    function deleteGuest(internalId) {
         if (confirm('هل أنت متأكد من حذف هذا الضيف؟')) {
-            guests = guests.filter(guest => guest.id !== guestId);
+            guests = guests.filter(guest => guest.internalId !== internalId);
+            distributeBarcodesAutomatically(); // إعادة التوزيع بعد الحذف
             renderGuestTable();
         }
     }
-
 
     /**
      * يحمّل صور الباركود ويخزنها في الذاكرة (كـ Base64).
@@ -242,34 +248,110 @@
         }
 
         barcodeImages = {}; 
+        availableQrIds = []; 
         let loadedCount = 0;
 
         Array.from(files).forEach(file => {
             const reader = new FileReader();
             reader.onload = function(e) {
-                const fileNameWithoutExtension = file.name.split('.').slice(0, -1).join('.'); 
+                const fileNameWithoutExtension = file.name.split('.').slice(0, -1).join(''); 
                 barcodeImages[fileNameWithoutExtension] = e.target.result; 
+                availableQrIds.push(fileNameWithoutExtension); 
                 loadedCount++;
                 document.getElementById('barcodeCount').textContent = loadedCount;
+                
+                // تحديث القائمة المعروضة
+                document.getElementById('importedQrCodes').textContent = availableQrIds.join(', ');
+                
+                // عند اكتمال التحميل، أعد التوزيع التلقائي
+                if (loadedCount === files.length) {
+                    distributeBarcodesAutomatically();
+                    renderGuestTable();
+                    alert(`تم استيراد ${loadedCount} كود باركود بنجاح. وتم توزيعهم تلقائيًا على الضيوف.`);
+                }
             };
             reader.readAsDataURL(file); 
         });
-        alert('تم بدء استيراد الصور. يرجى الانتظار حتى يتم تحميل جميع الصور.');
     }
+
+    /**
+     * وظيفة التوزيع التلقائي: يتم تعيين الباركود المستورد بالترتيب للضيوف غير المخصص لهم كرت.
+     */
+    function distributeBarcodesAutomatically() {
+        const assignedIds = guests.map(g => g.assignedQrId).filter(id => id !== null);
+        const unassignedQrIds = availableQrIds.filter(id => !assignedIds.includes(id));
+        
+        let qrIndex = 0;
+        
+        guests.forEach(guest => {
+            // إذا لم يكن هناك كود باركود مُعيّن بالفعل، نقوم بتعيين أول كود غير مستخدم
+            if (guest.assignedQrId === null && qrIndex < unassignedQrIds.length) {
+                guest.assignedQrId = unassignedQrIds[qrIndex];
+                qrIndex++;
+            }
+        });
+    }
+
+    /**
+     * يسمح للمستخدم بتعيين كود باركود مختلف يدوياً للضيف.
+     */
+    function assignBarcode(internalId) {
+        const currentGuest = guests.find(g => g.internalId === internalId);
+        if (!currentGuest) return;
+
+        // عرض قائمة الأكواد المستوردة للمساعدة
+        const availableList = availableQrIds.filter(id => !guests.some(g => g.assignedQrId === id && g.internalId !== currentGuest.internalId));
+        
+        const defaultQr = currentGuest.assignedQrId || 'غير مخصص';
+        let promptMessage = `أدخل كود الباركود الجديد لـ ${currentGuest.name}: (الحالي: ${defaultQr})\n\n`;
+        promptMessage += `الأكواد غير المخصصة المتاحة: ${availableList.join(', ')}`;
+
+        const newQrId = prompt(promptMessage, currentGuest.assignedQrId);
+
+        if (newQrId === null) return; // المستخدم ألغى الأمر
+
+        if (newQrId.trim() === '') {
+            currentGuest.assignedQrId = null; // إلغاء التعيين
+        } else if (newQrId !== currentGuest.assignedQrId) {
+            // 1. التحقق من أن الكود تم استيراده بالفعل
+            if (!barcodeImages[newQrId]) {
+                 alert(`تحذير: الكود "${newQrId}" غير موجود في قائمة الباركود المستوردة!`);
+            }
+            // 2. التحقق من عدم تكرار الكود
+            if (guests.some(g => g.assignedQrId === newQrId && g.internalId !== currentGuest.internalId)) {
+                 alert(`خطأ: كود الباركود "${newQrId}" مُعيّن بالفعل لضيف آخر.`);
+                return;
+            }
+            
+            currentGuest.assignedQrId = newQrId; 
+        }
+        
+        // بعد التعيين اليدوي، يتم إعادة التوزيع (لترتيب الأكواد غير المخصصة)
+        distributeBarcodesAutomatically();
+        renderGuestTable();
+    }
+
 
     // ----------------------------------------------------------------------
     // 2. وظائف الإرسال والتحميل
     // ----------------------------------------------------------------------
 
     /**
-     * وظيفة لتنزيل صورة الباركود المخصصة (فردي) من الذاكرة (Base64).
+     * وظيفة لتنزيل صورة الباركود المخصصة.
      */
-    function downloadBarcodeImage(guestId) {
-        const imageName = `${guestId}.png`; 
-        const base64Data = barcodeImages[guestId];
+    function downloadBarcodeImage(guest) {
+        const qrCodeId = guest.assignedQrId; 
+        
+        if (!qrCodeId) {
+             alert('خطأ: لم يتم تعيين كود باركود لهذا الضيف بعد. يرجى التعيين يدوياً أو استيراد الكروت.');
+             return;
+        }
+
+        const imageName = `${qrCodeId}.png`; 
+        const base64Data = barcodeImages[qrCodeId];
         
         if (!base64Data) {
-            alert(`خطأ: لم يتم العثور على صورة لـ ID رقم "${guestId}". تأكد من أن ملف الصورة يحمل اسم "${guestId}.png" وتم استيراده.`);
+            alert(`خطأ: لم يتم العثور على صورة لـ كود "${qrCodeId}". يرجى التأكد من استيراد ملف اسمه "${qrCodeId}.png".`);
             return;
         }
 
@@ -285,13 +367,13 @@
      * وظيفة لفتح محادثة واتساب مع رسالة مُعدَّة مسبقاً.
      */
     function sendWhatsAppMessage(guest) {
+        if (!guest.assignedQrId) {
+             alert('لا يمكن إرسال الرسالة: لم يتم تعيين كود باركود لهذا الضيف.');
+             return;
+        }
+        
         let messageText = document.getElementById('messageTemplate').value;
 
-        if (!barcodeImages[guest.id]) {
-             console.warn(`تحذير: صورة الباركود لـ ID ${guest.id} غير مستوردة!`);
-        }
-
-        // استبدال المتغيرات
         messageText = messageText.replace(/#{{GUEST_NAME}}#/g, guest.name);
         messageText = messageText.replace(/#{{COMPANIONS_COUNT}}#/g, guest.companions);
         
@@ -308,26 +390,38 @@
         tableBody.innerHTML = '';
         document.getElementById('guestCount').textContent = guests.length;
         
-        // تحديث الـ ID الأخير إذا كانت القائمة غير فارغة
-        if (guests.length > 0) {
-            lastGuestId = parseInt(guests[guests.length - 1].id);
-        }
-
         guests.forEach(guest => {
             const row = tableBody.insertRow();
             
-            row.insertCell().textContent = guest.id; 
             row.insertCell().textContent = guest.name;
             row.insertCell().textContent = guest.companions;
             row.insertCell().textContent = guest.phone;
             
+            // كود الباركود المخصص
+            const qrCodeCell = row.insertCell();
+            qrCodeCell.textContent = guest.assignedQrId || 'لم يخصص';
+            qrCodeCell.style.color = guest.assignedQrId ? '#333' : '#f44336'; 
+            qrCodeCell.style.fontWeight = 'bold';
+
             const actionsCell = row.insertCell();
 
-            // زر تحميل الباركود (فردي)
+            // زر تعيين كود الباركود (الإختيار اليدوي)
+            const assignButton = document.createElement('button');
+            assignButton.textContent = 'تعيين/تغيير الكرت';
+            assignButton.className = 'btn-assign';
+            assignButton.onclick = () => assignBarcode(guest.internalId); 
+            actionsCell.appendChild(assignButton);
+            
+            // زر تحميل الباركود
             const qrButton = document.createElement('button');
-            qrButton.textContent = '💾 تحميل باركود';
+            qrButton.textContent = '💾 سحب الباركود';
             qrButton.className = 'btn-qr';
-            qrButton.onclick = () => downloadBarcodeImage(guest.id); 
+            qrButton.onclick = () => downloadBarcodeImage(guest); 
+            
+            if (!guest.assignedQrId || !barcodeImages[guest.assignedQrId]) {
+                 qrButton.disabled = true;
+                 qrButton.textContent = '🚫 لا يوجد كرت';
+            }
             actionsCell.appendChild(qrButton);
             
             // زر إرسال واتساب
@@ -341,7 +435,7 @@
             const deleteButton = document.createElement('button');
             deleteButton.textContent = '🗑️';
             deleteButton.className = 'btn-delete';
-            deleteButton.onclick = () => deleteGuest(guest.id);
+            deleteButton.onclick = () => deleteGuest(guest.internalId); 
             actionsCell.appendChild(deleteButton);
         });
     }
