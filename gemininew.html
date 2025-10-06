@@ -3,31 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز إرسال الدعوات اليدوي</title>
+    <title>مركز إرسال الدعوات اليدوي (V2)</title>
     <style>
         body { font-family: Tahoma, Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        .container { max-width: 1200px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; color: #333; margin-bottom: 20px; }
+        h2 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 30px; color: #5d7eaf; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
         th { background-color: #5d7eaf; color: white; }
         tr:nth-child(even) { background-color: #f9f9f9; }
         button { padding: 8px 15px; margin: 5px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: background-color 0.3s; }
-        .btn-qr { background-color: #4CAF50; color: white; }
-        .btn-qr:hover { background-color: #45a049; }
+        .btn-qr { background-color: #00bcd4; color: white; }
+        .btn-qr:hover { background-color: #0097a7; }
         .btn-whatsapp { background-color: #25D366; color: white; }
         .btn-whatsapp:hover { background-color: #1DA851; }
+        textarea { width: 98%; min-height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; margin-bottom: 15px; }
+        .placeholder-note { color: #f44336; font-weight: bold; margin-bottom: 15px; display: block; text-align: right; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>مركز إرسال الدعوات اليدوي (خطوتان لكل ضيف)</h1>
+    <h1>مركز إرسال الدعوات اليدوي (V2)</h1>
 
+    <h2>🖊️ تعديل نص رسالة الواتساب التلقائية</h2>
+    <span class="placeholder-note">
+        ملاحظة: تأكد من ترك المتغيرات `{{CONFIRM_LINK}}` و `{{DECLINE_LINK}}` كما هي. سيتم استبدالها بالروابط القصيرة الفريدة لكل ضيف عند الإرسال.
+    </span>
+    <textarea id="messageTemplate">
+مرحباً #{{GUEST_NAME}}#،
+نتشرف بدعوتكم لحضور... (مجموع الأفراد: #{{COMPANIONS_COUNT}}#).
+
+للتأكيد: {{CONFIRM_LINK}}
+للاعتذار: {{DECLINE_LINK}}
+
+يرجى ملاحظة: كود الدخول الخاص بكم موجود في الصورة المرفقة.
+    </textarea>
+
+    <h2>📋 قائمة المدعوين وجاهزية الإرسال</h2>
     <table>
         <thead>
             <tr>
                 <th>اسم الضيف</th>
+                <th>عدد المرافقين</th>
                 <th>رقم الهاتف</th>
                 <th>الحالة</th>
                 <th>الإجراءات</th>
@@ -36,28 +55,29 @@
         <tbody id="guestTableBody">
             </tbody>
     </table>
+
+    <a id="hiddenDownloadLink" style="display: none;"></a>
 </div>
 
 <script>
     // ----------------------------------------------------------------------
     // 1. بيانات الدعوات
-    // 
-    // ملاحظة هامة: يجب أن تكون الروابط هنا هي الروابط 'القصيرة' التي تم إنشاؤها عبر Bitly أو Short.io
-    // تأكد من أن ملفات صور الباركود موجودة في مجلد "qr_images" داخل نفس مجلد هذا الملف.
     // ----------------------------------------------------------------------
     const guests = [
         {
             id: '1001', 
             name: 'فهد السالم', 
+            companions: 3, // جديد: عدد المرافقين
             phone: '96650XXXXXXX', 
             status: 'Pending', 
-            qrImage: 'qr-1001.png', // اسم ملف الصورة في مجلد qr_images
+            qrImage: 'qr-1001.png', 
             shortConfirmLink: 'https://bit.ly/fahd-c', 
             shortDeclineLink: 'https://bit.ly/fahd-d'
         },
         {
             id: '1002', 
             name: 'نورة العلي', 
+            companions: 1, 
             phone: '96655XXXXXXX', 
             status: 'Confirmed', 
             qrImage: 'qr-1002.png',
@@ -67,6 +87,7 @@
         {
             id: '1003', 
             name: 'خالد الزهراني', 
+            companions: 0, 
             phone: '96656XXXXXXX', 
             status: 'Declined', 
             qrImage: 'qr-1003.png', 
@@ -81,35 +102,42 @@
     // ----------------------------------------------------------------------
 
     /**
-     * وظيفة لفتح صورة الباركود المخصصة في نافذة جديدة.
+     * وظيفة لتحميل (تنزيل) صورة الباركود المخصصة مباشرة.
      * @param {string} imageName - اسم ملف صورة الباركود (مثلاً: qr-1001.png).
      */
-    function openBarcodeImage(imageName) {
-        // المسار يفترض أن الصور موجودة في مجلد فرعي باسم 'qr_images'
+    function downloadBarcodeImage(imageName) {
         const imagePath = `qr_images/${imageName}`;
-        window.open(imagePath, '_blank');
+        const downloadLink = document.getElementById('hiddenDownloadLink');
+        
+        // تعيين مسار الملف المراد تحميله
+        downloadLink.href = imagePath;
+        // تعيين اسم الملف الذي سيتم حفظه به
+        downloadLink.download = imageName;
+        
+        // محاكاة النقر على الرابط المخفي لتنفيذ التحميل
+        downloadLink.click();
+
+        alert(`تم بدء تحميل ملف الباركود: ${imageName}. ابحث عنه في مجلد التنزيلات.`);
     }
 
+
     /**
-     * وظيفة لفتح محادثة واتساب مع رسالة مُعدَّة مسبقاً.
-     * @param {string} phone - رقم هاتف الضيف (يجب أن يبدأ برمز الدولة، مثل 966).
-     * @param {string} name - اسم الضيف.
-     * @param {string} confirmLink - الرابط القصير لتأكيد الحضور.
-     * @param {string} declineLink - الرابط القصير للاعتذار.
+     * وظيفة لفتح محادثة واتساب مع رسالة مُعدَّة مسبقاً (باستخدام النص القابل للتعديل).
      */
-    function sendWhatsAppMessage(phone, name, confirmLink, declineLink) {
-        const message = `مرحباً ${name}،
-نتشرف بدعوتك لحضور...
+    function sendWhatsAppMessage(guest) {
+        // 1. سحب النص الحالي من حقل التعديل
+        let messageText = document.getElementById('messageTemplate').value;
 
-للتأكيد: ${confirmLink}
-للاعتذار: ${declineLink}
-
-⚠️ ملاحظة هامة: كود الدخول الخاص بك في الصورة المرفقة (يجب إرفاق الصورة يدوياً).`;
-
-        // إنشاء رابط واتساب مع الرسالة المشفرة
-        const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        // 2. استبدال المتغيرات الخاصة بالضيف
+        messageText = messageText.replace(/#{{GUEST_NAME}}#/g, guest.name);
+        messageText = messageText.replace(/#{{COMPANIONS_COUNT}}#/g, guest.companions);
         
-        // فتح محادثة الواتساب في نافذة جديدة
+        // 3. استبدال روابط التأكيد والاعتذار بالروابط القصيرة
+        messageText = messageText.replace(/{{CONFIRM_LINK}}/g, guest.shortConfirmLink);
+        messageText = messageText.replace(/{{DECLINE_LINK}}/g, guest.shortDeclineLink);
+
+        // 4. إنشاء رابط الواتساب وفتحه
+        const waLink = `https://wa.me/${guest.phone}?text=${encodeURIComponent(messageText)}`;
         window.open(waLink, '_blank');
     }
 
@@ -123,13 +151,13 @@
         guests.forEach(guest => {
             const row = tableBody.insertRow();
             
-            // عمود الاسم ورقم الهاتف والحالة
+            // عمود الاسم وعدد المرافقين ورقم الهاتف والحالة
             row.insertCell().textContent = guest.name;
+            row.insertCell().textContent = guest.companions; // عرض عدد المرافقين
             row.insertCell().textContent = guest.phone;
             
             const statusCell = row.insertCell();
             statusCell.textContent = guest.status;
-            // يمكنك تلوين الحالة بناءً على قيمتها
             if (guest.status === 'Confirmed') {
                 statusCell.style.color = '#4CAF50';
                 statusCell.style.fontWeight = 'bold';
@@ -140,23 +168,19 @@
             // عمود الإجراءات (الأزرار)
             const actionsCell = row.insertCell();
 
-            // زر فتح الباركود (الخطوة 1: تجهيز الصورة)
+            // زر تحميل الباركود (الخطوة 1: تجهيز الصورة)
             const qrButton = document.createElement('button');
-            qrButton.textContent = '1. فتح صورة الباركود';
+            qrButton.textContent = '1. تحميل الباركود 💾';
             qrButton.className = 'btn-qr';
-            qrButton.onclick = () => openBarcodeImage(guest.qrImage);
+            qrButton.onclick = () => downloadBarcodeImage(guest.qrImage);
             actionsCell.appendChild(qrButton);
             
             // زر إرسال واتساب (الخطوة 2: فتح محادثة النص)
             const waButton = document.createElement('button');
             waButton.textContent = '2. إرسال واتساب (النص والروابط)';
             waButton.className = 'btn-whatsapp';
-            waButton.onclick = () => sendWhatsAppMessage(
-                guest.phone, 
-                guest.name, 
-                guest.shortConfirmLink, 
-                guest.shortDeclineLink
-            );
+            // نمرر كائن الضيف بالكامل للوظيفة
+            waButton.onclick = () => sendWhatsAppMessage(guest);
             actionsCell.appendChild(waButton);
         });
     });
