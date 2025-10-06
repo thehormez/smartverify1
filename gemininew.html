@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز الإرسال اليدوي (بسيط جداً)</title>
+    <title>مركز الإرسال اليدوي (مع دعم Excel)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: Tahoma, Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
@@ -21,42 +22,53 @@
         .btn-qr:hover { background-color: #0097a7; }
         .btn-whatsapp { background-color: #25D366; color: white; }
         .btn-whatsapp:hover { background-color: #1DA851; }
+        .btn-delete { background-color: #f44336; color: white; }
+        .btn-delete:hover { background-color: #da190b; }
         textarea { width: 98%; min-height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; margin-bottom: 15px; }
         .placeholder-note { color: #f44336; font-weight: bold; margin-bottom: 15px; display: block; text-align: right; }
+        .form-control { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>مركز الإرسال اليدوي (بسيط جداً)</h1>
+    <h1>مركز الإرسال اليدوي (مع دعم Excel)</h1>
 
-    <h2>⚙️ استيراد البيانات والباركود</h2>
+    <h2>⚙️ إدارة قائمة الضيوف</h2>
 
     <div style="margin-bottom: 15px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
-        <h3>استيراد قائمة الضيوف (CSV)</h3>
-        <p>يجب أن يحتوي ملف CSV على الأعمدة بترتيب معين: <strong><code>name</code> (الاسم), <code>phone</code> (الهاتف), <code>companions</code> (عدد المرافقين)</strong>.</p>
-        <input type="file" id="guestListUpload" accept=".csv" style="margin-bottom: 10px;">
-        <button onclick="loadGuestsFromCSV()" class="btn-action">✅ استيراد الأسماء</button>
+        <h3>استيراد القائمة (Excel أو CSV)</h3>
+        <p>يجب أن تكون رؤوس الأعمدة (Headers) في الملف هي: <strong><code>name</code>, <code>phone</code>, <code>companions</code></strong>.</p>
+        <input type="file" id="guestListUpload" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="margin-bottom: 10px;">
+        <button onclick="handleFileUpload()" class="btn-action">✅ استيراد الأسماء</button>
         <p>تم تحميل <span id="guestCount">0</span> ضيف.</p>
     </div>
 
     <div style="margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
-        <h3>استيراد صور الباركود</h3>
+        <h3>🖼️ استيراد صور الباركود</h3>
         <p>اختر كل ملفات الباركود دفعة واحدة. يجب أن يكون اسم الملف هو **رقم ID الضيف** (مثلاً: <code>1001.png</code>).</p>
         <input type="file" id="barcodeUpload" accept="image/*" multiple style="margin-bottom: 10px;">
-        <button onclick="loadBarcodes()" class="btn-action">🖼️ استيراد الباركود</button>
+        <button onclick="loadBarcodes()" class="btn-action">استيراد الباركود</button>
         <p>تم استيراد <span id="barcodeCount">0</span> ملف باركود.</p>
+    </div>
+    
+    <h2>➕ إضافة ضيف يدوياً</h2>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+        <input type="text" id="newGuestName" placeholder="الاسم" class="form-control">
+        <input type="text" id="newGuestPhone" placeholder="الهاتف (9665...)" class="form-control">
+        <input type="number" id="newGuestCompanions" placeholder="المرافقين" min="0" value="0" class="form-control">
+        <button onclick="addGuestManually()" class="btn-qr">إضافة الضيف</button>
     </div>
 
     <h2>🖊️ تعديل نص رسالة الواتساب التلقائية</h2>
     <span class="placeholder-note">
-        استخدم المتغيرات: <code>#{{GUEST_NAME}}#</code>, <code>#{{COMPANIONS_COUNT}}#</code>. **(ملاحظة: لن تعمل روابط التأكيد/الاعتذار في هذا الإصدار)**.
+        استخدم المتغيرات: <code>#{{GUEST_NAME}}#</code> (الاسم), <code>#{{COMPANIONS_COUNT}}#</code> (المرافقين).
     </span>
     <textarea id="messageTemplate">
 مرحباً #{{GUEST_NAME}}#،
 نتشرف بدعوتكم لحضور... (مجموع الأفراد: #{{COMPANIONS_COUNT}}#).
 
-الرجاء مسح كود الباركود في الصورة المرفقة لتأكيد الحضور.
+الرجاء مسح كود الباركود في الصورة المرفقة للدخول.
     </textarea>
 
     <h2>📋 قائمة المدعوين</h2>
@@ -78,52 +90,146 @@
 
 <script>
     let guests = [];
-    // هذا الكائن سيخزن صور الباركود المشفرة (Base64)
     let barcodeImages = {}; 
+    
+    // يحافظ على الرقم التسلسلي الأخير لتوليد IDs فريدة عند الإدخال اليدوي
+    let lastGuestId = 1000;
 
     // ----------------------------------------------------------------------
-    // 1. وظائف الاستيراد (CSV والصور)
+    // 1. وظائف الإدارة والاستيراد
     // ----------------------------------------------------------------------
 
     /**
-     * يحمّل قائمة الضيوف من ملف CSV (بثلاثة أعمدة فقط).
+     * يتعامل مع تحميل الملفات (CSV أو Excel)
      */
-    function loadGuestsFromCSV() {
+    function handleFileUpload() {
         const fileInput = document.getElementById('guestListUpload');
         const file = fileInput.files[0];
         if (!file) {
-            alert('يرجى اختيار ملف CSV أولاً.');
+            alert('يرجى اختيار ملف أولاً.');
             return;
         }
 
+        const fileName = file.name;
+        const fileExtension = fileName.split('.').pop().toLowerCase();
+
+        if (fileExtension === 'csv') {
+            readCSV(file);
+        } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+            readExcel(file);
+        } else {
+            alert('صيغة الملف غير مدعومة. يرجى استخدام CSV أو XLSX.');
+        }
+    }
+
+    /**
+     * يقرأ ملف CSV باستخدام PapaParse
+     */
+    function readCSV(file) {
         Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
-                const requiredFields = ['name', 'phone', 'companions'];
-                const data = results.data;
-                
-                if (data.length === 0 || !requiredFields.every(field => Object.keys(data[0]).includes(field))) {
-                    alert('خطأ في تنسيق ملف CSV. يرجى التأكد من وجود الأعمدة المطلوبة: name, phone, companions.');
-                    return;
-                }
-                
-                // تعيين ID لكل ضيف يعتمد على ترتيبه (G1, G2...) لربطه بصورة الباركود
-                guests = data.map((guest, index) => ({
-                    id: `${1000 + index + 1}`, // توليد ID بسيط (مثلاً: 1001، 1002)
-                    name: guest.name || 'N/A',
-                    companions: parseInt(guest.companions) || 0,
-                    phone: guest.phone || 'N/A',
-                }));
-                
-                renderGuestTable();
-                alert(`تم تحميل ${guests.length} ضيف بنجاح. يرجى ملاحظة أرقام الـ ID (مثل 1001) لأسماء ملفات الباركود.`);
+                processImportedData(results.data);
             },
             error: function(error) {
                 alert(`خطأ في قراءة ملف CSV: ${error.message}`);
             }
         });
     }
+
+    /**
+     * يقرأ ملف Excel باستخدام SheetJS
+     */
+    function readExcel(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            // نفترض أن البيانات موجودة في أول ورقة عمل (Sheet)
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // تحويل البيانات إلى تنسيق JSON (Array of Objects)
+            const importedData = XLSX.utils.sheet_to_json(worksheet);
+            processImportedData(importedData);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+    
+    /**
+     * يعالج البيانات المستوردة من CSV أو Excel
+     */
+    function processImportedData(data) {
+        const requiredFields = ['name', 'phone', 'companions'];
+        if (data.length === 0 || !requiredFields.every(field => Object.keys(data[0]).some(key => key.toLowerCase() === field))) {
+            alert('خطأ: البيانات المستوردة لا تحتوي على جميع الأعمدة المطلوبة (name, phone, companions).');
+            return;
+        }
+
+        let newGuests = data.map((guest, index) => {
+            // توحيد أسماء الأعمدة (خاصة مع Excel الذي قد يغير التهجئة)
+            const guestData = {
+                name: guest.Name || guest.name || 'N/A',
+                phone: guest.Phone || guest.phone || 'N/A',
+                companions: parseInt(guest.Companions || guest.companions) || 0,
+            };
+            
+            // تحديث الـ ID الأخير وتوليد ID فريد
+            lastGuestId = Math.max(lastGuestId, 1000) + 1;
+            return {
+                id: `${lastGuestId}`,
+                ...guestData
+            };
+        });
+
+        // استبدال القائمة بالبيانات الجديدة
+        guests = newGuests;
+        renderGuestTable();
+        alert(`تم تحميل ${guests.length} ضيف بنجاح. تبدأ الـ IDs من ${guests[0].id}.`);
+    }
+
+    /**
+     * يضيف ضيفًا جديدًا من حقول الإدخال اليدوية.
+     */
+    function addGuestManually() {
+        const nameInput = document.getElementById('newGuestName').value;
+        const phoneInput = document.getElementById('newGuestPhone').value;
+        const companionsInput = document.getElementById('newGuestCompanions').value;
+
+        if (!nameInput || !phoneInput) {
+            alert('يرجى ملء حقلي الاسم والهاتف على الأقل.');
+            return;
+        }
+
+        lastGuestId = Math.max(lastGuestId, 1000) + 1; // توليد ID جديد
+        
+        const newGuest = {
+            id: `${lastGuestId}`,
+            name: nameInput,
+            phone: phoneInput,
+            companions: parseInt(companionsInput) || 0,
+        };
+
+        guests.push(newGuest);
+        renderGuestTable();
+
+        // مسح الحقول
+        document.getElementById('newGuestName').value = '';
+        document.getElementById('newGuestPhone').value = '';
+        document.getElementById('newGuestCompanions').value = '0';
+    }
+    
+    /**
+     * يحذف ضيفًا من القائمة.
+     */
+    function deleteGuest(guestId) {
+        if (confirm('هل أنت متأكد من حذف هذا الضيف؟')) {
+            guests = guests.filter(guest => guest.id !== guestId);
+            renderGuestTable();
+        }
+    }
+
 
     /**
      * يحمّل صور الباركود ويخزنها في الذاكرة (كـ Base64).
@@ -141,8 +247,6 @@
         Array.from(files).forEach(file => {
             const reader = new FileReader();
             reader.onload = function(e) {
-                // استخدام اسم الملف (بدون امتداده) كمفتاح، وهذا هو الـ ID
-                // مثال: ملف "1001.png" يتم تخزينه تحت المفتاح "1001"
                 const fileNameWithoutExtension = file.name.split('.').slice(0, -1).join('.'); 
                 barcodeImages[fileNameWithoutExtension] = e.target.result; 
                 loadedCount++;
@@ -154,14 +258,14 @@
     }
 
     // ----------------------------------------------------------------------
-    // 2. وظائف الإرسال والتحميل الفردي
+    // 2. وظائف الإرسال والتحميل
     // ----------------------------------------------------------------------
 
     /**
      * وظيفة لتنزيل صورة الباركود المخصصة (فردي) من الذاكرة (Base64).
      */
     function downloadBarcodeImage(guestId) {
-        const imageName = `${guestId}.png`; // افتراض أن اسم الملف هو ID الضيف وامتداده PNG
+        const imageName = `${guestId}.png`; 
         const base64Data = barcodeImages[guestId];
         
         if (!base64Data) {
@@ -169,7 +273,6 @@
             return;
         }
 
-        // إنشاء رابط وهمي لتحميل ملف من Base64
         const downloadLink = document.createElement('a');
         downloadLink.href = base64Data;
         downloadLink.download = imageName;
@@ -184,7 +287,6 @@
     function sendWhatsAppMessage(guest) {
         let messageText = document.getElementById('messageTemplate').value;
 
-        // التحقق من أن الباركود قد تم استيراده قبل الإرسال
         if (!barcodeImages[guest.id]) {
              console.warn(`تحذير: صورة الباركود لـ ID ${guest.id} غير مستوردة!`);
         }
@@ -193,11 +295,6 @@
         messageText = messageText.replace(/#{{GUEST_NAME}}#/g, guest.name);
         messageText = messageText.replace(/#{{COMPANIONS_COUNT}}#/g, guest.companions);
         
-        // إزالة أي متغيرات قديمة غير مستخدمة (لضمان النظافة)
-        messageText = messageText.replace(/{{CONFIRM_LINK}}/g, ''); 
-        messageText = messageText.replace(/{{DECLINE_LINK}}/g, ''); 
-
-
         const waLink = `https://wa.me/${guest.phone}?text=${encodeURIComponent(messageText)}`;
         window.open(waLink, '_blank');
     }
@@ -211,10 +308,15 @@
         tableBody.innerHTML = '';
         document.getElementById('guestCount').textContent = guests.length;
         
+        // تحديث الـ ID الأخير إذا كانت القائمة غير فارغة
+        if (guests.length > 0) {
+            lastGuestId = parseInt(guests[guests.length - 1].id);
+        }
+
         guests.forEach(guest => {
             const row = tableBody.insertRow();
             
-            row.insertCell().textContent = guest.id; // عرض الـ ID الذي يمثل اسم ملف الباركود
+            row.insertCell().textContent = guest.id; 
             row.insertCell().textContent = guest.name;
             row.insertCell().textContent = guest.companions;
             row.insertCell().textContent = guest.phone;
@@ -223,9 +325,9 @@
 
             // زر تحميل الباركود (فردي)
             const qrButton = document.createElement('button');
-            qrButton.textContent = '💾 تحميل الباركود';
+            qrButton.textContent = '💾 تحميل باركود';
             qrButton.className = 'btn-qr';
-            qrButton.onclick = () => downloadBarcodeImage(guest.id); // استخدام الـ ID
+            qrButton.onclick = () => downloadBarcodeImage(guest.id); 
             actionsCell.appendChild(qrButton);
             
             // زر إرسال واتساب
@@ -234,6 +336,13 @@
             waButton.className = 'btn-whatsapp';
             waButton.onclick = () => sendWhatsAppMessage(guest);
             actionsCell.appendChild(waButton);
+            
+            // زر الحذف
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = '🗑️';
+            deleteButton.className = 'btn-delete';
+            deleteButton.onclick = () => deleteGuest(guest.id);
+            actionsCell.appendChild(deleteButton);
         });
     }
 
