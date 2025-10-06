@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز إرسال الدعوات اليدوي (V2)</title>
+    <title>مركز إرسال الدعوات اليدوي (V3)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         body { font-family: Tahoma, Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
@@ -18,18 +19,42 @@
         .btn-qr:hover { background-color: #0097a7; }
         .btn-whatsapp { background-color: #25D366; color: white; }
         .btn-whatsapp:hover { background-color: #1DA851; }
+        .btn-action { background-color: #FF9800; color: white; }
+        .btn-action:hover { background-color: #e68900; }
+        .btn-delete { background-color: #f44336; color: white; }
+        .btn-delete:hover { background-color: #da190b; }
         textarea { width: 98%; min-height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; margin-bottom: 15px; }
         .placeholder-note { color: #f44336; font-weight: bold; margin-bottom: 15px; display: block; text-align: right; }
+        .form-control { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>مركز إرسال الدعوات اليدوي (V2)</h1>
+    <h1>مركز إرسال الدعوات اليدوي (V3)</h1>
+
+    <h2>⚙️ إدارة وتحميل قائمة الضيوف</h2>
+    <p>لتحميل القائمة، يجب أن يكون الملف بصيغة JSON ويحتوي على حقول (id, name, companions, phone, status, qrImage, shortConfirmLink, shortDeclineLink).</p>
+    
+    <input type="file" id="guestListUpload" accept=".json" style="margin-bottom: 10px;">
+    <button onclick="loadGuestsFromFile()" class="btn-action">تحميل القائمة من ملف</button>
+    <button onclick="downloadAllQRCodes()" class="btn-action">📥 تحميل كل الباركود (ZIP)</button>
+
+    <h2>➕ إضافة ضيف جديد يدوياً</h2>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+        <input type="text" id="newGuestName" placeholder="الاسم" class="form-control">
+        <input type="number" id="newGuestCompanions" placeholder="المرافقين" min="0" value="0" class="form-control">
+        <input type="text" id="newGuestPhone" placeholder="الهاتف (9665...)" class="form-control">
+        <input type="text" id="newGuestQR" placeholder="اسم صورة الباركود (qr-XXXX.png)" class="form-control">
+        <input type="text" id="newGuestConfirm" placeholder="رابط التأكيد القصير" class="form-control">
+        <input type="text" id="newGuestDecline" placeholder="رابط الاعتذار القصير" class="form-control">
+        <input type="text" id="newGuestID" placeholder="ID فريد" class="form-control">
+        <button onclick="addGuestManually()" class="btn-qr">إضافة الضيف</button>
+    </div>
 
     <h2>🖊️ تعديل نص رسالة الواتساب التلقائية</h2>
     <span class="placeholder-note">
-        ملاحظة: تأكد من ترك المتغيرات `{{CONFIRM_LINK}}` و `{{DECLINE_LINK}}` كما هي. سيتم استبدالها بالروابط القصيرة الفريدة لكل ضيف عند الإرسال.
+        يرجى استخدام المتغيرات التالية: <code>#{{GUEST_NAME}}#</code>, <code>#{{COMPANIONS_COUNT}}#</code>, <code>{{CONFIRM_LINK}}</code>, <code>{{DECLINE_LINK}}</code>
     </span>
     <textarea id="messageTemplate">
 مرحباً #{{GUEST_NAME}}#،
@@ -38,7 +63,7 @@
 للتأكيد: {{CONFIRM_LINK}}
 للاعتذار: {{DECLINE_LINK}}
 
-يرجى ملاحظة: كود الدخول الخاص بكم موجود في الصورة المرفقة.
+⚠️ ملاحظة هامة: كود الدخول الخاص بكم موجود في الصورة المرفقة.
     </textarea>
 
     <h2>📋 قائمة المدعوين وجاهزية الإرسال</h2>
@@ -61,99 +86,180 @@
 
 <script>
     // ----------------------------------------------------------------------
-    // 1. بيانات الدعوات
+    // 1. بيانات الدعوات - البدء بقائمة فارغة أو افتراضية
     // ----------------------------------------------------------------------
-    const guests = [
-        {
-            id: '1001', 
-            name: 'فهد السالم', 
-            companions: 3, // جديد: عدد المرافقين
-            phone: '96650XXXXXXX', 
-            status: 'Pending', 
-            qrImage: 'qr-1001.png', 
-            shortConfirmLink: 'https://bit.ly/fahd-c', 
-            shortDeclineLink: 'https://bit.ly/fahd-d'
-        },
-        {
-            id: '1002', 
-            name: 'نورة العلي', 
-            companions: 1, 
-            phone: '96655XXXXXXX', 
-            status: 'Confirmed', 
-            qrImage: 'qr-1002.png',
-            shortConfirmLink: 'https://bit.ly/nora-c', 
-            shortDeclineLink: 'https://bit.ly/nora-d'
-        },
-        {
-            id: '1003', 
-            name: 'خالد الزهراني', 
-            companions: 0, 
-            phone: '96656XXXXXXX', 
-            status: 'Declined', 
-            qrImage: 'qr-1003.png', 
-            shortConfirmLink: 'https://bit.ly/khaled-c', 
-            shortDeclineLink: 'https://bit.ly/khaled-d'
-        }
-        // أضف المزيد من الضيوف هنا...
+    let guests = [
+        // مثال لبيانات افتراضية:
+        { id: '1001', name: 'فهد السالم', companions: 3, phone: '96650XXXXXXX', status: 'Pending', qrImage: 'qr-1001.png', shortConfirmLink: 'https://bit.ly/fahd-c', shortDeclineLink: 'https://bit.ly/fahd-d' },
     ];
+    
+    const QR_IMAGES_DIR = 'qr_images';
 
     // ----------------------------------------------------------------------
-    // 2. وظائف JavaScript الرئيسية
+    // 2. وظائف الإدارة (تحميل، إضافة، حذف)
     // ----------------------------------------------------------------------
 
     /**
-     * وظيفة لتحميل (تنزيل) صورة الباركود المخصصة مباشرة.
-     * @param {string} imageName - اسم ملف صورة الباركود (مثلاً: qr-1001.png).
+     * يحمّل قائمة الضيوف من ملف JSON مرفق.
      */
-    function downloadBarcodeImage(imageName) {
-        const imagePath = `qr_images/${imageName}`;
-        const downloadLink = document.getElementById('hiddenDownloadLink');
-        
-        // تعيين مسار الملف المراد تحميله
-        downloadLink.href = imagePath;
-        // تعيين اسم الملف الذي سيتم حفظه به
-        downloadLink.download = imageName;
-        
-        // محاكاة النقر على الرابط المخفي لتنفيذ التحميل
-        downloadLink.click();
+    function loadGuestsFromFile() {
+        const fileInput = document.getElementById('guestListUpload');
+        const file = fileInput.files[0];
+        if (!file) {
+            alert('يرجى اختيار ملف JSON أولاً.');
+            return;
+        }
 
-        alert(`تم بدء تحميل ملف الباركود: ${imageName}. ابحث عنه في مجلد التنزيلات.`);
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                // استبدال القائمة الحالية بالبيانات الجديدة من الملف
+                guests = JSON.parse(event.target.result);
+                renderGuestTable();
+                alert(`تم تحميل ${guests.length} ضيف بنجاح.`);
+            } catch (e) {
+                alert('خطأ في قراءة الملف. تأكد من أن الملف بصيغة JSON صحيحة.');
+            }
+        };
+        reader.readAsText(file);
+    }
+    
+    /**
+     * يضيف ضيفًا جديدًا من حقول الإدخال اليدوية.
+     */
+    function addGuestManually() {
+        const newGuest = {
+            id: document.getElementById('newGuestID').value,
+            name: document.getElementById('newGuestName').value,
+            companions: parseInt(document.getElementById('newGuestCompanions').value) || 0,
+            phone: document.getElementById('newGuestPhone').value,
+            status: 'Pending',
+            qrImage: document.getElementById('newGuestQR').value,
+            shortConfirmLink: document.getElementById('newGuestConfirm').value,
+            shortDeclineLink: document.getElementById('newGuestDecline').value
+        };
+
+        if (!newGuest.name || !newGuest.phone || !newGuest.qrImage || !newGuest.id) {
+            alert('يرجى ملء جميع الحقول المطلوبة (الاسم، الهاتف، ID، صورة الباركود).');
+            return;
+        }
+
+        // إضافة الضيف ومسح الحقول
+        guests.push(newGuest);
+        renderGuestTable();
+        document.getElementById('newGuestName').value = '';
+        document.getElementById('newGuestCompanions').value = '0';
+        document.getElementById('newGuestPhone').value = '';
+        document.getElementById('newGuestQR').value = '';
+        document.getElementById('newGuestConfirm').value = '';
+        document.getElementById('newGuestDecline').value = '';
+        document.getElementById('newGuestID').value = '';
     }
 
+    /**
+     * حذف ضيف من القائمة بناءً على ID.
+     */
+    function deleteGuest(guestId) {
+        if (confirm('هل أنت متأكد من حذف هذا الضيف؟')) {
+            guests = guests.filter(guest => guest.id !== guestId);
+            renderGuestTable();
+        }
+    }
+
+    // ----------------------------------------------------------------------
+    // 3. وظائف الإرسال والتحميل الفردي/الجماعي
+    // ----------------------------------------------------------------------
+    
+    /**
+     * وظيفة لتحميل (تنزيل) صورة الباركود المخصصة مباشرة (فردي).
+     */
+    function downloadBarcodeImage(imageName) {
+        const imagePath = `${QR_IMAGES_DIR}/${imageName}`;
+        const downloadLink = document.getElementById('hiddenDownloadLink');
+        downloadLink.href = imagePath;
+        downloadLink.download = imageName;
+        downloadLink.click();
+        alert(`تم بدء تحميل ملف الباركود: ${imageName}`);
+    }
+
+    /**
+     * وظيفة للتحميل الجماعي لجميع صور الباركود في ملف ZIP.
+     */
+    async function downloadAllQRCodes() {
+        if (guests.length === 0) {
+            alert('لا توجد أسماء في القائمة للتحميل.');
+            return;
+        }
+        
+        const zip = new JSZip();
+        let downloadCount = 0;
+        
+        alert('جارِ تجميع ملفات الباركود... قد يستغرق هذا بعض الوقت.');
+
+        for (const guest of guests) {
+            const imagePath = `${QR_IMAGES_DIR}/${guest.qrImage}`;
+            try {
+                // استخدام fetch لقراءة محتوى الصورة كـ Blob
+                const response = await fetch(imagePath);
+                if (!response.ok) throw new Error(`Image not found: ${guest.qrImage}`);
+                const data = await response.blob();
+                
+                // إضافة الصورة إلى ملف الـ ZIP
+                zip.file(guest.qrImage, data);
+                downloadCount++;
+            } catch (error) {
+                console.error(`Error processing ${guest.qrImage}:`, error.message);
+            }
+        }
+        
+        if (downloadCount === 0) {
+             alert('تعذر تحميل أي ملفات باركود. تأكد من وجود مجلد "qr_images" ومن صحة أسماء الملفات.');
+             return;
+        }
+
+        // إنشاء ملف الـ ZIP وتنزيله
+        zip.generateAsync({ type: "blob" })
+            .then(function(content) {
+                const downloadLink = document.getElementById('hiddenDownloadLink');
+                const url = URL.createObjectURL(content);
+                downloadLink.href = url;
+                downloadLink.download = 'All_QR_Codes.zip';
+                downloadLink.click();
+                URL.revokeObjectURL(url);
+                alert(`تم تحميل ${downloadCount} ملف باركود بنجاح في ملف All_QR_Codes.zip.`);
+            });
+    }
 
     /**
      * وظيفة لفتح محادثة واتساب مع رسالة مُعدَّة مسبقاً (باستخدام النص القابل للتعديل).
      */
     function sendWhatsAppMessage(guest) {
-        // 1. سحب النص الحالي من حقل التعديل
         let messageText = document.getElementById('messageTemplate').value;
 
-        // 2. استبدال المتغيرات الخاصة بالضيف
+        // استبدال المتغيرات
         messageText = messageText.replace(/#{{GUEST_NAME}}#/g, guest.name);
         messageText = messageText.replace(/#{{COMPANIONS_COUNT}}#/g, guest.companions);
-        
-        // 3. استبدال روابط التأكيد والاعتذار بالروابط القصيرة
         messageText = messageText.replace(/{{CONFIRM_LINK}}/g, guest.shortConfirmLink);
         messageText = messageText.replace(/{{DECLINE_LINK}}/g, guest.shortDeclineLink);
 
-        // 4. إنشاء رابط الواتساب وفتحه
         const waLink = `https://wa.me/${guest.phone}?text=${encodeURIComponent(messageText)}`;
         window.open(waLink, '_blank');
     }
 
     // ----------------------------------------------------------------------
-    // 3. عرض البيانات في الجدول
+    // 4. وظيفة عرض الجدول (Render)
     // ----------------------------------------------------------------------
     
-    document.addEventListener('DOMContentLoaded', () => {
+    function renderGuestTable() {
         const tableBody = document.getElementById('guestTableBody');
+        tableBody.innerHTML = ''; // تفريغ الجدول قبل إعادة الملء
         
         guests.forEach(guest => {
             const row = tableBody.insertRow();
             
-            // عمود الاسم وعدد المرافقين ورقم الهاتف والحالة
+            // خلايا البيانات
             row.insertCell().textContent = guest.name;
-            row.insertCell().textContent = guest.companions; // عرض عدد المرافقين
+            row.insertCell().textContent = guest.companions;
             row.insertCell().textContent = guest.phone;
             
             const statusCell = row.insertCell();
@@ -168,23 +274,31 @@
             // عمود الإجراءات (الأزرار)
             const actionsCell = row.insertCell();
 
-            // زر تحميل الباركود (الخطوة 1: تجهيز الصورة)
+            // زر تحميل الباركود (فردي)
             const qrButton = document.createElement('button');
-            qrButton.textContent = '1. تحميل الباركود 💾';
+            qrButton.textContent = '💾 باركود';
             qrButton.className = 'btn-qr';
             qrButton.onclick = () => downloadBarcodeImage(guest.qrImage);
             actionsCell.appendChild(qrButton);
             
-            // زر إرسال واتساب (الخطوة 2: فتح محادثة النص)
+            // زر إرسال واتساب
             const waButton = document.createElement('button');
-            waButton.textContent = '2. إرسال واتساب (النص والروابط)';
+            waButton.textContent = '💬 إرسال واتساب';
             waButton.className = 'btn-whatsapp';
-            // نمرر كائن الضيف بالكامل للوظيفة
             waButton.onclick = () => sendWhatsAppMessage(guest);
             actionsCell.appendChild(waButton);
+            
+            // زر الحذف
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = '🗑️ حذف';
+            deleteButton.className = 'btn-delete';
+            deleteButton.onclick = () => deleteGuest(guest.id);
+            actionsCell.appendChild(deleteButton);
         });
-    });
+    }
 
+    // عرض الجدول عند تحميل الصفحة لأول مرة
+    document.addEventListener('DOMContentLoaded', renderGuestTable);
 </script>
 </body>
 </html>
