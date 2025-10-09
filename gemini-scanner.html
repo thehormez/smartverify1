@@ -1,420 +1,158 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — ماسح مناسبة احترافي</title>
-  <style>
-    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--ok:#22c55e;--bad:#ef4444;--warn:#f59e0b;--card:#0e172a}
-    html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
-    .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
-    .container{max-width:1200px;margin:0 auto;padding:14px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
-    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    .btn:hover{background:#0d1528}
-    .select,.input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
-    .grid{display:grid;gap:12px}
-    @media(min-width:1024px){.grid-2{grid-template-columns:2fr 1fr}}
-    .muted{color:var(--muted)}
-    .dot{width:10px;height:10px;border-radius:50%}
-    .status{display:flex;gap:8px;align-items:center}
-
-    /* Scanner video */
-    .scanWrap{
-      position:relative;width:100%;aspect-ratio:3/4;max-width:480px;
-      margin-inline:auto;border-radius:14px;overflow:hidden;background:#000;
-      border:1px solid rgba(255,255,255,.08);
-      /* 🟢 الإضافة/التعديل: لجعل تغيير اللون سلسًا */
-      transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
-    }
-    /* 🟢 الأنماط الجديدة لإضاءة الشاشة */
-    .scanWrap.status-ok {
-        background-color: var(--ok); /* أخضر للقبول */
-        border-color: var(--ok);
-    }
-    .scanWrap.status-bad {
-        background-color: var(--bad); /* أحمر للرفض */
-        border-color: var(--bad);
-    }
-    #video{width:100%;height:100%;object-fit:cover}
-    .frame{position:absolute;inset:0;pointer-events:none}
-    .corner{position:absolute;width:42px;height:42px;border:3px solid rgba(255,255,255,.7)}
-    .corner.tl{top:12px;left:12px;border-right:none;border-bottom:none;border-radius:10px 0 0 0}
-    .corner.tr{top:12px;right:12px;border-left:none;border-bottom:none;border-radius:0 10px 0 0}
-    .corner.bl{bottom:12px;left:12px;border-right:none;border-top:none;border-radius:0 0 0 10px}
-    .corner.br{bottom:12px;right:12px;border-left:none;border-top:none;border-radius:0 0 10px 0}
-
-    /* Last result */
-    .qrBox{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center}
-    .qrBox canvas{background:#fff;border-radius:10px}
-
-    .hist{max-height:300px;overflow:auto}
-    .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قارئ الباركود/QR سهل</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #videoContainer {
+            width: 100%;
+            height: 400px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            background-color: #000;
+            margin-bottom: 20px;
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #startButton { background-color: #4CAF50; color: white; }
+        #stopButton { background-color: #f44336; color: white; }
+        #result {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #e9ecef;
+            word-break: break-all;
+            font-size: 1.1em;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.3/umd/index.min.js"></script>
 </head>
 <body>
-    <div class="topbar">
-    <div class="container row" style="justify-content:space-between">
-      <div class="row"><div style="font-weight:900">HS</div><div class="muted">ماسح الباركود — مناسبة محددة</div></div>
-      <div class="row">
-        <span class="tag">Event: <b id="evTag">—</b></span>
-        <button id="setEventBtn" class="btn">تعيين/تغيير الحدث</button>
-        <button id="langBtn" class="btn">AR</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="container grid grid-2">
-        <div class="card">
-      <div class="row" style="justify-content:space-between; gap:8px">
-        <div class="status"><div id="statusDot" class="dot" style="background:#9ca3af"></div><div id="statusText" class="muted">—</div></div>
-        <div class="row">
-          <button id="startBtn" class="btn">▶️ تشغيل</button>
-          <button id="stopBtn" class="btn" disabled>⏹️ إيقاف</button>
-          <button id="switchBtn" class="btn">🔄 تبديل</button>
-          <button id="torchBtn" class="btn">💡 فلاش</button>
-        </div>
-      </div>
-
-      <div class="scanWrap" id="scanWrap">
-        <video id="video" playsinline muted autoplay></video>
-        <div class="frame">
-          <div class="corner tl"></div>
-          <div class="corner tr"></div>
-          <div class="corner bl"></div>
-          <div class="corner br"></div>
-        </div>
-      </div>
-
-            <div class="row" style="margin-top:10px">
-        <div style="width:160px">
-          <div class="muted">فترة التوقف (ملّي ثانية)</div>
-          <input id="pauseMs" class="input" type="number" value="2000" />
-        </div>
-        <div style="width:150px">
-          <div class="muted">الأصوات</div>
-          <select id="soundMode" class="select">
-            <option value="on">تشغيل</option>
-            <option value="off">إيقاف</option>
-          </select>
-        </div>
-        <div style="width:180px">
-          <div class="muted">حجم القارئ</div>
-          <select id="scanSize" class="select">
-            <option value="360">صغير</option>
-            <option value="480" selected>متوسط</option>
-            <option value="680">كبير</option>
-          </select>
-        </div>
-        <div style="width:220px">
-          <div class="muted">نمط الكود (Regex)</div>
-          <input id="codeRegex" class="input mono" value="^[A-Z]{2}_[0-9]{3,}$" />
-        </div>
-        <div style="width:170px">
-          <div class="muted">وضع صارم</div>
-          <select id="strictMode" class="select">
-            <option value="on">اقبل المطابق فقط</option>
-            <option value="off">اقبل الكل</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:10px">
-        <div style="flex:1">
-          <div class="muted" id="lblCam">الكاميرا</div>
-          <select id="cameraSelect" class="select"></select>
-        </div>
-        <div style="flex:1">
-          <div class="muted" id="lblManual">إدخال يدوي</div>
-          <div class="row">
-            <input id="manualCode" class="input" placeholder="SA_001" />
-            <button id="manualBtn" class="btn">تحقق</button>
-          </div>
-        </div>
-      </div>
-
-      <div id="httpsWarn" class="card" style="display:none; margin-top:10px; border-color:#7f1d1d;background:#450a0a;color:#fecaca">
-        ⚠️ الكاميرا تتطلب HTTPS أو localhost.
-      </div>
-    </div>
-
-        <div class="card">
-      <div class="muted" style="font-size:12px">النتيجة الأخيرة</div>
-      <div class="qrBox" style="margin-top:6px">
-        <canvas id="qrCanvas" width="120" height="120"></canvas>
-        <div>
-          <div id="lastCode" class="mono" style="font-size:22px;font-weight:800">—</div>
-          <div id="lastMsg" class="muted" style="font-size:12px;margin-top:4px">—</div>
-        </div>
-        <div style="grid-column:1/3; margin-top:10px; font-size:14px; text-align:center;">
-          <span id="flashMessage" style="font-weight:bold; color:var(--ink)"></span>
+    <div class="container">
+        <h1>قارئ باركود/QR عملي</h1>
+        
+        <div class="controls">
+            <button id="startButton">▶️ تشغيل الماسح</button>
+            <button id="stopButton" disabled>⏹️ إيقاف الماسح</button>
         </div>
-      </div>
 
-      <div class="muted" style="font-size:12px;margin-top:14px">السجل (محفوظ محليًا حسب المناسبة)</div>
-      <div id="hist" class="hist"></div>
-      <div class="row" style="margin-top:8px"><button id="clearHist" class="btn">مسح السجل</button></div>
-    </div>
-  </div>
+        <div id="videoContainer">
+            <video id="video" playsinline muted></video>
+        </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+        <h3>النتيجة:</h3>
+        <p id="result">لا يوجد باركود مقروء حالياً.</p>
+    </div>
 
-    <script>
-    (function(){
-      const CANDS=[
-        'https://unpkg.com/@zxing/browser@0.1.3/umd/index.min.js',
-        'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.3/umd/index.min.js',
-        'https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js',
-        'https://cdn.jsdelivr.net/npm/@zxing/library@0.18.6/umd/index.min.js'
-      ];
-      function load(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
-      window.ensureZXing=async()=>{if(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))return true;for(const u of CANDS){try{await load(u);if(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))return true;}catch(_){} }return !!(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))};
-      window.hasNativeDetector = 'BarcodeDetector' in window;
-    })();
-  </script>
-
-    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
-
-  <script>
-  (function(){
-    const $=(s,root=document)=>root.querySelector(s);
-    const T={
-      ar:{ready:'جاهز',checking:'جاري التحقق…',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',camera:'الكاميرا',manual:'إدخال يدوي',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',notfound:'❌ الكود غير موجود',mismatch:'❌ لا يخص هذه المناسبة',needHttps:'⚠️ يتطلب HTTPS',camlib:'⚠️ مكتبة الكاميرا لم تُحمّل',paused:'⏸️ إيقاف مؤقت',needEvent:'الرجاء تعيين اسم المناسبة أولاً'},
-      en:{ready:'Ready',checking:'Checking…',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',camera:'Camera',manual:'Manual input',ok:'✅ Accepted',dupe:'⚠️ Already used',notfound:'❌ Code not found',mismatch:'❌ Not this event',needHttps:'⚠️ HTTPS required',camlib:'⚠️ Camera lib not loaded',paused:'⏸️ Paused',needEvent:'Please set the event name first'}
-    };
-    let LANG=localStorage.getItem('hs:evscan:lang')||'ar';
-    function i18n(){ const L=T[LANG]; $('#langBtn').textContent = (LANG==='ar'?'EN':'AR'); $('#statusText').textContent=L.ready; $('#lblCam').textContent=L.camera; $('#lblManual').textContent=L.manual; $('#startBtn').textContent=L.start; $('#stopBtn').textContent=L.stop; $('#switchBtn').textContent=L.switch; $('#torchBtn').textContent=L.flash; }
-
-    // ===== Firebase =====
-    const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
-    if(!firebase.apps.length){ firebase.initializeApp(cfg); }
-    const db=firebase.firestore();
-
-    // ===== Event handling =====
-    const URL_EVENT = new URLSearchParams(location.search).get('event');
-    let EVENT_LOCKED = false; // true إذا محدد من URL
-    let EVENT_NAME = '';
-
-    function setEvent(name, locked=false){
-      EVENT_NAME = String(name||'').trim();
-      EVENT_LOCKED = !!locked;
-      $('#evTag').textContent = EVENT_NAME || '—';
-      localStorage.setItem('hs:evscan:event', EVENT_NAME);
-      renderHist();
-      $('#evSetup')?.classList?.add?.('hidden');
-      $('#startBtn').disabled = !httpsOK() || !EVENT_NAME;
-      $('#manualBtn').disabled = !EVENT_NAME;
-    }
-
-    function initEvent(){
-      const saved = localStorage.getItem('hs:evscan:event')||'';
-      if(URL_EVENT){ setEvent(URL_EVENT, true); }
-      else if(saved){ setEvent(saved, false); }
-      else { // اطلب من المستخدم التعيين
-        // أضف بطاقة إدخال أسفل التوب بار
-        const card=document.createElement('div'); card.className='card'; card.id='evSetup';
-        card.innerHTML=`<div class="muted" style="margin-bottom:6px">اكتب اسم المناسبة بالضبط كما هو في Firestore (الحقل EventName)</div>
-        <div class="row"><input id="evInput" class="input" placeholder="مثال: زفاف سعيد" /><button id="saveEv" class="btn">حفظ</button></div>`;
-        document.querySelector('.container').prepend(card);
-        $('#startBtn').disabled = true; $('#manualBtn').disabled=true;
-        $('#saveEv').addEventListener('click', ()=>{ const v=$('#evInput').value.trim(); if(!v) return alert('أدخل اسم المناسبة'); if(scanning){ stop(); } setEvent(v,false); });
-      }
-    }
-
-    // HTTPS guard
-    function httpsOK(){ const isLocal = ['localhost','127.0.0.1'].includes(location.hostname); const ok = location.protocol==='https:'||isLocal; $('#httpsWarn').style.display = ok? 'none':'block'; if(!ok) { $('#startBtn').disabled=true; } return ok; }
-
-    // History per event
-    function hKey(){ return `hs:evscan:hist:${EVENT_NAME||'__NONE__'}` }
-    function getHist(){ try{ return JSON.parse(localStorage.getItem(hKey())||'[]'); }catch{return []} }
-    function pushHist(code,msg,good){ const h=getHist(); h.unshift({code,msg,at:Date.now(),good}); localStorage.setItem(hKey(), JSON.stringify(h.slice(0,80))); renderHist(); }
-    function renderHist(){ const box=$('#hist'); const L=T[LANG]; box.innerHTML=''; const h=getHist(); if(!EVENT_NAME){ box.innerHTML = `<div class="muted">${L.needEvent}</div>`; return; } if(!h.length){ box.innerHTML = `<div class="muted">—</div>`; return; } h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='6px'; d.style.borderTop='1px solid var(--line)'; d.innerHTML = `<div class="mono">${x.code}</div><div class=\"muted\" style=\"font-size:12px\">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); }); }
-
-    // ===== Audio (WebAudio, unlocked on Start) =====
-    let audioCtx=null;
-    function ensureAudio(){ try{ if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended') audioCtx.resume(); }catch{} }
-    window.__hsPlayTone = function(type='ok'){
-      if(document.getElementById('soundMode')?.value==='off') return;
-      try{
-        ensureAudio(); if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
-        o.type='sine'; o.frequency.value = (type==='ok')? 880 : 220; const now=audioCtx.currentTime; const dur=(type==='ok')?0.12:0.22;
-        o.connect(g); g.connect(audioCtx.destination);
-        g.gain.setValueAtTime(0.0001, now);
-        g.gain.exponentialRampToValueAtTime(0.2, now+0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, now+dur);
-        o.start(); o.stop(now+dur+0.02);
-      }catch{}
-    }
-
-    // UI helpers
-    function setStatus(text,color){ $('#statusText').textContent=text; $('#statusDot').style.background=color; }
-    function drawQRPreview(text){ const c=$('#qrCanvas'); if(!c) return; try{ if(!text){ const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); return; } QRCode.toCanvas(c, text, {width:120, margin:1}, ()=>{}); }catch{} }
-    
-    // 🟢 الدالة الجديدة لتغيير لون الشاشة (الفلاش)
-    function flashScreen(good) {
-        const wrap = $('#scanWrap');
-        if (!wrap) return;
-
-        // إزالة أي فئات حالة سابقة
-        wrap.classList.remove('status-ok', 'status-bad');
+    <script>
+        const $ = s => document.querySelector(s);
+        const video = $('#video');
+        const startButton = $('#startButton');
+        const stopButton = $('#stopButton');
+        const resultElement = $('#result');
+        const videoContainer = $('#videoContainer');
         
-        // تحديد فئة الحالة الجديدة
-        const statusClass = good ? 'status-ok' : 'status-bad';
-        wrap.classList.add(statusClass);
-
-        // إزالة فئة الحالة بعد 300 مللي ثانية (لتوفير وميض)
-        setTimeout(() => {
-            wrap.classList.remove(statusClass);
-        }, 300); 
-    }
-
-    // 🟢 تعديل دالة عرض النتيجة الأخيرة لاستدعاء الوميض
-    function showLast(code,msg,good){ 
-        $('#lastCode').textContent=code||'—'; 
-        $('#lastCode').style.color = good? '#86efac':'#fca5a5'; 
-        $('#lastMsg').textContent=msg||''; 
-        drawQRPreview(code||''); 
+        let codeReader;
+        let stream;
         
-        // استدعاء دالة وميض الشاشة
-        flashScreen(good);
+        // 1. تشغيل الماسح
+        startButton.addEventListener('click', async () => {
+            if (codeReader) {
+                // منع التشغيل المزدوج
+                return;
+            }
 
-        try{ 
-            window.__hsPlayTone(good? 'ok':'err'); 
-            navigator.vibrate?.(good? 60:120); 
-        }catch{} 
-    }
+            try {
+                // تهيئة قارئ ZXing
+                codeReader = new ZXing.BrowserMultiFormatReader();
 
-    // Camera state
-    let devices=[], currentDeviceId=null, track=null, scanning=false, torch=false, rafId=null; let reader=null, ndet=null; let locked=false; function lockPause(){ locked=true; const ms = Math.max(300, parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
+                // طلب الوصول إلى الكاميرا
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = stream;
+                
+                // تشغيل الفيديو والبدء في تحليل الإطارات
+                codeReader.decodeFromStream(stream, video, (result, err) => {
+                    if (result) {
+                        const code = result.getText();
+                        resultElement.textContent = `الكود المقروء: ${code}`;
+                        // يمكنك هنا إضافة منطق لمعالجة الكود (مثل التحقق من قاعدة بيانات)
+                        
+                        // 🌟 لإضافة تأثير الاحترافية (وميض أخضر عند القراءة)
+                        videoContainer.style.backgroundColor = '#4CAF50';
+                        setTimeout(() => { videoContainer.style.backgroundColor = '#000'; }, 150);
+                    }
+                    if (err && !(err instanceof ZXing.NotFoundException)) {
+                        console.error(err);
+                    }
+                });
 
-    // Regex/Strict helpers
-    function strictOn(){ return (document.getElementById('strictMode')?.value||'on')==='on'; }
-    function codeRegex(){ try{ return new RegExp(document.getElementById('codeRegex')?.value||''); }catch{ return null; } }
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                resultElement.textContent = 'الماسح يعمل... يرجى توجيه الكاميرا نحو الباركود.';
 
-    async function ensurePerm(){ try{ const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); tmp.getTracks().forEach(t=>t.stop()); }catch{} }
-    async function listCams(){ const all=await navigator.mediaDevices.enumerateDevices(); devices = all.filter(d=>d.kind==='videoinput'); const sel=$('#cameraSelect'); sel.innerHTML=''; devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label||`Camera ${i+1}`; sel.appendChild(o); }); if(devices.length){ if(!currentDeviceId){ const back=devices.find(d=>/back|rear|environment|خلف/i.test(d.label||'')); currentDeviceId = back? back.deviceId : devices[0].deviceId; } sel.value=currentDeviceId; }
-    }
+            } catch (error) {
+                console.error('فشل الوصول إلى الكاميرا:', error);
+                alert('لا يمكن الوصول إلى الكاميرا. يرجى التأكد من استخدام HTTPS أو localhost وإعطاء الإذن.');
+                stopScanning();
+            }
+        });
 
-    async function start(){ locked=false; ensureAudio(); if(!EVENT_NAME){ alert(T[LANG].needEvent); return; } if(!httpsOK()) { alert(T[LANG].needHttps); return; } await ensurePerm(); await listCams(); const video=$('#video'); const dev=$('#cameraSelect').value||currentDeviceId; currentDeviceId=dev; const stream = await navigator.mediaDevices.getUserMedia({video:{deviceId: dev? {exact:dev}:undefined, focusMode:'continuous'}, audio:false}); video.srcObject=stream; await video.play().catch(()=>{}); track = stream.getVideoTracks()[0]||null; scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false; setStatus(T[LANG].ready,'#22c55e');
-      const zxingOk = await window.ensureZXing();
-      if(zxingOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){
-        try{
-          if(window.ZXing && window.ZXing.BarcodeFormat && window.ZXing.DecodeHintType){
-            const hints = new Map();
-            hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, [window.ZXing.BarcodeFormat.QR_CODE]);
-            reader = new window.ZXing.BrowserMultiFormatReader(hints);
-          }else{
-            reader = new window.ZXing.BrowserMultiFormatReader();
-          }
-        }catch{ reader = new window.ZXing.BrowserMultiFormatReader(); }
-        reader.decodeFromVideoDevice(dev||null, video, (res,err)=>{ if(res){ if(locked) return; const text = res.getText? res.getText(): (res.text||''); handleRawScan(String(text||'').trim()); } });
-      }
-      else if('BarcodeDetector' in window){
-        ndet = new window.BarcodeDetector({formats:['qr_code']});
-        const loop=async()=>{ if(!scanning) return; try{ if(!locked){ const bar=await ndet.detect(video); if(bar && bar.length){ handleRawScan(String(bar[0].rawValue||'').trim()); } } }catch{} rafId = requestAnimationFrame(loop); }; loop();
-      } else {
-        alert(T[LANG].camlib); setStatus(T[LANG].camlib,'#f59e0b');
-      }
-    }
+        // 2. إيقاف الماسح
+        stopButton.addEventListener('click', stopScanning);
 
-    async function stop(){ try{ if(reader){ try{reader.reset();}catch{} reader=null; } if(rafId){ cancelAnimationFrame(rafId); rafId=null; } if(track){ try{track.stop();}catch{} track=null; } const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; setStatus(T[LANG].paused,'#f59e0b'); }
-
-    async function switchCam(){ if(!devices.length) return; const idx=devices.findIndex(d=>d.deviceId===currentDeviceId); const next=devices[(idx+1)%devices.length]; currentDeviceId=next.deviceId; $('#cameraSelect').value=currentDeviceId; if(scanning){ await stop(); await start(); } }
-
-    async function toggleTorch(){ try{ if(!track) return; const caps=track.getCapabilities?.(); if(!caps?.torch) return alert('No torch'); const on = caps.torch && !(track.getConstraints()?.advanced?.[0]?.torch); await track.applyConstraints({advanced:[{torch: on}]}); }catch(e){ alert('Torch error'); } }
-
-    // ===== Verification (event-locked)
-    // 🟢 تم تعديل verifyAndMark لإعادة ضبط حالة dot إلى "جاهز" بعد العرض
-    async function verifyAndMark(code){ 
-        const L=T[LANG]; 
-        setStatus(L.checking,'#f59e0b'); // جاري التحقق
-      try{
-        if(!EVENT_NAME){ 
-            showLast(code, L.needEvent, false); 
-            setStatus(L.paused,'#f59e0b'); // إعادة إلى حالة الإيقاف المؤقت
-            return; 
+        function stopScanning() {
+            if (codeReader) {
+                codeReader.reset();
+                codeReader = null;
+            }
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            video.srcObject = null;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            resultElement.textContent = 'لا يوجد باركود مقروء حالياً.';
+            videoContainer.style.backgroundColor = '#000';
         }
-        const ref = db.collection('invites');
-        const q = await ref.where('Code','==',code).where('EventName','==',EVENT_NAME).limit(1).get();
-        if(q.empty){ 
-            showLast(code,L.mismatch,false); 
-            pushHist(code,L.mismatch,false); 
-            setStatus(L.ready,'#22c55e'); // إعادة إلى حالة جاهز
-            return; 
-        }
-        const doc = q.docs[0]; 
-        const data = doc.data()||{};
-        if(String((data.Status||'')).toLowerCase()==='yes'){
-          showLast(code,L.dupe,false); 
-            pushHist(code,L.dupe,false); 
-            setStatus(L.ready,'#22c55e'); // إعادة إلى حالة جاهز
-        } else {
-          await doc.ref.set({ Status:'yes', scannedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-          showLast(code,L.ok,true); 
-            pushHist(code,L.ok,true);
-            setStatus(L.ready,'#22c55e'); // إعادة إلى حالة جاهز
-        }
-      }catch(e){ 
-        showLast(code, e.message||'Error', false); 
-        pushHist(code, e.message||'Error', false); 
-        setStatus(L.ready,'#22c55e'); // إعادة إلى حالة جاهز
-    }
-    }
-
-    function onCode(text){ if(!text) return; if(locked) return; lockPause(); verifyAndMark(text); }
-
-    function handleRawScan(raw){
-      const strict = strictOn();
-      const re = codeRegex();
-      if(strict){ if(!re) return; if(!re.test(raw)) return; }
-      onCode(raw);
-    }
-
-    // Wire
-    document.addEventListener('DOMContentLoaded', ()=>{
-      i18n(); httpsOK(); initEvent(); renderHist(); drawQRPreview('');
-      // حجم القارئ
-      const savedW = localStorage.getItem('hs:evscan:scanw');
-      if(savedW && document.getElementById('scanSize')){
-        document.getElementById('scanSize').value = savedW;
-      }
-      applyScanSize();
-      document.getElementById('scanSize')?.addEventListener('change', applyScanSize);
-
-      $('#langBtn').addEventListener('click', ()=>{ LANG= (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:evscan:lang',LANG); i18n(); renderHist(); });
-      $('#startBtn').addEventListener('click', ()=>{ ensureAudio(); start(); });
-      $('#stopBtn').addEventListener('click', stop);
-      $('#switchBtn').addEventListener('click', switchCam);
-      $('#torchBtn').addEventListener('click', toggleTorch);
-      $('#manualBtn').addEventListener('click', ()=>{ ensureAudio(); const c=$('#manualCode').value.trim(); if(!c){return;} handleRawScan(c); });
-      $('#clearHist').addEventListener('click', ()=>{ if(!EVENT_NAME) return; localStorage.removeItem(hKey()); renderHist(); });
-
-      $('#setEventBtn').addEventListener('click', ()=>{
-        if(EVENT_LOCKED){ alert('تم تعيين الحدث من خلال رابط الصفحة ولا يمكن تغييره.'); return; }
-        const ex=document.getElementById('evSetup');
-        if(ex){ ex.classList.toggle('hidden'); ex.querySelector('#evInput')?.focus(); }
-        else{
-          const card=document.createElement('div'); card.className='card'; card.id='evSetup';
-          card.innerHTML=`<div class="muted" style="margin-bottom:6px">اكتب اسم المناسبة بالضبط كما هو في Firestore (الحقل EventName)</div>
-          <div class="row"><input id="evInput" class="input" placeholder="مثال: زفاف سعيد" /><button id="saveEv" class="btn">حفظ</button></div>`;
-          document.querySelector('.container').prepend(card);
-          document.getElementById('saveEv').addEventListener('click', ()=>{ const v=document.getElementById('evInput').value.trim(); if(!v) return alert('أدخل اسم المناسبة'); if(scanning){ stop(); } setEvent(v,false); });
-        }
-      });
-    });
-
-    function applyScanSize(){
-      const wrap = document.getElementById('scanWrap'); if(!wrap) return;
-      const w = document.getElementById('scanSize')?.value || '480';
-      wrap.style.maxWidth = w + 'px';
-      localStorage.setItem('hs:evscan:scanw', w);
-    }
-  })();
-  </script>
+        
+        // عند تحميل الصفحة، تأكد من عدم وجود أي قارئ يعمل
+        document.addEventListener('DOMContentLoaded', stopScanning);
+    </script>
 </body>
 </html>
