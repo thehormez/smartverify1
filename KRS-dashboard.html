@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hormez — لوحة تحكم الحدث</title>
+  <style>
+    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--card:#0e172a;--b:#1f2937;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:40px;height:40px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center}
+    .logo span{font-weight:900;color:#ffd700}
+    .btn{appearance:none;border:1px solid #334155;background:#0b1220;color:var(--ink);border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn:hover{background:#0d1528}
+    .select,.input{width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .grid{display:grid;gap:12px}
+    .grid-2{grid-template-columns:1fr 1fr}
+    .grid-4{grid-template-columns:repeat(4,1fr)}
+    @media(max-width:900px){.grid-2{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}}
+    .kpi{display:flex;gap:12px;align-items:center}
+    .kpi .n{font-size:26px;font-weight:900}
+    .badge{padding:4px 8px;border-radius:8px;border:1px solid transparent;font-weight:700;font-size:12px}
+    .badge.ok{background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.35);color:#86efac}
+    .badge.no{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.35);color:#fca5a5}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-top:1px solid rgba(255,255,255,.08)}
+    thead th{position:sticky;top:0;background:#0e162c}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .muted{color:var(--muted)}
+    .error{color:#fda4af}
+    /* Print styles */
+    @media print { body{background:#fff;color:#000} .topbar,.gate{display:none!important} .card{border:1px solid #ccc} .badge{border:1px solid #333} }
+
+    /* =========================
+       ألوان مصمتة لمربعات الإحصائيات
+       ========================= */
+    .kpi.card { 
+      background-image: none !important; 
+      box-shadow: none !important;
+      border-color: transparent !important;
+      color: #fff;                 /* افتراضيًا أبيض */
+    }
+    .kpi.card * { color: inherit !important; }
+
+    .kpi.card.blue   { background:#1e40af !important; }  /* أزرق كامل */
+    .kpi.card.gold   { background:#b48a18 !important; color:#111 !important; } /* ذهبي كامل مع نص داكن */
+    .kpi.card.rose   { background:#be123c !important; }  /* وردي كامل */
+    .kpi.card.green  { background:#047857 !important; }  /* أخضر كامل */
+
+    /* تحسين عرض العناوين داخل KPIs */
+    .kpi.card h4,
+    .kpi.card .muted { font-weight:700; opacity:1 }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="topbar">
+    <div class="container row" style="align-items:center">
+      <div class="brand">
+        <div class="logo"><span>HS</span></div>
+        <div>
+          <div class="muted" style="font-size:12px">HORMEZ SECURITY</div>
+          <div style="font-weight:800">لوحة تحكم الحدث — <span id="evNameTitle">—</span></div>
+          <div class="muted" style="font-size:12px">الحضور المباشر وحالة الدعوات</div>
+        </div>
+      </div>
+      <div style="margin-inline-start:auto" class="row">
+        <button id="langBtn" class="btn">AR</button>
+        <button id="refreshBtn" class="btn">↻ تحديث</button>
+        <button id="logoutBtn" class="btn" style="display:none">🚪 خروج</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- بوابة كلمة المرور الخاصة بالحدث -->
+    <div class="card gate" id="gate">
+      <div class="row" style="align-items:end">
+        <div style="flex:1;min-width:200px">
+          <div class="muted" id="lblEvent">الحدث</div>
+          <input id="eventInput" class="input" />
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div class="muted" id="lblPass">كلمة المرور</div>
+          <input id="passInput" type="password" class="input" />
+        </div>
+        <div style="display:flex;gap:8px;align-items:end">
+          <button id="enterBtn" class="btn">دخول</button>
+        </div>
+      </div>
+      <div id="gateMsg" class="error" style="margin-top:8px"></div>
+    </div>
+
+    <div id="content" style="display:none">
+      <!-- أدوات البحث والطباعة والتاريخ -->
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="muted" id="lblSearch" style="font-size:12px">ابحث عن كود…</div>
+          <input id="searchInput" class="input" placeholder="FA_001" />
+        </div>
+        <div class="card" style="display:flex;gap:8px;align-items:end">
+          <div style="flex:1">
+            <div class="muted" id="lblFrom" style="font-size:12px">من تاريخ</div>
+            <input id="dateFrom" type="date" class="input" />
+          </div>
+          <div style="flex:1">
+            <div class="muted" id="lblTo" style="font-size:12px">إلى تاريخ</div>
+            <input id="dateTo" type="date" class="input" />
+          </div>
+          <button id="applyDate" class="btn">تطبيق</button>
+          <button id="clearDate" class="btn">مسح</button>
+          <button id="exportBtn" class="btn">⤓ CSV</button>
+          <button id="printBtn" class="btn">🖨️ طباعة</button>
+        </div>
+      </div>
+
+      <!-- KPIs (أضفنا كلاسات الألوان هنا) -->
+      <div class="grid grid-4" style="margin-top:12px">
+        <div class="card kpi blue">
+          <div class="muted" id="kpiTotalLbl">الإجمالي</div>
+          <div id="kpiTotal" class="n">—</div>
+        </div>
+        <div class="card kpi gold">
+          <div class="muted" id="kpiUsedLbl">المستخدم</div>
+          <div id="kpiUsed" class="n">—</div>
+        </div>
+        <div class="card kpi rose">
+          <div class="muted" id="kpiLeftLbl">المتبقي</div>
+          <div id="kpiLeft" class="n">—</div>
+        </div>
+        <div class="card kpi green">
+          <div class="muted" id="kpiRateLbl">نسبة الحضور</div>
+          <div id="kpiRate" class="n">—%</div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card" style="margin-top:12px">
+        <div class="muted" id="recentLbl" style="font-size:12px">أحدث المسحات (آخر 100)</div>
+        <div id="printArea" style="max-height:60vh;overflow:auto;margin-top:8px">
+          <table>
+            <thead>
+              <tr>
+                <th id="thCode">الكود</th>
+                <th id="thStatus">الحالة</th>
+                <th id="thTime">الوقت</th>
+              </tr>
+            </thead>
+            <tbody id="rowsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs (Modules) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    // ===== i18n =====
+    const STR = {
+      en: { event:"Event", pass:"Password", enter:"Enter", badpass:"Wrong password", search:"Search code…", export:"Export CSV", print:"Print", total:"Total", used:"Checked-in", left:"Remaining", rate:"Attendance", recent:"Recent scans (latest 100)", code:"Code", status:"Status", time:"Time", refreshed:"Refreshed", from:"From", to:"To", apply:"Apply", clear:"Clear" },
+      ar: { event:"الحدث", pass:"كلمة المرور", enter:"دخول", badpass:"كلمة المرور غير صحيحة", search:"ابحث عن كود…", export:"تصدير CSV", print:"طباعة", total:"الإجمالي", used:"المستخدم", left:"المتبقي", rate:"نسبة الحضور", recent:"أحدث المسحات (آخر 100)", code:"الكود", status:"الحالة", time:"الوقت", refreshed:"تم التحديث", from:"من تاريخ", to:"إلى تاريخ", apply:"تطبيق", clear:"مسح" }
+    };
+    const $ = (s,root=document)=>root.querySelector(s);
+
+    const state = { lang: localStorage.getItem('hs:dash:lang')||'ar', ev:'', pass:'' };
+
+    function applyLang(){
+      const L = STR[state.lang] || STR.en; const isAr = state.lang==='ar';
+      document.documentElement.lang = state.lang; document.documentElement.dir = isAr?'rtl':'ltr';
+      $('#langBtn').textContent = isAr? 'EN' : 'AR';
+      $('#lblEvent').textContent = L.event; $('#lblPass').textContent = L.pass; $('#enterBtn').textContent = L.enter;
+      $('#lblSearch').textContent = L.search; $('#exportBtn').textContent = (isAr? '⤓ ' : '') + L.export; $('#printBtn').textContent = '🖨️ ' + L.print;
+      $('#kpiTotalLbl').textContent = L.total; $('#kpiUsedLbl').textContent = L.used; $('#kpiLeftLbl').textContent = L.left; $('#kpiRateLbl').textContent = L.rate;
+      $('#recentLbl').textContent = L.recent; $('#thCode').textContent = L.code; $('#thStatus').textContent = L.status; $('#thTime').textContent = L.time;
+      $('#lblFrom').textContent = L.from; $('#lblTo').textContent = L.to; $('#applyDate').textContent = L.apply; $('#clearDate').textContent = L.clear;
+    }
+
+    // ===== Firebase =====
+    const firebaseConfig = { apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv", storageBucket:"hormez-inv.firebasestorage.app", messagingSenderId:"747519941805", appId:"1:747519941805:web:468fada2492700e9da3a24" };
+    const app = initializeApp(firebaseConfig); const db = getFirestore(app);
+
+    // ضع اسم الحدث وكلمة المرور لهذه الصفحة فقط:
+    const PAGE_EVENT = 'haddad';
+    const PAGE_PASSWORD = '8888';
+
+    const sessKey = ()=> `hs:dash:event:${PAGE_EVENT}`;
+
+    function openContent(){
+      $('#gate').style.display='none'; $('#content').style.display='block'; $('#logoutBtn').style.display='inline-block';
+      $('#evNameTitle').textContent = PAGE_EVENT; startStream();
+    }
+
+    function handleEnter(){
+      const ev = ($('#eventInput').value||'').trim();
+      const pw = ($('#passInput').value||'').trim();
+      if(ev!==PAGE_EVENT){ $('#gateMsg').textContent = '❌ اسم الحدث غير صحيح لهذه الصفحة'; return; }
+      if(PAGE_PASSWORD && pw!==PAGE_PASSWORD){ $('#gateMsg').textContent = STR[state.lang].badpass; return; }
+      localStorage.setItem(sessKey(),'ok'); openContent();
+    }
+
+    function tryAutoLogin(){
+      const passParam = new URLSearchParams(location.search).get('pass');
+      if(localStorage.getItem(sessKey())==='ok' || (PAGE_PASSWORD && passParam===PAGE_PASSWORD) || !PAGE_PASSWORD){
+        $('#eventInput').value = PAGE_EVENT; openContent();
+      }else{
+        $('#eventInput').value = PAGE_EVENT;
+      }
+    }
+
+    function logout(){ localStorage.removeItem(sessKey()); location.href = location.pathname; }
+    window.logout = logout; // للزر
+
+    let unsub=null; let allRows=[]; let filtRows=[]; let from='', to='';
+
+    function startStream(){
+      if(unsub) unsub();
+      const ref = collection(db,'invites');
+      const qEv = query(ref, where('EventName','==', PAGE_EVENT));
+      unsub = onSnapshot(qEv, snap=>{
+        let t=0,u=0; const rec=[];
+        snap.forEach(d=>{ const x=d.data(); t++; if((x.Status||'').toLowerCase()==='yes') u++; if(x.scannedAt?.toDate?.()) rec.push({id:d.id,Code:x.Code||d.id,Status:x.Status||'no',scannedAt:x.scannedAt.toDate()}); });
+        renderKPIs(t,u); allRows = rec.sort((a,b)=>(b.scannedAt?.getTime?.()||0)-(a.scannedAt?.getTime?.()||0));
+        applyFilters();
+      });
+    }
+
+    function withinDateRange(d){ if(!d) return false; const ts=d.getTime(); if(from){const f=new Date(from+"T00:00:00").getTime(); if(ts<f) return false;} if(to){const t=new Date(to+"T23:59:59").getTime(); if(ts>t) return false;} return true; }
+
+    function applyFilters(){
+      const q = ($('#searchInput').value||'').trim().toLowerCase();
+      let list = allRows;
+      if(from||to) list = list.filter(r=> withinDateRange(r.scannedAt));
+      if(q) list = list.filter(r=> (r.Code||'').toLowerCase().includes(q));
+      filtRows = list.slice(0,100);
+      renderRows();
+    }
+
+    function renderKPIs(total, used){ const left=Math.max(total-used,0); const rate= total>0? Math.round((used/total)*100):0; $('#kpiTotal').textContent=total; $('#kpiUsed').textContent=used; $('#kpiLeft').textContent=left; $('#kpiRate').textContent=rate+'%'; }
+
+    function renderRows(){
+      const L = STR[state.lang]||STR.en; const isAr = state.lang==='ar'; const tb=$('#rowsBody'); tb.innerHTML='';
+      if(filtRows.length===0){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=3; td.className='muted'; td.style.textAlign='center'; td.style.padding='18px'; td.textContent=isAr?'لا توجد مسحات':'No scans yet'; tr.appendChild(td); tb.appendChild(tr); return; }
+      for(const r of filtRows){
+        const tr=document.createElement('tr');
+        const td1=document.createElement('td'); td1.className='mono'; td1.textContent=r.Code; tr.appendChild(td1);
+        const td2=document.createElement('td'); const b=document.createElement('span'); const ok=(r.Status||'no').toLowerCase()==='yes'; b.className='badge ' + (ok? 'ok':'no'); b.textContent= ok ? (isAr?'yes':'yes') : (isAr?'no':'no'); td2.appendChild(b); tr.appendChild(td2);
+        const td3=document.createElement('td'); td3.textContent= r.scannedAt ? r.scannedAt.toLocaleString(isAr?'ar-EG':'en-GB') : '—'; tr.appendChild(td3);
+        tb.appendChild(tr);
+      }
+    }
+
+    function exportCSV(){
+      const L = STR[state.lang]||STR.en; const header=[L.code,L.status,'EventName',L.time].join(',');
+      const lines = filtRows.map(r=> [r.Code, r.Status, PAGE_EVENT, r.scannedAt? new Date(r.scannedAt).toISOString():'' ].join(','));
+      const csv=[header,...lines].join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`hormez-${PAGE_EVENT}-scans.csv`; a.click(); URL.revokeObjectURL(url);
+    }
+
+    function printTable(){ window.print(); }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      $('#eventInput').value = PAGE_EVENT; $('#evNameTitle').textContent = PAGE_EVENT;
+      applyLang(); tryAutoLogin();
+      $('#langBtn').addEventListener('click', ()=>{ state.lang = state.lang==='ar'?'en':'ar'; localStorage.setItem('hs:dash:lang', state.lang); applyLang(); renderRows(); });
+      $('#refreshBtn').addEventListener('click', ()=> location.reload());
+      $('#logoutBtn').addEventListener('click', logout);
+      $('#enterBtn').addEventListener('click', handleEnter);
+      $('#passInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleEnter(); } });
+      $('#searchInput').addEventListener('input', applyFilters);
+      $('#applyDate').addEventListener('click', ()=>{ from=$('#dateFrom').value||''; to=$('#dateTo').value||''; applyFilters(); });
+      $('#clearDate').addEventListener('click', ()=>{ from=''; to=''; $('#dateFrom').value=''; $('#dateTo').value=''; applyFilters(); });
+      $('#exportBtn').addEventListener('click', exportCSV);
+      $('#printBtn').addEventListener('click', printTable);
+    });
+  </script>
+</body>
+</html>
