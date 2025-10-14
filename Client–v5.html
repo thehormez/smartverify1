@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>مركز الإرسال — أسود/ذهبي + حفظ تلقائي + رصيد كروت</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>مركز الإرسال — نسخة الجوال (أسود/ذهبي)</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -12,90 +12,146 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
   <style>
-    :root{ --bg:#0b0b0c; --panel:#14151a; --panel-2:#111217; --stroke:#27282f; --gold:#d4af37; --txt:#e7e7e7; --muted:#a7a7a7; --danger:#ef4444; --ok:#25d366 }
-    *{ box-sizing:border-box }
+    :root{
+      --bg:#0b0b0c; --panel:#14151a; --panel-2:#111217; --stroke:#2a2b32;
+      --gold:#d4af37; --txt:#e7e7e7; --muted:#a7a7a7; --danger:#ef4444; --ok:#25d366
+    }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
     html,body{ height:100% }
     body{ margin:0; font-family:'Noto Sans Arabic', system-ui, -apple-system, Segoe UI, Arial; background:var(--bg); color:var(--txt) }
-    .container{ max-width:1280px; margin:0 auto; padding:16px }
+    .container{ max-width:1200px; margin:0 auto; padding:16px }
 
-    .topbar{ position:sticky; top:0; z-index:50; background:linear-gradient(180deg, rgba(10,10,12,.9), rgba(10,10,12,.75)); border-bottom:1px solid var(--stroke); backdrop-filter:blur(6px) }
+    /* Topbar */
+    .topbar{ position:sticky; top:0; z-index:50; background:linear-gradient(180deg, rgba(10,10,12,.95), rgba(10,10,12,.8)); border-bottom:1px solid var(--stroke); backdrop-filter:blur(6px) }
     .brand{ display:flex; align-items:center; gap:10px; font-weight:900 }
     .brand .dot{ width:12px; height:12px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ffe8a3, var(--gold)) }
-    .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
-    .field{ width:auto; min-width:200px; padding:8px 10px; border-radius:10px; border:1px solid var(--stroke); background:#0f1013; color:var(--txt) }
-    .btn{ border:1px solid var(--stroke); background:#0f1013; color:#fff; padding:9px 12px; border-radius:10px; cursor:pointer; font-weight:800 }
+    .event-name{ font-weight:900; background:linear-gradient(90deg,#ffe8a3,#d4af37); -webkit-background-clip:text; background-clip:text; color:transparent }
+
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+    .btn{
+      border:1px solid var(--stroke); background:#121318; color:#fff; padding:12px 14px; border-radius:12px;
+      cursor:pointer; font-weight:800; font-size:16px; min-height:44px
+    }
+    .btn:active{ transform:scale(0.99) }
     .btn.gold{ background:linear-gradient(180deg, #2a2211, #1f1a0d); border-color:var(--gold) }
     .btn.warn{ border-color:#7a1f1f }
     .btn.ok{ border-color:#1b8c4f }
-    .hint{ color:var(--muted); font-size:12px }
+    .hint{ color:var(--muted); font-size:13px }
 
-    .tabs{ display:flex; gap:8px; padding:10px 0; flex-wrap:wrap }
-    .tab{ border:1px solid var(--stroke); background:#111217; color:#ddd; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:800 }
+    /* Tabs */
+    .tabs{ display:flex; gap:10px; padding:12px 0; flex-wrap:wrap }
+    .tab{
+      border:1px solid var(--stroke); background:#111217; color:#ddd; padding:12px 16px; border-radius:14px;
+      cursor:pointer; font-weight:800; font-size:15px; min-height:44px
+    }
     .tab.active{ border-color:var(--gold); color:#fff }
     .section{ display:none }
     .section.active{ display:block }
 
-    .card{ background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--stroke); border-radius:16px; padding:16px }
-    table{ width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:14px; margin-top:10px }
-    thead th{ background:linear-gradient(180deg, #222328, #1a1b20); color:#f6f6f6; border-bottom:1px solid var(--stroke); padding:12px; text-align:right; font-weight:900 }
-    tbody td{ padding:12px; border-bottom:1px solid var(--stroke) }
+    /* Cards & KPI */
+    .card{ background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--stroke); border-radius:18px; padding:16px }
+    /* ألوان فخمة قابلة للتبديل */
+    .card.gold{ border-color:#b48a18; background:linear-gradient(180deg,#1a160a,#141108) }
+    .card.emerald{ border-color:#146c43; background:linear-gradient(180deg,#0e1a15,#0c1612) }
+    .card.sapphire{ border-color:#1e3a8a; background:linear-gradient(180deg,#0f1320,#0d111b) }
+    .card.rose{ border-color:#7f1d1d; background:linear-gradient(180deg,#1c1113,#170f11) }
+
+    .kpi{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px }
+    .kpi .card h4{ margin:0; font-size:13px; color:#cfcfcf }
+    .kpi .card .num{ font-size:22px; font-weight:900; margin-top:6px; color:#fafafa }
+
+    .pill{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--stroke); border-radius:999px; background:#0f1013; color:#ddd; font-size:12px }
+
+    /* Table -> Card on mobile */
+    table{ width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:16px; margin-top:10px }
+    thead th{
+      background:linear-gradient(180deg, #222328, #1a1b20); color:#f6f6f6; border-bottom:1px solid var(--stroke);
+      padding:12px; text-align:right; font-weight:900; font-size:14px
+    }
+    tbody td{ padding:12px; border-bottom:1px solid var(--stroke); font-size:15px }
     tbody tr:hover{ background:rgba(212,175,55,0.05) }
     .editable{ cursor:pointer; color:#ffd76a; font-weight:800; text-decoration:underline dotted rgba(212,175,55,.6); text-underline-offset:3px }
 
-    .kpi{ display:grid; grid-template-columns: repeat(4, 1fr); gap:10px }
-    .kpi .card{ text-align:center }
-    .pill{ display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid var(--stroke); border-radius:999px; background:#0f1013; color:#ddd; font-size:12px }
+    /* Auth modal */
+    .overlay{ position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.7), rgba(0,0,0,.8)); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; z-index:100 }
+    .modal{ width:100%; max-width:520px; background:linear-gradient(180deg, #16171b, #121317); border:1px solid var(--stroke); border-radius:18px; padding:18px }
+    .title{ margin:0 0 10px; font-weight:900; font-size:22px }
+
+    /* Mobile adjustments */
+    @media (max-width: 640px){
+      .container{ padding:12px }
+      .tabs{ gap:8px }
+      .tab{ flex:1; text-align:center; padding:10px 8px; font-size:14px }
+      .kpi{ grid-template-columns:1fr 1fr }
+      .btn.block{ width:100% }
+      /* table -> card list */
+      table thead{ display:none }
+      table, tbody, tr, td{ display:block; width:100% }
+      tbody tr{ border:1px solid var(--stroke); border-radius:14px; margin-bottom:10px; overflow:hidden }
+      tbody td{ display:flex; justify-content:space-between; gap:12px }
+      tbody td::before{
+        content:attr(data-label);
+        color:#bdbdbd; font-weight:700
+      }
+      td.actions{ display:block }
+      .actions .btn{ width:100%; margin-top:8px }
+    }
   </style>
 </head>
 <body>
-  <!-- بوابة الدخول اليدوي -->
+  <!-- بوابة الدخول (يظهر فيها اسم الحدث + الباسورد فقط) -->
   <div id="authGate" class="overlay" style="display:none">
-    <div class="modal" style="width:100%; max-width:460px; background:linear-gradient(180deg, #16171b, #121317); border:1px solid var(--stroke); border-radius:18px; padding:18px">
-      <h3 class="title" style="margin:0 0 8px; font-weight:900; font-size:22px">🔐 دخول الحدث</h3>
-      <div class="hint">اكتب <b>اسم الحدث</b> و<b>كلمة المرور</b>. الحدث الجديد يُسجِّل كلمة المرور هذه.</div>
-      <div class="row" style="margin-top:10px; justify-content:space-between">
-        <input id="authEvent" class="field" placeholder="اسم الحدث" />
-        <input id="authPass" type="password" class="field" placeholder="كلمة المرور" />
-        <button class="btn gold" onclick="authLogin()">دخول</button>
+    <div class="modal">
+      <h3 class="title">🔐 دخول الحدث</h3>
+      <div class="hint">أدخل <b>اسم الحدث</b> و<b>كلمة المرور</b>. الحدث الجديد يسجل كلمة مروره.</div>
+      <div class="row" style="margin-top:10px; flex-wrap:wrap">
+        <input id="authEvent" class="btn" style="flex:1" placeholder="اسم الحدث" />
+        <input id="authPass" type="password" class="btn" style="flex:1" placeholder="كلمة المرور" />
+        <button class="btn gold block" style="width:100%" onclick="authLogin()">دخول</button>
       </div>
       <div id="authErr" class="hint" style="color:#ffb3b3; margin-top:8px"></div>
     </div>
   </div>
 
-  <!-- الشريط العلوي -->
+  <!-- الشريط العلوي (عرض اسم الحدث فقط + خروج) -->
   <div class="topbar">
     <div class="container" style="display:flex; align-items:center; justify-content:space-between; gap:12px">
       <div class="brand"><span class="dot"></span><span>مركز الإرسال</span></div>
       <div class="row">
-        <input id="topEvent" class="field" placeholder="اسم الحدث" />
-        <input id="topPass" type="password" class="field" placeholder="كلمة المرور" />
-        <button class="btn gold" onclick="saveTopMeta()">حفظ</button>
+        <span id="currentEvent" class="event-name"></span>
         <button class="btn warn" onclick="logout()">خروج</button>
       </div>
     </div>
   </div>
 
   <main class="container">
-    <!-- إدارة الدعوات + رصيد الكروت -->
-    <section class="kpi" style="margin:10px 0 16px">
-      <div class="card"><div class="hint">إجمالي الدعوات</div><div style="font-size:22px; font-weight:900" id="kpiTotal">0</div></div>
-      <div class="card"><div class="hint">الدعوات المُرسلة</div><div style="font-size:22px; font-weight:900" id="kpiSent">0</div></div>
-      <div class="card"><div class="hint">المتبقية (غير مُرسلة)</div><div style="font-size:22px; font-weight:900" id="kpiRemain">0</div></div>
-      <div class="card">
-        <div class="hint">رصيد الكروت</div>
-        <div style="display:flex; align-items:center; gap:8px; margin-top:6px">
-          <input id="cardStock" type="number" class="field" min="0" value="0" style="min-width:120px" />
+    <!-- إدارة الدعوات + رصيد -->
+    <section class="kpi" style="margin:12px 0 16px">
+      <div class="card gold">
+        <h4>إجمالي الدعوات</h4><div class="num" id="kpiTotal">0</div>
+      </div>
+      <div class="card sapphire">
+        <h4>الدعوات المُرسلة</h4><div class="num" id="kpiSent">0</div>
+      </div>
+      <div class="card rose">
+        <h4>المتبقية</h4><div class="num" id="kpiRemain">0</div>
+      </div>
+      <div class="card emerald">
+        <h4>رصيد الكروت</h4>
+        <div class="row" style="margin-top:6px; flex-wrap:wrap">
+          <input id="cardStock" type="number" class="btn" min="0" value="0" placeholder="رصيد الكروت" style="flex:1" />
           <button class="btn gold" onclick="applyCardStock()">تطبيق</button>
-          <span class="pill">المستخدم: <b id="kpiUsedCards">0</b></span>
-          <span class="pill">المتاح للتوزيع: <b id="kpiFreeCards">0</b></span>
         </div>
-        <div class="hint" style="margin-top:6px">يمكن التحكم بالرصيد أيضاً من داخل الكود عبر <code>DEFAULT_CARD_STOCK</code>.</div>
+        <div class="row" style="gap:8px; margin-top:8px; flex-wrap:wrap">
+          <span class="pill">المستخدم: <b id="kpiUsedCards">0</b></span>
+          <span class="pill">المتاح: <b id="kpiFreeCards">0</b></span>
+        </div>
       </div>
     </section>
 
-    <!-- التبويبات -->
+    <!-- تبويبات -->
     <nav class="tabs" id="tabs">
-      <button class="tab active" data-section="#sec-home">الصفحة الرئيسية</button>
+      <button class="tab active" data-section="#sec-home">الرئيسية</button>
       <button class="tab" data-section="#sec-event">بيانات الحدث</button>
       <button class="tab" data-section="#sec-guests">إضافة الضيوف</button>
       <button class="tab" data-section="#sec-stock">مخزون الدعوات</button>
@@ -104,37 +160,37 @@
 
     <!-- الصفحات -->
     <section id="sec-home" class="section active">
-      <div class="card">
-        <h3 style="margin:0 0 8px">مرحبًا! استخدم التبويبات أعلاه للتنقّل بين الإعدادات والقوائم.</h3>
-        <div class="hint">المزامنة بين أجهزة مختلفة تتطلب تصدير/استيراد JSON (بدون سيرفر لا يمكن المزامنة التلقائية عبر الأجهزة).</div>
+      <div class="card gold">
+        <h3 style="margin:0 0 8px">مرحبًا 👋</h3>
+        <div class="hint">للمزامنة بين أجهزة مختلفة استخدم تصدير/استيراد JSON (لا يوجد سيرفر).</div>
       </div>
     </section>
 
     <section id="sec-event" class="section">
-      <div class="card">
+      <div class="card sapphire">
         <h3 style="margin:0 0 8px">🏷️ بيانات الحدث</h3>
-        <div class="row">
-          <input id="eventName" class="field" placeholder="اسم الحدث" />
+        <div class="row" style="flex-wrap:wrap">
+          <input id="eventName" class="btn" placeholder="اسم الحدث" style="flex:1" />
           <button class="btn gold" onclick="exportJSON()">💾 تصدير JSON</button>
           <input id="dataUpload" type="file" accept=".json" style="display:none" onchange="importJSONFile(this.files[0])" />
           <button class="btn" onclick="document.getElementById('dataUpload').click()">↩️ استيراد JSON</button>
         </div>
-        <div class="hint" style="margin-top:8px">الصور لا تنتقل عبر JSON — احتفظ بملفات الباركود وأعد استيرادها عند الحاجة.</div>
+        <div class="hint" style="margin-top:8px">صور الباركود لا تُحفظ داخل JSON — أعد استيرادها على كل جهاز.</div>
       </div>
     </section>
 
     <section id="sec-guests" class="section">
-      <div class="card">
+      <div class="card emerald">
         <h3 style="margin:0 0 8px">👥 إضافة الضيوف</h3>
-        <div class="row" style="margin-bottom:8px">
-          <input id="guestListUpload" type="file" class="field" style="max-width:420px" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+        <div class="row" style="margin-bottom:8px; flex-wrap:wrap">
+          <input id="guestListUpload" type="file" class="btn" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="flex:1" />
           <button class="btn gold" onclick="handleFileUpload()">✅ استيراد الضيوف</button>
-          <button class="btn ok" onclick="importFromContacts()">📱 استيراد من سجل الهاتف</button>
+          <button class="btn ok" onclick="importFromContacts()">📱 من سجل الهاتف</button>
         </div>
-        <div class="row">
-          <input id="newGuestName" class="field" placeholder="الاسم" />
-          <input id="newGuestPhone" class="field" placeholder="الهاتف (9665...)" />
-          <input id="newGuestTotalNeeded" class="field" type="number" min="1" value="1" placeholder="عدد الدعوات" />
+        <div class="row" style="flex-wrap:wrap">
+          <input id="newGuestName" class="btn" placeholder="الاسم" style="flex:1" />
+          <input id="newGuestPhone" class="btn" placeholder="الهاتف (9665...)" style="flex:1" />
+          <input id="newGuestTotalNeeded" class="btn" type="number" min="1" value="1" placeholder="عدد الدعوات" style="flex:1" />
           <button class="btn gold" onclick="addGuestManually()">➕ إضافة الضيف</button>
         </div>
         <div class="hint" style="margin-top:8px">تم تحميل <b id="guestCount">0</b> ضيف.</div>
@@ -142,10 +198,10 @@
     </section>
 
     <section id="sec-stock" class="section">
-      <div class="card">
+      <div class="card rose">
         <h3 style="margin:0 0 8px">🎟️ مخزون الدعوات (صور الباركود)</h3>
-        <div class="row">
-          <input id="barcodeUpload" type="file" class="field" accept="image/*" multiple />
+        <div class="row" style="flex-wrap:wrap">
+          <input id="barcodeUpload" type="file" class="btn" accept="image/*" multiple style="flex:1" />
           <button class="btn gold" onclick="loadBarcodes()">🗂️ استيراد صور الباركود</button>
         </div>
         <div class="hint" style="margin-top:6px">المستوردة: <b id="barcodeCount">0</b> — الأكواد: <span id="importedQrCodes">—</span></div>
@@ -155,7 +211,7 @@
 
     <section id="sec-list" class="section">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="row" style="justify-content:space-between; align-items:center">
           <h3 style="margin:0 0 8px">📋 قائمة المدعوين</h3>
           <button class="btn ok" onclick="sendAllWhatsApp()">📢 إرسال جماعي</button>
         </div>
@@ -172,10 +228,10 @@
           </thead>
           <tbody id="guestTableBody"></tbody>
         </table>
-        <div class="card" style="margin-top:12px">
+        <div class="card gold" style="margin-top:12px">
           <h3 style="margin:0 0 6px">🖊️ نص رسالة الواتساب</h3>
           <p class="hint">المتغيرات: <code>#{{GUEST_NAME}}#</code>، <code>#{{TOTAL_COUNT}}#</code></p>
-          <textarea id="messageTemplate" class="field" rows="4" style="resize:vertical; line-height:1.9">مرحباً #{{GUEST_NAME}}#،
+          <textarea id="messageTemplate" class="btn" rows="4" style="width:100%; resize:vertical; line-height:1.9">مرحباً #{{GUEST_NAME}}#،
 نتشرف بدعوتكم لحضور فعاليتنا (إجمالي الدعوات: #{{TOTAL_COUNT}}#).
 الرجاء إحضار/إظهار أحد أكواد الباركود المرفقة للدخول.</textarea>
         </div>
@@ -184,13 +240,13 @@
   </main>
 
   <script>
-    // =====  إعدادات قابلة للتعديل من داخل الكود  =====
-    const DEFAULT_EVENT = "زفاف_خالد";   // اسم الحدث
-    const DEFAULT_PASS  = "12345";        // كلمة المرور
-    const DEFAULT_CARD_STOCK = 120;       // رصيد الكروت الابتدائي (يمكن تغييره من الواجهة أيضاً)
-    // ================================================
+    // ===== إعدادات من داخل الكود =====
+    const DEFAULT_EVENT = "زفاف_خالد";
+    const DEFAULT_PASS  = "12345";
+    const DEFAULT_CARD_STOCK = 120;
+    // ==================================
 
-    // مفاتيح التخزين المحلي
+    // مفاتيح التخزين
     const LS_EVENTS='hormez_events_meta';
     const LS_AUTH='hormez_auth_event';
     const LS_GUESTS='hormez_guests';
@@ -206,9 +262,9 @@
     const setEventMeta=(o)=>setJSON(LS_EVENTS,o);
 
     // حالة التطبيق
-    let guests = getJSON(LS_GUESTS, []);                 // [{internalId,...}]
-    let barcodeImages = {};                               // id->dataURL (لا نخزنها LocalStorage لتجنب الضخامة)
-    let availableQrIds = getJSON(LS_QR, []);             // أسماء الملفات بدون امتداد
+    let guests = getJSON(LS_GUESTS, []);
+    let barcodeImages = {};                   // dataURL لكل صورة (لا نخزنها لثقل الحجم)
+    let availableQrIds = getJSON(LS_QR, []);
     let internalGuestIdCounter = guests.reduce((m,g)=>Math.max(m,g.internalId||0), 0);
     let cardStock = Number(localStorage.getItem(LS_STOCK) || DEFAULT_CARD_STOCK) || 0;
 
@@ -226,25 +282,16 @@
       else if((entry.password||'')!==pass){ err.textContent='كلمة المرور غير صحيحة لهذا الحدث'; return }
       localStorage.setItem(LS_AUTH, JSON.stringify({event:name}));
       localStorage.setItem(LS_EVENT_NAME, name);
-      document.getElementById('topEvent').value=name; document.getElementById('topPass').value=pass; document.getElementById('eventName').value=name;
+      document.getElementById('currentEvent').textContent = name;
+      document.getElementById('eventName').value = name;
       hideAuth();
     }
     function logout(){ localStorage.removeItem(LS_AUTH); showAuth(); }
-    function saveTopMeta(){
-      const name=document.getElementById('topEvent').value.trim();
-      const pass=document.getElementById('topPass').value;
-      if(!name||!pass){ alert('أدخل الاسم وكلمة المرور'); return }
-      const meta=getEventMeta(); meta[name]={password:pass}; setEventMeta(meta);
-      localStorage.setItem(LS_AUTH, JSON.stringify({event:name}));
-      localStorage.setItem(LS_EVENT_NAME, name);
-      document.getElementById('eventName').value=name;
-      alert('تم حفظ بيانات الحدث');
-    }
 
-    // boot
+    // Boot
     (function boot(){
       try{
-        // حقن القيم الافتراضية للتسهيل
+        // حقن الافتراضيات لأول تشغيل
         const meta = getEventMeta();
         if (DEFAULT_EVENT && DEFAULT_PASS) {
           meta[DEFAULT_EVENT] = { password: DEFAULT_PASS };
@@ -257,18 +304,18 @@
           if (DEFAULT_EVENT) document.getElementById('authEvent').value = DEFAULT_EVENT;
           if (DEFAULT_PASS)  document.getElementById('authPass').value  = DEFAULT_PASS;
         } else {
-          document.getElementById('topEvent').value=s.event;
-          document.getElementById('topPass').value=meta[s.event]?.password||'';
+          document.getElementById('currentEvent').textContent = s.event;
         }
         document.getElementById('eventName').value = evName;
         document.getElementById('cardStock').value = cardStock;
+
         const savedMsg = localStorage.getItem(LS_MSG);
         if (savedMsg && document.getElementById('messageTemplate')) document.getElementById('messageTemplate').value = savedMsg;
       }catch{ showAuth() }
       renderGuestTable(); updateKPIs(); refreshQrUI();
     })();
 
-    // تبويبات
+    // Tabs
     document.querySelectorAll('#tabs .tab').forEach(tab=>{
       tab.addEventListener('click',()=>{
         document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('active'));
@@ -279,7 +326,7 @@
       });
     });
 
-    // حفظ تلقائي محلي عند أي تغيير
+    // حفظ تلقائي
     function persistAll(){
       setJSON(LS_GUESTS, guests);
       setJSON(LS_QR, availableQrIds);
@@ -290,7 +337,7 @@
       if(ev) localStorage.setItem(LS_EVENT_NAME, ev);
     }
 
-    // تصدير/استيراد JSON (لأجهزة أخرى)
+    // تصدير/استيراد JSON
     function exportJSON(){
       const payload = {
         version:2,
@@ -312,9 +359,10 @@
           internalGuestIdCounter = data.internalGuestIdCounter || guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
           cardStock = Number(data.cardStock||0);
           document.getElementById('eventName').value = data.eventName || '';
+          document.getElementById('currentEvent').textContent = data.eventName || '';
           if (data.messageTemplate && document.getElementById('messageTemplate')) document.getElementById('messageTemplate').value = data.messageTemplate;
           renderGuestTable(); updateKPIs(); refreshQrUI(); persistAll();
-          alert('تم الاستيراد بنجاح. (تذكير: يجب إعادة استيراد ملفات صور الباركود الفعلية على هذا الجهاز)');
+          alert('تم الاستيراد بنجاح. (تذكير: يجب إعادة استيراد صور الباركود الفعلية على هذا الجهاز)');
         }catch{ alert('ملف JSON غير صالح') }
       };
       r.readAsText(file);
@@ -326,7 +374,7 @@
       if (v<0 || !Number.isFinite(v)){ alert('رصيد غير صالح'); return }
       cardStock = v;
       persistAll();
-      distributeBarcodesAutomatically(); // لإعادة توزيع ضمن حد الرصيد
+      distributeBarcodesAutomatically();
       renderGuestTable(); updateKPIs(); refreshQrUI();
     }
 
@@ -367,7 +415,7 @@
         const get=(f)=>{ const k=Object.keys(g).find(x=>x.toLowerCase()===f); return k? g[k]:'' };
         const name=String(get('name')).trim(); const phone=String(get('phone')).trim();
         if(!name||!phone) return;
-        if(guests.some(x=>x.phone===phone)) return; // منع التكرار بالهاتف
+        if(guests.some(x=>x.phone===phone)) return; // منع التكرار
         const total=Math.max(1, parseInt(get('totalneeded'))||1);
         internalGuestIdCounter++;
         newOnes.push({ internalId:internalGuestIdCounter, name, phone, totalNeeded:total, assignedQrIds:[], isManuallyAssigned:false, status:'new' });
@@ -380,11 +428,11 @@
       alert(`تم إضافة ${newOnes.length} ضيف جديد (مع تجاهل المكرر).`);
     }
 
-    // استيراد من سجل الهاتف (Android Chrome + HTTPS)
+    // استيراد من سجل الهاتف (Chrome Android + HTTPS)
     async function importFromContacts(){
       try{
         if (!('contacts' in navigator) || !('select' in navigator.contacts)){
-          alert('ميزة استيراد جهات الاتصال غير مدعومة على هذا المتصفح. جرب Chrome على أندرويد واتصل عبر HTTPS.');
+          alert('ميزة استيراد جهات الاتصال غير مدعومة على هذا المتصفح. جرب Chrome على أندرويد مع HTTPS.');
           return;
         }
         const picked = await navigator.contacts.select(['name','tel'], { multiple:true });
@@ -430,7 +478,6 @@
     function loadBarcodes(){
       const files=document.getElementById('barcodeUpload').files;
       if(!files.length){ alert('اختر ملفات'); return }
-      // لا نخزن الصور في LocalStorage (كبيرة). نخزن فقط المعرفات.
       barcodeImages={}; availableQrIds=[];
       let ok=0; const total=files.length;
       Array.from(files).forEach(file=>{
@@ -456,15 +503,11 @@
 
     // توزيع ضمن حد الرصيد
     function distributeWithinStock(){
-      // أكواد متاحة فعلياً + حد الرصيد
       const cap = Math.min(cardStock, availableQrIds.length);
       const allowed = availableQrIds.slice(0, cap);
-
       const usedByManual = guests.filter(g=>g.isManuallyAssigned).flatMap(g=>g.assignedQrIds);
       const free = allowed.filter(id=>!usedByManual.includes(id));
-
       guests.forEach(g=>{ if(!g.isManuallyAssigned) g.assignedQrIds=[] });
-
       let i=0;
       guests.forEach(g=>{
         if(!g.isManuallyAssigned){
@@ -476,13 +519,13 @@
     }
     function distributeBarcodesAutomatically(){ distributeWithinStock(); }
 
-    // عرض أرقام الرصيد/الاستخدام
+    // أرقام الرصيد/الاستخدام + mismatch
     function refreshQrUI(){
       const cap = Math.min(cardStock, availableQrIds.length);
       const used = guests.reduce((s,g)=>s + (g.assignedQrIds?.length||0), 0);
       const free = Math.max(cap - used, 0);
-      document.getElementById('kpiUsedCards').textContent = used;
-      document.getElementById('kpiFreeCards').textContent = free;
+      const usedEl=document.getElementById('kpiUsedCards'); if(usedEl) usedEl.textContent=used;
+      const freeEl=document.getElementById('kpiFreeCards'); if(freeEl) freeEl.textContent=free;
 
       const need=guests.reduce((s,g)=>s+g.totalNeeded,0);
       const el=document.getElementById('qrMismatchAlert');
@@ -510,7 +553,6 @@
       g.assignedQrIds=list; g.isManuallyAssigned=true;
       persistAll(); renderGuestTable(); updateKPIs(); refreshQrUI();
     }
-
     function editTotalNeeded(id){
       const g=guests.find(x=>x.internalId===id); if(!g) return;
       const s=prompt(`عدد جديد لـ ${g.name}:`, g.totalNeeded);
@@ -526,6 +568,8 @@
       g[field]=s.trim();
       persistAll(); renderGuestTable();
     }
+
+    // تنزيل PNG/ZIP (يتجاهل الناقص)
     async function downloadBarcodeImage(guest){
       const ids=(guest.assignedQrIds||[]).map(x=>String(x).trim()).filter(Boolean);
       if(!ids.length){ alert('لا توجد كروت لهذا الضيف'); return }
@@ -552,7 +596,7 @@
       persistAll(); distributeBarcodesAutomatically(); renderGuestTable(); updateKPIs(); refreshQrUI();
     }
 
-    // إرسال واتساب
+    // واتساب
     function sendWhatsAppMessage(guest){
       if(!guest.assignedQrIds.length){ alert('لا كروت للضيف'); return }
       const msgEl=document.getElementById('messageTemplate');
@@ -571,7 +615,7 @@
         const txt=template.replace(/#\{\{GUEST_NAME\}\}#/g,guest.name).replace(/#\{\{TOTAL_COUNT\}\}#/g,guest.totalNeeded);
         const url=`https://wa.me/${guest.phone}?text=${encodeURIComponent(txt)}`;
         setTimeout(()=>{ window.open(url,'_blank'); guest.status='sent'; persistAll(); updateKPIs(); renderGuestTable(); }, delay);
-        delay+=1500;
+        delay+=1400; // تأخير بسيط للجوال
       });
     }
 
@@ -584,54 +628,48 @@
       document.getElementById('kpiSent').textContent=sent;
       document.getElementById('kpiRemain').textContent=remain;
     }
-    function refreshQrUI(){ // محدثة أعلاه
-      const cap = Math.min(cardStock, availableQrIds.length);
-      const used = guests.reduce((s,g)=>s + (g.assignedQrIds?.length||0), 0);
-      const free = Math.max(cap - used, 0);
-      const usedEl=document.getElementById('kpiUsedCards'); if(usedEl) usedEl.textContent=used;
-      const freeEl=document.getElementById('kpiFreeCards'); if(freeEl) freeEl.textContent=free;
-
-      const need=guests.reduce((s,g)=>s+g.totalNeeded,0);
-      const el=document.getElementById('qrMismatchAlert'); if(!el) return;
-      if(cap<need){ el.style.display='block'; el.textContent=`تحذير: المتاح ضمن الرصيد (${cap}) أقل من المطلوب (${need}).` }
-      else if(cap>need){ el.style.display='block'; el.textContent=`ملاحظة: المتاح ضمن الرصيد (${cap}) أكثر من المطلوب (${need}). المتبقي: ${cap-need}` }
-      else { el.style.display='none' }
-    }
     function renderGuestTable(){
       const body=document.getElementById('guestTableBody'); if(!body) return;
       body.innerHTML='';
       document.getElementById('guestCount').textContent=guests.length;
+
       guests.forEach(guest=>{
         const tr=document.createElement('tr');
 
         const tdName=document.createElement('td');
+        tdName.setAttribute('data-label','اسم الضيف');
         tdName.innerHTML=`<span class="editable" onclick="editGuestDetails(${guest.internalId||0}, 'name')">${guest.name||''}</span>`;
         tr.appendChild(tdName);
 
         const tdCount=document.createElement('td');
+        tdCount.setAttribute('data-label','عدد الدعوات');
         tdCount.innerHTML=`<span class="editable" onclick="editTotalNeeded(${guest.internalId||0})">${guest.totalNeeded||0}</span>`;
         tr.appendChild(tdCount);
 
         const tdPhone=document.createElement('td');
+        tdPhone.setAttribute('data-label','رقم الهاتف');
         tdPhone.innerHTML=`<span class="editable" onclick="editGuestDetails(${guest.internalId||0}, 'phone')">${guest.phone||''}</span>`;
         tr.appendChild(tdPhone);
 
         const tdQr=document.createElement('td');
+        tdQr.setAttribute('data-label','الباركود');
         tdQr.textContent=(guest.assignedQrIds||[]).join(', ')||'لم يخصَّص';
         tdQr.style.color = (guest.assignedQrIds||[]).length===guest.totalNeeded? '#cfd2d6' : '#ffb3b3';
         tdQr.style.fontWeight='800';
         tr.appendChild(tdQr);
 
         const tdStatus=document.createElement('td');
+        tdStatus.setAttribute('data-label','الحالة');
         tdStatus.textContent = guest.status==='sent'? 'مُرسلة' : 'جديدة';
         tr.appendChild(tdStatus);
 
-        const tdAct=document.createElement('td'); tdAct.style.textAlign='left';
-        const b1=document.createElement('button'); b1.className='btn'; b1.textContent='تعيين/تغيير'; b1.onclick=()=>assignBarcode(guest.internalId);
-        const b2=document.createElement('button'); b2.className='btn'; b2.textContent= guest.totalNeeded===1? '💾 PNG' : '💾 ZIP'; b2.onclick=()=>downloadBarcodeImage(guest);
-        const b3=document.createElement('button'); b3.className='btn ok'; b3.textContent='💬 واتساب'; b3.onclick=()=>sendWhatsAppMessage(guest);
-        const b4=document.createElement('button'); b4.className='btn warn'; b4.textContent='🗑️'; b4.onclick=()=>deleteGuest(guest.internalId);
-        [b1,b2,b3,b4].forEach(b=>{ b.style.marginInlineStart='6px'; tdAct.appendChild(b) });
+        const tdAct=document.createElement('td'); tdAct.className='actions'; tdAct.style.textAlign='left';
+        tdAct.setAttribute('data-label','الإجراءات');
+        const b1=document.createElement('button'); b1.className='btn block'; b1.textContent='تعيين/تغيير'; b1.onclick=()=>assignBarcode(guest.internalId);
+        const b2=document.createElement('button'); b2.className='btn block'; b2.textContent= guest.totalNeeded===1? '💾 PNG' : '💾 ZIP'; b2.onclick=()=>downloadBarcodeImage(guest);
+        const b3=document.createElement('button'); b3.className='btn ok block'; b3.textContent='💬 واتساب'; b3.onclick=()=>sendWhatsAppMessage(guest);
+        const b4=document.createElement('button'); b4.className='btn warn block'; b4.textContent='🗑️ حذف'; b4.onclick=()=>deleteGuest(guest.internalId);
+        [b1,b2,b3,b4].forEach(b=>{ b.style.marginInlineStart='0'; b.style.marginTop='8px'; tdAct.appendChild(b) });
         tr.appendChild(tdAct);
 
         body.appendChild(tr);
@@ -639,7 +677,7 @@
       updateKPIs(); refreshQrUI(); persistAll();
     }
 
-    // حفظ نص الرسالة تلقائياً عند تغييره
+    // حفظ نص الرسالة تلقائياً
     (function bindMsgAutoSave(){
       const el=document.getElementById('messageTemplate');
       if(!el) return;
