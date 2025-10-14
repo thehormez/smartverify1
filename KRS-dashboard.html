@@ -3,17 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>Hormez — لوحة تحكم الحدث (متجاوبة للجوال)</title>
+  <title>Hormez — لوحة تحكم الحدث (مناسبة للجوال)</title>
   <style>
     :root{
       --bg:#0b1020; --ink:#e5e7eb; --muted:#94a3b8; --card:#0e172a; --b:#1f2937;
       --ok:#16a34a; --bad:#dc2626; --warn:#f59e0b;
-
-      /* ألوان مصمتة للكروت */
-      --solid-blue:#1e40af;    /* أزرق */
-      --solid-gold:#b48a18;    /* ذهبي */
-      --solid-rose:#be123c;    /* وردي */
-      --solid-green:#047857;   /* أخضر */
+      --solid-blue:#1e40af;   /* أزرق */
+      --solid-gold:#b48a18;   /* ذهبي */
+      --solid-rose:#be123c;   /* وردي */
+      --solid-green:#047857;  /* أخضر */
     }
 
     html,body{height:100%}
@@ -23,34 +21,35 @@
       color:var(--ink);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial
     }
-    .container{max-width:1100px;margin:0 auto;padding:16px}
+    .container{max-width:1000px;margin:0 auto;padding:12px}
     .topbar{
       position:sticky;top:0;z-index:10;
       background:rgba(11,16,32,.88);backdrop-filter:blur(6px);
       border-bottom:1px solid #243047
     }
-    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
     .brand{display:flex;align-items:center;gap:10px}
-    .logo{width:40px;height:40px;border-radius:10px;background:#111;border:1px solid #333;display:grid;place-items:center}
-    .logo span{font-weight:900;color:#ffd700}
+    .logo{width:32px;height:32px;border-radius:8px;background:#111;border:1px solid #333;display:grid;place-items:center}
+    .logo span{font-weight:900;color:#ffd700;font-size:12px}
 
     .btn{
       appearance:none;border:1px solid #334155;background:#0b1220;color:var(--ink);
-      border-radius:12px;padding:10px 14px;cursor:pointer;min-height:44px
+      border-radius:10px;padding:8px 12px;cursor:pointer;min-height:40px;font-size:14px
     }
     .btn:hover{background:#0d1528}
     .btn.block{width:100%}
 
-    .select,.input{
-      width:100%;padding:12px;border-radius:12px;border:1px solid #334155;background:#0b1220;color:var(--ink);min-height:44px
+    .input{
+      width:100%;padding:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--ink);
+      min-height:40px;font-size:14px
     }
 
     .card{
       background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-      border-radius:16px;padding:14px
+      border-radius:14px;padding:12px
     }
 
-    .grid{display:grid;gap:12px}
+    .grid{display:grid;gap:10px}
     .grid-2{grid-template-columns:1fr 1fr}
     .grid-4{grid-template-columns:repeat(4,1fr)}
 
@@ -58,19 +57,16 @@
     @media(max-width:900px){
       .grid-2{grid-template-columns:1fr}
       .grid-4{grid-template-columns:1fr 1fr}
-      .topbar .row > .btn{padding:10px 12px}
     }
     @media(max-width:560px){
       .grid-4{grid-template-columns:1fr}
-      .brand{gap:8px}
-      .logo{width:34px;height:34px;border-radius:8px}
-      .container{padding:12px}
+      .container{padding:10px}
     }
 
-    /* KPI Cards بألوان مصمتة كاملة */
-    .kpi{display:flex;gap:12px;align-items:center;justify-content:space-between}
-    .kpi .title{font-weight:800}
-    .kpi .n{font-size:26px;font-weight:900}
+    /* KPI بألوان مصمتة كاملة وحجم أصغر */
+    .kpi{display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .kpi .title{font-weight:800;font-size:13px}
+    .kpi .n{font-size:22px;font-weight:900}
     .kpi.card{background-image:none!important;border-color:transparent!important;color:#fff}
     .kpi.card *{color:inherit!important}
     .kpi.card.blue   { background:var(--solid-blue)!important; }
@@ -78,32 +74,34 @@
     .kpi.card.rose   { background:var(--solid-rose)!important; }
     .kpi.card.green  { background:var(--solid-green)!important; }
 
-    .badge{padding:4px 8px;border-radius:10px;border:1px solid transparent;font-weight:700;font-size:12px}
+    .muted{color:var(--muted);font-size:12px}
+    .titlebar{font-weight:800;font-size:14px}
+
+    .badge{padding:3px 6px;border-radius:10px;border:1px solid transparent;font-weight:700;font-size:12px}
     .badge.ok{background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.35);color:#86efac}
     .badge.no{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.35);color:#fca5a5}
 
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-top:1px solid rgba(255,255,255,.08)}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:8px;border-top:1px solid rgba(255,255,255,.08)}
     thead th{position:sticky;top:0;background:#0e162c}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
-    .muted{color:var(--muted)}
-    .error{color:#fda4af}
 
-    /* تحويل الجدول إلى بطاقات على الشاشات الصغيرة */
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .error{color:#fda4af;font-size:12px}
+
+    /* بطاقات بديلة للجدول على الشاشات الصغيرة */
     @media(max-width:760px){
       table thead{display:none}
       table,tbody,tr,td{display:block;width:100%}
       tbody tr{
         background:rgba(255,255,255,.04);
         border:1px solid rgba(255,255,255,.08);
-        border-radius:14px;margin-bottom:10px;overflow:hidden
+        border-radius:12px;margin-bottom:8px;overflow:hidden
       }
-      tbody td{display:flex;justify-content:space-between;gap:12px;border-top:none;border-bottom:1px solid rgba(255,255,255,.08)}
+      tbody td{display:flex;justify-content:space-between;gap:8px;border-top:none;border-bottom:1px solid rgba(255,255,255,.08);padding:10px}
       tbody td:last-child{border-bottom:none}
       tbody td::before{
-        content:attr(data-label);color:#cbd5e1;font-weight:700
+        content:attr(data-label);color:#cbd5e1;font-weight:700;font-size:12px
       }
-      .table-actions .btn{width:100%;margin-top:8px}
     }
 
     /* طباعة */
@@ -122,64 +120,52 @@
       <div class="brand">
         <div class="logo"><span>HS</span></div>
         <div>
-          <div class="muted" style="font-size:12px">HORMEZ SECURITY</div>
-          <div style="font-weight:800">لوحة تحكم الحدث — <span id="evNameTitle">—</span></div>
-          <div class="muted" style="font-size:12px">الحضور المباشر وحالة الدعوات</div>
+          <div class="muted">HORMEZ SECURITY</div>
+          <div class="titlebar">لوحة تحكم الحدث — <span id="evNameTitle">—</span></div>
         </div>
       </div>
       <div style="margin-inline-start:auto" class="row">
         <button id="langBtn" class="btn">AR</button>
-        <button id="refreshBtn" class="btn">↻ تحديث</button>
+        <button id="refreshBtn" class="btn">↻</button>
         <button id="logoutBtn" class="btn" style="display:none">🚪 خروج</button>
       </div>
     </div>
   </div>
 
   <div class="container">
-    <!-- بوابة كلمة المرور الخاصة بالحدث -->
+    <!-- بوابة الدخول (مرتّبة للجوال: عمودي) -->
     <div class="card gate" id="gate">
-      <div class="row" style="align-items:end">
-        <div style="flex:1;min-width:220px">
-          <div class="muted" id="lblEvent" style="font-size:12px">الحدث</div>
-          <input id="eventInput" class="input" />
+      <div class="muted" style="margin-bottom:6px">ادخل اسم الحدث وكلمة المرور</div>
+      <div class="grid" style="gap:8px">
+        <div>
+          <div class="muted" id="lblEvent">الحدث</div>
+          <input id="eventInput" class="input" placeholder="مثال: haddad" />
         </div>
-        <div style="flex:1;min-width:220px">
-          <div class="muted" id="lblPass" style="font-size:12px">كلمة المرور</div>
-          <input id="passInput" type="password" class="input" />
+        <div>
+          <div class="muted" id="lblPass">كلمة المرور</div>
+          <input id="passInput" type="password" class="input" placeholder="••••" />
         </div>
-        <div style="display:flex;gap:8px;align-items:end;min-width:140px">
-          <button id="enterBtn" class="btn block">دخول</button>
-        </div>
+        <button id="enterBtn" class="btn block">دخول</button>
       </div>
-      <div id="gateMsg" class="error" style="margin-top:8px"></div>
+      <div id="gateMsg" class="error" style="margin-top:6px"></div>
     </div>
 
-    <!-- محتوى الصفحة بعد الدخول -->
+    <!-- المحتوى الداخلي -->
     <div id="content" style="display:none">
-      <!-- أدوات البحث والطباعة والتاريخ -->
+      <!-- أدوات البحث والتصدير -->
       <div class="grid grid-2">
         <div class="card">
-          <div class="muted" id="lblSearch" style="font-size:12px">ابحث عن كود…</div>
+          <div class="muted" id="lblSearch">ابحث عن كود…</div>
           <input id="searchInput" class="input" placeholder="FA_001" />
         </div>
         <div class="card" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
-          <div style="flex:1;min-width:140px">
-            <div class="muted" id="lblFrom" style="font-size:12px">من تاريخ</div>
-            <input id="dateFrom" type="date" class="input" />
-          </div>
-          <div style="flex:1;min-width:140px">
-            <div class="muted" id="lblTo" style="font-size:12px">إلى تاريخ</div>
-            <input id="dateTo" type="date" class="input" />
-          </div>
-          <button id="applyDate" class="btn">تطبيق</button>
-          <button id="clearDate" class="btn">مسح</button>
           <button id="exportBtn" class="btn">⤓ CSV</button>
           <button id="printBtn" class="btn">🖨️ طباعة</button>
         </div>
       </div>
 
-      <!-- KPIs (ألوان كاملة ومتحولة على الجوال) -->
-      <div class="grid grid-4" style="margin-top:12px">
+      <!-- KPIs مصمتة وبأحجام أصغر -->
+      <div class="grid grid-4" style="margin-top:10px">
         <div class="card kpi blue">
           <div class="title" id="kpiTotalLbl">الإجمالي</div>
           <div id="kpiTotal" class="n">—</div>
@@ -198,10 +184,10 @@
         </div>
       </div>
 
-      <!-- جدول/بطاقات المسحات -->
-      <div class="card" style="margin-top:12px">
-        <div class="muted" id="recentLbl" style="font-size:12px">أحدث المسحات (آخر 100)</div>
-        <div id="printArea" style="max-height:60vh;overflow:auto;margin-top:8px">
+      <!-- جدول / بطاقات -->
+      <div class="card" style="margin-top:10px">
+        <div class="muted" id="recentLbl">أحدث المسحات (آخر 100)</div>
+        <div id="printArea" style="max-height:60vh;overflow:auto;margin-top:6px">
           <table>
             <thead>
               <tr>
@@ -224,8 +210,8 @@
 
     // ===== i18n =====
     const STR = {
-      en: { event:"Event", pass:"Password", enter:"Enter", badpass:"Wrong password", search:"Search code…", export:"Export CSV", print:"Print", total:"Total", used:"Checked-in", left:"Remaining", rate:"Attendance", recent:"Recent scans (latest 100)", code:"Code", status:"Status", time:"Time", refreshed:"Refreshed", from:"From", to:"To", apply:"Apply", clear:"Clear" },
-      ar: { event:"الحدث", pass:"كلمة المرور", enter:"دخول", badpass:"كلمة المرور غير صحيحة", search:"ابحث عن كود…", export:"تصدير CSV", print:"طباعة", total:"الإجمالي", used:"المستخدم", left:"المتبقي", rate:"نسبة الحضور", recent:"أحدث المسحات (آخر 100)", code:"الكود", status:"الحالة", time:"الوقت", refreshed:"تم التحديث", from:"من تاريخ", to:"إلى تاريخ", apply:"تطبيق", clear:"مسح" }
+      en: { event:"Event", pass:"Password", enter:"Enter", badpass:"Wrong password", search:"Search code…", export:"Export CSV", print:"Print", total:"Total", used:"Checked-in", left:"Remaining", rate:"Attendance", recent:"Recent scans (latest 100)", code:"Code", status:"Status", time:"Time" },
+      ar: { event:"الحدث", pass:"كلمة المرور", enter:"دخول", badpass:"كلمة المرور غير صحيحة", search:"ابحث عن كود…", export:"تصدير CSV", print:"طباعة", total:"الإجمالي", used:"المستخدم", left:"المتبقي", rate:"نسبة الحضور", recent:"أحدث المسحات (آخر 100)", code:"الكود", status:"الحالة", time:"الوقت" }
     };
     const $ = (s,root=document)=>root.querySelector(s);
     const state = { lang: localStorage.getItem('hs:dash:lang')||'ar' };
@@ -235,10 +221,11 @@
       document.documentElement.lang = state.lang; document.documentElement.dir = isAr?'rtl':'ltr';
       $('#langBtn').textContent = isAr? 'EN' : 'AR';
       $('#lblEvent').textContent = L.event; $('#lblPass').textContent = L.pass; $('#enterBtn').textContent = L.enter;
-      $('#lblSearch').textContent = L.search; $('#exportBtn').textContent = (isAr? '⤓ ' : '') + L.export; $('#printBtn').textContent = '🖨️ ' + L.print;
+      $('#lblSearch').textContent = L.search;
       $('#kpiTotalLbl').textContent = L.total; $('#kpiUsedLbl').textContent = L.used; $('#kpiLeftLbl').textContent = L.left; $('#kpiRateLbl').textContent = L.rate;
       $('#recentLbl').textContent = L.recent; $('#thCode').textContent = L.code; $('#thStatus').textContent = L.status; $('#thTime').textContent = L.time;
-      $('#lblFrom').textContent = L.from; $('#lblTo').textContent = L.to; $('#applyDate').textContent = L.apply; $('#clearDate').textContent = L.clear;
+      $('#exportBtn').textContent = (isAr? '⤓ ' : '') + L.export;
+      $('#printBtn').textContent = '🖨️ ' + L.print;
     }
 
     // ===== Firebase =====
@@ -256,7 +243,6 @@
     // ضع اسم الحدث وكلمة المرور لهذه الصفحة فقط:
     const PAGE_EVENT = 'haddad';
     const PAGE_PASSWORD = '8888';
-
     const sessKey = ()=> `hs:dash:event:${PAGE_EVENT}`;
 
     function openContent(){
@@ -265,8 +251,7 @@
       $('#logoutBtn').style.display='inline-block';
       $('#evNameTitle').textContent = PAGE_EVENT;
       startStream();
-      // تمرير الصفحة قليلًا على الجوال ليظهر المحتوى مباشرة
-      setTimeout(()=>{ window.scrollTo({top:0,behavior:'smooth'}); }, 50);
+      setTimeout(()=>{ window.scrollTo({top:0,behavior:'smooth'}); }, 30);
     }
 
     function handleEnter(){
@@ -290,7 +275,7 @@
     function logout(){ localStorage.removeItem(sessKey()); location.href = location.pathname; }
     window.logout = logout;
 
-    let unsub=null; let allRows=[]; let filtRows=[]; let from='', to='';
+    let unsub=null; let allRows=[]; let filtRows=[];
 
     function startStream(){
       if(unsub) unsub();
@@ -309,18 +294,9 @@
       });
     }
 
-    function withinDateRange(d){
-      if(!d) return false;
-      const ts=d.getTime();
-      if(from){const f=new Date(from+"T00:00:00").getTime(); if(ts<f) return false;}
-      if(to){const t=new Date(to+"T23:59:59").getTime(); if(ts>t) return false;}
-      return true;
-    }
-
     function applyFilters(){
       const q = ($('#searchInput').value||'').trim().toLowerCase();
       let list = allRows;
-      if(from||to) list = list.filter(r=> withinDateRange(r.scannedAt));
       if(q) list = list.filter(r=> (r.Code||'').toLowerCase().includes(q));
       filtRows = list.slice(0,100);
       renderRows();
@@ -341,7 +317,7 @@
       if(filtRows.length===0){
         const tr=document.createElement('tr');
         const td=document.createElement('td');
-        td.colSpan=3; td.className='muted'; td.style.textAlign='center'; td.style.padding='18px';
+        td.colSpan=3; td.className='muted'; td.style.textAlign='center'; td.style.padding='14px';
         td.textContent=isAr?'لا توجد مسحات':'No scans yet';
         tr.appendChild(td); tb.appendChild(tr); return;
       }
@@ -393,13 +369,11 @@
         applyLang(); renderRows();
       });
       $('#refreshBtn').addEventListener('click', ()=> location.reload());
-      $('#logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem(sessKey()); location.href = location.pathname; });
+      $('#logoutBtn').addEventListener('click', logout);
       $('#enterBtn').addEventListener('click', handleEnter);
       $('#passInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleEnter(); } });
 
       $('#searchInput').addEventListener('input', applyFilters);
-      $('#applyDate').addEventListener('click', ()=>{ from=$('#dateFrom').value||''; to=$('#dateTo').value||''; applyFilters(); });
-      $('#clearDate').addEventListener('click', ()=>{ from=''; to=''; $('#dateFrom').value=''; $('#dateTo').value=''; applyFilters(); });
       $('#exportBtn').addEventListener('click', exportCSV);
       $('#printBtn').addEventListener('click', printTable);
     });
