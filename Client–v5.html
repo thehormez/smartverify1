@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مركز الإرسال — أسود/ذهبي + دخول + تبويبات</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet" />
+
+  <!-- libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <style>
+    :root{ --bg:#0b0b0c; --panel:#14151a; --panel-2:#111217; --stroke:#27282f; --gold:#d4af37; --txt:#e7e7e7; --muted:#a7a7a7; --danger:#ef4444; --ok:#25d366 }
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
+    body{ margin:0; font-family:'Noto Sans Arabic', system-ui, -apple-system, Segoe UI, Arial; background:var(--bg); color:var(--txt) }
+
+    .container{ max-width:1280px; margin:0 auto; padding:16px }
+
+    /* Topbar */
+    .topbar{ position:sticky; top:0; z-index:50; background:linear-gradient(180deg, rgba(10,10,12,.9), rgba(10,10,12,.75)); border-bottom:1px solid var(--stroke); backdrop-filter:blur(6px) }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:900 }
+    .brand .dot{ width:12px; height:12px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ffe8a3, var(--gold)) }
+
+    .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+    .field{ width:auto; min-width:200px; padding:8px 10px; border-radius:10px; border:1px solid var(--stroke); background:#0f1013; color:var(--txt) }
+    .btn{ border:1px solid var(--stroke); background:#0f1013; color:#fff; padding:9px 12px; border-radius:10px; cursor:pointer; font-weight:800 }
+    .btn.gold{ background:linear-gradient(180deg, #2a2211, #1f1a0d); border-color:var(--gold) }
+    .btn.warn{ border-color:#7a1f1f }
+    .btn.ok{ border-color:#1b8c4f }
+    .hint{ color:var(--muted); font-size:12px }
+
+    /* Tabs */
+    .tabs{ display:flex; gap:8px; padding:10px 0; flex-wrap:wrap }
+    .tab{ border:1px solid var(--stroke); background:#111217; color:#ddd; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:800 }
+    .tab.active{ border-color:var(--gold); color:#fff }
+    .section{ display:none }
+    .section.active{ display:block }
+
+    /* Cards & table */
+    .card{ background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--stroke); border-radius:16px; padding:16px }
+    table{ width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:14px; margin-top:10px }
+    thead th{ background:linear-gradient(180deg, #222328, #1a1b20); color:#f6f6f6; border-bottom:1px solid var(--stroke); padding:12px; text-align:right; font-weight:900 }
+    tbody td{ padding:12px; border-bottom:1px solid var(--stroke) }
+    tbody tr:hover{ background:rgba(212,175,55,0.05) }
+    .editable{ cursor:pointer; color:#ffd76a; font-weight:800; text-decoration:underline dotted rgba(212,175,55,.6); text-underline-offset:3px }
+
+    /* KPIs */
+    .kpi{ display:grid; grid-template-columns: repeat(3, 1fr); gap:10px }
+    .kpi .card{ text-align:center }
+
+    /* Auth modal */
+    .overlay{ position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.7), rgba(0,0,0,.8)); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; z-index:100 }
+    .modal{ width:100%; max-width:460px; background:linear-gradient(180deg, #16171b, #121317); border:1px solid var(--stroke); border-radius:18px; padding:18px }
+    .title{ margin:0 0 8px; font-weight:900; font-size:22px }
+  </style>
+</head>
+<body>
+  <!-- Auth Gate -->
+  <div id="authGate" class="overlay" style="display:none">
+    <div class="modal">
+      <h3 class="title">🔐 دخول الحدث</h3>
+      <div class="hint">اكتب <b>اسم الحدث</b> و<b>كلمة المرور</b>. الحدث الجديد يُسجِّل كلمة المرور هذه.</div>
+      <div class="row" style="margin-top:10px; justify-content:space-between">
+        <input id="authEvent" class="field" placeholder="اسم الحدث" />
+        <input id="authPass" type="password" class="field" placeholder="كلمة المرور" />
+        <button class="btn gold" onclick="authLogin()">دخول</button>
+      </div>
+      <div id="authErr" class="hint" style="color:#ffb3b3; margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- Topbar with event + password + logout -->
+  <div class="topbar">
+    <div class="container" style="display:flex; align-items:center; justify-content:space-between; gap:12px">
+      <div class="brand"><span class="dot"></span><span>مركز الإرسال</span></div>
+      <div class="row">
+        <input id="topEvent" class="field" placeholder="اسم الحدث" />
+        <input id="topPass" type="password" class="field" placeholder="كلمة المرور" />
+        <button class="btn gold" onclick="saveTopMeta()">حفظ</button>
+        <button class="btn warn" onclick="logout()">خروج</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <!-- إدارة الدعوات: إجمالي/مرسلة/متبقية -->
+    <section class="kpi" style="margin:10px 0 16px">
+      <div class="card"><div class="hint">إجمالي الدعوات</div><div style="font-size:22px; font-weight:900" id="kpiTotal">0</div></div>
+      <div class="card"><div class="hint">الدعوات المُرسلة</div><div style="font-size:22px; font-weight:900" id="kpiSent">0</div></div>
+      <div class="card"><div class="hint">المتبقية</div><div style="font-size:22px; font-weight:900" id="kpiRemain">0</div></div>
+    </section>
+
+    <!-- Tabs bar -->
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-section="#sec-home">الصفحة الرئيسية</button>
+      <button class="tab" data-section="#sec-event">بيانات الحدث</button>
+      <button class="tab" data-section="#sec-guests">إضافة الضيوف</button>
+      <button class="tab" data-section="#sec-stock">مخزون الدعوات</button>
+      <button class="tab" data-section="#sec-list">قائمة المدعوين</button>
+    </nav>
+
+    <!-- Sections -->
+    <section id="sec-home" class="section active">
+      <div class="card">
+        <h3 style="margin:0 0 8px">مرحبًا! استخدم التبويبات أعلاه للتنقّل بين الإعدادات والقوائم.</h3>
+        <div class="hint">تلميح: بعد إرسال واتساب لضيف، ستُحسب تلقائيًا ضمن "الدعوات المُرسلة".</div>
+      </div>
+    </section>
+
+    <section id="sec-event" class="section">
+      <div class="card">
+        <h3 style="margin:0 0 8px">🏷️ بيانات الحدث</h3>
+        <div class="row">
+          <input id="eventName" class="field" placeholder="اسم الحدث" />
+          <button class="btn gold" onclick="saveData()">💾 حفظ البيانات (JSON)</button>
+          <input id="dataUpload" type="file" accept=".json" style="display:none" onchange="loadDataFile(this.files[0])" />
+          <button class="btn" onclick="document.getElementById('dataUpload').click()">↩️ تحميل البيانات</button>
+        </div>
+        <div class="hint" style="margin-top:8px">الصور لا تنتقل عبر JSON — احتفظ بملفات الباركود وأعد استيرادها عند الحاجة.</div>
+      </div>
+    </section>
+
+    <section id="sec-guests" class="section">
+      <div class="card">
+        <h3 style="margin:0 0 8px">👥 إضافة الضيوف</h3>
+        <div class="row" style="margin-bottom:8px">
+          <input id="guestListUpload" type="file" class="field" style="max-width:420px" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+          <button class="btn gold" onclick="handleFileUpload()">✅ استيراد الضيوف</button>
+          <button class="btn ok" onclick="importFromContacts()">📱 استيراد من سجل الهاتف</button>
+        </div>
+        <div class="row">
+          <input id="newGuestName" class="field" placeholder="الاسم" />
+          <input id="newGuestPhone" class="field" placeholder="الهاتف (9665...)" />
+          <input id="newGuestTotalNeeded" class="field" type="number" min="1" value="1" placeholder="عدد الدعوات" />
+          <button class="btn gold" onclick="addGuestManually()">➕ إضافة الضيف</button>
+        </div>
+        <div class="hint" style="margin-top:8px">تم تحميل <b id="guestCount">0</b> ضيف.</div>
+      </div>
+    </section>
+
+    <section id="sec-stock" class="section">
+      <div class="card">
+        <h3 style="margin:0 0 8px">🎟️ مخزون الدعوات</h3>
+        <div class="row">
+          <input id="allowedCapacity" type="number" class="field" min="0" value="0" placeholder="العدد المسموح به (اختياري)" onchange="updateKPIs()" />
+          <input id="barcodeUpload" type="file" class="field" accept="image/*" multiple />
+          <button class="btn gold" onclick="loadBarcodes()">🗂️ استيراد صور الباركود</button>
+        </div>
+        <div class="hint" style="margin-top:6px">المستوردة: <b id="barcodeCount">0</b> — الأكواد: <span id="importedQrCodes">—</span></div>
+        <div id="qrMismatchAlert" class="hint" style="margin-top:6px; color:#ffb3b3; display:none"></div>
+      </div>
+    </section>
+
+    <section id="sec-list" class="section">
+      <div class="card">
+        <h3 style="margin:0 0 8px">📋 قائمة المدعوين</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>اسم الضيف</th>
+              <th>عدد الدعوات</th>
+              <th>رقم الهاتف</th>
+              <th>الباركود المخصصة</th>
+              <th>الحالة</th>
+              <th style="text-align:left">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="guestTableBody"></tbody>
+        </table>
+        <div class="card" style="margin-top:12px">
+          <h3 style="margin:0 0 6px">🖊️ نص رسالة الواتساب</h3>
+          <p class="hint">المتغيرات: <code>#{{GUEST_NAME}}#</code>، <code>#{{TOTAL_COUNT}}#</code></p>
+          <textarea id="messageTemplate" class="field" rows="4" style="resize:vertical; line-height:1.9">مرحباً #{{GUEST_NAME}}#،
+نتشرف بدعوتكم لحضور فعاليتنا (إجمالي الدعوات: #{{TOTAL_COUNT}}#).
+الرجاء إحضار/إظهار أحد أكواد الباركود المرفقة للدخول.</textarea>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ====== تخزين الحدث وكلمة المرور ======
+    const LS_EVENTS='hormez_events_meta';
+    const LS_AUTH='hormez_auth_event';
+    const getEventMeta=()=>{ try{ return JSON.parse(localStorage.getItem(LS_EVENTS)||'{}') }catch{return{}} };
+    const setEventMeta=(o)=>{ try{ localStorage.setItem(LS_EVENTS, JSON.stringify(o||{})) }catch{} };
+
+    function showAuth(){ document.getElementById('authGate').style.display='flex' }
+    function hideAuth(){ document.getElementById('authGate').style.display='none' }
+
+    function authLogin(){
+      const name=document.getElementById('authEvent').value.trim();
+      const pass=document.getElementById('authPass').value;
+      const err=document.getElementById('authErr'); err.textContent='';
+      if(!name||!pass){ err.textContent='أدخل الاسم وكلمة المرور'; return }
+      const meta=getEventMeta(); const entry=meta[name];
+      if(!entry){ meta[name]={password:pass}; setEventMeta(meta); }
+      else if((entry.password||'')!==pass){ err.textContent='كلمة المرور غير صحيحة لهذا الحدث'; return }
+      localStorage.setItem(LS_AUTH, JSON.stringify({event:name}));
+      document.getElementById('topEvent').value=name; document.getElementById('topPass').value=pass; document.getElementById('eventName').value=name;
+      hideAuth();
+    }
+    function logout(){ localStorage.removeItem(LS_AUTH); showAuth(); }
+    function saveTopMeta(){ const name=document.getElementById('topEvent').value.trim(); const pass=document.getElementById('topPass').value; if(!name||!pass){ alert('أدخل الاسم وكلمة المرور'); return } const meta=getEventMeta(); meta[name]={password:pass}; setEventMeta(meta); localStorage.setItem(LS_AUTH, JSON.stringify({event:name})); document.getElementById('eventName').value=name; alert('تم حفظ بيانات الحدث'); }
+
+    (function boot(){
+      try{
+        const s=JSON.parse(localStorage.getItem(LS_AUTH)||'null');
+        if(!s?.event){ showAuth(); }
+        else {
+          const meta=getEventMeta();
+          document.getElementById('topEvent').value=s.event;
+          document.getElementById('topPass').value=meta[s.event]?.password||'';
+          document.getElementById('eventName').value=s.event;
+        }
+      }catch{ showAuth() }
+    })();
+
+    // ====== تبويبات ======
+    document.querySelectorAll('#tabs .tab').forEach(tab=>{
+      tab.addEventListener('click',()=>{
+        document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        const id=tab.dataset.section;
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+        document.querySelector(id).classList.add('active');
+      });
+    });
+
+    // ====== البيانات الرئيسية ======
+    let guests=[];               // {internalId,name,phone,totalNeeded,assignedQrIds,isManuallyAssigned,status}
+    let barcodeImages={};        // id -> dataURL
+    let availableQrIds=[];       // أسماء الملفات بدون امتداد
+    let internalGuestIdCounter=0;
+
+    // تحديث مؤشرات الإدارة أعلى الصفحة
+    function updateKPIs(){
+      const total=guests.length;
+      const sent=guests.filter(g=>g.status==='sent').length;
+      const remain=Math.max(total - sent, 0);
+      document.getElementById('kpiTotal').textContent=total;
+      document.getElementById('kpiSent').textContent=sent;
+      document.getElementById('kpiRemain').textContent=remain;
+    }
+
+    // حفظ/تحميل JSON للبيانات (بدون الصور)
+    function saveData(){ const ev=document.getElementById('eventName').value||'Unnamed_Event'; const data={ eventName:ev, guests, availableQrIds, internalGuestIdCounter, messageTemplate:document.getElementById('messageTemplate').value }; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); saveAs(blob, `${ev}_Data_${new Date().toISOString().slice(0,10)}.json`); alert('تم حفظ البيانات (تذكير: الصور لا تنتقل عبر JSON)'); }
+    function loadDataFile(file){ if(!file) return; const r=new FileReader(); r.onload=(e)=>{ try{ const d=JSON.parse(e.target.result); loadData(d); alert('تم التحميل. أعد استيراد صور الباركود عند الحاجة.'); }catch{ alert('ملف غير صالح') } }; r.readAsText(file) }
+    function loadData(d){ guests=d.guests||[]; availableQrIds=d.availableQrIds||[]; internalGuestIdCounter=d.internalGuestIdCounter||0; document.getElementById('eventName').value=d.eventName||''; document.getElementById('guestCount').textContent=guests.length; document.getElementById('importedQrCodes').textContent=availableQrIds.join(', ')||'—'; renderGuestTable(); checkQrMismatch(); updateKPIs(); }
+
+    // استيراد الضيوف
+    function handleFileUpload(){ const f=document.getElementById('guestListUpload').files[0]; if(!f){ alert('اختر ملفًا'); return } const ext=f.name.split('.').pop().toLowerCase(); if(ext==='csv') readCSV(f); else if(['xlsx','xls'].includes(ext)) readExcel(f); else alert('استخدم CSV أو XLSX') }
+    function readCSV(file){ Papa.parse(file,{ header:true, skipEmptyLines:true, complete:(res)=>processImportedData(res.data), error:(e)=>alert('CSV خطأ: '+e.message) }) }
+    function readExcel(file){ const r=new FileReader(); r.onload=(e)=>{ const data=new Uint8Array(e.target.result); const wb=XLSX.read(data,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]]; const arr=XLSX.utils.sheet_to_json(ws); processImportedData(arr) }; r.readAsArrayBuffer(file) }
+    function processImportedData(data){ const required=['name','phone','totalNeeded']; if(!data.length||!required.every(f=>Object.keys(data[0]).some(k=>k.toLowerCase()===f))){ alert('الأعمدة المطلوبة: name, phone, totalNeeded'); return } internalGuestIdCounter=0; guests=data.map(g=>{ const get=(f)=>{ const k=Object.keys(g).find(x=>x.toLowerCase()===f); return k? g[k]:'' }; internalGuestIdCounter++; const total=Math.max(1, parseInt(get('totalneeded'))||1); return { internalId:internalGuestIdCounter, name:String(get('name')).trim()||'—', phone:String(get('phone')).trim()||'—', totalNeeded:total, assignedQrIds:[], isManuallyAssigned:false, status:'new' }; }); distributeBarcodesAutomatically(); renderGuestTable(); checkQrMismatch(); updateKPIs(); document.getElementById('guestCount').textContent=guests.length; }
+
+    // إضافة يدوي
+    function addGuestManually(){ const n=document.getElementById('newGuestName').value.trim(); const p=document.getElementById('newGuestPhone').value.trim(); const c=Math.max(1, parseInt(document.getElementById('newGuestTotalNeeded').value)||1); if(!n||!p){ alert('أدخل الاسم والهاتف'); return } internalGuestIdCounter++; guests.push({ internalId:internalGuestIdCounter, name:n, phone:p, totalNeeded:c, assignedQrIds:[], isManuallyAssigned:false, status:'new' }); distributeBarcodesAutomatically(); renderGuestTable(); updateKPIs(); document.getElementById('newGuestName').value=''; document.getElementById('newGuestPhone').value=''; document.getElementById('newGuestTotalNeeded').value='1'; document.getElementById('guestCount').textContent=guests.length; }
+
+    // استيراد صور الباركود
+    function loadBarcodes(){ const files=document.getElementById('barcodeUpload').files; if(!files.length){ alert('اختر ملفات'); return } barcodeImages={}; availableQrIds=[]; let ok=0; const total=files.length; Array.from(files).forEach(file=>{ const reader=new FileReader(); reader.onload=(e)=>{ const id=file.name.replace(/\.[^.]+$/,'').trim(); barcodeImages[id]=e.target.result; if(!availableQrIds.includes(id)) availableQrIds.push(id); ok++; document.getElementById('barcodeCount').textContent=ok; document.getElementById('importedQrCodes').textContent=availableQrIds.join(', '); if(ok===total){ availableQrIds.sort((a,b)=>{ const A=parseInt(a),B=parseInt(b); if(!isNaN(A)&&!isNaN(B)) return A-B; return a.localeCompare(b) }); distributeBarcodesAutomatically(); renderGuestTable(); checkQrMismatch(); updateKPIs(); alert(`تم استيراد ${ok} كود وتوزيعها تلقائيًا.`); } }; reader.readAsDataURL(file) }); }
+
+    // توزيع تلقائي
+    function distributeBarcodesAutomatically(){ const used=guests.filter(g=>g.isManuallyAssigned).flatMap(g=>g.assignedQrIds); const free=availableQrIds.filter(id=>!used.includes(id)); guests.forEach(g=>{ if(!g.isManuallyAssigned) g.assignedQrIds=[] }); let i=0; guests.forEach(g=>{ if(!g.isManuallyAssigned){ const need=g.totalNeeded; if(i+need<=free.length){ g.assignedQrIds=free.slice(i,i+need); i+=need } else { g.assignedQrIds=[] } } }); }
+
+    // تعيين يدوي
+    function assignBarcode(id){ const g=guests.find(x=>x.internalId===id); if(!g) return; const need=g.totalNeeded; const val=prompt(`أدخل ${need} كود مفصولة بفواصل لـ ${g.name}:`, g.assignedQrIds.join(', ')); if(val===null) return; const list=val.split(',').map(s=>s.trim()).filter(Boolean); if(list.length!==need){ alert(`يجب إدخال ${need} كود بالضبط`); return } const others=guests.flatMap(x=>x.assignedQrIds||[]).filter(x=>!g.assignedQrIds.includes(x)); for(const k of list){ if(!availableQrIds.includes(k)){ alert(`"${k}" ليس ضمن الأكواد المستوردة`); return } if(others.includes(k)){ alert(`الكود "${k}" مستخدم لضيف آخر`); return } } g.assignedQrIds=list; g.isManuallyAssigned=true; renderGuestTable(); updateKPIs(); }
+
+    // تعديل بيانات ضيف
+    function editTotalNeeded(id){ const g=guests.find(x=>x.internalId===id); if(!g) return; const s=prompt(`عدد جديد لـ ${g.name}:`, g.totalNeeded); if(s===null||s.trim()==='') return; const n=parseInt(s); if(isNaN(n)||n<1){ alert('عدد غير صالح'); return } g.totalNeeded=n; g.isManuallyAssigned=false; distributeBarcodesAutomatically(); renderGuestTable(); updateKPIs(); }
+    function editGuestDetails(id, field){ const g=guests.find(x=>x.internalId===id); if(!g) return; const s=prompt(field==='name'?`اسم جديد لـ ${g.name}:`:`هاتف جديد لـ ${g.name}:`, g[field]); if(s===null||s.trim()==='') return; g[field]=s.trim(); renderGuestTable(); }
+
+    // تنزيل PNG/ZIP — إصلاح: تجاهل الناقص بدلاً من الإيقاف الكامل
+    async function downloadBarcodeImage(guest){
+      const ids=(guest.assignedQrIds||[]).map(x=>String(x).trim()).filter(Boolean);
+      if(!ids.length){ alert('لا توجد كروت لهذا الضيف'); return }
+      const present=ids.filter(id=>barcodeImages[id]);
+      if(!present.length){ alert('لا توجد صور متاحة لهذا الضيف — أعد استيراد صور الباركود.'); return }
+      if(ids.length===1){
+        const id=present[0];
+        const a=document.createElement('a');
+        a.href=barcodeImages[id];
+        a.download=`${guest.name}_${id}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return
+      }
+      const zip=new JSZip(); let added=0;
+      for(const id of present){ const b64=barcodeImages[id].split(',')[1]; zip.file(`${id}.png`, b64, {base64:true}); added++; }
+      if(!added){ alert('لم يتم العثور على صور'); return }
+      const blob=await zip.generateAsync({type:'blob'});
+      saveAs(blob, `${guest.name}_${present.length}_Cards.zip`);
+      if(present.length<ids.length){ alert(`تم تنزيل ${present.length} من أصل ${ids.length}. بعض الصور غير مستوردة.`) }
+    }
+
+    function deleteGuest(id){ if(!confirm('حذف الضيف؟')) return; guests = guests.filter(g=>g.internalId!==id); distributeBarcodesAutomatically(); renderGuestTable(); updateKPIs(); }
+
+    function sendWhatsAppMessage(guest){
+      if(!guest.assignedQrIds.length){ alert('لا كروت للضيف'); return }
+      let txt=document.getElementById('messageTemplate').value;
+      txt=txt.replace(/#\{\{GUEST_NAME\}\}#/g, guest.name).replace(/#\{\{TOTAL_COUNT\}\}#/g, guest.totalNeeded);
+      const url=`https://wa.me/${guest.phone}?text=${encodeURIComponent(txt)}`;
+      window.open(url,'_blank');
+      guest.status='sent';
+      updateKPIs();
+      renderGuestTable();
+    }
+
+    function checkQrMismatch(){
+      const need=guests.reduce((s,g)=>s+g.totalNeeded,0);
+      const available=availableQrIds.length;
+      const el=document.getElementById('qrMismatchAlert');
+      if(!el) return;
+      if(available<need){ el.style.display='block'; el.textContent=`تحذير: المتاح (${available}) أقل من المطلوب (${need}).` }
+      else if(available>need){ el.style.display='block'; el.textContent=`ملاحظة: المتاح (${available}) أكثر من المطلوب (${need}). المتبقي: ${available-need}` }
+      else { el.style.display='none' }
+    }
+
+    function renderGuestTable(){
+      const body=document.getElementById('guestTableBody'); if(!body) return;
+      body.innerHTML='';
+      document.getElementById('guestCount').textContent=guests.length;
+      guests.forEach(guest=>{
+        const tr=document.createElement('tr');
+
+        const tdName=document.createElement('td');
+        tdName.innerHTML=`<span class="editable" onclick="editGuestDetails(${guest.internalId}, 'name')">${guest.name}</span>`;
+        tr.appendChild(tdName);
+
+        const tdCount=document.createElement('td');
+        tdCount.innerHTML=`<span class="editable" onclick="editTotalNeeded(${guest.internalId})">${guest.totalNeeded}</span>`;
+        tr.appendChild(tdCount);
+
+        const tdPhone=document.createElement('td');
+        tdPhone.innerHTML=`<span class="editable" onclick="editGuestDetails(${guest.internalId}, 'phone')">${guest.phone}</span>`;
+        tr.appendChild(tdPhone);
+
+        const tdQr=document.createElement('td');
+        tdQr.textContent=(guest.assignedQrIds||[]).join(', ')||'لم يخصَّص';
+        tdQr.style.color = (guest.assignedQrIds||[]).length===guest.totalNeeded? '#cfd2d6' : '#ffb3b3';
+        tdQr.style.fontWeight='800';
+        tr.appendChild(tdQr);
+
+        const tdStatus=document.createElement('td');
+        tdStatus.textContent = guest.status==='sent'? 'مُرسلة' : 'جديدة';
+        tr.appendChild(tdStatus);
+
+        const tdAct=document.createElement('td'); tdAct.style.textAlign='left';
+        const b1=document.createElement('button'); b1.className='btn'; b1.textContent='تعيين/تغيير'; b1.onclick=()=>assignBarcode(guest.internalId);
+        const b2=document.createElement('button'); b2.className='btn'; b2.textContent= guest.totalNeeded===1? '💾 PNG' : '💾 ZIP'; b2.onclick=()=>downloadBarcodeImage(guest);
+        const b3=document.createElement('button'); b3.className='btn ok'; b3.textContent='💬 واتساب'; b3.onclick=()=>sendWhatsAppMessage(guest);
+        const b4=document.createElement('button'); b4.className='btn warn'; b4.textContent='🗑️'; b4.onclick=()=>deleteGuest(guest.internalId);
+        [b1,b2,b3,b4].forEach(b=>{ b.style.marginInlineStart='6px'; tdAct.appendChild(b) });
+        tr.appendChild(tdAct);
+
+        body.appendChild(tr);
+      });
+      checkQrMismatch();
+      updateKPIs();
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{ renderGuestTable(); updateKPIs(); });
+  </script>
+</body>
+</html>
