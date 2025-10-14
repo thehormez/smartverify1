@@ -17,8 +17,7 @@
       backdrop-filter:blur(6px);border-bottom:1px solid #243047}
     .row{display:flex;gap:8px;flex-wrap:wrap}
     .brand{display:flex;align-items:center;gap:10px}
-    .logo{width:32px;height:32px;border-radius:8px;background:#111;
-      border:1px solid #333;display:grid;place-items:center}
+    .logo{width:32px;height:32px;border-radius:8px;background:#111;border:1px solid #333;display:grid;place-items:center}
     .logo span{font-weight:900;color:#ffd700;font-size:12px}
     .btn{border:1px solid #334155;background:#0b1220;color:var(--ink);
       border-radius:10px;padding:8px 12px;cursor:pointer;min-height:40px;font-size:14px}
@@ -45,22 +44,24 @@
     th,td{padding:8px;border-top:1px solid rgba(255,255,255,.08)}
     thead th{background:#0e162c}
     .mono{font-family:ui-monospace,monospace}.error{color:#fda4af;font-size:12px}
-    /* بطاقات على الجوال */
+
+    /* ===== عرضين للقائمة: جدول للديسكتوب + بطاقات عمودية للجوال ===== */
+    #desktopTableWrap{display:block}
+    #mobileList{display:none}
+
     @media(max-width:760px){
-      table thead{display:none}table,tbody,tr,td{display:block;width:100%}
-      tbody tr{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-        border-radius:12px;margin-bottom:8px}
-      tbody td{display:flex;justify-content:space-between;gap:8px;
-        border-bottom:1px solid rgba(255,255,255,.08);padding:10px}
-      tbody td:last-child{border-bottom:none}
-      tbody td::before{content:attr(data-label);color:#cbd5e1;font-weight:700;font-size:12px}
-    }
-    /* إصلاح قص القائمة */
-    @media(max-width:760px){
-      #printArea{max-height:none!important;overflow:visible!important;
-        -webkit-overflow-scrolling:auto;padding-bottom:8px}
-      #rowsBody td{word-break:break-word;white-space:normal}
-      thead th{position:static!important}
+      #desktopTableWrap{display:none}
+      #mobileList{display:block}
+      .scan-card{
+        background:rgba(255,255,255,.04);
+        border:1px solid rgba(255,255,255,.08);
+        border-radius:12px;
+        padding:10px; margin-bottom:8px
+      }
+      .scan-line{display:flex;justify-content:space-between;gap:10px;margin:6px 0}
+      .scan-label{color:#cbd5e1;font-weight:700;font-size:12px}
+      .scan-value{font-size:14px}
+      .scan-value.mono{font-family:ui-monospace,monospace}
     }
   </style>
 </head>
@@ -70,14 +71,14 @@
     <div class="brand">
       <div class="logo"><span>HS</span></div>
       <div>
-        <div class="muted">HORMEZ SECURITY</div>
-        <div class="titlebar">لوحة تحكم الحدث — <span id="evNameTitle">—</span></div>
+        <div class="muted" id="hdrOrg">HORMEZ SECURITY</div>
+        <div class="titlebar"><span id="hdrTitlePrefix">لوحة تحكم الحدث — </span><span id="evNameTitle">—</span></div>
       </div>
     </div>
     <div style="margin-inline-start:auto" class="row">
       <button id="langBtn" class="btn">AR</button>
       <button id="refreshBtn" class="btn">↻</button>
-      <button id="logoutBtn" class="btn" style="display:none">🚪 خروج</button>
+      <button id="logoutBtn" class="btn" style="display:none">🚪 <span id="logoutTxt">خروج</span></button>
     </div>
   </div>
 </div>
@@ -85,7 +86,7 @@
 <div class="container">
   <!-- شاشة الدخول -->
   <div class="card gate" id="gate">
-    <div class="muted" style="margin-bottom:6px">ادخل اسم الحدث وكلمة المرور</div>
+    <div class="muted" id="gateHint" style="margin-bottom:6px">ادخل اسم الحدث وكلمة المرور</div>
     <div class="grid" style="gap:8px">
       <div><div class="muted" id="lblEvent">الحدث</div>
         <input id="eventInput" class="input" placeholder="مثال: haddad" /></div>
@@ -105,7 +106,7 @@
       </div>
       <div class="card" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
         <button id="exportBtn" class="btn">⤓ CSV</button>
-        <button id="printBtn" class="btn">🖨️ طباعة</button>
+        <button id="printBtn" class="btn">🖨️ <span id="printTxt">طباعة</span></button>
       </div>
     </div>
 
@@ -118,12 +119,23 @@
 
     <div class="card" style="margin-top:10px">
       <div class="muted" id="recentLbl">أحدث المسحات (آخر 100)</div>
-      <div id="printArea" style="margin-top:6px">
+
+      <!-- عرض الديسكتوب: جدول -->
+      <div id="desktopTableWrap" style="margin-top:6px">
         <table>
-          <thead><tr><th id="thCode">الكود</th><th id="thStatus">الحالة</th><th id="thTime">الوقت</th></tr></thead>
+          <thead>
+            <tr>
+              <th id="thCode">الكود</th>
+              <th id="thStatus">الحالة</th>
+              <th id="thTime">الوقت</th>
+            </tr>
+          </thead>
           <tbody id="rowsBody"></tbody>
         </table>
       </div>
+
+      <!-- عرض الجوال: بطاقات عمودية -->
+      <div id="mobileList" style="margin-top:6px"></div>
     </div>
   </div>
 </div>
@@ -132,9 +144,76 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-const STR={ar:{badpass:"كلمة المرور غير صحيحة"},en:{badpass:"Wrong password"}};
-const $=(s,r=document)=>r.querySelector(s);const state={lang:'ar'};
+/* ===================== i18n ===================== */
+const STR={
+  ar:{
+    org:"HORMEZ SECURITY",
+    titlePrefix:"لوحة تحكم الحدث — ",
+    gateHint:"ادخل اسم الحدث وكلمة المرور",
+    event:"الحدث", pass:"كلمة المرور", enter:"دخول", logout:"خروج",
+    badpass:"كلمة المرور غير صحيحة", badname:"❌ اسم الحدث غير صحيح",
+    search:"ابحث عن كود…", export:"تصدير CSV", print:"طباعة",
+    total:"الإجمالي", used:"المستخدم", left:"المتبقي", rate:"نسبة الحضور",
+    recent:"أحدث المسحات (آخر 100)",
+    code:"الكود", status:"الحالة", time:"الوقت",
+    yes:"نعم", no:"لا", noRows:"لا توجد مسحات"
+  },
+  en:{
+    org:"HORMEZ SECURITY",
+    titlePrefix:"Event Dashboard — ",
+    gateHint:"Enter event name and password",
+    event:"Event", pass:"Password", enter:"Enter", logout:"Logout",
+    badpass:"Wrong password", badname:"❌ Wrong event name",
+    search:"Search code…", export:"Export CSV", print:"Print",
+    total:"Total", used:"Checked-in", left:"Remaining", rate:"Attendance",
+    recent:"Recent scans (latest 100)",
+    code:"Code", status:"Status", time:"Time",
+    yes:"Yes", no:"No", noRows:"No scans yet"
+  }
+};
+const $=(s,r=document)=>r.querySelector(s);
+const state={ lang: localStorage.getItem('hs:dash:lang')||'ar' };
 
+function applyLang(){
+  const L=STR[state.lang];
+  const isAr=state.lang==='ar';
+  document.documentElement.lang=state.lang;
+  document.documentElement.dir=isAr?'rtl':'ltr';
+
+  // Top bar
+  $('#hdrOrg').textContent=L.org;
+  $('#hdrTitlePrefix').textContent=L.titlePrefix;
+  $('#langBtn').textContent=isAr?'EN':'AR';
+  $('#logoutTxt').textContent=L.logout;
+
+  // Gate
+  $('#gateHint').textContent=L.gateHint;
+  $('#lblEvent').textContent=L.event;
+  $('#lblPass').textContent=L.pass;
+  $('#enterBtn').textContent=L.enter;
+
+  // Filters
+  $('#lblSearch').textContent=L.search;
+  $('#exportBtn').textContent=(isAr?'⤓ ':'⤓ ')+L.export;
+  $('#printTxt').textContent=L.print;
+
+  // KPI labels
+  $('#kpiTotalLbl').textContent=L.total;
+  $('#kpiUsedLbl').textContent=L.used;
+  $('#kpiLeftLbl').textContent=L.left;
+  $('#kpiRateLbl').textContent=L.rate;
+
+  // Table headers
+  $('#recentLbl').textContent=L.recent;
+  $('#thCode').textContent=L.code;
+  $('#thStatus').textContent=L.status;
+  $('#thTime').textContent=L.time;
+
+  // Placeholders
+  $('#searchInput').placeholder = (isAr?'مثال: ':'e.g. ') + 'FA_001';
+}
+
+/* ===================== Firebase ===================== */
 const app=initializeApp({
   apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
   authDomain:"hormez-inv.firebaseapp.com",
@@ -144,73 +223,179 @@ const app=initializeApp({
   appId:"1:747519941805:web:468fada2492700e9da3a24"
 });
 const db=getFirestore(app);
-const PAGE_EVENT='haddad';const PAGE_PASSWORD='8888';
+
+// ضع اسم الحدث وكلمة المرور لهذه الصفحة فقط:
+const PAGE_EVENT='haddad';
+const PAGE_PASSWORD='8888';
 const sessKey=()=>`hs:dash:${PAGE_EVENT}`;
 
+/* ===================== Gate ===================== */
 function openContent(){
-  $('#gate').style.display='none';$('#content').style.display='block';
-  $('#logoutBtn').style.display='inline-block';$('#evNameTitle').textContent=PAGE_EVENT;startStream();
+  $('#gate').style.display='none';
+  $('#content').style.display='block';
+  $('#logoutBtn').style.display='inline-block';
+  $('#evNameTitle').textContent=PAGE_EVENT;
+  startStream();
 }
 function handleEnter(){
-  const ev=$('#eventInput').value.trim(),pw=$('#passInput').value.trim();
-  if(ev!==PAGE_EVENT)return $('#gateMsg').textContent='❌ اسم الحدث غير صحيح';
-  if(pw!==PAGE_PASSWORD)return $('#gateMsg').textContent=STR[state.lang].badpass;
-  localStorage.setItem(sessKey(),'ok');openContent();
+  const ev=$('#eventInput').value.trim();
+  const pw=$('#passInput').value.trim();
+  if(ev!==PAGE_EVENT){ $('#gateMsg').textContent=STR[state.lang].badname; return; }
+  if(pw!==PAGE_PASSWORD){ $('#gateMsg').textContent=STR[state.lang].badpass; return; }
+  localStorage.setItem(sessKey(),'ok'); openContent();
 }
 function tryAutoLogin(){
-  if(localStorage.getItem(sessKey())==='ok'){ $('#eventInput').value=PAGE_EVENT;openContent(); }
-  else $('#eventInput').value=PAGE_EVENT;
-}
-function logout(){localStorage.removeItem(sessKey());location.href=location.pathname;}
-let unsub=null,allRows=[],filtRows=[];
-function startStream(){
-  if(unsub)unsub();
-  const qEv=query(collection(db,'invites'),where('EventName','==',PAGE_EVENT));
-  unsub=onSnapshot(qEv,snap=>{
-    let t=0,u=0;const rec=[];
-    snap.forEach(d=>{
-      const x=d.data();t++;if((x.Status||'').toLowerCase()==='yes')u++;
-      if(x.scannedAt?.toDate?.())rec.push({Code:x.Code||d.id,Status:x.Status||'no',scannedAt:x.scannedAt.toDate()});
-    });
-    renderKPIs(t,u);allRows=rec.sort((a,b)=>b.scannedAt-b.scannedAt);applyFilters();
-  });
-}
-function applyFilters(){
-  const q=$('#searchInput').value.trim().toLowerCase();
-  let list=allRows;if(q)list=list.filter(r=>(r.Code||'').toLowerCase().includes(q));
-  filtRows=list.slice(0,100);renderRows();
-}
-function renderKPIs(t,u){const l=Math.max(t-u,0),r=t>0?Math.round((u/t)*100):0;
-  $('#kpiTotal').textContent=t;$('#kpiUsed').textContent=u;
-  $('#kpiLeft').textContent=l;$('#kpiRate').textContent=r+'%';
-}
-function renderRows(){
-  const tb=$('#rowsBody');tb.innerHTML='';
-  if(filtRows.length===0){const tr=document.createElement('tr'),td=document.createElement('td');
-    td.colSpan=3;td.className='muted';td.style.textAlign='center';td.textContent='لا توجد مسحات';
-    tr.appendChild(td);tb.appendChild(tr);return;}
-  for(const r of filtRows){
-    const tr=document.createElement('tr');
-    const td1=document.createElement('td');td1.setAttribute('data-label','الكود');td1.className='mono';td1.textContent=r.Code;
-    const td2=document.createElement('td');td2.setAttribute('data-label','الحالة');
-    const b=document.createElement('span');b.className='badge '+((r.Status||'no').toLowerCase()==='yes'?'ok':'no');
-    b.textContent=(r.Status||'no');td2.appendChild(b);
-    const td3=document.createElement('td');td3.setAttribute('data-label','الوقت');
-    td3.textContent=r.scannedAt?r.scannedAt.toLocaleString('ar-EG'):'—';
-    tr.append(td1,td2,td3);tb.appendChild(tr);
+  if(localStorage.getItem(sessKey())==='ok'){
+    $('#eventInput').value=PAGE_EVENT; openContent();
+  }else{
+    $('#eventInput').value=PAGE_EVENT;
   }
 }
-function exportCSV(){
-  const lines=filtRows.map(r=>[r.Code,r.Status,PAGE_EVENT,r.scannedAt.toISOString()].join(','));
-  const csv=['Code,Status,EventName,Time',...lines].join('\n');
-  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`${PAGE_EVENT}-scans.csv`;a.click();URL.revokeObjectURL(url);
+function logout(){ localStorage.removeItem(sessKey()); location.href=location.pathname; }
+
+/* ===================== Data & Render ===================== */
+let unsub=null, allRows=[], filtRows=[];
+
+function startStream(){
+  if(unsub) unsub();
+  const qEv=query(collection(db,'invites'), where('EventName','==',PAGE_EVENT));
+  unsub=onSnapshot(qEv, snap=>{
+    let t=0, u=0; const rec=[];
+    snap.forEach(d=>{
+      const x=d.data(); t++; if((x.Status||'').toLowerCase()==='yes') u++;
+      if(x.scannedAt?.toDate?.()){
+        rec.push({ Code:x.Code||d.id, Status:String(x.Status||'no'), scannedAt:x.scannedAt.toDate() });
+      }
+    });
+    renderKPIs(t,u);
+    allRows = rec.sort((a,b)=> b.scannedAt - a.scannedAt);
+    applyFilters();
+  });
 }
-document.addEventListener('DOMContentLoaded',()=>{
-  $('#eventInput').value=PAGE_EVENT;tryAutoLogin();
-  $('#enterBtn').onclick=handleEnter;$('#logoutBtn').onclick=logout;
-  $('#refreshBtn').onclick=()=>location.reload();
-  $('#searchInput').oninput=applyFilters;$('#exportBtn').onclick=exportCSV;
+
+function applyFilters(){
+  const q = ($('#searchInput').value||'').trim().toLowerCase();
+  let list = allRows;
+  if(q) list = list.filter(r => (r.Code||'').toLowerCase().includes(q));
+  filtRows = list.slice(0,100);
+  renderRows();
+}
+
+function renderKPIs(total, used){
+  const left=Math.max(total-used,0);
+  const rate= total>0? Math.round((used/total)*100):0;
+  $('#kpiTotal').textContent=total;
+  $('#kpiUsed').textContent=used;
+  $('#kpiLeft').textContent=left;
+  $('#kpiRate').textContent=rate+'%';
+}
+
+function renderRows(){
+  const L=STR[state.lang];
+
+  // جدول الديسكتوب
+  const tb=$('#rowsBody'); tb.innerHTML='';
+  if(filtRows.length===0){
+    const tr=document.createElement('tr');
+    const td=document.createElement('td');
+    td.colSpan=3; td.className='muted'; td.style.textAlign='center'; td.textContent=L.noRows;
+    tr.appendChild(td); tb.appendChild(tr);
+  }else{
+    for(const r of filtRows){
+      const tr=document.createElement('tr');
+
+      const td1=document.createElement('td');
+      td1.textContent=r.Code; td1.className='mono';
+      const td2=document.createElement('td');
+      const b=document.createElement('span');
+      const ok=(r.Status||'no').toLowerCase()==='yes';
+      b.className='badge ' + (ok? 'ok':'no');
+      b.textContent = ok ? L.yes : L.no;
+      td2.appendChild(b);
+      const td3=document.createElement('td');
+      td3.textContent = r.scannedAt ? r.scannedAt.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB') : '—';
+
+      tr.append(td1,td2,td3); tb.appendChild(tr);
+    }
+  }
+
+  // بطاقات الجوال (عمودية)
+  const listBox = $('#mobileList'); listBox.innerHTML='';
+  if(filtRows.length===0){
+    const empty=document.createElement('div');
+    empty.className='muted';
+    empty.style.textAlign='center';
+    empty.textContent=L.noRows;
+    listBox.appendChild(empty);
+  }else{
+    for(const r of filtRows){
+      const card=document.createElement('div'); card.className='scan-card';
+
+      const line1=document.createElement('div'); line1.className='scan-line';
+      const l1=document.createElement('div'); l1.className='scan-label'; l1.textContent=L.code;
+      const v1=document.createElement('div'); v1.className='scan-value mono'; v1.textContent=r.Code;
+      line1.append(l1,v1);
+
+      const line2=document.createElement('div'); line2.className='scan-line';
+      const l2=document.createElement('div'); l2.className='scan-label'; l2.textContent=L.status;
+      const v2=document.createElement('div'); v2.className='scan-value';
+      const ok=(r.Status||'no').toLowerCase()==='yes';
+      v2.textContent = ok ? L.yes : L.no;
+      line2.append(l2,v2);
+
+      const line3=document.createElement('div'); line3.className='scan-line';
+      const l3=document.createElement('div'); l3.className='scan-label'; l3.textContent=L.time;
+      const v3=document.createElement('div'); v3.className='scan-value';
+      v3.textContent = r.scannedAt ? r.scannedAt.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB') : '—';
+      line3.append(l3,v3);
+
+      card.append(line1,line2,line3);
+      listBox.appendChild(card);
+    }
+  }
+}
+
+function exportCSV(){
+  const L=STR[state.lang];
+  const header=[L.code,L.status,'EventName',L.time].join(',');
+  const lines=filtRows.map(r=>[
+    r.Code,
+    ((r.Status||'no').toLowerCase()==='yes' ? L.yes : L.no),
+    PAGE_EVENT,
+    r.scannedAt ? r.scannedAt.toISOString() : ''
+  ].join(','));
+  const csv=[header,...lines].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`${PAGE_EVENT}-scans.csv`; a.click(); URL.revokeObjectURL(url);
+}
+
+/* ===================== Wire UI ===================== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // لغة/نصوص
+  applyLang();
+
+  // تعبئة اسم الحدث في البوابة
+  $('#eventInput').value=PAGE_EVENT;
+  tryAutoLogin();
+
+  // أزرار الشريط
+  $('#langBtn').addEventListener('click', ()=>{
+    state.lang = (state.lang==='ar') ? 'en' : 'ar';
+    localStorage.setItem('hs:dash:lang', state.lang);
+    applyLang();
+    renderRows();
+  });
+  $('#refreshBtn').addEventListener('click', ()=> location.reload());
+  $('#logoutBtn').addEventListener('click', logout);
+
+  // البوابة
+  $('#enterBtn').addEventListener('click', handleEnter);
+  $('#passInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleEnter(); } });
+
+  // البحث/تصدير/طباعة
+  $('#searchInput').addEventListener('input', applyFilters);
+  $('#exportBtn').addEventListener('click', exportCSV);
+  $('#printBtn').addEventListener('click', ()=>window.print());
 });
 </script>
 </body>
