@@ -13,7 +13,7 @@
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
     .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 12px;cursor:pointer}
-    .btn.primary{background:#7c2d12;border-color:#a16207} /* ذهبي داكن */
+    .btn.primary{background:#7c2d12;border-color:#a16207}
     .btn.danger{background:#7f1d1d;border-color:#dc2626}
     .btn.ghost{background:#0b1220}
     .btn:disabled{opacity:.55;cursor:not-allowed}
@@ -187,7 +187,7 @@
       filtered = allEvents.filter(e=> e.name.toLowerCase().includes(q));
       $('#foundLbl').textContent = filtered.length ? L().found(filtered.length) : L().none;
       const box=$('#list'); box.innerHTML='';
-      filtered.forEach((ev,i)=>{
+      filtered.forEach((ev)=>{
         const row=document.createElement('div'); row.className='item';
         row.innerHTML = `
           <input type="checkbox" ${ev.selected?'checked':''} data-ev="${ev.name}">
@@ -211,14 +211,13 @@
       allEvents=[]; render(); setProgress(0); $('#log').textContent='';
       logLine(L().load+' …'); logLine(L().loadWarn);
       const seen=new Set();
-      let last=null; const PAGE=800; let totalFetched=0; // اضبط الحجم حسب حجم البيانات/الميزانية
+      let last=null; const PAGE=800; // اضبطه حسب حجم بياناتك
       while(true){
         let q = db.collection('invites').orderBy('EventName').limit(PAGE);
         if(last) q = q.startAfter(last);
         const snap = await q.get();
         if(snap.empty) break;
         snap.docs.forEach(d=>{
-          totalFetched++;
           const ev = d.get('EventName')||'';
           if(ev && !seen.has(ev)){
             seen.add(ev);
@@ -227,8 +226,6 @@
         });
         last = snap.docs[snap.docs.length-1];
         if(snap.size < PAGE) break;
-        // تقدم تقريبي
-        setProgress( Math.min(90, setProgress.value||0 + 5) );
       }
       setProgress(100);
       render();
@@ -240,20 +237,41 @@
       return qs.size;
     }
 
+    // ✅ الإصلاح: تفعيل زر الحذف بعد العد إذا total > 0
     async function countSelected(){
-      $('#log').textContent=''; setProgress(0); logLine(L().counting);
+      $('#log').textContent=''; 
+      setProgress(0); 
+      logLine(L().counting);
+
+      const btnDel = $('#deleteBtn');
+      btnDel.disabled = true; // عطّل أثناء العد
+
       const targets = allEvents.filter(e=>e.selected);
-      if(!targets.length){ logLine(L().none); setProgress(100); return {total:0}; }
-      let total=0, done=0;
+      if(!targets.length){
+        logLine(L().none);
+        setProgress(100);
+        btnDel.disabled = true;
+        return { total: 0 };
+      }
+
+      let total = 0, done = 0;
       for(const t of targets){
         const n = await countForEvent(t.name);
-        t.count = n; total += n; done++;
+        t.count = n; 
+        total += n; 
+        done++;
         logLine(L().foundItems(t.name, n));
-        setProgress( (done/targets.length) * 100 );
+        setProgress((done/targets.length)*100);
         render();
       }
-      logLine('—'); logLine(L().totalItems(total));
-      return {total, targets};
+
+      logLine('—'); 
+      logLine(L().totalItems(total));
+
+      // فعّل زر الحذف فقط إذا هناك عناصر فعلًا
+      btnDel.disabled = !(total > 0);
+
+      return { total, targets };
     }
 
     function clearLocalForEvent(ev){
@@ -283,8 +301,8 @@
     async function deleteSelected(){
       $('#deleteBtn').disabled=true; $('#countBtn').disabled=true;
       $('#log').textContent=''; setProgress(0); logLine(L().deleting);
-      // تأكد من الحساب أولًا
-      const {total, targets} = await countSelected();
+
+      const { total, targets } = await countSelected();
       if(!targets || !targets.length){ $('#deleteBtn').disabled=false; $('#countBtn').disabled=false; return; }
       if(total===0){ $('#deleteBtn').disabled=false; $('#countBtn').disabled=false; return; }
 
@@ -300,7 +318,7 @@
         setProgress( (step/targets.length)*100 );
       }
       logLine('—'); logLine(L().doneDel(deletedAll));
-      // حددها كغير محددة واحذفها من القائمة (اختياري) أو أعد التحميل
+      // إزالة الأحداث المحذوفة من القائمة
       allEvents = allEvents.filter(e=> !targets.find(t=>t.name===e.name));
       render();
       $('#deleteBtn').disabled=false; $('#countBtn').disabled=false;
@@ -316,7 +334,6 @@
     document.addEventListener('DOMContentLoaded', ()=>{
       applyLang();
       $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar'?'en':'ar'); localStorage.setItem('hs:delmulti:lang',LANG); applyLang(); render(); });
-
       $('#loadBtn').addEventListener('click', fetchDistinctEvents);
       $('#search').addEventListener('input', render);
       $('#selectAllBtn').addEventListener('click', ()=>{ filtered.forEach(ev=>{ ev.selected=true; }); render(); });
@@ -324,7 +341,6 @@
       $('#countBtn').addEventListener('click', countSelected);
       $('#deleteBtn').addEventListener('click', deleteSelected);
       $('#localBtn').addEventListener('click', clearLocalSelected);
-
       // تحميل تلقائي عند الفتح
       fetchDistinctEvents().catch(e=>{ logLine(STR[LANG].err(e.message||e)); });
     });
