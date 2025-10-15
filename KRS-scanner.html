@@ -5,11 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Hormez — ماسح مناسبة احترافي</title>
   <style>
-    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--ok:#16a34a;--bad:#ef4444;--warn:#f59e0b;--card:#0e172a}
+    :root{
+      --bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;
+      --ok:#16a34a;--bad:#ef4444;--warn:#f59e0b;--card:#0e172a
+    }
     html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
+    body{
+      margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);
+      color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial
+    }
     .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
-    .container{max-width:1200px;margin:0 auto;padding:14px}
+    .container{max-width:1100px;margin:0 auto;padding:14px}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
     .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
@@ -17,7 +23,8 @@
     .btn:hover{background:#0d1528}
     .select,.input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
     .grid{display:grid;gap:12px}
-    @media(min-width:1024px){.grid-2{grid-template-columns:2fr 1fr}}
+    .grid-2{grid-template-columns:2fr 1fr}
+    @media(max-width:900px){.grid-2{grid-template-columns:1fr}}
     .muted{color:var(--muted)}
     .dot{width:10px;height:10px;border-radius:50%}
     .status{display:flex;gap:8px;align-items:center}
@@ -33,10 +40,10 @@
     .corner.br{bottom:12px;right:12px;border-left:none;border-top:none;border-radius:0 0 10px 0}
 
     /* Last result */
-    .qrBox{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center}
+    .qrBox{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center}
     .qrBox canvas{background:#fff;border-radius:10px}
 
-    .hist{max-height:300px;overflow:auto}
+    .hist{max-height:320px;overflow:auto}
     .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
 
@@ -47,22 +54,28 @@
       animation:fadeIn .12s ease-out;
     }
     #okOverlay .code{
-      font-size: clamp(32px, 9vw, 96px);
+      font-size: clamp(28px, 9vw, 88px);
       font-weight: 900;
       letter-spacing: 2px;
       text-shadow: 0 2px 6px rgba(0,0,0,.25);
     }
-    #okOverlay .msg{ margin-top:10px; font-size: clamp(16px, 3.5vw, 28px); font-weight:700 }
+    #okOverlay .msg{ margin-top:10px; font-size: clamp(14px, 3.5vw, 26px); font-weight:700 }
     @keyframes fadeIn { from{opacity:.0} to{opacity:1} }
+
+    /* Settings accordion */
+    .accordion{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    .acc-hd{background:#0b1220;padding:10px 14px;cursor:pointer;font-weight:700}
+    .acc-bd{display:none;padding:12px;background:#0c1426;border-top:1px solid var(--line)}
+    .acc-bd.open{display:block}
   </style>
 </head>
 <body>
   <!-- Topbar -->
   <div class="topbar">
     <div class="container row" style="justify-content:space-between">
-      <div class="row"><div style="font-weight:900">HS</div><div class="muted">ماسح الباركود — مناسبة محددة</div></div>
+      <div class="row"><div style="font-weight:900">HS</div><div class="muted" id="titleSub">ماسح الباركود — مناسبة محددة</div></div>
       <div class="row">
-        <span class="tag">Event: <b id="evTag">—</b></span>
+        <span class="tag"><span id="lblEventTag">الحدث</span>: <b id="evTag">—</b></span>
         <button id="setEventBtn" class="btn">تعيين/تغيير الحدث</button>
         <button id="langBtn" class="btn">AR</button>
       </div>
@@ -78,7 +91,7 @@
   </div>
 
   <div class="container grid grid-2">
-    <!-- Left: Scanner -->
+    <!-- Left: Scanner + controls -->
     <div class="card">
       <div class="row" style="justify-content:space-between; gap:8px">
         <div class="status"><div id="statusDot" class="dot" style="background:#9ca3af"></div><div id="statusText" class="muted">—</div></div>
@@ -100,40 +113,49 @@
         </div>
       </div>
 
-      <!-- Controls -->
-      <div class="row" style="margin-top:10px">
-        <div style="width:160px">
-          <div class="muted">فترة التوقف (ملّي ثانية)</div>
-          <input id="pauseMs" class="input" type="number" value="2000" />
-        </div>
-        <div style="width:150px">
-          <div class="muted">الأصوات</div>
-          <select id="soundMode" class="select">
-            <option value="on">تشغيل</option>
-            <option value="off">إيقاف</option>
-          </select>
-        </div>
-        <div style="width:180px">
-          <div class="muted">حجم القارئ</div>
-          <select id="scanSize" class="select">
-            <option value="360">صغير</option>
-            <option value="480" selected>متوسط</option>
-            <option value="680">كبير</option>
-          </select>
-        </div>
-        <div style="width:220px">
-          <div class="muted">نمط الكود (Regex)</div>
-          <input id="codeRegex" class="input mono" value="^[A-Z]{2}_[0-9]{3,}$" />
-        </div>
-        <div style="width:170px">
-          <div class="muted">وضع صارم</div>
-          <select id="strictMode" class="select">
-            <option value="on">اقبل المطابق فقط</option>
-            <option value="off">اقبل الكل</option>
-          </select>
+      <!-- Settings (accordion) -->
+      <div class="accordion" style="margin-top:12px">
+        <div class="acc-hd" id="accToggle">⚙️ <span id="lblSettings">الإعدادات</span></div>
+        <div class="acc-bd" id="accBody">
+          <div class="row" style="margin-top:6px">
+            <div style="width:160px">
+              <div class="muted" id="lblPause">فترة التوقف (ملّي ثانية)</div>
+              <input id="pauseMs" class="input" type="number" value="2000" />
+            </div>
+            <div style="width:150px">
+              <div class="muted" id="lblSound">الأصوات</div>
+              <select id="soundMode" class="select">
+                <option value="on">تشغيل</option>
+                <option value="off">إيقاف</option>
+              </select>
+            </div>
+            <div style="width:180px">
+              <div class="muted" id="lblScanSize">حجم القارئ</div>
+              <select id="scanSize" class="select">
+                <option value="360">صغير</option>
+                <option value="480" selected>متوسط</option>
+                <option value="680">كبير</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px">
+            <div style="flex:1">
+              <div class="muted" id="lblRegex">نمط الكود (Regex)</div>
+              <input id="codeRegex" class="input mono" value="^[A-Z]{2}_[0-9]{3,}$" />
+            </div>
+            <div style="width:170px">
+              <div class="muted" id="lblStrict">وضع صارم</div>
+              <select id="strictMode" class="select">
+                <option value="on">اقبل المطابق فقط</option>
+                <option value="off">اقبل الكل</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
+      <!-- Camera + manual -->
       <div class="row" style="margin-top:10px">
         <div style="flex:1">
           <div class="muted" id="lblCam">الكاميرا</div>
@@ -149,22 +171,22 @@
       </div>
 
       <div id="httpsWarn" class="card" style="display:none; margin-top:10px; border-color:#7f1d1d;background:#450a0a;color:#fecaca">
-        ⚠️ الكاميرا تتطلب HTTPS أو localhost.
+        ⚠️ <span id="lblHttps">الكاميرا تتطلب HTTPS أو localhost</span>.
       </div>
     </div>
 
-    <!-- Right: Last result + history -->
+    <!-- Right: last result + history -->
     <div class="card">
-      <div class="muted" style="font-size:12px">النتيجة الأخيرة</div>
+      <div class="muted" id="lblLast" style="font-size:12px">النتيجة الأخيرة</div>
       <div class="qrBox" style="margin-top:6px">
-        <canvas id="qrCanvas" width="120" height="120"></canvas>
+        <canvas id="qrCanvas" width="110" height="110"></canvas>
         <div>
           <div id="lastCode" class="mono" style="font-size:22px;font-weight:800">—</div>
           <div id="lastMsg" class="muted" style="font-size:12px;margin-top:4px">—</div>
         </div>
       </div>
 
-      <div class="muted" style="font-size:12px;margin-top:14px">السجل (محفوظ محليًا حسب المناسبة)</div>
+      <div class="muted" id="lblHist" style="font-size:12px;margin-top:14px">السجل (محفوظ محليًا حسب المناسبة)</div>
       <div id="hist" class="hist"></div>
       <div class="row" style="margin-top:8px"><button id="clearHist" class="btn">مسح السجل</button></div>
     </div>
@@ -173,7 +195,7 @@
   <!-- QR lib for preview -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
-  <!-- ZXing candidates & native flag -->
+  <!-- ZXing dynamic loader -->
   <script>
     (function(){
       const CANDS=[
@@ -195,17 +217,62 @@
   <script>
   (function(){
     const $=(s,root=document)=>root.querySelector(s);
+
+    // ===== i18n =====
     const T={
-      ar:{ready:'جاهز',checking:'جاري التحقق…',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',camera:'الكاميرا',manual:'إدخال يدوي',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',notfound:'❌ الكود غير موجود',mismatch:'❌ لا يخص هذه المناسبة',needHttps:'⚠️ يتطلب HTTPS',camlib:'⚠️ مكتبة الكاميرا لم تُحمّل',paused:'⏸️ إيقاف مؤقت',needEvent:'الرجاء تعيين اسم المناسبة أولاً', accepted:'تم القبول'},
-      en:{ready:'Ready',checking:'Checking…',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',camera:'Camera',manual:'Manual input',ok:'✅ Accepted',dupe:'⚠️ Already used',notfound:'❌ Code not found',mismatch:'❌ Not this event',needHttps:'⚠️ HTTPS required',camlib:'⚠️ Camera lib not loaded',paused:'⏸️ Paused',needEvent:'Please set the event name first', accepted:'Accepted'}
+      ar:{
+        titleSub:'ماسح الباركود — مناسبة محددة', eventTag:'الحدث',
+        ready:'جاهز',checking:'جاري التحقق…',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',
+        camera:'الكاميرا',manual:'إدخال يدوي',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',mismatch:'❌ لا يخص هذه المناسبة',
+        needHttps:'الكاميرا تتطلب HTTPS أو localhost',camlib:'⚠️ مكتبة الكاميرا لم تُحمّل',paused:'⏸️ إيقاف مؤقت',needEvent:'الرجاء تعيين اسم المناسبة أولاً',
+        settings:'الإعدادات',pause:'فترة التوقف (ملّي ثانية)',sounds:'الأصوات',reader:'حجم القارئ',regex:'نمط الكود (Regex)',strict:'وضع صارم',
+        last:'النتيجة الأخيرة',hist:'السجل (محفوظ محليًا حسب المناسبة)',save:'حفظ',check:'تحقق',httpsWarn:'الكاميرا تتطلب HTTPS أو localhost',
+        accOpen:'فتح الإعدادات', accClose:'إغلاق الإعدادات', accepted:'تم القبول ✅'
+      },
+      en:{
+        titleSub:'Barcode Scanner — Event Locked', eventTag:'Event',
+        ready:'Ready',checking:'Checking…',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',
+        camera:'Camera',manual:'Manual input',ok:'✅ Accepted',dupe:'⚠️ Already used',mismatch:'❌ Not this event',
+        needHttps:'Camera requires HTTPS or localhost',camlib:'⚠️ Camera library not loaded',paused:'⏸️ Paused',needEvent:'Please set the event name first',
+        settings:'Settings',pause:'Pause (ms)',sounds:'Sounds',reader:'Scan size',regex:'Code pattern (Regex)',strict:'Strict mode',
+        last:'Last result',hist:'History (locally per event)',save:'Save',check:'Check',httpsWarn:'Camera requires HTTPS or localhost',
+        accOpen:'Open settings', accClose:'Close settings', accepted:'Accepted ✅'
+      }
     };
+
     let LANG=localStorage.getItem('hs:evscan:lang')||'ar';
+
+    function applyDir(){
+      const isAr = LANG==='ar';
+      document.documentElement.lang = LANG;
+      document.documentElement.dir  = isAr? 'rtl':'ltr';
+    }
+
     function i18n(){
       const L=T[LANG];
+      $('#titleSub').textContent=L.titleSub;
+      $('#lblEventTag').textContent=L.eventTag;
       $('#langBtn').textContent = (LANG==='ar'?'EN':'AR');
-      $('#statusText').textContent=L.ready; $('#lblCam').textContent=L.camera; $('#lblManual').textContent=L.manual;
+
+      // Buttons & labels
       $('#startBtn').textContent=L.start; $('#stopBtn').textContent=L.stop; $('#switchBtn').textContent=L.switch; $('#torchBtn').textContent=L.flash;
-      $('#okMsg').textContent = (LANG==='ar')? 'تم القبول ✅' : 'Accepted ✅';
+      $('#statusText').textContent=L.ready; $('#lblCam').textContent=L.camera; $('#lblManual').textContent=L.manual;
+      $('#manualBtn').textContent=L.check; $('#lblHttps').textContent=L.httpsWarn;
+
+      // Settings
+      $('#lblSettings').textContent=L.settings;
+      $('#accToggle').setAttribute('aria-label', L.accOpen);
+      $('#lblPause').textContent=L.pause; $('#lblSound').textContent=L.sounds; $('#lblScanSize').textContent=L.reader;
+      $('#lblRegex').textContent=L.regex; $('#lblStrict').textContent=L.strict;
+
+      // Side
+      $('#lblLast').textContent=L.last; $('#lblHist').textContent=L.hist;
+
+      // Overlay
+      $('#okMsg').textContent = L.accepted;
+
+      // Placeholders
+      $('#manualCode').placeholder = (LANG==='ar' ? 'SA_001' : 'SA_001');
     }
 
     // ===== Firebase =====
@@ -213,7 +280,7 @@
     if(!firebase.apps.length){ firebase.initializeApp(cfg); }
     const db=firebase.firestore();
 
-    // ===== Event from URL / local =====
+    // ===== Event from URL / local (lock if from URL) =====
     const URL_EVENT = new URLSearchParams(location.search).get('event'); // ← يحدد الحدث من خارج الصفحة
     let EVENT_LOCKED = false; // true إذا قادم من الرابط
     let EVENT_NAME = '';
@@ -223,13 +290,18 @@
       EVENT_LOCKED = !!locked;
       $('#evTag').textContent = EVENT_NAME || '—';
       localStorage.setItem('hs:evscan:event', EVENT_NAME);
+
+      // قفل حقيقي: إخفاء زر التعيين وعدم إنشاء بطاقة إدخال
+      if (EVENT_LOCKED){
+        $('#setEventBtn').style.display = 'none';
+        const evSetup = $('#evSetup'); if(evSetup) evSetup.remove();
+      }else{
+        $('#setEventBtn').style.display = '';
+      }
+
       renderHist();
-      $('#evSetup')?.classList?.add?.('hidden');
       $('#startBtn').disabled = !httpsOK() || !EVENT_NAME;
       $('#manualBtn').disabled = !EVENT_NAME;
-      if (locked) { // إخفِ زر التغيير إذا الحدث مقفول بالرابط
-        $('#setEventBtn').style.display = 'none';
-      }
     }
 
     function initEvent(){
@@ -237,24 +309,52 @@
       if(URL_EVENT){ setEvent(URL_EVENT, true); }
       else if(saved){ setEvent(saved, false); }
       else {
-        // بطاقة إدخال أولية
-        const card=document.createElement('div'); card.className='card'; card.id='evSetup';
-        card.innerHTML=`<div class="muted" style="margin-bottom:6px">اكتب اسم المناسبة بالضبط كما هو في Firestore (EventName)</div>
-        <div class="row"><input id="evInput" class="input" placeholder="مثال: زفاف سعيد" /><button id="saveEv" class="btn">حفظ</button></div>`;
-        document.querySelector('.container').prepend(card);
-        $('#startBtn').disabled = true; $('#manualBtn').disabled=true;
-        $('#saveEv').addEventListener('click', ()=>{ const v=$('#evInput').value.trim(); if(!v) return alert('أدخل اسم المناسبة'); if(scanning){ stop(); } setEvent(v,false); });
+        showEventSetup();
       }
     }
 
+    function showEventSetup(){
+      if (EVENT_LOCKED) return; // لا تعرضها إذا مقفول بالرابط
+      if ($('#evSetup')) return;
+      const L=T[LANG];
+      const card=document.createElement('div'); card.className='card'; card.id='evSetup';
+      card.innerHTML=`<div class="muted" style="margin-bottom:6px">${LANG==='ar'?'اكتب اسم المناسبة بالضبط كما هو في Firestore (EventName)':'Type event name exactly as in Firestore (EventName)'}</div>
+      <div class="row"><input id="evInput" class="input" placeholder="${LANG==='ar'?'مثال: زفاف سعيد':'e.g. Saeed Wedding'}" />
+      <button id="saveEv" class="btn">${L.save}</button></div>`;
+      document.querySelector('.container').prepend(card);
+      $('#startBtn').disabled = true; $('#manualBtn').disabled=true;
+      $('#saveEv').addEventListener('click', ()=>{
+        if (EVENT_LOCKED) return; // حماية إضافية
+        const v=$('#evInput').value.trim(); if(!v) return alert(LANG==='ar'?'أدخل اسم المناسبة':'Enter event name');
+        if(scanning){ stop(); } setEvent(v,false);
+      });
+    }
+
     // HTTPS guard
-    function httpsOK(){ const isLocal = ['localhost','127.0.0.1'].includes(location.hostname); const ok = location.protocol==='https:'||isLocal; $('#httpsWarn').style.display = ok? 'none':'block'; if(!ok) { $('#startBtn').disabled=true; } return ok; }
+    function httpsOK(){
+      const isLocal = ['localhost','127.0.0.1'].includes(location.hostname);
+      const ok = location.protocol==='https:'||isLocal;
+      $('#httpsWarn').style.display = ok? 'none':'block';
+      if(!ok) { $('#startBtn').disabled=true; }
+      return ok;
+    }
 
     // History per event
     function hKey(){ return `hs:evscan:hist:${EVENT_NAME||'__NONE__'}` }
     function getHist(){ try{ return JSON.parse(localStorage.getItem(hKey())||'[]'); }catch{return []} }
     function pushHist(code,msg,good){ const h=getHist(); h.unshift({code,msg,at:Date.now(),good}); localStorage.setItem(hKey(), JSON.stringify(h.slice(0,80))); renderHist(); }
-    function renderHist(){ const box=$('#hist'); const L=T[LANG]; box.innerHTML=''; const h=getHist(); if(!EVENT_NAME){ box.innerHTML = `<div class="muted">${L.needEvent}</div>`; return; } if(!h.length){ box.innerHTML = `<div class="muted">—</div>`; return; } h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='6px'; d.style.borderTop='1px solid var(--line)'; d.innerHTML = `<div class="mono">${x.code}</div><div class=\"muted\" style=\"font-size:12px\">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); }); }
+    function renderHist(){
+      const box=$('#hist'); const L=T[LANG]; box.innerHTML='';
+      const h=getHist();
+      if(!EVENT_NAME){ box.innerHTML = `<div class="muted">${L.needEvent}</div>`; return; }
+      if(!h.length){ box.innerHTML = `<div class="muted">—</div>`; return; }
+      h.forEach(x=>{
+        const d=document.createElement('div');
+        d.style.padding='6px'; d.style.borderTop='1px solid var(--line)';
+        d.innerHTML = `<div class="mono">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`;
+        box.appendChild(d);
+      });
+    }
 
     // ===== Audio =====
     let audioCtx=null;
@@ -274,35 +374,60 @@
 
     // UI helpers
     function setStatus(text,color){ $('#statusText').textContent=text; $('#statusDot').style.background=color; }
-    function drawQRPreview(text){ const c=$('#qrCanvas'); if(!c) return; try{ if(!text){ const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); return; } QRCode.toCanvas(c, text, {width:120, margin:1}, ()=>{}); }catch{} }
-
+    function drawQRPreview(text){
+      const c=$('#qrCanvas'); if(!c) return;
+      try{ if(!text){ const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); return; }
+        QRCode.toCanvas(c, text, {width:110, margin:1}, ()=>{});
+      }catch{}
+    }
     function showGreenOverlay(code){
       const overlay = $('#okOverlay');
       $('#okCode').textContent = code || '—';
       overlay.style.display = 'flex';
-      setTimeout(()=>{ overlay.style.display='none'; }, 1300); // يخفي بعد 1.3 ثانية
+      setTimeout(()=>{ overlay.style.display='none'; }, 1300);
     }
-
     function showLast(code,msg,good){
       $('#lastCode').textContent=code||'—';
       $('#lastCode').style.color = good? '#86efac':'#fca5a5';
       $('#lastMsg').textContent=msg||'';
       drawQRPreview(code||'');
       try{ window.__hsPlayTone(good? 'ok':'err'); navigator.vibrate?.(good? 60:120); }catch{}
-      if(good){ showGreenOverlay(code); } // ← عرض الأوفرلاي الأخضر بالكود
+      if(good){ showGreenOverlay(code); }
     }
 
     // Camera state
-    let devices=[], currentDeviceId=null, track=null, scanning=false, torch=false, rafId=null; let reader=null, ndet=null; let locked=false; function lockPause(){ locked=true; const ms = Math.max(300, parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
+    let devices=[], currentDeviceId=null, track=null, scanning=false, rafId=null; let reader=null, ndet=null; let locked=false;
+    function lockPause(){ locked=true; const ms = Math.max(300, parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
 
     // Regex/Strict helpers
     function strictOn(){ return (document.getElementById('strictMode')?.value||'on')==='on'; }
     function codeRegex(){ try{ return new RegExp(document.getElementById('codeRegex')?.value||''); }catch{ return null; } }
 
     async function ensurePerm(){ try{ const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); tmp.getTracks().forEach(t=>t.stop()); }catch{} }
-    async function listCams(){ const all=await navigator.mediaDevices.enumerateDevices(); devices = all.filter(d=>d.kind==='videoinput'); const sel=$('#cameraSelect'); sel.innerHTML=''; devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label||`Camera ${i+1}`; sel.appendChild(o); }); if(devices.length){ if(!currentDeviceId){ const back=devices.find(d=>/back|rear|environment|خلف/i.test(d.label||'')); currentDeviceId = back? back.deviceId : devices[0].deviceId; } sel.value=currentDeviceId; } }
+    async function listCams(){
+      const all=await navigator.mediaDevices.enumerateDevices(); devices = all.filter(d=>d.kind==='videoinput');
+      const sel=$('#cameraSelect'); sel.innerHTML='';
+      devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label||`Camera ${i+1}`; sel.appendChild(o); });
+      if(devices.length){
+        if(!currentDeviceId){
+          const back=devices.find(d=>/back|rear|environment|خلف/i.test(d.label||'')); currentDeviceId = back? back.deviceId : devices[0].deviceId;
+        }
+        sel.value=currentDeviceId;
+      }
+    }
 
-    async function start(){ locked=false; ensureAudio(); if(!EVENT_NAME){ alert(T[LANG].needEvent); return; } if(!httpsOK()) { alert(T[LANG].needHttps); return; } await ensurePerm(); await listCams(); const video=$('#video'); const dev=$('#cameraSelect').value||currentDeviceId; currentDeviceId=dev; const stream = await navigator.mediaDevices.getUserMedia({video:{deviceId: dev? {exact:dev}:undefined, focusMode:'continuous'}, audio:false}); video.srcObject=stream; await video.play().catch(()=>{}); track = stream.getVideoTracks()[0]||null; scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false; setStatus(T[LANG].ready,'#22c55e');
+    async function start(){
+      const L=T[LANG];
+      locked=false; ensureAudio();
+      if(!EVENT_NAME){ alert(L.needEvent); return; }
+      if(!httpsOK()) { alert(L.needHttps); return; }
+      await ensurePerm(); await listCams();
+      const video=$('#video'); const dev=$('#cameraSelect').value||currentDeviceId; currentDeviceId=dev;
+      const stream = await navigator.mediaDevices.getUserMedia({video:{deviceId: dev? {exact:dev}:undefined, focusMode:'continuous'}, audio:false});
+      video.srcObject=stream; await video.play().catch(()=>{});
+      track = stream.getVideoTracks()[0]||null;
+      scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false; setStatus(L.ready,'#22c55e');
+
       const zxingOk = await window.ensureZXing();
       if(zxingOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){
         try{
@@ -324,11 +449,24 @@
       }
     }
 
-    async function stop(){ try{ if(reader){ try{reader.reset();}catch{} reader=null; } if(rafId){ cancelAnimationFrame(rafId); rafId=null; } if(track){ try{track.stop();}catch{} track=null; } const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; setStatus(T[LANG].paused,'#f59e0b'); }
+    async function stop(){
+      try{
+        if(reader){ try{reader.reset();}catch{} reader=null; }
+        if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+        if(track){ try{track.stop();}catch{} track=null; }
+        const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; }
+      }catch{}
+      scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; setStatus(T[LANG].paused,'#f59e0b');
+    }
 
     async function switchCam(){ if(!devices.length) return; const idx=devices.findIndex(d=>d.deviceId===currentDeviceId); const next=devices[(idx+1)%devices.length]; currentDeviceId=next.deviceId; $('#cameraSelect').value=currentDeviceId; if(scanning){ await stop(); await start(); } }
-
-    async function toggleTorch(){ try{ if(!track) return; const caps=track.getCapabilities?.(); if(!caps?.torch) return alert('No torch'); const on = caps.torch && !(track.getConstraints()?.advanced?.[0]?.torch); await track.applyConstraints({advanced:[{torch: on}]}); }catch(e){ alert('Torch error'); } }
+    async function toggleTorch(){
+      try{
+        if(!track) return; const caps=track.getCapabilities?.(); if(!caps?.torch) return alert('No torch');
+        const on = caps.torch && !(track.getConstraints()?.advanced?.[0]?.torch);
+        await track.applyConstraints({advanced:[{torch: on}]});
+      }catch(e){ alert('Torch error'); }
+    }
 
     // ===== Verification (event-locked) =====
     async function verifyAndMark(code){
@@ -357,13 +495,26 @@
       onCode(raw);
     }
 
-    // Wire
+    // ===== Wire =====
     document.addEventListener('DOMContentLoaded', ()=>{
-      i18n(); httpsOK(); initEvent(); renderHist(); drawQRPreview('');
-      const savedW = localStorage.getItem('hs:evscan:scanw'); if(savedW) document.getElementById('scanSize').value = savedW;
-      applyScanSize(); document.getElementById('scanSize').addEventListener('change', applyScanSize);
+      applyDir(); i18n(); httpsOK(); initEvent(); renderHist(); drawQRPreview('');
 
-      $('#langBtn').addEventListener('click', ()=>{ LANG= (LANG==='ar')?'en':'ar'; localStorage.setItem('hs:evscan:lang',LANG); i18n(); renderHist(); });
+      // Settings accordion
+      $('#accToggle').addEventListener('click', ()=>{
+        const bd=$('#accBody'); const open=bd.classList.toggle('open');
+        $('#accToggle').setAttribute('aria-label', open? T[LANG].accClose : T[LANG].accOpen);
+      });
+
+      // Saved scan width
+      const savedW = localStorage.getItem('hs:evscan:scanw'); if(savedW) $('#scanSize').value = savedW;
+      applyScanSize(); $('#scanSize').addEventListener('change', applyScanSize);
+
+      $('#langBtn').addEventListener('click', ()=>{
+        LANG= (LANG==='ar')?'en':'ar';
+        localStorage.setItem('hs:evscan:lang',LANG);
+        applyDir(); i18n(); renderHist();
+      });
+
       $('#startBtn').addEventListener('click', ()=>{ ensureAudio(); start(); });
       $('#stopBtn').addEventListener('click', stop);
       $('#switchBtn').addEventListener('click', switchCam);
@@ -371,17 +522,10 @@
       $('#manualBtn').addEventListener('click', ()=>{ ensureAudio(); const c=$('#manualCode').value.trim(); if(!c){return;} handleRawScan(c); });
       $('#clearHist').addEventListener('click', ()=>{ if(!EVENT_NAME) return; localStorage.removeItem(hKey()); renderHist(); });
 
+      // Open/Change event
       $('#setEventBtn').addEventListener('click', ()=>{
-        if(EVENT_LOCKED){ alert('تم تعيين الحدث من خلال رابط الصفحة ولا يمكن تغييره.'); return; }
-        const ex=document.getElementById('evSetup');
-        if(ex){ ex.classList.toggle('hidden'); ex.querySelector('#evInput')?.focus(); }
-        else{
-          const card=document.createElement('div'); card.className='card'; card.id='evSetup';
-          card.innerHTML=`<div class="muted" style="margin-bottom:6px">اكتب اسم المناسبة بالضبط كما هو في Firestore (EventName)</div>
-          <div class="row"><input id="evInput" class="input" placeholder="مثال: زفاف سعيد" /><button id="saveEv" class="btn">حفظ</button></div>`;
-          document.querySelector('.container').prepend(card);
-          document.getElementById('saveEv').addEventListener('click', ()=>{ const v=document.getElementById('evInput').value.trim(); if(!v) return alert('أدخل اسم المناسبة'); if(scanning){ stop(); } setEvent(v,false); });
-        }
+        if(EVENT_LOCKED){ alert(LANG==='ar'?'تم تعيين الحدث من خلال رابط الصفحة ولا يمكن تغييره.':'Event is locked by URL and cannot be changed.'); return; }
+        showEventSetup();
       });
     });
 
