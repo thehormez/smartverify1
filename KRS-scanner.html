@@ -393,7 +393,7 @@
       } else { alert(T[LANG].camlib); setStatus(T[LANG].camlib,'#f59e0b'); }
     }
 
-    async function stop(){ try{ if(reader){ try{reader.reset();}catch{} reader=null; } if(rafId){ cancelAnimationFrame(rafId); rafId=null; } if(track){ try{track.stop();}catch{} track=null; } const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; setStatus(T[LANG].paused],'#f59e0b'); }
+    async function stop(){ try{ if(reader){ try{reader.reset();}catch{} reader=null; } if(rafId){ cancelAnimationFrame(rafId); rafId=null; } if(track){ try{track.stop();}catch{} track=null; } const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; setStatus(T[LANG].paused,'#f59e0b'); }
     async function switchCam(){ if(!devices.length) return; const idx=devices.findIndex(d=>d.deviceId===currentDeviceId); const next=devices[(idx+1)%devices.length]; currentDeviceId=next.deviceId; $('#cameraSelect').value=currentDeviceId; if(scanning){ await stop(); await start(); } }
     async function toggleTorch(){ try{ if(!track) return; const caps=track.getCapabilities?.(); if(!caps?.torch) return alert('No torch'); const on=caps.torch && !(track.getConstraints()?.advanced?.[0]?.torch); await track.applyConstraints({advanced:[{torch:on}]}); }catch(e){ alert('Torch error'); } }
 
