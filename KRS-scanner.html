@@ -7,7 +7,7 @@
   <style>
     :root{
       --bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;
-      --ok:#16a34a;--bad:#ef4444;--warn:#f59e0b;--card:#0e172a
+      --ok:#22c55e;--bad:#ef4444;--warn:#f59e0b;--card:#0e172a
     }
     html,body{height:100%}
     body{
@@ -47,19 +47,22 @@
     .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
 
-    /* SUCCESS OVERLAY */
-    #okOverlay{
+    /* SUCCESS / ERROR OVERLAYS */
+    .overlay{
       position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-      background:var(--ok); color:#fff; z-index:9999; text-align:center; padding:20px;
+      color:#fff; z-index:9999; text-align:center; padding:20px;
       animation:fadeIn .12s ease-out;
     }
-    #okOverlay .code{
+    #okOverlay{ background:var(--ok); }
+    #errOverlay{ background:var(--bad); }
+    .overlay .code{
       font-size: clamp(28px, 9vw, 88px);
       font-weight: 900;
       letter-spacing: 2px;
       text-shadow: 0 2px 6px rgba(0,0,0,.25);
+      word-break: break-all;
     }
-    #okOverlay .msg{ margin-top:10px; font-size: clamp(14px, 3.5vw, 26px); font-weight:700 }
+    .overlay .msg{ margin-top:10px; font-size: clamp(14px, 3.5vw, 26px); font-weight:700 }
     @keyframes fadeIn { from{opacity:.0} to{opacity:1} }
 
     /* Settings accordion */
@@ -67,6 +70,11 @@
     .acc-hd{background:#0b1220;padding:10px 14px;cursor:pointer;font-weight:700}
     .acc-bd{display:none;padding:12px;background:#0c1426;border-top:1px solid var(--line)}
     .acc-bd.open{display:block}
+
+    /* Gate (event before enter) */
+    #gate{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:9998}
+    #gate .panel{width:min(560px,92vw);background:#0d1426;border:1px solid #243047;border-radius:16px;padding:16px}
+    #gate .panel h3{margin:0 0 8px 0}
   </style>
 </head>
 <body>
@@ -76,30 +84,50 @@
       <div class="row"><div style="font-weight:900">HS</div><div class="muted" id="titleSub">ماسح الباركود — مناسبة محددة</div></div>
       <div class="row">
         <span class="tag"><span id="lblEventTag">الحدث</span>: <b id="evTag">—</b></span>
-        <button id="setEventBtn" class="btn">تعيين/تغيير الحدث</button>
         <button id="langBtn" class="btn">AR</button>
       </div>
     </div>
   </div>
 
+  <!-- Gate asks for event BEFORE entering content -->
+  <div id="gate">
+    <div class="panel">
+      <h3 id="gateTitle" style="font-weight:800">ادخل اسم الحدث</h3>
+      <div class="muted" id="gateHint" style="margin-bottom:8px">يجب تحديد اسم الحدث قبل استخدام الماسح</div>
+      <div class="row">
+        <input id="gateEvent" class="input" placeholder="مثال: Zafaf Ali 2025" />
+        <button id="gateEnter" class="btn">دخول</button>
+      </div>
+      <div class="muted" id="gateMsg" style="margin-top:8px"></div>
+    </div>
+  </div>
+
   <!-- Green success overlay -->
-  <div id="okOverlay">
+  <div id="okOverlay" class="overlay">
     <div>
       <div class="code" id="okCode">—</div>
       <div class="msg" id="okMsg">تم القبول ✅</div>
     </div>
   </div>
 
-  <div class="container grid grid-2">
+  <!-- Red error overlay -->
+  <div id="errOverlay" class="overlay">
+    <div>
+      <div class="code" id="errCode">—</div>
+      <div class="msg" id="errMsg">مرفوض</div>
+    </div>
+  </div>
+
+  <div class="container grid grid-2" id="content" style="display:none">
     <!-- Left: Scanner + controls -->
     <div class="card">
       <div class="row" style="justify-content:space-between; gap:8px">
         <div class="status"><div id="statusDot" class="dot" style="background:#9ca3af"></div><div id="statusText" class="muted">—</div></div>
         <div class="row">
-          <button id="startBtn" class="btn">▶️ تشغيل</button>
+          <button id="startBtn" class="btn" disabled>▶️ تشغيل</button>
           <button id="stopBtn" class="btn" disabled>⏹️ إيقاف</button>
-          <button id="switchBtn" class="btn">🔄 تبديل</button>
-          <button id="torchBtn" class="btn">💡 فلاش</button>
+          <button id="switchBtn" class="btn" disabled>🔄 تبديل</button>
+          <button id="torchBtn" class="btn" disabled>💡 فلاش</button>
         </div>
       </div>
 
@@ -165,7 +193,7 @@
           <div class="muted" id="lblManual">إدخال يدوي</div>
           <div class="row">
             <input id="manualCode" class="input" placeholder="SA_001" />
-            <button id="manualBtn" class="btn">تحقق</button>
+            <button id="manualBtn" class="btn" disabled>تحقق</button>
           </div>
         </div>
       </div>
@@ -223,56 +251,38 @@
       ar:{
         titleSub:'ماسح الباركود — مناسبة محددة', eventTag:'الحدث',
         ready:'جاهز',checking:'جاري التحقق…',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',
-        camera:'الكاميرا',manual:'إدخال يدوي',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',mismatch:'❌ لا يخص هذه المناسبة',
+        camera:'الكاميرا',manual:'إدخال يدوي',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',mismatch:'❌ لا يخص هذه المناسبة',notfound:'❌ الكود غير موجود',
         needHttps:'الكاميرا تتطلب HTTPS أو localhost',camlib:'⚠️ مكتبة الكاميرا لم تُحمّل',paused:'⏸️ إيقاف مؤقت',needEvent:'الرجاء تعيين اسم المناسبة أولاً',
         settings:'الإعدادات',pause:'فترة التوقف (ملّي ثانية)',sounds:'الأصوات',reader:'حجم القارئ',regex:'نمط الكود (Regex)',strict:'وضع صارم',
         last:'النتيجة الأخيرة',hist:'السجل (محفوظ محليًا حسب المناسبة)',save:'حفظ',check:'تحقق',httpsWarn:'الكاميرا تتطلب HTTPS أو localhost',
-        accOpen:'فتح الإعدادات', accClose:'إغلاق الإعدادات', accepted:'تم القبول ✅'
+        accOpen:'فتح الإعدادات', accClose:'إغلاق الإعدادات',
+        accepted:'تم القبول ✅', rejected:'مرفوض', reason_mismatch:'لا يخص هذه المناسبة', reason_dupe:'كود مستخدم سابقًا', reason_notfound:'كود غير موجود'
       },
       en:{
         titleSub:'Barcode Scanner — Event Locked', eventTag:'Event',
         ready:'Ready',checking:'Checking…',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',
-        camera:'Camera',manual:'Manual input',ok:'✅ Accepted',dupe:'⚠️ Already used',mismatch:'❌ Not this event',
+        camera:'Camera',manual:'Manual input',ok:'✅ Accepted',dupe:'⚠️ Already used',mismatch:'❌ Not this event',notfound:'❌ Code not found',
         needHttps:'Camera requires HTTPS or localhost',camlib:'⚠️ Camera library not loaded',paused:'⏸️ Paused',needEvent:'Please set the event name first',
         settings:'Settings',pause:'Pause (ms)',sounds:'Sounds',reader:'Scan size',regex:'Code pattern (Regex)',strict:'Strict mode',
         last:'Last result',hist:'History (locally per event)',save:'Save',check:'Check',httpsWarn:'Camera requires HTTPS or localhost',
-        accOpen:'Open settings', accClose:'Close settings', accepted:'Accepted ✅'
+        accOpen:'Open settings', accClose:'Close settings',
+        accepted:'Accepted ✅', rejected:'Rejected', reason_mismatch:'Not this event', reason_dupe:'Already used', reason_notfound:'Code not found'
       }
     };
-
     let LANG=localStorage.getItem('hs:evscan:lang')||'ar';
-
-    function applyDir(){
-      const isAr = LANG==='ar';
-      document.documentElement.lang = LANG;
-      document.documentElement.dir  = isAr? 'rtl':'ltr';
-    }
-
+    function applyDir(){ const isAr=LANG==='ar'; document.documentElement.lang=LANG; document.documentElement.dir=isAr?'rtl':'ltr'; }
     function i18n(){
       const L=T[LANG];
-      $('#titleSub').textContent=L.titleSub;
-      $('#lblEventTag').textContent=L.eventTag;
-      $('#langBtn').textContent = (LANG==='ar'?'EN':'AR');
-
-      // Buttons & labels
+      $('#titleSub').textContent=L.titleSub; $('#lblEventTag').textContent=L.eventTag; $('#langBtn').textContent=(LANG==='ar'?'EN':'AR');
       $('#startBtn').textContent=L.start; $('#stopBtn').textContent=L.stop; $('#switchBtn').textContent=L.switch; $('#torchBtn').textContent=L.flash;
-      $('#statusText').textContent=L.ready; $('#lblCam').textContent=L.camera; $('#lblManual').textContent=L.manual;
-      $('#manualBtn').textContent=L.check; $('#lblHttps').textContent=L.httpsWarn;
-
-      // Settings
-      $('#lblSettings').textContent=L.settings;
-      $('#accToggle').setAttribute('aria-label', L.accOpen);
-      $('#lblPause').textContent=L.pause; $('#lblSound').textContent=L.sounds; $('#lblScanSize').textContent=L.reader;
-      $('#lblRegex').textContent=L.regex; $('#lblStrict').textContent=L.strict;
-
-      // Side
+      $('#statusText').textContent=L.ready; $('#lblCam').textContent=L.camera; $('#lblManual').textContent=L.manual; $('#manualBtn').textContent=L.check; $('#lblHttps').textContent=L.httpsWarn;
+      $('#lblSettings').textContent=L.settings; $('#accToggle').setAttribute('aria-label', L.accOpen); $('#lblPause').textContent=L.pause; $('#lblSound').textContent=L.sounds; $('#lblScanSize').textContent=L.reader; $('#lblRegex').textContent=L.regex; $('#lblStrict').textContent=L.strict;
       $('#lblLast').textContent=L.last; $('#lblHist').textContent=L.hist;
-
-      // Overlay
-      $('#okMsg').textContent = L.accepted;
-
-      // Placeholders
-      $('#manualCode').placeholder = (LANG==='ar' ? 'SA_001' : 'SA_001');
+      $('#okMsg').textContent=L.accepted; $('#errMsg').textContent=L.rejected;
+      $('#gateTitle').textContent = (LANG==='ar'?'ادخل اسم الحدث':'Enter event name');
+      $('#gateHint').textContent  = (LANG==='ar'?'يجب تحديد اسم الحدث قبل استخدام الماسح':'You must set the event name before using the scanner');
+      $('#gateEvent').placeholder = (LANG==='ar'?'مثال: Zafaf Ali 2025':'e.g. Zafaf Ali 2025');
+      $('#gateEnter').textContent = (LANG==='ar'?'دخول':'Enter');
     }
 
     // ===== Firebase =====
@@ -280,240 +290,153 @@
     if(!firebase.apps.length){ firebase.initializeApp(cfg); }
     const db=firebase.firestore();
 
-    // ===== Event from URL / local (lock if from URL) =====
-    const URL_EVENT = new URLSearchParams(location.search).get('event'); // ← يحدد الحدث من خارج الصفحة
-    let EVENT_LOCKED = false; // true إذا قادم من الرابط
+    // ===== Event from URL or Gate (before content) =====
+    const URL_EVENT = new URLSearchParams(location.search).get('event');
     let EVENT_NAME = '';
 
-    function setEvent(name, locked=false){
+    function allowUI(enable){
+      $('#content').style.display = enable ? '' : 'none';
+      $('#startBtn').disabled = !enable;
+      $('#stopBtn').disabled = !enable;
+      $('#switchBtn').disabled = !enable;
+      $('#torchBtn').disabled = !enable;
+      $('#manualBtn').disabled = !enable;
+    }
+
+    function setEvent(name){
       EVENT_NAME = String(name||'').trim();
-      EVENT_LOCKED = !!locked;
       $('#evTag').textContent = EVENT_NAME || '—';
       localStorage.setItem('hs:evscan:event', EVENT_NAME);
-
-      // قفل حقيقي: إخفاء زر التعيين وعدم إنشاء بطاقة إدخال
-      if (EVENT_LOCKED){
-        $('#setEventBtn').style.display = 'none';
-        const evSetup = $('#evSetup'); if(evSetup) evSetup.remove();
-      }else{
-        $('#setEventBtn').style.display = '';
-      }
-
       renderHist();
-      $('#startBtn').disabled = !httpsOK() || !EVENT_NAME;
-      $('#manualBtn').disabled = !EVENT_NAME;
+      allowUI(!!EVENT_NAME);
     }
 
-    function initEvent(){
+    function tryInitEvent(){
       const saved = localStorage.getItem('hs:evscan:event')||'';
-      if(URL_EVENT){ setEvent(URL_EVENT, true); }
-      else if(saved){ setEvent(saved, false); }
-      else {
-        showEventSetup();
+      if(URL_EVENT){ // event provided from outside page → skip gate
+        setEvent(URL_EVENT); $('#gate').style.display='none'; allowUI(true);
+      }else if(saved){
+        // still require a confirmation to match your request "يكتب قبل الدخول"
+        $('#gate').style.display='flex';
+        $('#gateEvent').value = saved;
+      }else{
+        $('#gate').style.display='flex';
       }
     }
 
-    function showEventSetup(){
-      if (EVENT_LOCKED) return; // لا تعرضها إذا مقفول بالرابط
-      if ($('#evSetup')) return;
-      const L=T[LANG];
-      const card=document.createElement('div'); card.className='card'; card.id='evSetup';
-      card.innerHTML=`<div class="muted" style="margin-bottom:6px">${LANG==='ar'?'اكتب اسم المناسبة بالضبط كما هو في Firestore (EventName)':'Type event name exactly as in Firestore (EventName)'}</div>
-      <div class="row"><input id="evInput" class="input" placeholder="${LANG==='ar'?'مثال: زفاف سعيد':'e.g. Saeed Wedding'}" />
-      <button id="saveEv" class="btn">${L.save}</button></div>`;
-      document.querySelector('.container').prepend(card);
-      $('#startBtn').disabled = true; $('#manualBtn').disabled=true;
-      $('#saveEv').addEventListener('click', ()=>{
-        if (EVENT_LOCKED) return; // حماية إضافية
-        const v=$('#evInput').value.trim(); if(!v) return alert(LANG==='ar'?'أدخل اسم المناسبة':'Enter event name');
-        if(scanning){ stop(); } setEvent(v,false);
-      });
+    // Gate actions
+    function enterFromGate(){
+      const v = ($('#gateEvent').value||'').trim();
+      if(!v){ $('#gateMsg').textContent = (LANG==='ar'?'أدخل اسم الحدث':'Enter event name'); return; }
+      setEvent(v);
+      $('#gate').style.display='none';
+      allowUI(true);
     }
 
     // HTTPS guard
-    function httpsOK(){
-      const isLocal = ['localhost','127.0.0.1'].includes(location.hostname);
-      const ok = location.protocol==='https:'||isLocal;
-      $('#httpsWarn').style.display = ok? 'none':'block';
-      if(!ok) { $('#startBtn').disabled=true; }
-      return ok;
-    }
+    function httpsOK(){ const isLocal=['localhost','127.0.0.1'].includes(location.hostname); const ok=location.protocol==='https:'||isLocal; $('#httpsWarn').style.display=ok?'none':'block'; if(!ok){ $('#startBtn').disabled=true; } return ok; }
 
     // History per event
     function hKey(){ return `hs:evscan:hist:${EVENT_NAME||'__NONE__'}` }
     function getHist(){ try{ return JSON.parse(localStorage.getItem(hKey())||'[]'); }catch{return []} }
     function pushHist(code,msg,good){ const h=getHist(); h.unshift({code,msg,at:Date.now(),good}); localStorage.setItem(hKey(), JSON.stringify(h.slice(0,80))); renderHist(); }
     function renderHist(){
-      const box=$('#hist'); const L=T[LANG]; box.innerHTML='';
-      const h=getHist();
-      if(!EVENT_NAME){ box.innerHTML = `<div class="muted">${L.needEvent}</div>`; return; }
+      const box=$('#hist'); box.innerHTML='';
+      const h=getHist(); if(!EVENT_NAME){ box.innerHTML=`<div class="muted">${T[LANG].needEvent}</div>`; return; }
       if(!h.length){ box.innerHTML = `<div class="muted">—</div>`; return; }
-      h.forEach(x=>{
-        const d=document.createElement('div');
-        d.style.padding='6px'; d.style.borderTop='1px solid var(--line)';
-        d.innerHTML = `<div class="mono">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`;
-        box.appendChild(d);
-      });
+      h.forEach(x=>{ const d=document.createElement('div'); d.style.padding='6px'; d.style.borderTop='1px solid var(--line)'; d.innerHTML=`<div class="mono">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`; box.appendChild(d); });
     }
 
     // ===== Audio =====
-    let audioCtx=null;
-    function ensureAudio(){ try{ if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended') audioCtx.resume(); }catch{} }
-    window.__hsPlayTone = function(type='ok'){
-      if(document.getElementById('soundMode')?.value==='off') return;
-      try{
-        ensureAudio(); if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
-        o.type='sine'; o.frequency.value = (type==='ok')? 880 : 220; const now=audioCtx.currentTime; const dur=(type==='ok')?0.12:0.22;
-        o.connect(g); g.connect(audioCtx.destination);
-        g.gain.setValueAtTime(0.0001, now);
-        g.gain.exponentialRampToValueAtTime(0.2, now+0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, now+dur);
-        o.start(); o.stop(now+dur+0.02);
-      }catch{}
-    }
+    let audioCtx=null; function ensureAudio(){ try{ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended') audioCtx.resume(); }catch{} }
+    window.__hsPlayTone=function(type='ok'){ if($('#soundMode')?.value==='off') return; try{ ensureAudio(); if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.value=(type==='ok')?880:220; const now=audioCtx.currentTime; const dur=(type==='ok')?0.12:0.22; o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(0.0001,now); g.gain.exponentialRampToValueAtTime(0.2,now+0.02); g.gain.exponentialRampToValueAtTime(0.0001,now+dur); o.start(); o.stop(now+dur+0.02);}catch{} }
 
-    // UI helpers
+    // UI helpers + overlays
     function setStatus(text,color){ $('#statusText').textContent=text; $('#statusDot').style.background=color; }
-    function drawQRPreview(text){
-      const c=$('#qrCanvas'); if(!c) return;
-      try{ if(!text){ const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); return; }
-        QRCode.toCanvas(c, text, {width:110, margin:1}, ()=>{});
-      }catch{}
-    }
-    function showGreenOverlay(code){
-      const overlay = $('#okOverlay');
-      $('#okCode').textContent = code || '—';
-      overlay.style.display = 'flex';
-      setTimeout(()=>{ overlay.style.display='none'; }, 1300);
-    }
-    function showLast(code,msg,good){
-      $('#lastCode').textContent=code||'—';
-      $('#lastCode').style.color = good? '#86efac':'#fca5a5';
-      $('#lastMsg').textContent=msg||'';
-      drawQRPreview(code||'');
-      try{ window.__hsPlayTone(good? 'ok':'err'); navigator.vibrate?.(good? 60:120); }catch{}
-      if(good){ showGreenOverlay(code); }
-    }
+    function drawQRPreview(text){ const c=$('#qrCanvas'); if(!c) return; try{ if(!text){ const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); return; } QRCode.toCanvas(c, text, {width:110, margin:1}, ()=>{});}catch{} }
+    function showGreenOverlay(code){ $('#okCode').textContent=code||'—'; const el=$('#okOverlay'); el.style.display='flex'; setTimeout(()=>{ el.style.display='none'; }, 1200); }
+    function showRedOverlay(code,reason){ $('#errCode').textContent=code||'—'; $('#errMsg').textContent=reason||T[LANG].rejected; const el=$('#errOverlay'); el.style.display='flex'; setTimeout(()=>{ el.style.display='none'; }, 1400); }
+    function showLast(code,msg,good){ $('#lastCode').textContent=code||'—'; $('#lastCode').style.color=good?'#86efac':'#fca5a5'; $('#lastMsg').textContent=msg||''; drawQRPreview(code||''); try{ window.__hsPlayTone(good?'ok':'err'); navigator.vibrate?.(good?60:120);}catch{}; if(good) showGreenOverlay(code); }
 
     // Camera state
     let devices=[], currentDeviceId=null, track=null, scanning=false, rafId=null; let reader=null, ndet=null; let locked=false;
-    function lockPause(){ locked=true; const ms = Math.max(300, parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
+    function lockPause(){ locked=true; const ms=Math.max(300, parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
 
     // Regex/Strict helpers
-    function strictOn(){ return (document.getElementById('strictMode')?.value||'on')==='on'; }
-    function codeRegex(){ try{ return new RegExp(document.getElementById('codeRegex')?.value||''); }catch{ return null; } }
+    function strictOn(){ return ($('#strictMode')?.value||'on')==='on'; }
+    function codeRegex(){ try{ return new RegExp($('#codeRegex')?.value||''); }catch{ return null; } }
 
     async function ensurePerm(){ try{ const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); tmp.getTracks().forEach(t=>t.stop()); }catch{} }
-    async function listCams(){
-      const all=await navigator.mediaDevices.enumerateDevices(); devices = all.filter(d=>d.kind==='videoinput');
-      const sel=$('#cameraSelect'); sel.innerHTML='';
-      devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label||`Camera ${i+1}`; sel.appendChild(o); });
-      if(devices.length){
-        if(!currentDeviceId){
-          const back=devices.find(d=>/back|rear|environment|خلف/i.test(d.label||'')); currentDeviceId = back? back.deviceId : devices[0].deviceId;
-        }
-        sel.value=currentDeviceId;
-      }
-    }
+    async function listCams(){ const all=await navigator.mediaDevices.enumerateDevices(); devices=all.filter(d=>d.kind==='videoinput'); const sel=$('#cameraSelect'); sel.innerHTML=''; devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.deviceId; o.textContent=d.label||`Camera ${i+1}`; sel.appendChild(o); }); if(devices.length){ if(!currentDeviceId){ const back=devices.find(d=>/back|rear|environment|خلف/i.test(d.label||'')); currentDeviceId=back?back.deviceId:devices[0].deviceId; } sel.value=currentDeviceId; } }
 
     async function start(){
-      const L=T[LANG];
-      locked=false; ensureAudio();
+      const L=T[LANG]; locked=false; ensureAudio();
       if(!EVENT_NAME){ alert(L.needEvent); return; }
-      if(!httpsOK()) { alert(L.needHttps); return; }
+      if(!httpsOK()){ alert(L.needHttps); return; }
       await ensurePerm(); await listCams();
       const video=$('#video'); const dev=$('#cameraSelect').value||currentDeviceId; currentDeviceId=dev;
-      const stream = await navigator.mediaDevices.getUserMedia({video:{deviceId: dev? {exact:dev}:undefined, focusMode:'continuous'}, audio:false});
-      video.srcObject=stream; await video.play().catch(()=>{});
-      track = stream.getVideoTracks()[0]||null;
-      scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false; setStatus(L.ready,'#22c55e');
+      const stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:dev?{exact:dev}:undefined, focusMode:'continuous'}, audio:false});
+      video.srcObject=stream; await video.play().catch(()=>{}); track=stream.getVideoTracks()[0]||null;
+      scanning=true; $('#startBtn').disabled=true; $('#stopBtn').disabled=false; $('#switchBtn').disabled=false; $('#torchBtn').disabled=false; setStatus(L.ready,'#22c55e');
 
-      const zxingOk = await window.ensureZXing();
+      const zxingOk=await window.ensureZXing();
       if(zxingOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){
         try{
           if(window.ZXing && window.ZXing.BarcodeFormat && window.ZXing.DecodeHintType){
-            const hints = new Map();
-            hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, [window.ZXing.BarcodeFormat.QR_CODE]);
-            reader = new window.ZXing.BrowserMultiFormatReader(hints);
-          }else{
-            reader = new window.ZXing.BrowserMultiFormatReader();
-          }
-        }catch{ reader = new window.ZXing.BrowserMultiFormatReader(); }
-        reader.decodeFromVideoDevice(dev||null, video, (res,err)=>{ if(res){ if(locked) return; const text = res.getText? res.getText(): (res.text||''); handleRawScan(String(text||'').trim()); } });
-      }
-      else if('BarcodeDetector' in window){
-        ndet = new window.BarcodeDetector({formats:['qr_code']});
-        const loop=async()=>{ if(!scanning) return; try{ if(!locked){ const bar=await ndet.detect(video); if(bar && bar.length){ handleRawScan(String(bar[0].rawValue||'').trim()); } } }catch{} rafId = requestAnimationFrame(loop); }; loop();
-      } else {
-        alert(T[LANG].camlib); setStatus(T[LANG].camlib,'#f59e0b');
-      }
+            const hints=new Map(); hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS,[window.ZXing.BarcodeFormat.QR_CODE]); reader=new window.ZXing.BrowserMultiFormatReader(hints);
+          } else { reader=new window.ZXing.BrowserMultiFormatReader(); }
+        }catch{ reader=new window.ZXing.BrowserMultiFormatReader(); }
+        reader.decodeFromVideoDevice(dev||null, video, (res,err)=>{ if(res){ if(locked) return; const text=res.getText?res.getText():(res.text||''); handleRawScan(String(text||'').trim()); } });
+      } else if('BarcodeDetector' in window){
+        ndet=new window.BarcodeDetector({formats:['qr_code']});
+        const loop=async()=>{ if(!scanning) return; try{ if(!locked){ const bar=await ndet.detect(video); if(bar && bar.length){ handleRawScan(String(bar[0].rawValue||'').trim()); } } }catch{} rafId=requestAnimationFrame(loop); }; loop();
+      } else { alert(T[LANG].camlib); setStatus(T[LANG].camlib,'#f59e0b'); }
     }
 
-    async function stop(){
-      try{
-        if(reader){ try{reader.reset();}catch{} reader=null; }
-        if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
-        if(track){ try{track.stop();}catch{} track=null; }
-        const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; }
-      }catch{}
-      scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; setStatus(T[LANG].paused,'#f59e0b');
-    }
-
+    async function stop(){ try{ if(reader){ try{reader.reset();}catch{} reader=null; } if(rafId){ cancelAnimationFrame(rafId); rafId=null; } if(track){ try{track.stop();}catch{} track=null; } const v=$('#video'); if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; } }catch{} scanning=false; $('#startBtn').disabled=false; $('#stopBtn').disabled=true; setStatus(T[LANG].paused],'#f59e0b'); }
     async function switchCam(){ if(!devices.length) return; const idx=devices.findIndex(d=>d.deviceId===currentDeviceId); const next=devices[(idx+1)%devices.length]; currentDeviceId=next.deviceId; $('#cameraSelect').value=currentDeviceId; if(scanning){ await stop(); await start(); } }
-    async function toggleTorch(){
-      try{
-        if(!track) return; const caps=track.getCapabilities?.(); if(!caps?.torch) return alert('No torch');
-        const on = caps.torch && !(track.getConstraints()?.advanced?.[0]?.torch);
-        await track.applyConstraints({advanced:[{torch: on}]});
-      }catch(e){ alert('Torch error'); }
-    }
+    async function toggleTorch(){ try{ if(!track) return; const caps=track.getCapabilities?.(); if(!caps?.torch) return alert('No torch'); const on=caps.torch && !(track.getConstraints()?.advanced?.[0]?.torch); await track.applyConstraints({advanced:[{torch:on}]}); }catch(e){ alert('Torch error'); } }
 
-    // ===== Verification (event-locked) =====
+    // ===== Firestore verification =====
     async function verifyAndMark(code){
       const L=T[LANG]; setStatus(L.checking,'#f59e0b');
       try{
-        if(!EVENT_NAME){ showLast(code, L.needEvent, false); return; }
-        const ref = db.collection('invites');
-        const q = await ref.where('Code','==',code).where('EventName','==',EVENT_NAME).limit(1).get();
-        if(q.empty){ showLast(code,L.mismatch,false); pushHist(code,L.mismatch,false); return; }
-        const doc = q.docs[0]; const data = doc.data()||{};
+        if(!EVENT_NAME){ showLast(code, L.needEvent, false); showRedOverlay(code,L.needEvent); return; }
+        const ref=db.collection('invites');
+        const q=await ref.where('Code','==',code).where('EventName','==',EVENT_NAME).limit(1).get();
+        if(q.empty){ const reason=L.mismatch; showLast(code,reason,false); pushHist(code,reason,false); showRedOverlay(code, T[LANG].reason_mismatch); return; }
+        const doc=q.docs[0]; const data=doc.data()||{};
         if(String((data.Status||'')).toLowerCase()==='yes'){
-          showLast(code,L.dupe,false); pushHist(code,L.dupe,false);
+          const reason=L.dupe; showLast(code,reason,false); pushHist(code,reason,false); showRedOverlay(code, T[LANG].reason_dupe);
         } else {
           await doc.ref.set({ Status:'yes', scannedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
           showLast(code,L.ok,true); pushHist(code,L.ok,true);
         }
-      }catch(e){ showLast(code, e.message||'Error', false); pushHist(code, e.message||'Error', false); }
+      }catch(e){
+        const msg=e?.message||'Error';
+        showLast(code,msg,false); pushHist(code,msg,false); showRedOverlay(code, (LANG==='ar'?'خطأ: ':'Error: ')+msg);
+      }
     }
 
     function onCode(text){ if(!text) return; if(locked) return; lockPause(); verifyAndMark(text); }
-
-    function handleRawScan(raw){
-      const strict = strictOn();
-      const re = codeRegex();
-      if(strict){ if(!re) return; if(!re.test(raw)) return; }
-      onCode(raw);
-    }
+    function handleRawScan(raw){ const strict=strictOn(); const re=codeRegex(); if(strict){ if(!re) return; if(!re.test(raw)) return; } onCode(raw); }
 
     // ===== Wire =====
     document.addEventListener('DOMContentLoaded', ()=>{
-      applyDir(); i18n(); httpsOK(); initEvent(); renderHist(); drawQRPreview('');
+      applyDir(); i18n(); httpsOK(); tryInitEvent(); renderHist(); drawQRPreview('');
+
+      // Gate
+      $('#gateEnter').addEventListener('click', enterFromGate);
+      $('#gateEvent').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); enterFromGate(); } });
 
       // Settings accordion
-      $('#accToggle').addEventListener('click', ()=>{
-        const bd=$('#accBody'); const open=bd.classList.toggle('open');
-        $('#accToggle').setAttribute('aria-label', open? T[LANG].accClose : T[LANG].accOpen);
-      });
+      $('#accToggle').addEventListener('click', ()=>{ const bd=$('#accBody'); const open=bd.classList.toggle('open'); $('#accToggle').setAttribute('aria-label', open? T[LANG].accClose : T[LANG].accOpen); });
 
       // Saved scan width
-      const savedW = localStorage.getItem('hs:evscan:scanw'); if(savedW) $('#scanSize').value = savedW;
+      const savedW=localStorage.getItem('hs:evscan:scanw'); if(savedW) $('#scanSize').value=savedW;
       applyScanSize(); $('#scanSize').addEventListener('change', applyScanSize);
 
-      $('#langBtn').addEventListener('click', ()=>{
-        LANG= (LANG==='ar')?'en':'ar';
-        localStorage.setItem('hs:evscan:lang',LANG);
-        applyDir(); i18n(); renderHist();
-      });
+      $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar')?'en':'ar'; localStorage.setItem('hs:evscan:lang',LANG); applyDir(); i18n(); renderHist(); });
 
       $('#startBtn').addEventListener('click', ()=>{ ensureAudio(); start(); });
       $('#stopBtn').addEventListener('click', stop);
@@ -521,20 +444,12 @@
       $('#torchBtn').addEventListener('click', toggleTorch);
       $('#manualBtn').addEventListener('click', ()=>{ ensureAudio(); const c=$('#manualCode').value.trim(); if(!c){return;} handleRawScan(c); });
       $('#clearHist').addEventListener('click', ()=>{ if(!EVENT_NAME) return; localStorage.removeItem(hKey()); renderHist(); });
-
-      // Open/Change event
-      $('#setEventBtn').addEventListener('click', ()=>{
-        if(EVENT_LOCKED){ alert(LANG==='ar'?'تم تعيين الحدث من خلال رابط الصفحة ولا يمكن تغييره.':'Event is locked by URL and cannot be changed.'); return; }
-        showEventSetup();
-      });
     });
 
-    function applyScanSize(){
-      const wrap = document.getElementById('scanWrap'); if(!wrap) return;
-      const w = document.getElementById('scanSize')?.value || '480';
-      wrap.style.maxWidth = w + 'px';
-      localStorage.setItem('hs:evscan:scanw', w);
-    }
+    function applyScanSize(){ const wrap=$('#scanWrap'); if(!wrap) return; const w=$('#scanSize')?.value||'480'; wrap.style.maxWidth=w+'px'; localStorage.setItem('hs:evscan:scanw', w); }
+
+    // Pause lock
+    function lockPause(){ locked=true; const ms=Math.max(300, parseInt($('#pauseMs')?.value||'2000',10)); setTimeout(()=>{ locked=false; }, ms); }
   })();
   </script>
 </body>
