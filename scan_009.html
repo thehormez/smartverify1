@@ -1,312 +1,707 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez Scanner — زفاف خالد</title>
-
-  <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
-
+  <title>Hormez — ماسح مناسبة احترافي</title>
   <style>
     :root{
-      --bg:#0b0b0d; --card:#141418; --gold:#d6b25e; --text:#f5f5f7; --muted:#b7b7bd;
-      --ok:#18c06e; --bad:#ff4d4d; --warn:#ffcc00;
+      --bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;
+      --ok:#22c55e;--bad:#ef4444;--warn:#f59e0b;--card:#0e172a
     }
-    *{box-sizing:border-box}
+    html,body{height:100%}
     body{
-      margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;
-      background: radial-gradient(1200px 600px at 50% -20%, rgba(214,178,94,.15), transparent 60%), var(--bg);
-      color:var(--text);
+      margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);
+      color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial
     }
-    header{padding:18px 16px 10px; text-align:center}
-    .brand{font-weight:900; color:var(--gold); font-size:20px; margin-bottom:6px; letter-spacing:.5px}
-    .event{font-weight:800; font-size:18px}
-    .sub{color:var(--muted); font-size:13px; margin-top:6px}
-    .wrap{max-width:720px; margin:0 auto; padding:12px 14px 22px}
-    .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:18px; padding:14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
+    .container{max-width:1100px;margin:0 auto;padding:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn:hover{background:#0d1528}
+    .select,.input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
+    .grid{display:grid;gap:12px}
+    .grid-2{grid-template-columns:2fr 1fr}
+    @media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+    .muted{color:var(--muted)}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .status{display:flex;gap:8px;align-items:center}
+
+    /* Scanner video */
+    .scanWrap{position:relative;width:100%;aspect-ratio:3/4;max-width:480px;margin-inline:auto;border-radius:14px;overflow:hidden;background:#000;border:1px solid rgba(255,255,255,.08)}
+    #video{width:100%;height:100%;object-fit:cover}
+    .frame{position:absolute;inset:0;pointer-events:none}
+    .corner{position:absolute;width:42px;height:42px;border:3px solid rgba(255,255,255,.7)}
+    .corner.tl{top:12px;left:12px;border-right:none;border-bottom:none;border-radius:10px 0 0 0}
+    .corner.tr{top:12px;right:12px;border-left:none;border-bottom:none;border-radius:0 10px 0 0}
+    .corner.bl{bottom:12px;left:12px;border-right:none;border-top:none;border-radius:0 0 0 10px}
+    .corner.br{bottom:12px;right:12px;border-left:none;border-top:none;border-radius:0 0 10px 0}
+
+    /* Last result */
+    .qrBox{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center}
+    .qrBox canvas{background:#fff;border-radius:10px}
+
+    .hist{max-height:320px;overflow:auto}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#0b1220}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+
+    /* SUCCESS / ERROR OVERLAYS */
+    .overlay{
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+      color:#fff; z-index:9999; text-align:center; padding:20px;
+      animation:fadeIn .12s ease-out;
     }
-    #reader{
-      width:100%; max-width:520px; margin:12px auto 0;
-      border-radius:18px; overflow:hidden;
-      border:1px solid rgba(214,178,94,.35);
-      background:#000;
+    #okOverlay{ background:var(--ok); }
+    #errOverlay{ background:var(--bad); }
+    .overlay .code{
+      font-size: clamp(28px, 9vw, 88px);
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 6px rgba(0,0,0,.25);
+      word-break: break-all;
     }
-    .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:12px}
-    button{
-      border:none; border-radius:14px; padding:12px 14px; font-weight:900;
-      cursor:pointer; font-size:14px; min-width:140px;
-    }
-    .btn-primary{background:var(--gold); color:#111}
-    .btn-ghost{background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.10)}
-    .btn-danger{background:rgba(255,77,77,.12); color:var(--bad); border:1px solid rgba(255,77,77,.30)}
-    .hint{text-align:center; color:var(--muted); font-size:13px; margin-top:10px; line-height:1.6}
-    .status{
-      margin-top:12px; padding:14px; border-radius:16px;
-      border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03);
-      min-height:76px; display:flex; align-items:center; justify-content:center; text-align:center;
-      font-weight:900; font-size:16px; line-height:1.6;
-    }
-    .status.ok{ border-color: rgba(24,192,110,.35); }
-    .status.bad{ border-color: rgba(255,77,77,.35); }
-    .status.warn{ border-color: rgba(255,204,0,.35); }
-    .small{display:block; font-weight:700; font-size:12px; color:var(--muted); margin-top:8px}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; font-weight:900; color:var(--gold)}
+    .overlay .msg{ margin-top:10px; font-size: clamp(14px, 3.5vw, 26px); font-weight:700 }
+    @keyframes fadeIn { from{opacity:.0} to{opacity:1} }
+
+    /* Settings accordion */
+    .accordion{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    .acc-hd{background:#0b1220;padding:10px 14px;cursor:pointer;font-weight:700}
+    .acc-bd{display:none;padding:12px;background:#0c1426;border-top:1px solid var(--line)}
+    .acc-bd.open{display:block}
+
+    /* Gate (event before enter) */
+    #gate{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:9998}
+    #gate .panel{width:min(560px,92vw);background:#0d1426;border:1px solid #243047;border-radius:16px;padding:16px}
+    #gate .panel h3{margin:0 0 8px 0}
   </style>
 </head>
-
 <body>
-<header>
-  <div class="brand">Hormez Security</div>
-  <div class="event">ماسح الدعوات — زفاف خالد</div>
-  <div class="sub">قراءة سريعة + تحديث الحالة في Firestore</div>
-</header>
-
-<div class="wrap">
-  <div class="card">
-    <div id="reader"></div>
-
-    <div class="row">
-      <button id="btnStart" class="btn-primary">تشغيل الكاميرا</button>
-      <button id="btnStop" class="btn-danger" disabled>إيقاف</button>
-      <button id="btnTorch" class="btn-ghost" disabled>فلاش</button>
-      <button id="btnNew" class="btn-ghost" disabled>مسح جديد</button>
-    </div>
-
-    <div class="hint">
-      📌 ضع الباركود داخل المربع — مسافة 15–25 سم — إضاءة جيدة.<br/>
-      يتم إيقاف الكاميرا تلقائيًا بعد أول قراءة (لتسريع الدخول).
-    </div>
-
-    <div id="status" class="status warn">
-      جاهز… اضغط “تشغيل الكاميرا”
-      <span class="small">الحدث: <span class="mono" id="eventNameLabel"></span></span>
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="container row" style="justify-content:space-between">
+      <div class="row"><div style="font-weight:900">HS</div><div class="muted" id="titleSub">ماسح الباركود — مناسبة محددة</div></div>
+      <div class="row">
+        <span class="tag"><span id="lblEventTag">الحدث</span>: <b id="evTag">—</b></span>
+        <button id="langBtn" class="btn">AR</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-  import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from
-    "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  <!-- Gate asks for event BEFORE entering content -->
+  <div id="gate">
+    <div class="panel">
+      <h3 id="gateTitle" style="font-weight:800">ادخل اسم الحدث</h3>
+      <div class="muted" id="gateHint" style="margin-bottom:8px">يجب تحديد اسم الحدث قبل استخدام الماسح</div>
+      <div class="row">
+        <input id="gateEvent" class="input" placeholder="مثال: Zafaf Ali 2025" />
+        <button id="gateEnter" class="btn">دخول</button>
+      </div>
+      <div class="muted" id="gateMsg" style="margin-top:8px"></div>
+    </div>
+  </div>
 
-  /********** إعدادات مشروعك **********/
-  const firebaseConfig = {
-    apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-    authDomain: "hormez-inv.firebaseapp.com",
-    projectId: "hormez-inv",
-    storageBucket: "hormez-inv.firebasestorage.app",
-    messagingSenderId: "747519941805",
-    appId: "1:747519941805:web:468fada2492700e9da3a24"
-  };
+  <!-- Green success overlay -->
+  <div id="okOverlay" class="overlay">
+    <div>
+      <div class="code" id="okCode">—</div>
+      <div class="msg" id="okMsg">تم القبول ✅</div>
+    </div>
+  </div>
 
-  const EVENT_NAME = "زفاف خالد";
-  const COLLECTION = "invites";
+  <!-- Red error overlay -->
+  <div id="errOverlay" class="overlay">
+    <div>
+      <div class="code" id="errCode">—</div>
+      <div class="msg" id="errMsg">مرفوض</div>
+    </div>
+  </div>
 
-  // إعدادات الأداء (سريعة)
-  const SCAN_FPS = 15;
-  const QR_BOX = 260;
-  const CAMERA_CONSTRAINTS = {
-    facingMode: "environment",
-    width: { ideal: 640 },
-    height: { ideal: 480 }
-  };
+  <div class="container grid grid-2" id="content" style="display:none">
+    <!-- Left: Scanner + controls -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between; gap:8px">
+        <div class="status"><div id="statusDot" class="dot" style="background:#9ca3af"></div><div id="statusText" class="muted">—</div></div>
+        <div class="row">
+          <button id="startBtn" class="btn" disabled>▶️ تشغيل</button>
+          <button id="stopBtn" class="btn" disabled>⏹️ إيقاف</button>
+          <button id="switchBtn" class="btn" disabled>🔄 تبديل</button>
+          <button id="torchBtn" class="btn" disabled>💡 فلاش</button>
+        </div>
+      </div>
 
-  document.getElementById("eventNameLabel").textContent = EVENT_NAME;
+      <div class="scanWrap" id="scanWrap">
+        <video id="video" playsinline muted autoplay></video>
+        <div class="frame">
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+        </div>
+      </div>
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+      <!-- Settings (accordion) -->
+      <div class="accordion" style="margin-top:12px">
+        <div class="acc-hd" id="accToggle">⚙️ <span id="lblSettings">الإعدادات</span></div>
+        <div class="acc-bd" id="accBody">
+          <div class="row" style="margin-top:6px">
+            <div style="width:160px">
+              <div class="muted" id="lblPause">فترة التوقف (ملّي ثانية)</div>
+              <!-- ✅ أسرع افتراضيًا -->
+              <input id="pauseMs" class="input" type="number" value="600" />
+            </div>
+            <div style="width:150px">
+              <div class="muted" id="lblSound">الأصوات</div>
+              <select id="soundMode" class="select">
+                <option value="on">تشغيل</option>
+                <option value="off">إيقاف</option>
+              </select>
+            </div>
+            <div style="width:180px">
+              <div class="muted" id="lblScanSize">حجم القارئ</div>
+              <select id="scanSize" class="select">
+                <option value="360">صغير</option>
+                <option value="480" selected>متوسط</option>
+                <option value="680">كبير</option>
+              </select>
+            </div>
+          </div>
 
-  let qr;
-  let running = false;
-  let locked = false;
-  let torch = false;
+          <div class="row" style="margin-top:10px">
+            <div style="flex:1">
+              <div class="muted" id="lblRegex">نمط الكود (Regex)</div>
+              <input id="codeRegex" class="input mono" value="^[A-Z]{2}_[0-9]{3,}$" />
+            </div>
+            <div style="width:170px">
+              <div class="muted" id="lblStrict">وضع صارم</div>
+              <select id="strictMode" class="select">
+                <option value="on">اقبل المطابق فقط</option>
+                <option value="off">اقبل الكل</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  const s = document.getElementById("status");
-  const btnStart = document.getElementById("btnStart");
-  const btnStop  = document.getElementById("btnStop");
-  const btnTorch = document.getElementById("btnTorch");
-  const btnNew   = document.getElementById("btnNew");
+      <!-- Camera + manual -->
+      <div class="row" style="margin-top:10px">
+        <div style="flex:1">
+          <div class="muted" id="lblCam">الكاميرا</div>
+          <select id="cameraSelect" class="select"></select>
+        </div>
+        <div style="flex:1">
+          <div class="muted" id="lblManual">إدخال يدوي</div>
+          <div class="row">
+            <input id="manualCode" class="input" placeholder="SA_001" />
+            <button id="manualBtn" class="btn" disabled>تحقق</button>
+          </div>
+        </div>
+      </div>
 
-  const deviceId = getOrCreateDeviceId();
+      <div id="httpsWarn" class="card" style="display:none; margin-top:10px; border-color:#7f1d1d;background:#450a0a;color:#fecaca">
+        ⚠️ <span id="lblHttps">الكاميرا تتطلب HTTPS أو localhost</span>.
+      </div>
+    </div>
 
-  function setStatus(type, main, sub=""){
-    s.classList.remove("ok","bad","warn");
-    s.classList.add(type);
-    s.innerHTML = `${main}${sub ? `<span class="small">${sub}</span>` : ""}`;
-  }
+    <!-- Right: last result + history -->
+    <div class="card">
+      <div class="muted" id="lblLast" style="font-size:12px">النتيجة الأخيرة</div>
+      <div class="qrBox" style="margin-top:6px">
+        <canvas id="qrCanvas" width="110" height="110"></canvas>
+        <div>
+          <div id="lastCode" class="mono" style="font-size:22px;font-weight:800">—</div>
+          <div id="lastMsg" class="muted" style="font-size:12px;margin-top:4px">—</div>
+        </div>
+      </div>
 
-  function beep(){
-    try{
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.frequency.value = 880; g.gain.value = 0.05;
-      o.connect(g); g.connect(ctx.destination);
-      o.start(); setTimeout(()=>{o.stop(); ctx.close();}, 110);
-    }catch(e){}
-    if (navigator.vibrate) navigator.vibrate(60);
-  }
+      <div class="muted" id="lblHist" style="font-size:12px;margin-top:14px">السجل (محفوظ محليًا حسب المناسبة)</div>
+      <div id="hist" class="hist"></div>
+      <div class="row" style="margin-top:8px"><button id="clearHist" class="btn">مسح السجل</button></div>
+    </div>
+  </div>
 
-  function normalizeCode(text){
-    // يدعم: نص مباشر (INV-001) أو رابط فيه ?code=INV-001
-    const t = (text||"").trim();
-    if (!t) return "";
-    if (t.includes("http")){
+  <!-- QR lib for preview -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+  <!-- ZXing dynamic loader -->
+  <script>
+    (function(){
+      const CANDS=[
+        'https://unpkg.com/@zxing/browser@0.1.3/umd/index.min.js',
+        'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.3/umd/index.min.js',
+        'https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js',
+        'https://cdn.jsdelivr.net/npm/@zxing/library@0.18.6/umd/index.min.js'
+      ];
+      function load(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
+      window.ensureZXing=async()=>{if(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))return true;for(const u of CANDS){try{await load(u);if(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))return true;}catch(_){} }return !!(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))};
+      window.hasNativeDetector = 'BarcodeDetector' in window;
+    })();
+  </script>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+  <script>
+  (function(){
+    const $=(s,root=document)=>root.querySelector(s);
+
+    // ===== i18n =====
+    const T={
+      ar:{
+        titleSub:'ماسح الباركود — مناسبة محددة', eventTag:'الحدث',
+        ready:'جاهز',checking:'جاري التحقق…',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',
+        camera:'الكاميرا',manual:'إدخال يدوي',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',mismatch:'❌ لا يخص هذه المناسبة',notfound:'❌ الكود غير موجود',
+        needHttps:'الكاميرا تتطلب HTTPS أو localhost',camlib:'⚠️ مكتبة الكاميرا لم تُحمّل',paused:'⏸️ إيقاف مؤقت',needEvent:'الرجاء تعيين اسم المناسبة أولاً',
+        settings:'الإعدادات',pause:'فترة التوقف (ملّي ثانية)',sounds:'الأصوات',reader:'حجم القارئ',regex:'نمط الكود (Regex)',strict:'وضع صارم',
+        last:'النتيجة الأخيرة',hist:'السجل (محفوظ محليًا حسب المناسبة)',save:'حفظ',check:'تحقق',httpsWarn:'الكاميرا تتطلب HTTPS أو localhost',
+        accOpen:'فتح الإعدادات', accClose:'إغلاق الإعدادات',
+        accepted:'تم القبول ✅', rejected:'مرفوض', reason_mismatch:'لا يخص هذه المناسبة', reason_dupe:'كود مستخدم سابقًا', reason_notfound:'كود غير موجود'
+      },
+      en:{
+        titleSub:'Barcode Scanner — Event Locked', eventTag:'Event',
+        ready:'Ready',checking:'Checking…',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',
+        camera:'Camera',manual:'Manual input',ok:'✅ Accepted',dupe:'⚠️ Already used',mismatch:'❌ Not this event',notfound:'❌ Code not found',
+        needHttps:'Camera requires HTTPS or localhost',camlib:'⚠️ Camera library not loaded',paused:'⏸️ Paused',needEvent:'Please set the event name first',
+        settings:'Settings',pause:'Pause (ms)',sounds:'Sounds',reader:'Scan size',regex:'Code pattern (Regex)',strict:'Strict mode',
+        last:'Last result',hist:'History (locally per event)',save:'Save',check:'Check',httpsWarn:'Camera requires HTTPS or localhost',
+        accOpen:'Open settings', accClose:'Close settings',
+        accepted:'Accepted ✅', rejected:'Rejected', reason_mismatch:'Not this event', reason_dupe:'Already used', reason_notfound:'Code not found'
+      }
+    };
+
+    let LANG=localStorage.getItem('hs:evscan:lang')||'ar';
+    function applyDir(){ const isAr=LANG==='ar'; document.documentElement.lang=LANG; document.documentElement.dir=isAr?'rtl':'ltr'; }
+    function i18n(){
+      const L=T[LANG];
+      $('#titleSub').textContent=L.titleSub; $('#lblEventTag').textContent=L.eventTag; $('#langBtn').textContent=(LANG==='ar'?'EN':'AR');
+      $('#startBtn').textContent=L.start; $('#stopBtn').textContent=L.stop; $('#switchBtn').textContent=L.switch; $('#torchBtn').textContent=L.flash;
+      $('#statusText').textContent=L.ready; $('#lblCam').textContent=L.camera; $('#lblManual').textContent=L.manual; $('#manualBtn').textContent=L.check; $('#lblHttps').textContent=L.httpsWarn;
+      $('#lblSettings').textContent=L.settings; $('#accToggle').setAttribute('aria-label', L.accOpen); $('#lblPause').textContent=L.pause; $('#lblSound').textContent=L.sounds; $('#lblScanSize').textContent=L.reader; $('#lblRegex').textContent=L.regex; $('#lblStrict').textContent=L.strict;
+      $('#lblLast').textContent=L.last; $('#lblHist').textContent=L.hist;
+      $('#okMsg').textContent=L.accepted; $('#errMsg').textContent=L.rejected;
+      $('#gateTitle').textContent = (LANG==='ar'?'ادخل اسم الحدث':'Enter event name');
+      $('#gateHint').textContent  = (LANG==='ar'?'يجب تحديد اسم الحدث قبل استخدام الماسح':'You must set the event name before using the scanner');
+      $('#gateEvent').placeholder = (LANG==='ar'?'مثال: Zafaf Ali 2025':'e.g. Zafaf Ali 2025');
+      $('#gateEnter').textContent = (LANG==='ar'?'دخول':'Enter');
+    }
+
+    // ===== Firebase =====
+    const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
+    if(!firebase.apps.length){ firebase.initializeApp(cfg); }
+    const db=firebase.firestore();
+
+    // ===== Event from URL or Gate (before content) =====
+    const URL_EVENT = new URLSearchParams(location.search).get('event');
+    let EVENT_NAME = '';
+
+    function allowUI(enable){
+      $('#content').style.display = enable ? '' : 'none';
+      $('#startBtn').disabled = !enable;
+      $('#stopBtn').disabled = !enable;
+      $('#switchBtn').disabled = !enable;
+      $('#torchBtn').disabled = !enable;
+      $('#manualBtn').disabled = !enable;
+    }
+
+    function setEvent(name){
+      EVENT_NAME = String(name||'').trim();
+      $('#evTag').textContent = EVENT_NAME || '—';
+      localStorage.setItem('hs:evscan:event', EVENT_NAME);
+      renderHist();
+      allowUI(!!EVENT_NAME);
+    }
+
+    function tryInitEvent(){
+      const saved = localStorage.getItem('hs:evscan:event')||'';
+      if(URL_EVENT){
+        setEvent(URL_EVENT); $('#gate').style.display='none'; allowUI(true);
+      }else if(saved){
+        $('#gate').style.display='flex';
+        $('#gateEvent').value = saved;
+      }else{
+        $('#gate').style.display='flex';
+      }
+    }
+
+    function enterFromGate(){
+      const v = ($('#gateEvent').value||'').trim();
+      if(!v){ $('#gateMsg').textContent = (LANG==='ar'?'أدخل اسم الحدث':'Enter event name'); return; }
+      setEvent(v);
+      $('#gate').style.display='none';
+      allowUI(true);
+    }
+
+    // HTTPS guard
+    function httpsOK(){
+      const isLocal=['localhost','127.0.0.1'].includes(location.hostname);
+      const ok=location.protocol==='https:'||isLocal;
+      $('#httpsWarn').style.display=ok?'none':'block';
+      if(!ok){ $('#startBtn').disabled=true; }
+      return ok;
+    }
+
+    // History per event
+    function hKey(){ return `hs:evscan:hist:${EVENT_NAME||'__NONE__'}` }
+    function getHist(){ try{ return JSON.parse(localStorage.getItem(hKey())||'[]'); }catch{return []} }
+    function pushHist(code,msg,good){ const h=getHist(); h.unshift({code,msg,at:Date.now(),good}); localStorage.setItem(hKey(), JSON.stringify(h.slice(0,80))); renderHist(); }
+    function renderHist(){
+      const box=$('#hist'); box.innerHTML='';
+      const h=getHist(); if(!EVENT_NAME){ box.innerHTML=`<div class="muted">${T[LANG].needEvent}</div>`; return; }
+      if(!h.length){ box.innerHTML = `<div class="muted">—</div>`; return; }
+      h.forEach(x=>{
+        const d=document.createElement('div');
+        d.style.padding='6px';
+        d.style.borderTop='1px solid var(--line)';
+        d.innerHTML=`<div class="mono">${x.code}</div><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString(LANG==='ar'?'ar-EG':'en-GB')} — ${x.msg}</div>`;
+        box.appendChild(d);
+      });
+    }
+
+    // ===== Audio =====
+    let audioCtx=null;
+    function ensureAudio(){ try{ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended') audioCtx.resume(); }catch{} }
+    window.__hsPlayTone=function(type='ok'){
+      if($('#soundMode')?.value==='off') return;
       try{
-        const url = new URL(t);
-        const c = url.searchParams.get("code") || url.searchParams.get("c");
-        return (c||"").trim();
-      }catch(e){ return t; }
-    }
-    return t;
-  }
-
-  async function verifyAndMarkUsed(code){
-    const ref = doc(db, COLLECTION, code);
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()){
-      return {type:"bad", main:"❌ كود غير موجود", sub:`الكود: <span class="mono">${esc(code)}</span>`};
+        ensureAudio(); if(!audioCtx) return;
+        const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
+        o.type='sine'; o.frequency.value=(type==='ok')?880:220;
+        const now=audioCtx.currentTime; const dur=(type==='ok')?0.12:0.22;
+        o.connect(g); g.connect(audioCtx.destination);
+        g.gain.setValueAtTime(0.0001,now);
+        g.gain.exponentialRampToValueAtTime(0.2,now+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+        o.start(); o.stop(now+dur+0.02);
+      }catch{}
     }
 
-    const data = snap.data();
-
-    const ev = (data.eventName || data.EventName || "").toString();
-    if (ev !== EVENT_NAME){
-      return {type:"bad", main:"❌ هذا الكود ليس لنفس الحدث", sub:`الكود: <span class="mono">${esc(code)}</span>`};
+    // UI helpers + overlays
+    function setStatus(text,color){ $('#statusText').textContent=text; $('#statusDot').style.background=color; }
+    function drawQRPreview(text){
+      const c=$('#qrCanvas'); if(!c) return;
+      try{
+        if(!text){
+          const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); return;
+        }
+        QRCode.toCanvas(c, text, {width:110, margin:1}, ()=>{});
+      }catch{}
+    }
+    function showGreenOverlay(code){ $('#okCode').textContent=code||'—'; const el=$('#okOverlay'); el.style.display='flex'; setTimeout(()=>{ el.style.display='none'; }, 1200); }
+    function showRedOverlay(code,reason){ $('#errCode').textContent=code||'—'; $('#errMsg').textContent=reason||T[LANG].rejected; const el=$('#errOverlay'); el.style.display='flex'; setTimeout(()=>{ el.style.display='none'; }, 1400); }
+    function showLast(code,msg,good){
+      $('#lastCode').textContent=code||'—';
+      $('#lastCode').style.color=good?'#86efac':'#fca5a5';
+      $('#lastMsg').textContent=msg||'—';
+      drawQRPreview(code||'');
+      try{
+        window.__hsPlayTone(good?'ok':'err');
+        navigator.vibrate?.(good?60:120);
+      }catch{}
+      if(good) showGreenOverlay(code);
+      else showRedOverlay(code, msg);
     }
 
-    const status = (data.status || data.Status || "").toString().toLowerCase();
-    const used = data.used === true || status === "used" || status === "yes" || status === "true";
+    // Camera state
+    let devices=[], currentDeviceId=null, track=null, scanning=false, rafId=null; let reader=null, ndet=null; let locked=false;
 
-    if (used){
-      return {type:"warn", main:"⚠️ تم استخدام الدعوة مسبقًا", sub:`الكود: <span class="mono">${esc(code)}</span>`};
+    // Pause lock (fast)
+    function lockPause(){
+      locked=true;
+      const ms=Math.max(250, parseInt($('#pauseMs')?.value||'600',10));
+      setTimeout(()=>{ locked=false; }, ms);
     }
 
-    await updateDoc(ref, {
-      status: "used",
-      used: true,
-      usedAt: serverTimestamp(),
-      usedBy: deviceId,
-      lastScanEvent: EVENT_NAME
+    // Regex/Strict helpers
+    function strictOn(){ return ($('#strictMode')?.value||'on')==='on'; }
+    function codeRegex(){ try{ return new RegExp($('#codeRegex')?.value||''); }catch{ return null; } }
+
+    async function ensurePerm(){
+      try{
+        const tmp=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+        tmp.getTracks().forEach(t=>t.stop());
+      }catch{}
+    }
+    async function listCams(){
+      const all=await navigator.mediaDevices.enumerateDevices();
+      devices=all.filter(d=>d.kind==='videoinput');
+      const sel=$('#cameraSelect'); sel.innerHTML='';
+      devices.forEach((d,i)=>{
+        const o=document.createElement('option');
+        o.value=d.deviceId;
+        o.textContent=d.label||`Camera ${i+1}`;
+        sel.appendChild(o);
+      });
+      if(devices.length){
+        if(!currentDeviceId){
+          const back=devices.find(d=>/back|rear|environment|خلف/i.test(d.label||''));
+          currentDeviceId=back?back.deviceId:devices[0].deviceId;
+        }
+        sel.value=currentDeviceId;
+      }
+    }
+
+    async function start(){
+      const L=T[LANG];
+      locked=false;
+      ensureAudio();
+
+      if(!EVENT_NAME){ alert(L.needEvent); return; }
+      if(!httpsOK()){ alert(L.needHttps); return; }
+
+      await ensurePerm(); await listCams();
+
+      const video=$('#video');
+      const dev=$('#cameraSelect').value||currentDeviceId;
+      currentDeviceId=dev;
+
+      // ✅ تسريع الكاميرا: دقة أقل + فريم ريت مناسب
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          deviceId: dev ? { exact: dev } : undefined,
+          facingMode: { ideal: "environment" },
+          width:  { ideal: 640 },
+          height: { ideal: 480 },
+          frameRate: { ideal: 20, max: 30 }
+        },
+        audio:false
+      });
+
+      video.srcObject=stream;
+      await video.play().catch(()=>{});
+
+      track=stream.getVideoTracks()[0]||null;
+
+      // ✅ تحسين الفوكس (لو مدعوم)
+      try{
+        await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+      }catch(_){}
+
+      scanning=true;
+      $('#startBtn').disabled=true;
+      $('#stopBtn').disabled=false;
+      $('#switchBtn').disabled=false;
+      $('#torchBtn').disabled=false;
+      setStatus(L.ready,'#22c55e');
+
+      const zxingOk=await window.ensureZXing();
+
+      // ZXing (أفضل دقة وسرعة على أغلب الأجهزة)
+      if(zxingOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){
+        try{
+          if(window.ZXing && window.ZXing.BarcodeFormat && window.ZXing.DecodeHintType){
+            const hints=new Map();
+            hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS,[window.ZXing.BarcodeFormat.QR_CODE]);
+            reader=new window.ZXing.BrowserMultiFormatReader(hints);
+          } else {
+            reader=new window.ZXing.BrowserMultiFormatReader();
+          }
+        }catch{
+          reader=new window.ZXing.BrowserMultiFormatReader();
+        }
+
+        reader.decodeFromVideoDevice(dev||null, video, (res,err)=>{
+          if(res){
+            if(locked) return;
+            const text=res.getText?res.getText():(res.text||'');
+            handleRawScan(String(text||'').trim());
+          }
+        });
+
+      } else if('BarcodeDetector' in window){
+        // Native BarcodeDetector fallback (سريع جدًا في بعض الأجهزة)
+        ndet=new window.BarcodeDetector({formats:['qr_code']});
+        const loop=async()=>{
+          if(!scanning) return;
+          try{
+            if(!locked){
+              const bar=await ndet.detect(video);
+              if(bar && bar.length){
+                handleRawScan(String(bar[0].rawValue||'').trim());
+              }
+            }
+          }catch{}
+          rafId=requestAnimationFrame(loop);
+        };
+        loop();
+      } else {
+        alert(T[LANG].camlib);
+        setStatus(T[LANG].camlib,'#f59e0b');
+      }
+    }
+
+    async function stop(){
+      try{
+        if(reader){ try{reader.reset();}catch{} reader=null; }
+        if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+        if(track){ try{track.stop();}catch{} track=null; }
+
+        const v=$('#video');
+        if(v.srcObject){
+          v.srcObject.getTracks().forEach(t=>t.stop());
+          v.srcObject=null;
+        }
+      }catch{}
+      scanning=false;
+      $('#startBtn').disabled=false;
+      $('#stopBtn').disabled=true;
+      setStatus(T[LANG].paused,'#f59e0b');
+    }
+
+    async function switchCam(){
+      if(!devices.length) return;
+      const idx=devices.findIndex(d=>d.deviceId===currentDeviceId);
+      const next=devices[(idx+1)%devices.length];
+      currentDeviceId=next.deviceId;
+      $('#cameraSelect').value=currentDeviceId;
+      if(scanning){ await stop(); await start(); }
+    }
+
+    async function toggleTorch(){
+      try{
+        if(!track) return;
+        const caps=track.getCapabilities?.();
+        if(!caps?.torch) return alert('No torch');
+        const current = track.getConstraints()?.advanced?.[0]?.torch === true;
+        await track.applyConstraints({advanced:[{torch: !current}]});
+      }catch(e){
+        alert('Torch error');
+      }
+    }
+
+    // ===== Firestore verification (FAST: docId = code + fields: EventName / Status) =====
+    async function verifyAndMark(code){
+      const L=T[LANG];
+      setStatus(L.checking,'#f59e0b');
+
+      try{
+        if(!EVENT_NAME){
+          const reason=L.needEvent;
+          showLast(code, reason, false);
+          pushHist(code, reason, false);
+          return;
+        }
+
+        // ✅ أسرع: docId = code (بدون Query)
+        const docRef = db.collection('invites').doc(code);
+        const snap = await docRef.get();
+
+        if(!snap.exists){
+          const reason=L.notfound;
+          showLast(code, reason, false);
+          pushHist(code, reason, false);
+          return;
+        }
+
+        const data = snap.data() || {};
+
+        const ev = String(data.EventName || '').trim();
+        const statusRaw = String(data.Status || '').trim().toLowerCase();
+
+        // ✅ ليس نفس الحدث
+        if(ev !== EVENT_NAME){
+          const reason=L.mismatch;
+          showLast(code, reason, false);
+          pushHist(code, reason, false);
+          return;
+        }
+
+        // ✅ مستخدم سابقًا
+        if(statusRaw === 'yes'){
+          const reason=L.dupe;
+          showLast(code, reason, false);
+          pushHist(code, reason, false);
+          return;
+        }
+
+        // ✅ تحديث سريع
+        await docRef.set({
+          Status:'yes',
+          scannedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+
+        showLast(code, L.ok, true);
+        pushHist(code, L.ok, true);
+
+      }catch(e){
+        const msg=e?.message||'Error';
+        showLast(code, msg, false);
+        pushHist(code, msg, false);
+      }
+    }
+
+    function onCode(text){
+      if(!text) return;
+      if(locked) return;
+
+      lockPause();
+      verifyAndMark(text);
+    }
+
+    function handleRawScan(raw){
+      const strict=strictOn();
+      const re=codeRegex();
+      if(strict){
+        if(!re) return;
+        if(!re.test(raw)) return;
+      }
+      onCode(raw);
+    }
+
+    // ===== Wire =====
+    document.addEventListener('DOMContentLoaded', ()=>{
+      applyDir(); i18n(); httpsOK(); tryInitEvent(); renderHist(); drawQRPreview('');
+
+      // Gate
+      $('#gateEnter').addEventListener('click', enterFromGate);
+      $('#gateEvent').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); enterFromGate(); } });
+
+      // Settings accordion
+      $('#accToggle').addEventListener('click', ()=>{
+        const bd=$('#accBody');
+        const open=bd.classList.toggle('open');
+        $('#accToggle').setAttribute('aria-label', open? T[LANG].accClose : T[LANG].accOpen);
+      });
+
+      // Saved scan width
+      const savedW=localStorage.getItem('hs:evscan:scanw');
+      if(savedW) $('#scanSize').value=savedW;
+      applyScanSize();
+      $('#scanSize').addEventListener('change', applyScanSize);
+
+      $('#langBtn').addEventListener('click', ()=>{
+        LANG=(LANG==='ar')?'en':'ar';
+        localStorage.setItem('hs:evscan:lang',LANG);
+        applyDir(); i18n(); renderHist();
+      });
+
+      $('#startBtn').addEventListener('click', ()=>{ ensureAudio(); start(); });
+      $('#stopBtn').addEventListener('click', stop);
+      $('#switchBtn').addEventListener('click', switchCam);
+      $('#torchBtn').addEventListener('click', toggleTorch);
+
+      $('#manualBtn').addEventListener('click', ()=>{
+        ensureAudio();
+        const c=$('#manualCode').value.trim();
+        if(!c) return;
+        handleRawScan(c);
+      });
+
+      $('#clearHist').addEventListener('click', ()=>{
+        if(!EVENT_NAME) return;
+        localStorage.removeItem(hKey());
+        renderHist();
+      });
     });
 
-    return {type:"ok", main:"✅ تم التحقق بنجاح", sub:`الكود: <span class="mono">${esc(code)}</span>`};
-  }
-
-  async function start(){
-    if (running) return;
-
-    locked = false;
-    setStatus("warn","📷 جاري تشغيل الكاميرا…","تأكد من HTTPS والسماح بالكاميرا");
-
-    if (!qr) qr = new Html5Qrcode("reader");
-
-    try{
-      await qr.start(
-        CAMERA_CONSTRAINTS,
-        { fps: SCAN_FPS, qrbox: { width: QR_BOX, height: QR_BOX } },
-        async (decodedText) => {
-          if (locked) return;
-          locked = true;
-
-          const code = normalizeCode(decodedText);
-          if (!code){ locked = false; return; }
-
-          beep();
-          setStatus("warn","⏳ جارٍ التحقق…",`الكود: <span class="mono">${esc(code)}</span>`);
-
-          try{
-            const res = await verifyAndMarkUsed(code);
-            setStatus(res.type, res.main, res.sub);
-
-            // أهم نقطة للسرعة: أوقف الكاميرا فورًا بعد أول قراءة
-            await stop(true);
-            btnNew.disabled = false;
-          }catch(e){
-            console.error(e);
-            setStatus("bad","❌ خطأ في التحقق","تأكد من الإنترنت وFirestore Rules");
-            await stop(true);
-            btnNew.disabled = false;
-          }
-        }
-      );
-
-      running = true;
-      btnStart.disabled = true;
-      btnStop.disabled = false;
-      btnTorch.disabled = false;
-      btnNew.disabled = true;
-      setStatus("warn","جاهز للمسح ✅","قرّب الباركود داخل المربع");
-    }catch(e){
-      console.error(e);
-      setStatus("bad","❌ لم يتم تشغيل الكاميرا","اسمح بالكاميرا وتأكد من HTTPS");
+    function applyScanSize(){
+      const wrap=$('#scanWrap'); if(!wrap) return;
+      const w=$('#scanSize')?.value||'480';
+      wrap.style.maxWidth=w+'px';
+      localStorage.setItem('hs:evscan:scanw', w);
     }
-  }
-
-  async function stop(silent=false){
-    if (!qr || !running){
-      btnStart.disabled = false;
-      btnStop.disabled = true;
-      btnTorch.disabled = true;
-      return;
-    }
-    try{
-      await qr.stop();
-      await qr.clear();
-    }catch(e){}
-    running = false;
-    torch = false;
-    btnStart.disabled = false;
-    btnStop.disabled = true;
-    btnTorch.disabled = true;
-    if (!silent) setStatus("warn","تم الإيقاف","اضغط تشغيل للبدء");
-  }
-
-  async function toggleTorch(){
-    if (!qr || !running) return;
-    try{
-      torch = !torch;
-      await qr.applyVideoConstraints({ advanced: [{ torch }] });
-      btnTorch.textContent = torch ? "إطفاء الفلاش" : "فلاش";
-    }catch(e){
-      torch = false;
-      btnTorch.textContent = "فلاش";
-      setStatus("warn","⚠️ الفلاش غير مدعوم","ارفع الإضاءة");
-    }
-  }
-
-  function getOrCreateDeviceId(){
-    const key="hormez_scanner_device_id";
-    let v=localStorage.getItem(key);
-    if(!v){
-      v="DEV-"+Math.random().toString(16).slice(2)+"-"+Date.now().toString(16);
-      localStorage.setItem(key,v);
-    }
-    return v;
-  }
-
-  function esc(x){
-    return String(x).replace(/[&<>"']/g, m => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
-    }[m]));
-  }
-
-  btnStart.addEventListener("click", start);
-  btnStop.addEventListener("click", () => stop(false));
-  btnTorch.addEventListener("click", toggleTorch);
-  btnNew.addEventListener("click", async () => {
-    setStatus("warn","جاهز…","ابدأ المسح من جديد");
-    btnNew.disabled = true;
-    await start();
-  });
-
-  // لو تبغاه يشتغل تلقائي عند فتح الصفحة، فك التعليق:
-  // start();
-</script>
+  })();
+  </script>
 </body>
 </html>
