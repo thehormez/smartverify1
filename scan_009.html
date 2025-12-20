@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hormez Scanner — زفاف خالد</title>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0b0d; --card:#141418; --gold:#d6b25e; --text:#f5f5f7; --muted:#b7b7bd;
+      --ok:#18c06e; --bad:#ff4d4d; --warn:#ffcc00;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;
+      background: radial-gradient(1200px 600px at 50% -20%, rgba(214,178,94,.15), transparent 60%), var(--bg);
+      color:var(--text);
+    }
+    header{padding:18px 16px 10px; text-align:center}
+    .brand{font-weight:900; color:var(--gold); font-size:20px; margin-bottom:6px; letter-spacing:.5px}
+    .event{font-weight:800; font-size:18px}
+    .sub{color:var(--muted); font-size:13px; margin-top:6px}
+    .wrap{max-width:720px; margin:0 auto; padding:12px 14px 22px}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px; padding:14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    #reader{
+      width:100%; max-width:520px; margin:12px auto 0;
+      border-radius:18px; overflow:hidden;
+      border:1px solid rgba(214,178,94,.35);
+      background:#000;
+    }
+    .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:12px}
+    button{
+      border:none; border-radius:14px; padding:12px 14px; font-weight:900;
+      cursor:pointer; font-size:14px; min-width:140px;
+    }
+    .btn-primary{background:var(--gold); color:#111}
+    .btn-ghost{background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.10)}
+    .btn-danger{background:rgba(255,77,77,.12); color:var(--bad); border:1px solid rgba(255,77,77,.30)}
+    .hint{text-align:center; color:var(--muted); font-size:13px; margin-top:10px; line-height:1.6}
+    .status{
+      margin-top:12px; padding:14px; border-radius:16px;
+      border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03);
+      min-height:76px; display:flex; align-items:center; justify-content:center; text-align:center;
+      font-weight:900; font-size:16px; line-height:1.6;
+    }
+    .status.ok{ border-color: rgba(24,192,110,.35); }
+    .status.bad{ border-color: rgba(255,77,77,.35); }
+    .status.warn{ border-color: rgba(255,204,0,.35); }
+    .small{display:block; font-weight:700; font-size:12px; color:var(--muted); margin-top:8px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; font-weight:900; color:var(--gold)}
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="brand">Hormez Security</div>
+  <div class="event">ماسح الدعوات — زفاف خالد</div>
+  <div class="sub">قراءة سريعة + تحديث الحالة في Firestore</div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <div id="reader"></div>
+
+    <div class="row">
+      <button id="btnStart" class="btn-primary">تشغيل الكاميرا</button>
+      <button id="btnStop" class="btn-danger" disabled>إيقاف</button>
+      <button id="btnTorch" class="btn-ghost" disabled>فلاش</button>
+      <button id="btnNew" class="btn-ghost" disabled>مسح جديد</button>
+    </div>
+
+    <div class="hint">
+      📌 ضع الباركود داخل المربع — مسافة 15–25 سم — إضاءة جيدة.<br/>
+      يتم إيقاف الكاميرا تلقائيًا بعد أول قراءة (لتسريع الدخول).
+    </div>
+
+    <div id="status" class="status warn">
+      جاهز… اضغط “تشغيل الكاميرا”
+      <span class="small">الحدث: <span class="mono" id="eventNameLabel"></span></span>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from
+    "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  /********** إعدادات مشروعك **********/
+  const firebaseConfig = {
+    apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+    authDomain: "hormez-inv.firebaseapp.com",
+    projectId: "hormez-inv",
+    storageBucket: "hormez-inv.firebasestorage.app",
+    messagingSenderId: "747519941805",
+    appId: "1:747519941805:web:468fada2492700e9da3a24"
+  };
+
+  const EVENT_NAME = "زفاف خالد";
+  const COLLECTION = "invites";
+
+  // إعدادات الأداء (سريعة)
+  const SCAN_FPS = 15;
+  const QR_BOX = 260;
+  const CAMERA_CONSTRAINTS = {
+    facingMode: "environment",
+    width: { ideal: 640 },
+    height: { ideal: 480 }
+  };
+
+  document.getElementById("eventNameLabel").textContent = EVENT_NAME;
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let qr;
+  let running = false;
+  let locked = false;
+  let torch = false;
+
+  const s = document.getElementById("status");
+  const btnStart = document.getElementById("btnStart");
+  const btnStop  = document.getElementById("btnStop");
+  const btnTorch = document.getElementById("btnTorch");
+  const btnNew   = document.getElementById("btnNew");
+
+  const deviceId = getOrCreateDeviceId();
+
+  function setStatus(type, main, sub=""){
+    s.classList.remove("ok","bad","warn");
+    s.classList.add(type);
+    s.innerHTML = `${main}${sub ? `<span class="small">${sub}</span>` : ""}`;
+  }
+
+  function beep(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.frequency.value = 880; g.gain.value = 0.05;
+      o.connect(g); g.connect(ctx.destination);
+      o.start(); setTimeout(()=>{o.stop(); ctx.close();}, 110);
+    }catch(e){}
+    if (navigator.vibrate) navigator.vibrate(60);
+  }
+
+  function normalizeCode(text){
+    // يدعم: نص مباشر (INV-001) أو رابط فيه ?code=INV-001
+    const t = (text||"").trim();
+    if (!t) return "";
+    if (t.includes("http")){
+      try{
+        const url = new URL(t);
+        const c = url.searchParams.get("code") || url.searchParams.get("c");
+        return (c||"").trim();
+      }catch(e){ return t; }
+    }
+    return t;
+  }
+
+  async function verifyAndMarkUsed(code){
+    const ref = doc(db, COLLECTION, code);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()){
+      return {type:"bad", main:"❌ كود غير موجود", sub:`الكود: <span class="mono">${esc(code)}</span>`};
+    }
+
+    const data = snap.data();
+
+    const ev = (data.eventName || data.EventName || "").toString();
+    if (ev !== EVENT_NAME){
+      return {type:"bad", main:"❌ هذا الكود ليس لنفس الحدث", sub:`الكود: <span class="mono">${esc(code)}</span>`};
+    }
+
+    const status = (data.status || data.Status || "").toString().toLowerCase();
+    const used = data.used === true || status === "used" || status === "yes" || status === "true";
+
+    if (used){
+      return {type:"warn", main:"⚠️ تم استخدام الدعوة مسبقًا", sub:`الكود: <span class="mono">${esc(code)}</span>`};
+    }
+
+    await updateDoc(ref, {
+      status: "used",
+      used: true,
+      usedAt: serverTimestamp(),
+      usedBy: deviceId,
+      lastScanEvent: EVENT_NAME
+    });
+
+    return {type:"ok", main:"✅ تم التحقق بنجاح", sub:`الكود: <span class="mono">${esc(code)}</span>`};
+  }
+
+  async function start(){
+    if (running) return;
+
+    locked = false;
+    setStatus("warn","📷 جاري تشغيل الكاميرا…","تأكد من HTTPS والسماح بالكاميرا");
+
+    if (!qr) qr = new Html5Qrcode("reader");
+
+    try{
+      await qr.start(
+        CAMERA_CONSTRAINTS,
+        { fps: SCAN_FPS, qrbox: { width: QR_BOX, height: QR_BOX } },
+        async (decodedText) => {
+          if (locked) return;
+          locked = true;
+
+          const code = normalizeCode(decodedText);
+          if (!code){ locked = false; return; }
+
+          beep();
+          setStatus("warn","⏳ جارٍ التحقق…",`الكود: <span class="mono">${esc(code)}</span>`);
+
+          try{
+            const res = await verifyAndMarkUsed(code);
+            setStatus(res.type, res.main, res.sub);
+
+            // أهم نقطة للسرعة: أوقف الكاميرا فورًا بعد أول قراءة
+            await stop(true);
+            btnNew.disabled = false;
+          }catch(e){
+            console.error(e);
+            setStatus("bad","❌ خطأ في التحقق","تأكد من الإنترنت وFirestore Rules");
+            await stop(true);
+            btnNew.disabled = false;
+          }
+        }
+      );
+
+      running = true;
+      btnStart.disabled = true;
+      btnStop.disabled = false;
+      btnTorch.disabled = false;
+      btnNew.disabled = true;
+      setStatus("warn","جاهز للمسح ✅","قرّب الباركود داخل المربع");
+    }catch(e){
+      console.error(e);
+      setStatus("bad","❌ لم يتم تشغيل الكاميرا","اسمح بالكاميرا وتأكد من HTTPS");
+    }
+  }
+
+  async function stop(silent=false){
+    if (!qr || !running){
+      btnStart.disabled = false;
+      btnStop.disabled = true;
+      btnTorch.disabled = true;
+      return;
+    }
+    try{
+      await qr.stop();
+      await qr.clear();
+    }catch(e){}
+    running = false;
+    torch = false;
+    btnStart.disabled = false;
+    btnStop.disabled = true;
+    btnTorch.disabled = true;
+    if (!silent) setStatus("warn","تم الإيقاف","اضغط تشغيل للبدء");
+  }
+
+  async function toggleTorch(){
+    if (!qr || !running) return;
+    try{
+      torch = !torch;
+      await qr.applyVideoConstraints({ advanced: [{ torch }] });
+      btnTorch.textContent = torch ? "إطفاء الفلاش" : "فلاش";
+    }catch(e){
+      torch = false;
+      btnTorch.textContent = "فلاش";
+      setStatus("warn","⚠️ الفلاش غير مدعوم","ارفع الإضاءة");
+    }
+  }
+
+  function getOrCreateDeviceId(){
+    const key="hormez_scanner_device_id";
+    let v=localStorage.getItem(key);
+    if(!v){
+      v="DEV-"+Math.random().toString(16).slice(2)+"-"+Date.now().toString(16);
+      localStorage.setItem(key,v);
+    }
+    return v;
+  }
+
+  function esc(x){
+    return String(x).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  btnStart.addEventListener("click", start);
+  btnStop.addEventListener("click", () => stop(false));
+  btnTorch.addEventListener("click", toggleTorch);
+  btnNew.addEventListener("click", async () => {
+    setStatus("warn","جاهز…","ابدأ المسح من جديد");
+    btnNew.disabled = true;
+    await start();
+  });
+
+  // لو تبغاه يشتغل تلقائي عند فتح الصفحة، فك التعليق:
+  // start();
+</script>
+</body>
+</html>
