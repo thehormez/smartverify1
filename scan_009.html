@@ -78,7 +78,8 @@
   </style>
 </head>
 <body>
-  <!-- Hidden input for EY-034s (keyboard-wedge scanners) -->
+
+  <!-- ✅ Hidden input for EY-034s (keyboard wedge scanners) -->
   <input id="scannerInput"
          class="input"
          style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px"
@@ -101,7 +102,7 @@
       <h3 id="gateTitle" style="font-weight:800">ادخل اسم الحدث</h3>
       <div class="muted" id="gateHint" style="margin-bottom:8px">يجب تحديد اسم الحدث قبل استخدام الماسح</div>
       <div class="row">
-        <input id="gateEvent" class="input" placeholder="مثال: Zafaf Ali 2025" />
+        <input id="gateEvent" class="input" placeholder="مثال: زفاف خالد" />
         <button id="gateEnter" class="btn">دخول</button>
       </div>
       <div class="muted" id="gateMsg" style="margin-top:8px"></div>
@@ -176,13 +177,12 @@
           <div class="row" style="margin-top:10px">
             <div style="flex:1">
               <div class="muted" id="lblRegex">نمط الكود (Regex)</div>
-              <!-- ✅ مناسب للجهاز: يقبل حروف/أرقام/underscore -->
+              <!-- ✅ مناسب للـ EY-034s (مثل X001Q7G2L5) + SA_001 -->
               <input id="codeRegex" class="input mono" value="^[A-Z0-9_]{4,64}$" />
             </div>
             <div style="width:170px">
               <div class="muted" id="lblStrict">وضع صارم</div>
               <select id="strictMode" class="select">
-                <!-- ✅ الافتراضي OFF عشان لا يرفض كود الجهاز -->
                 <option value="off" selected>اقبل الكل</option>
                 <option value="on">اقبل المطابق فقط</option>
               </select>
@@ -264,7 +264,9 @@
         settings:'الإعدادات',pause:'فترة التوقف (ملّي ثانية)',sounds:'الأصوات',reader:'حجم القارئ',regex:'نمط الكود (Regex)',strict:'وضع صارم',
         last:'النتيجة الأخيرة',hist:'السجل (محفوظ محليًا حسب المناسبة)',check:'تحقق',httpsWarn:'الكاميرا تتطلب HTTPS أو localhost',
         accOpen:'فتح الإعدادات', accClose:'إغلاق الإعدادات',
-        accepted:'تم القبول ✅', rejected:'مرفوض', reason_mismatch:'لا يخص هذه المناسبة', reason_dupe:'كود مستخدم سابقًا', reason_notfound:'كود غير موجود'
+        accepted:'تم القبول ✅', rejected:'مرفوض',
+        received:'📥 تم استلام الكود…',
+        reason_mismatch:'لا يخص هذه المناسبة', reason_dupe:'كود مستخدم سابقًا', reason_notfound:'كود غير موجود'
       },
       en:{
         titleSub:'Barcode Scanner — Event Locked', eventTag:'Event',
@@ -274,7 +276,9 @@
         settings:'Settings',pause:'Pause (ms)',sounds:'Sounds',reader:'Scan size',regex:'Code pattern (Regex)',strict:'Strict mode',
         last:'Last result',hist:'History (locally per event)',check:'Check',httpsWarn:'Camera requires HTTPS or localhost',
         accOpen:'Open settings', accClose:'Close settings',
-        accepted:'Accepted ✅', rejected:'Rejected', reason_mismatch:'Not this event', reason_dupe:'Already used', reason_notfound:'Code not found'
+        accepted:'Accepted ✅', rejected:'Rejected',
+        received:'📥 Code received…',
+        reason_mismatch:'Not this event', reason_dupe:'Already used', reason_notfound:'Code not found'
       }
     };
 
@@ -290,7 +294,6 @@
       $('#okMsg').textContent=L.accepted; $('#errMsg').textContent=L.rejected;
       $('#gateTitle').textContent = (LANG==='ar'?'ادخل اسم الحدث':'Enter event name');
       $('#gateHint').textContent  = (LANG==='ar'?'يجب تحديد اسم الحدث قبل استخدام الماسح':'You must set the event name before using the scanner');
-      $('#gateEvent').placeholder = (LANG==='ar'?'مثال: Zafaf Ali 2025':'e.g. Zafaf Ali 2025');
       $('#gateEnter').textContent = (LANG==='ar'?'دخول':'Enter');
     }
 
@@ -299,7 +302,7 @@
     if(!firebase.apps.length){ firebase.initializeApp(cfg); }
     const db=firebase.firestore();
 
-    // ===== Event from URL or Gate =====
+    // ===== Event gate =====
     const URL_EVENT = new URLSearchParams(location.search).get('event');
     let EVENT_NAME = '';
 
@@ -328,14 +331,6 @@
       }else{
         $('#gate').style.display='flex';
       }
-    }
-    function enterFromGate(){
-      const v = ($('#gateEvent').value||'').trim();
-      if(!v){ $('#gateMsg').textContent = (LANG==='ar'?'أدخل اسم الحدث':'Enter event name'); return; }
-      setEvent(v);
-      $('#gate').style.display='none';
-      allowUI(true);
-      focusScannerInput(); // ✅ جاهزية للقارئ
     }
 
     // HTTPS guard
@@ -387,9 +382,7 @@
     function drawQRPreview(text){
       const c=$('#qrCanvas'); if(!c) return;
       try{
-        if(!text){
-          const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); return;
-        }
+        if(!text){ const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); return; }
         QRCode.toCanvas(c, text, {width:110, margin:1}, ()=>{});
       }catch{}
     }
@@ -400,44 +393,143 @@
       $('#lastCode').style.color=good?'#86efac':'#fca5a5';
       $('#lastMsg').textContent=msg||'—';
       drawQRPreview(code||'');
-      try{
-        window.__hsPlayTone(good?'ok':'err');
-        navigator.vibrate?.(good?60:120);
-      }catch{}
+      try{ window.__hsPlayTone(good?'ok':'err'); navigator.vibrate?.(good?60:120); }catch{}
       if(good) showGreenOverlay(code);
       else showRedOverlay(code, msg);
     }
 
-    // ===== EY-034s (Keyboard wedge) support =====
+    // ===== Scanner input (EY-034s) focus + capture =====
     const scannerInput = document.getElementById('scannerInput');
-    function focusScannerInput(){
-      try{ scannerInput.focus({ preventScroll:true }); }catch(_){}
-    }
+    function focusScannerInput(){ try{ scannerInput.focus({ preventScroll:true }); }catch(_){ } }
     setInterval(focusScannerInput, 500);
     document.addEventListener('click', focusScannerInput);
     document.addEventListener('touchstart', focusScannerInput);
 
+    // Debounce capture: works even if no Enter
+    let scanTimer = null;
+
+    function normalizeScanValue(v){
+      return String(v || '')
+        .replace(/[\r\n\t]/g, '')   // remove Enter/Tab/lines
+        .replace(/\s+/g, '')       // remove spaces
+        .trim();
+    }
+
+    function commitScannerValue(){
+      const raw = scannerInput.value;
+      scannerInput.value = '';
+      const code = normalizeScanValue(raw);
+      if(!code) return;
+
+      // ✅ show immediately so you know the page received it
+      showLast(code, T[LANG].received, true);
+      setStatus(T[LANG].received, '#22c55e');
+
+      handleRawScan(code);
+    }
+
+    // Enter or Tab
     scannerInput.addEventListener('keydown', (e)=>{
-      if(e.key === 'Enter'){
-        const code = (scannerInput.value || '').trim();
-        scannerInput.value = '';
-        if(code) handleRawScan(code);
+      if(e.key === 'Enter' || e.key === 'Tab'){
+        e.preventDefault();
+        if(scanTimer) clearTimeout(scanTimer);
+        commitScannerValue();
       }
     });
 
-    // Camera state
-    let devices=[], currentDeviceId=null, track=null, scanning=false, rafId=null; let reader=null, ndet=null; let locked=false;
+    // Without Enter: after typing stops
+    scannerInput.addEventListener('input', ()=>{
+      if(scanTimer) clearTimeout(scanTimer);
+      scanTimer = setTimeout(commitScannerValue, 70);
+    });
 
-    // Pause lock
+    // ===== Lock =====
+    let locked=false;
     function lockPause(){
       locked=true;
       const ms=Math.max(250, parseInt($('#pauseMs')?.value||'600',10));
       setTimeout(()=>{ locked=false; }, ms);
     }
 
-    // Regex/Strict helpers
+    // Regex/Strict
     function strictOn(){ return ($('#strictMode')?.value||'off')==='on'; }
     function codeRegex(){ try{ return new RegExp($('#codeRegex')?.value||''); }catch{ return null; } }
+
+    // ===== Firestore verification (FAST) =====
+    async function verifyAndMark(code){
+      const L=T[LANG];
+      setStatus(L.checking,'#f59e0b');
+
+      try{
+        const docRef = db.collection('invites').doc(code);
+        const snap = await docRef.get();
+
+        if(!snap.exists){
+          showLast(code, L.notfound, false);
+          pushHist(code, L.notfound, false);
+          return;
+        }
+
+        const data = snap.data() || {};
+        const ev = String(data.EventName || '').trim();
+        const statusRaw = String(data.Status || '').trim().toLowerCase();
+
+        if(ev !== EVENT_NAME){
+          showLast(code, L.mismatch, false);
+          pushHist(code, L.mismatch, false);
+          return;
+        }
+
+        if(statusRaw === 'yes'){
+          showLast(code, L.dupe, false);
+          pushHist(code, L.dupe, false);
+          return;
+        }
+
+        await docRef.set({
+          Status:'yes',
+          scannedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+
+        showLast(code, L.ok, true);
+        pushHist(code, L.ok, true);
+
+      }catch(e){
+        console.error('Firestore error:', e);
+        const msg = e?.message || 'Error';
+        showLast(code, (LANG==='ar'?'خطأ: ':'Error: ') + msg, false);
+        pushHist(code, (LANG==='ar'?'خطأ: ':'Error: ') + msg, false);
+      }
+    }
+
+    function onCode(code){
+      if(!code) return;
+      if(locked) return;
+      lockPause();
+      verifyAndMark(code);
+    }
+
+    function handleRawScan(raw){
+      const cleaned = String(raw||'').trim();
+      if(!cleaned) return;
+
+      if(!EVENT_NAME){
+        showLast(cleaned, T[LANG].needEvent, false);
+        return;
+      }
+
+      const strict=strictOn();
+      const re=codeRegex();
+      if(strict){
+        if(!re) return;
+        if(!re.test(cleaned)) return;
+      }
+
+      onCode(cleaned);
+    }
+
+    // ===== Camera =====
+    let devices=[], currentDeviceId=null, track=null, scanning=false, rafId=null, reader=null, ndet=null;
 
     async function ensurePerm(){
       try{
@@ -466,8 +558,6 @@
 
     async function start(){
       const L=T[LANG];
-      locked=false; ensureAudio();
-
       if(!EVENT_NAME){ alert(L.needEvent); return; }
       if(!httpsOK()){ alert(L.needHttps); return; }
 
@@ -477,7 +567,6 @@
       const dev=$('#cameraSelect').value||currentDeviceId;
       currentDeviceId=dev;
 
-      // ✅ أسرع كاميرا
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           deviceId: dev ? { exact: dev } : undefined,
@@ -492,7 +581,6 @@
       video.srcObject=stream;
       await video.play().catch(()=>{});
       track=stream.getVideoTracks()[0]||null;
-
       try{ await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); }catch(_){}
 
       scanning=true;
@@ -505,18 +593,7 @@
       const zxingOk=await window.ensureZXing();
 
       if(zxingOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){
-        try{
-          if(window.ZXing && window.ZXing.BarcodeFormat && window.ZXing.DecodeHintType){
-            const hints=new Map();
-            hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS,[window.ZXing.BarcodeFormat.QR_CODE]);
-            reader=new window.ZXing.BrowserMultiFormatReader(hints);
-          } else {
-            reader=new window.ZXing.BrowserMultiFormatReader();
-          }
-        }catch{
-          reader=new window.ZXing.BrowserMultiFormatReader();
-        }
-
+        reader=new window.ZXing.BrowserMultiFormatReader();
         reader.decodeFromVideoDevice(dev||null, video, (res,err)=>{
           if(res){
             if(locked) return;
@@ -576,104 +653,33 @@
         if(!caps?.torch) return alert('No torch');
         const current = track.getConstraints()?.advanced?.[0]?.torch === true;
         await track.applyConstraints({advanced:[{torch: !current}]});
-      }catch(e){
-        alert('Torch error');
-      }
+      }catch(e){ alert('Torch error'); }
     }
 
-    // ===== Firestore verification (FAST: docId = code, fields EventName/Status) =====
-    async function verifyAndMark(code){
-      const L=T[LANG];
-      setStatus(L.checking,'#f59e0b');
-
-      try{
-        if(!EVENT_NAME){
-          const reason=L.needEvent;
-          showLast(code, reason, false);
-          pushHist(code, reason, false);
-          return;
-        }
-
-        const docRef = db.collection('invites').doc(code);
-        const snap = await docRef.get();
-
-        if(!snap.exists){
-          const reason=L.notfound;
-          showLast(code, reason, false);
-          pushHist(code, reason, false);
-          return;
-        }
-
-        const data = snap.data() || {};
-        const ev = String(data.EventName || '').trim();
-        const statusRaw = String(data.Status || '').trim().toLowerCase();
-
-        if(ev !== EVENT_NAME){
-          const reason=L.mismatch;
-          showLast(code, reason, false);
-          pushHist(code, reason, false);
-          return;
-        }
-
-        if(statusRaw === 'yes'){
-          const reason=L.dupe;
-          showLast(code, reason, false);
-          pushHist(code, reason, false);
-          return;
-        }
-
-        await docRef.set({
-          Status:'yes',
-          scannedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
-
-        showLast(code, L.ok, true);
-        pushHist(code, L.ok, true);
-
-      }catch(e){
-        const msg=e?.message||'Error';
-        showLast(code, msg, false);
-        pushHist(code, msg, false);
-      }
-    }
-
-    function onCode(text){
-      if(!text) return;
-      if(locked) return;
-      lockPause();
-      verifyAndMark(text);
-    }
-
-    function handleRawScan(raw){
-      const cleaned = String(raw||'').trim();
-      if(!cleaned) return;
-
-      // ✅ Regex/Strict حسب الإعدادات
-      const strict=strictOn();
-      const re=codeRegex();
-      if(strict){
-        if(!re) return;
-        if(!re.test(cleaned)) return;
-      }
-      onCode(cleaned);
+    // ===== Gate actions =====
+    function enterFromGate(){
+      const v = ($('#gateEvent').value||'').trim();
+      if(!v){ $('#gateMsg').textContent = (LANG==='ar'?'أدخل اسم الحدث':'Enter event name'); return; }
+      setEvent(v);
+      $('#gate').style.display='none';
+      allowUI(true);
+      setTimeout(focusScannerInput, 50);
+      setTimeout(focusScannerInput, 300);
     }
 
     // ===== Wire =====
     document.addEventListener('DOMContentLoaded', ()=>{
       applyDir(); i18n(); httpsOK(); tryInitEvent(); renderHist(); drawQRPreview('');
 
-      // Gate
       $('#gateEnter').addEventListener('click', enterFromGate);
       $('#gateEvent').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); enterFromGate(); } });
 
-      // Settings accordion
       $('#accToggle').addEventListener('click', ()=>{
         const bd=$('#accBody');
         const open=bd.classList.toggle('open');
         $('#accToggle').setAttribute('aria-label', open? T[LANG].accClose : T[LANG].accOpen);
       });
 
-      // Saved scan width
       const savedW=localStorage.getItem('hs:evscan:scanw');
       if(savedW) $('#scanSize').value=savedW;
       applyScanSize();
@@ -694,6 +700,7 @@
         ensureAudio();
         const c=$('#manualCode').value.trim();
         if(!c) return;
+        showLast(c, T[LANG].received, true);
         handleRawScan(c);
       });
 
@@ -703,7 +710,6 @@
         renderHist();
       });
 
-      // ✅ جاهزية للقارئ حتى لو الكاميرا مطفية
       focusScannerInput();
     });
 
