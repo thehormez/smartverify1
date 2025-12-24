@@ -400,7 +400,19 @@
 
     // ===== Scanner input (EY-034s) focus + capture =====
     const scannerInput = document.getElementById('scannerInput');
-    function focusScannerInput(){ try{ scannerInput.focus({ preventScroll:true }); }catch(_){ } }
+
+    // ✅ IMPORTANT: enable scanner focus ONLY after entering event name
+    let scannerEnabled = false;
+
+    function focusScannerInput(){
+      if(!scannerEnabled) return;
+      // لا تسرق التركيز إذا المستخدم يكتب داخل input/textarea
+      const ae = document.activeElement;
+      if(ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+      try{ scannerInput.focus({ preventScroll:true }); }catch(_){ }
+    }
+
+    // نخليها موجودة لكن ما تشتغل إلا لما scannerEnabled = true
     setInterval(focusScannerInput, 500);
     document.addEventListener('click', focusScannerInput);
     document.addEventListener('touchstart', focusScannerInput);
@@ -663,8 +675,11 @@
       setEvent(v);
       $('#gate').style.display='none';
       allowUI(true);
-      setTimeout(focusScannerInput, 50);
-      setTimeout(focusScannerInput, 300);
+
+      // ✅ Enable scanner focus AFTER entering event
+      scannerEnabled = true;
+      setTimeout(focusScannerInput, 120);
+      setTimeout(focusScannerInput, 450);
     }
 
     // ===== Wire =====
@@ -710,7 +725,8 @@
         renderHist();
       });
 
-      focusScannerInput();
+      // ❌ لا نفعل scannerEnabled هنا (حتى لا يمنع كتابة اسم الحدث)
+      // scannerEnabled = false by default
     });
 
     function applyScanSize(){
