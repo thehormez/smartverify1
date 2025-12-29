@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>KRS INVITE — مركز الإرسال (QR باسم الضيف على الكرت)</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0b0c; --panel:#14151a; --panel-2:#111217; --stroke:#2a2b32;
+      --gold:#d4af37; --txt:#e7e7e7; --muted:#a7a7a7; --danger:#ef4444; --ok:#25d366;
+      --solid-gold:#b48a18; --solid-blue:#1e40af; --solid-rose:#be123c; --solid-emerald:#047857;
+    }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
+    html,body{ height:100% }
+    body{ margin:0; font-family:'Noto Sans Arabic', system-ui, -apple-system, Segoe UI, Arial; background:var(--bg); color:var(--txt) }
+    .container{ max-width:1200px; margin:0 auto; padding:16px }
+
+    .topbar{ position:sticky; top:0; z-index:50; background:#0a0a0c; border-bottom:1px solid var(--stroke) }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:900 }
+    .brand .dot{ width:12px; height:12px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ffe8a3, var(--gold)) }
+    .event-name{ font-weight:900; color:#ffe8a3 }
+
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+    .btn{
+      border:1px solid var(--stroke); background:#121318; color:#fff; padding:12px 14px; border-radius:12px;
+      cursor:pointer; font-weight:800; font-size:16px; min-height:44px
+    }
+    .btn:active{ transform:scale(0.99) }
+    .btn.warn{ border-color:#7a1f1f }
+    .btn.ok{ border-color:#1b8c4f }
+    .hint{ color:var(--muted); font-size:13px }
+
+    .tabs{ display:flex; gap:10px; padding:12px 0; flex-wrap:wrap }
+    .tab{
+      border:1px solid var(--stroke); background:#111217; color:#ddd; padding:12px 16px; border-radius:14px;
+      cursor:pointer; font-weight:800; font-size:15px; min-height:44px
+    }
+    .tab.active{ border-color:var(--gold); color:#fff }
+    .section{ display:none }
+    .section.active{ display:block }
+
+    .card{ background:#121318; border:1px solid var(--stroke); border-radius:16px; padding:14px }
+    .card.gold{ background:var(--solid-gold); border-color:var(--solid-gold); color:#fff }
+    .card.blue{ background:var(--solid-blue); border-color:var(--solid-blue); color:#fff }
+    .card.rose{ background:var(--solid-rose); border-color:var(--solid-rose); color:#fff }
+    .card.emerald{ background:var(--solid-emerald); border-color:var(--solid-emerald); color:#fff }
+
+    .kpi{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px }
+    .kpi .card h4{ margin:0; font-size:13px; color:#fff }
+    .kpi .card .num{ font-size:22px; font-weight:900; margin-top:6px; color:#fff }
+
+    .pill{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid rgba(255,255,255,.4); border-radius:999px; color:#fff; font-size:12px }
+    .pill.light{ border-color:rgba(0,0,0,.15); background:rgba(255,255,255,.15) }
+
+    table{ width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:16px; margin-top:10px }
+    thead th{
+      background:#1a1b20; color:#f6f6f6; border-bottom:1px solid var(--stroke);
+      padding:12px; text-align:right; font-weight:900; font-size:14px
+    }
+    tbody td{ padding:12px; border-bottom:1px solid var(--stroke); font-size:15px; background:#0f1013; color:#e9e9e9 }
+    tbody tr:hover td{ background:#15161b }
+    .editable{ cursor:pointer; color:#ffd76a; font-weight:800; text-decoration:underline dotted rgba(212,175,55,.6); text-underline-offset:3px }
+
+    .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:100 }
+    .modal{ width:100%; max-width:520px; background:#16171b; border:1px solid var(--stroke); border-radius:18px; padding:18px }
+    .title{ margin:0 0 10px; font-weight:900; font-size:22px }
+
+    textarea{ width:100%; resize:vertical; line-height:1.9 }
+
+    @media (max-width: 640px){
+      .container{ padding:12px }
+      .tabs{ gap:8px }
+      .tab{ flex:1; text-align:center; padding:10px 8px; font-size:14px }
+      .kpi{ grid-template-columns:1fr 1fr }
+      .btn.block{ width:100% }
+      table thead{ display:none }
+      table, tbody, tr, td{ display:block; width:100% }
+      tbody tr{ border:1px solid var(--stroke); border-radius:14px; margin-bottom:10px; overflow:hidden }
+      tbody td{ display:flex; justify-content:space-between; gap:12px }
+      tbody td::before{ content:attr(data-label); color:#bdbdbd; font-weight:700 }
+      td.actions{ display:block }
+      .actions .btn{ width:100%; margin-top:8px }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- بوابة الدخول -->
+  <div id="authGate" class="overlay" style="display:none">
+    <div class="modal">
+      <h3 class="title">🔐 دخول الحدث</h3>
+      <div class="hint">أدخل <b>اسم الحدث</b> و<b>كلمة المرور</b> المطابقين لما في الكود فقط.</div>
+      <div class="row" style="margin-top:10px">
+        <input id="authEvent" class="btn" style="flex:1" placeholder="اسم الحدث" />
+        <input id="authPass" type="password" class="btn" style="flex:1" placeholder="كلمة المرور" />
+        <button class="btn" style="width:100%" onclick="authLogin()">دخول</button>
+      </div>
+      <div id="authErr" class="hint" style="color:#ffb3b3; margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- الشريط العلوي -->
+  <div class="topbar">
+    <div class="container" style="display:flex; align-items:center; justify-content:space-between; gap:12px">
+      <div class="brand"><span class="dot"></span><span>KRS INVITE — مركز الإرسال</span></div>
+      <div class="row">
+        <span id="currentEvent" class="event-name"></span>
+        <button class="btn warn" onclick="logout()">خروج</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <!-- KPIs -->
+    <section class="kpi" style="margin:12px 0 16px">
+      <div class="card blue">
+        <h4>إجمالي المدعوين</h4><div class="num" id="kpiTotal">0</div>
+      </div>
+      <div class="card gold">
+        <h4>الدعوات المُرسلة</h4><div class="num" id="kpiSent">0</div>
+      </div>
+      <div class="card rose">
+        <h4>المتبقية</h4><div class="num" id="kpiRemain">0</div>
+      </div>
+      <div class="card emerald">
+        <h4>رصيد الكروت (ثابت)</h4>
+        <div class="row" style="gap:8px; margin-top:8px">
+          <span class="pill light">المجموع: <b id="kpiStock">0</b></span>
+          <span class="pill light">المستخدم: <b id="kpiUsedCards">0</b></span>
+          <span class="pill light">المتاح: <b id="kpiFreeCards">0</b></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-section="#sec-home">الرئيسية</button>
+      <button class="tab" data-section="#sec-event">بيانات الحدث</button>
+      <button class="tab" data-section="#sec-guests">إضافة الضيوف</button>
+      <button class="tab" data-section="#sec-list">قائمة المدعوين</button>
+    </nav>
+
+    <!-- Sections -->
+    <section id="sec-home" class="section active">
+      <div class="card gold">
+        <h3 style="margin:0 0 8px">مرحبًا 👋</h3>
+        <div class="hint">هذه النسخة تولّد QR تلقائيًا وتضع <b>اسم الضيف على الكرت</b>. لا تحتاج استيراد صور باركود.</div>
+      </div>
+    </section>
+
+    <section id="sec-event" class="section">
+      <div class="card blue">
+        <h3 style="margin:0 0 8px">🏷️ بيانات الحدث</h3>
+        <div class="row">
+          <input id="eventName" class="btn" placeholder="اسم الحدث (للملفات فقط)" style="flex:1" />
+          <button class="btn" onclick="exportJSON()">💾 تصدير JSON</button>
+          <input id="dataUpload" type="file" accept=".json" style="display:none" onchange="importJSONFile(this.files[0])" />
+          <button class="btn" onclick="document.getElementById('dataUpload').click()">↩️ استيراد JSON</button>
+        </div>
+        <div class="hint" style="margin-top:8px">الدخول يتحقق من القيم داخل الكود، وهذا الحقل فقط لتسمية ملفات التصدير.</div>
+      </div>
+    </section>
+
+    <section id="sec-guests" class="section">
+      <div class="card emerald">
+        <h3 style="margin:0 0 8px">👥 إضافة الضيوف</h3>
+        <div class="row" style="margin-bottom:8px">
+          <input id="guestListUpload" type="file" class="btn"
+                 accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                 style="flex:1" />
+          <button class="btn" onclick="handleFileUpload()">✅ استيراد الضيوف</button>
+          <button class="btn ok" onclick="importFromContacts()">📱 من سجل الهاتف</button>
+        </div>
+        <div class="row">
+          <input id="newGuestName" class="btn" placeholder="الاسم" style="flex:1" />
+          <input id="newGuestPhone" class="btn" placeholder="الهاتف (بدون +)" style="flex:1" />
+          <input id="newGuestTotalNeeded" class="btn" type="number" min="1" value="1" placeholder="عدد الدعوات" style="flex:1" />
+          <button class="btn" onclick="addGuestManually()">➕ إضافة الضيف</button>
+        </div>
+        <div class="hint" style="margin-top:8px">تم تحميل <b id="guestCount">0</b> ضيف.</div>
+        <div class="hint" style="margin-top:6px;color:#ffd76a">
+          الأعمدة المطلوبة في الملف: <b>name, phone, totalNeeded</b>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-list" class="section">
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center">
+          <h3 style="margin:0 0 8px">📋 قائمة المدعوين</h3>
+          <button class="btn ok" onclick="sendAllWhatsApp()">📢 إرسال جماعي</button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>اسم الضيف</th>
+              <th>عدد الدعوات</th>
+              <th>رقم الهاتف</th>
+              <th>الكود/الأكواد</th>
+              <th>الحالة</th>
+              <th style="text-align:left">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="guestTableBody"></tbody>
+        </table>
+
+        <div class="card gold" style="margin-top:12px">
+          <h3 style="margin:0 0 6px">🖊️ نص رسالة الواتساب</h3>
+          <p class="hint">المتغيرات: <code>#{{GUEST_NAME}}#</code>، <code>#{{TOTAL_COUNT}}#</code></p>
+          <textarea id="messageTemplate" class="btn" rows="4">مرحباً #{{GUEST_NAME}}#،
+نتشرف بدعوتكم لحضور فعاليتنا (إجمالي الدعوات: #{{TOTAL_COUNT}}#).
+سيتم إرسال بطاقة الدعوة (QR) لكم من خلال منظومة KRS INVITE.</textarea>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===============================
+    // إعدادات ثابتة من داخل الكود
+    // ===============================
+    const DEFAULT_EVENT = "زفاف خالد";
+    const DEFAULT_PASS  = "12345";
+    const DEFAULT_CARD_STOCK = 200; // رصيد ثابت لا يمكن تغييره من الصفحة
+    // دول افتراضية: إذا الرقم لا يبدأ بكود دولة، سنضيفه
+    // مثال: الإمارات 971، السعودية 966، الكويت 965 ...
+    const DEFAULT_COUNTRY_CODE = "971"; // عدّلها حسب احتياجك
+    // ===============================
+
+    // LocalStorage keys
+    const LS_AUTH='krs_auth_event';
+    const LS_GUESTS='krs_guests';
+    const LS_MSG='krs_message_template';
+    const LS_EVENT_NAME='krs_event_name';
+
+    const getJSON=(k,fb)=>{ try{ return JSON.parse(localStorage.getItem(k)||JSON.stringify(fb)) }catch{return fb} };
+    const setJSON=(k,v)=>{ try{ localStorage.setItem(k, JSON.stringify(v)) }catch{} };
+
+    // State
+    let guests = getJSON(LS_GUESTS, []);
+    let internalGuestIdCounter = guests.reduce((m,g)=>Math.max(m,g.internalId||0), 0);
+    const fixedStock = DEFAULT_CARD_STOCK;
+
+    // ========= Helpers =========
+    function normalizePhone(raw){
+      // يقبل: +9715..., 9715..., 05..., 5...
+      let p = String(raw||'').trim();
+      p = p.replace(/[^\d+]/g,'');          // remove spaces, dashes
+      p = p.replace(/^\+/, '');             // remove leading +
+      // remove 00 prefix
+      if(p.startsWith('00')) p = p.slice(2);
+
+      // إذا يبدأ بصفر محلي (مثل 05xxxx) نزيله
+      if(p.startsWith('0')) p = p.replace(/^0+/, '');
+
+      // إذا ما يبدأ بكود دولة معروف، نضيف الافتراضي
+      // قاعدة بسيطة: إذا طول الرقم <= 10 غالباً محلي
+      if(p.length <= 10){
+        p = DEFAULT_COUNTRY_CODE + p;
+      }
+      return p;
+    }
+
+    function genCode(prefix="KRS"){
+      const rnd = Math.random().toString(36).slice(2,8).toUpperCase();
+      const ts  = Date.now().toString(36).toUpperCase().slice(-4);
+      return `${prefix}-${rnd}-${ts}`;
+    }
+
+    function allocCodes(totalNeeded){
+      // توليد أكواد بعدد الدعوات ضمن حد الرصيد
+      const used = guests.reduce((s,g)=>s + ((g.codes||[]).length), 0);
+      const free = Math.max(fixedStock - used, 0);
+      if(totalNeeded > free) return null;
+
+      const codes = [];
+      for(let i=0;i<totalNeeded;i++) codes.push(genCode("KRS"));
+      return codes;
+    }
+
+    // ========= Auth =========
+    function showAuth(){ document.getElementById('authGate').style.display='flex' }
+    function hideAuth(){ document.getElementById('authGate').style.display='none' }
+
+    function authLogin(){
+      const name=document.getElementById('authEvent').value.trim();
+      const pass=document.getElementById('authPass').value;
+      const err=document.getElementById('authErr'); err.textContent='';
+      if(name!==DEFAULT_EVENT || pass!==DEFAULT_PASS){ err.textContent='اسم الحدث أو كلمة المرور غير صحيحة'; return }
+      localStorage.setItem(LS_AUTH, JSON.stringify({event:DEFAULT_EVENT}));
+      localStorage.setItem(LS_EVENT_NAME, DEFAULT_EVENT);
+      document.getElementById('currentEvent').textContent = DEFAULT_EVENT;
+      document.getElementById('eventName').value = DEFAULT_EVENT;
+      hideAuth();
+    }
+    function logout(){ localStorage.removeItem(LS_AUTH); showAuth(); }
+
+    // ========= Boot =========
+    (function boot(){
+      try{
+        const s=JSON.parse(localStorage.getItem(LS_AUTH)||'null');
+        if(!s?.event){ showAuth(); }
+        else { document.getElementById('currentEvent').textContent = s.event; }
+
+        document.getElementById('eventName').value = localStorage.getItem(LS_EVENT_NAME) || DEFAULT_EVENT;
+
+        const savedMsg = localStorage.getItem(LS_MSG);
+        if (savedMsg && document.getElementById('messageTemplate')) document.getElementById('messageTemplate').value = savedMsg;
+
+        document.getElementById('kpiStock').textContent = fixedStock;
+      }catch{ showAuth() }
+
+      renderGuestTable();
+      updateKPIs();
+      refreshStockKPIs();
+      document.getElementById('guestCount').textContent=guests.length;
+    })();
+
+    // ========= Tabs =========
+    document.querySelectorAll('#tabs .tab').forEach(tab=>{
+      tab.addEventListener('click',()=>{
+        document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        const id=tab.dataset.section;
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+        document.querySelector(id).classList.add('active');
+      });
+    });
+
+    function persistAll(){
+      setJSON(LS_GUESTS, guests);
+      const msgEl=document.getElementById('messageTemplate');
+      if(msgEl) localStorage.setItem(LS_MSG, msgEl.value||'');
+      const ev=document.getElementById('eventName')?.value||'';
+      if(ev) localStorage.setItem(LS_EVENT_NAME, ev);
+    }
+
+    // ========= JSON Export/Import =========
+    function exportJSON(){
+      const payload = {
+        version: 1,
+        eventName: document.getElementById('eventName').value || DEFAULT_EVENT,
+        fixedStock,
+        guests,
+        internalGuestIdCounter,
+        messageTemplate: document.getElementById('messageTemplate')?.value || ''
+      };
+      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+      saveAs(blob, `KRS_INVITE_${payload.eventName||'event'}_${Date.now()}.json`);
+    }
+
+    function importJSONFile(file){
+      if(!file) return;
+      const r=new FileReader();
+      r.onload=(e)=>{
+        try{
+          const data=JSON.parse(e.target.result);
+          guests = Array.isArray(data.guests)? data.guests: [];
+          internalGuestIdCounter = data.internalGuestIdCounter || guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
+          document.getElementById('eventName').value = data.eventName || DEFAULT_EVENT;
+          document.getElementById('currentEvent').textContent = data.eventName || DEFAULT_EVENT;
+          if (data.messageTemplate && document.getElementById('messageTemplate')) document.getElementById('messageTemplate').value = data.messageTemplate;
+
+          renderGuestTable(); updateKPIs(); refreshStockKPIs(); persistAll();
+          alert('تم الاستيراد بنجاح.');
+        }catch{ alert('ملف JSON غير صالح') }
+      };
+      r.readAsText(file);
+    }
+
+    // ========= Import Guests =========
+    function handleFileUpload(){
+      const f=document.getElementById('guestListUpload').files[0];
+      if(!f){ alert('اختر ملفًا'); return }
+      const ext=f.name.split('.').pop().toLowerCase();
+      if(ext==='csv') readCSV(f);
+      else if(['xlsx','xls'].includes(ext)) readExcel(f);
+      else alert('استخدم CSV أو XLSX')
+    }
+
+    function readCSV(file){
+      Papa.parse(file,{ header:true, skipEmptyLines:true,
+        complete:(res)=>processImportedData(res.data),
+        error:(e)=>alert('CSV خطأ: '+e.message)
+      })
+    }
+
+    function readExcel(file){
+      const r=new FileReader();
+      r.onload=(e)=>{
+        const data=new Uint8Array(e.target.result);
+        const wb=XLSX.read(data,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const arr=XLSX.utils.sheet_to_json(ws);
+        processImportedData(arr)
+      };
+      r.readAsArrayBuffer(file)
+    }
+
+    function processImportedData(data){
+      const required=['name','phone','totalNeeded'];
+      if(!data.length||!required.every(f=>Object.keys(data[0]).some(k=>k.toLowerCase()===f))){
+        alert('الأعمدة المطلوبة: name, phone, totalNeeded'); return
+      }
+
+      let added=0;
+      data.forEach(row=>{
+        const get=(f)=>{ const k=Object.keys(row).find(x=>x.toLowerCase()===f); return k? row[k]:'' };
+        const name=String(get('name')).trim();
+        const phoneRaw=String(get('phone')).trim();
+        const phone=normalizePhone(phoneRaw);
+        const total=Math.max(1, parseInt(get('totalneeded'))||1);
+        if(!name||!phone) return;
+
+        if(guests.some(x=>normalizePhone(x.phone)===phone)) return;
+
+        // توليد أكواد ضمن الرصيد
+        const codes = allocCodes(total);
+        if(!codes){ return; }
+
+        internalGuestIdCounter++;
+        guests.push({ internalId:internalGuestIdCounter, name, phone, totalNeeded:total, codes, status:'new' });
+        added++;
+      });
+
+      persistAll();
+      renderGuestTable(); updateKPIs(); refreshStockKPIs();
+      document.getElementById('guestCount').textContent=guests.length;
+      alert(`تم إضافة ${added} ضيف جديد. (مع تجاهل المكرر/الذي يتجاوز الرصيد)`);
+    }
+
+    async function importFromContacts(){
+      try{
+        if (!('contacts' in navigator) || !('select' in navigator.contacts)){
+          alert('استيراد جهات الاتصال غير مدعوم هنا. استخدم Chrome على Android مع HTTPS.');
+          return;
+        }
+        const picked = await navigator.contacts.select(['name','tel'], { multiple:true });
+        if (!picked || !picked.length){ alert('لم يتم اختيار أي جهة اتصال'); return; }
+
+        let added=0;
+        for(const c of picked){
+          const name=(c.name && c.name[0])||'بدون اسم';
+          const phoneRaw=(c.tel && c.tel[0])||'';
+          const phone=normalizePhone(phoneRaw);
+          if(!phone) continue;
+          if(guests.some(x=>normalizePhone(x.phone)===phone)) continue;
+
+          const codes = allocCodes(1);
+          if(!codes) continue;
+
+          internalGuestIdCounter++;
+          guests.push({ internalId:internalGuestIdCounter, name, phone, totalNeeded:1, codes, status:'new' });
+          added++;
+        }
+
+        persistAll();
+        renderGuestTable(); updateKPIs(); refreshStockKPIs();
+        alert(`تم استيراد ${added} جهة اتصال.`);
+      }catch(e){
+        console.error(e);
+        alert('تعذر الوصول لجهات الاتصال.');
+      }
+    }
+
+    function addGuestManually(){
+      const n=document.getElementById('newGuestName').value.trim();
+      const pRaw=document.getElementById('newGuestPhone').value.trim();
+      const p=normalizePhone(pRaw);
+      const c=Math.max(1, parseInt(document.getElementById('newGuestTotalNeeded').value)||1);
+      if(!n||!p){ alert('أدخل الاسم والهاتف'); return }
+
+      if(guests.some(x=>normalizePhone(x.phone)===p)){ alert('هذا الرقم موجود مسبقاً'); return }
+
+      const codes = allocCodes(c);
+      if(!codes){ alert('الرصيد لا يكفي لعدد الدعوات'); return }
+
+      internalGuestIdCounter++;
+      guests.push({ internalId:internalGuestIdCounter, name:n, phone:p, totalNeeded:c, codes, status:'new' });
+      persistAll();
+      renderGuestTable(); updateKPIs(); refreshStockKPIs();
+
+      document.getElementById('newGuestName').value='';
+      document.getElementById('newGuestPhone').value='';
+      document.getElementById('newGuestTotalNeeded').value='1';
+      document.getElementById('guestCount').textContent=guests.length;
+    }
+
+    // ========= بطاقة الدعوة PNG / ZIP =========
+    async function makeCardDataURL({ guestName, code }){
+      // Canvas 1080x1080 — غيّر لاحقاً إذا عندك خلفية جاهزة
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080; canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+
+      // خلفية فخمة (تدرج بسيط) — استبدلها بصورة تصميمك إذا عندك
+      const g = ctx.createLinearGradient(0,0,1080,1080);
+      g.addColorStop(0, '#0b0b0c');
+      g.addColorStop(1, '#1a1b20');
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,1080,1080);
+
+      // إطار ذهبي
+      ctx.strokeStyle = '#d4af37';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(40,40,1000,1000);
+
+      // عنوان
+      ctx.fillStyle = '#d4af37';
+      ctx.font = "900 54px 'Noto Sans Arabic', Arial";
+      ctx.textAlign = 'center';
+      ctx.fillText('KRS INVITE', 540, 130);
+
+      // اسم الضيف
+      ctx.fillStyle = '#ffffff';
+      ctx.font = "900 60px 'Noto Sans Arabic', Arial";
+      ctx.fillText(guestName, 540, 260);
+
+      // QR
+      const qrCanvas = document.createElement('canvas');
+      await QRCode.toCanvas(qrCanvas, code, { width: 360, margin: 1 });
+      ctx.drawImage(qrCanvas, 360, 360, 360, 360);
+
+      // الكود نص
+      ctx.fillStyle = '#ffe8a3';
+      ctx.font = "800 34px Arial";
+      ctx.fillText(code, 540, 770);
+
+      // ملاحظة
+      ctx.fillStyle = '#a7a7a7';
+      ctx.font = "700 28px 'Noto Sans Arabic', Arial";
+      ctx.fillText('يرجى إبراز الكود عند الدخول', 540, 840);
+
+      return canvas.toDataURL('image/png');
+    }
+
+    async function downloadInviteCards(guest){
+      const codes = (guest.codes||[]);
+      if(!codes.length){ alert('لا توجد أكواد'); return; }
+
+      if(codes.length===1){
+        const dataUrl = await makeCardDataURL({ guestName: guest.name, code: codes[0] });
+        const a=document.createElement('a');
+        a.href=dataUrl;
+        a.download=`${guest.name}_${codes[0]}.png`;
+        document.body.appendChild(a); a.click(); a.remove();
+        return;
+      }
+
+      const zip = new JSZip();
+      for(const code of codes){
+        const dataUrl = await makeCardDataURL({ guestName: guest.name, code });
+        const base64 = dataUrl.split(',')[1];
+        zip.file(`${guest.name}_${code}.png`, base64, {base64:true});
+      }
+      const blob = await zip.generateAsync({type:'blob'});
+      saveAs(blob, `${guest.name}_${codes.length}_Cards.zip`);
+    }
+
+    // ========= WhatsApp Fix (iOS) =========
+    function buildWhatsAppLinks(phone, text){
+      const cleanPhone = String(phone||'').replace(/[^\d]/g,''); // digits only
+      const encoded = encodeURIComponent(text||'');
+      // universal (works in most cases)
+      const waMe = `https://wa.me/${cleanPhone}?text=${encoded}`;
+      // iOS deep link fallback
+      const waApp = `whatsapp://send?phone=${cleanPhone}&text=${encoded}`;
+      return { waMe, waApp };
+    }
+
+    function openWhatsApp(phone, text){
+      const { waMe, waApp } = buildWhatsAppLinks(phone, text);
+
+      // Try app scheme first (iOS)
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if(isIOS){
+        // Attempt deep link
+        window.location.href = waApp;
+        // Fallback after short delay
+        setTimeout(()=>{ window.open(waMe, '_blank'); }, 600);
+      }else{
+        window.open(waMe, '_blank');
+      }
+    }
+
+    function sendWhatsAppMessage(guest){
+      if(!(guest.codes||[]).length){ alert('لا يوجد كود للضيف'); return }
+      const msgEl=document.getElementById('messageTemplate');
+      let txt= msgEl? msgEl.value : `مرحباً ${guest.name}`;
+      txt=txt.replace(/#\{\{GUEST_NAME\}\}#/g, guest.name)
+             .replace(/#\{\{TOTAL_COUNT\}\}#/g, guest.totalNeeded);
+
+      openWhatsApp(guest.phone, txt);
+
+      guest.status='sent';
+      persistAll(); updateKPIs(); renderGuestTable();
+    }
+
+    function sendAllWhatsApp(){
+      if(!guests.length){ alert('لا يوجد ضيوف'); return }
+      if(!confirm('سيتم فتح عدة نوافذ واتساب. هل تريد المتابعة؟')) return;
+
+      const template=document.getElementById('messageTemplate')?.value||'';
+      let delay=0;
+      guests.forEach((guest)=>{
+        const txt=template.replace(/#\{\{GUEST_NAME\}\}#/g,guest.name)
+                          .replace(/#\{\{TOTAL_COUNT\}\}#/g,guest.totalNeeded);
+
+        setTimeout(()=>{
+          openWhatsApp(guest.phone, txt);
+          guest.status='sent';
+          persistAll(); updateKPIs(); renderGuestTable();
+        }, delay);
+
+        delay += 1400;
+      });
+    }
+
+    // ========= Edit / Delete =========
+    function editTotalNeeded(id){
+      const g=guests.find(x=>x.internalId===id); if(!g) return;
+      const s=prompt(`عدد جديد لـ ${g.name}:`, g.totalNeeded);
+      if(s===null||s.trim()==='') return;
+      const n=parseInt(s); if(isNaN(n)||n<1){ alert('عدد غير صالح'); return }
+
+      // حساب الفرق في الأكواد
+      const old = (g.codes||[]).length;
+      if(n === old){ g.totalNeeded=n; persistAll(); renderGuestTable(); refreshStockKPIs(); return; }
+
+      if(n > old){
+        const extra = n - old;
+        const used = guests.reduce((sum,gg)=>sum + ((gg.codes||[]).length), 0);
+        const free = Math.max(fixedStock - used, 0);
+        if(extra > free){ alert('الرصيد لا يكفي'); return; }
+        for(let i=0;i<extra;i++) g.codes.push(genCode("KRS"));
+      }else{
+        g.codes = g.codes.slice(0, n);
+      }
+
+      g.totalNeeded = n;
+      persistAll(); renderGuestTable(); refreshStockKPIs();
+    }
+
+    function editGuestDetails(id, field){
+      const g=guests.find(x=>x.internalId===id); if(!g) return;
+      const s=prompt(field==='name'?`اسم جديد لـ ${g.name}:`:`هاتف جديد لـ ${g.name}:`, g[field]);
+      if(s===null||s.trim()==='') return;
+
+      if(field==='phone'){
+        const np = normalizePhone(s.trim());
+        if(guests.some(x=>x.internalId!==id && normalizePhone(x.phone)===np)){ alert('هذا الرقم مستخدم لضيف آخر'); return; }
+        g.phone = np;
+      }else{
+        g.name = s.trim();
+      }
+      persistAll(); renderGuestTable();
+    }
+
+    function deleteGuest(id){
+      if(!confirm('حذف الضيف؟')) return;
+      guests = guests.filter(g=>g.internalId!==id);
+      persistAll(); renderGuestTable(); updateKPIs(); refreshStockKPIs();
+    }
+
+    // ========= KPIs =========
+    function updateKPIs(){
+      const total=guests.length;
+      const sent=guests.filter(g=>g.status==='sent').length;
+      const remain=Math.max(total - sent, 0);
+      document.getElementById('kpiTotal').textContent=total;
+      document.getElementById('kpiSent').textContent=sent;
+      document.getElementById('kpiRemain').textContent=remain;
+    }
+
+    function refreshStockKPIs(){
+      const used = guests.reduce((s,g)=>s + ((g.codes||[]).length), 0);
+      const free = Math.max(fixedStock - used, 0);
+      document.getElementById('kpiStock').textContent = fixedStock;
+      document.getElementById('kpiUsedCards').textContent = used;
+      document.getElementById('kpiFreeCards').textContent = free;
+    }
+
+    // ========= Render Table =========
+    function renderGuestTable(){
+      const body=document.getElementById('guestTableBody'); if(!body) return;
+      body.innerHTML='';
+      document.getElementById('guestCount').textContent=guests.length;
+
+      guests.forEach(guest=>{
+        const tr=document.createElement('tr');
+
+        const tdName=document.createElement('td');
+        tdName.setAttribute('data-label','اسم الضيف');
+        tdName.innerHTML=`<span class="editable" onclick="editGuestDetails(${guest.internalId||0}, 'name')">${guest.name||''}</span>`;
+        tr.appendChild(tdName);
+
+        const tdCount=document.createElement('td');
+        tdCount.setAttribute('data-label','عدد الدعوات');
+        tdCount.innerHTML=`<span class="editable" onclick="editTotalNeeded(${guest.internalId||0})">${guest.totalNeeded||0}</span>`;
+        tr.appendChild(tdCount);
+
+        const tdPhone=document.createElement('td');
+        tdPhone.setAttribute('data-label','رقم الهاتف');
+        tdPhone.innerHTML=`<span class="editable" onclick="editGuestDetails(${guest.internalId||0}, 'phone')">${guest.phone||''}</span>`;
+        tr.appendChild(tdPhone);
+
+        const tdCodes=document.createElement('td');
+        tdCodes.setAttribute('data-label','الأكواد');
+        tdCodes.textContent = (guest.codes||[]).join(', ') || '—';
+        tdCodes.style.fontWeight='800';
+        tdCodes.style.color = '#b7ffc8';
+        tr.appendChild(tdCodes);
+
+        const tdStatus=document.createElement('td');
+        tdStatus.setAttribute('data-label','الحالة');
+        tdStatus.textContent = guest.status==='sent'? 'مُرسلة' : 'جديدة';
+        tr.appendChild(tdStatus);
+
+        const tdAct=document.createElement('td'); tdAct.className='actions'; tdAct.style.textAlign='left';
+        tdAct.setAttribute('data-label','الإجراءات');
+
+        const bPNG=document.createElement('button');
+        bPNG.className='btn block';
+        bPNG.textContent = guest.totalNeeded===1 ? '🎫 تنزيل PNG' : '🎫 تنزيل ZIP';
+        bPNG.onclick=()=>downloadInviteCards(guest);
+
+        const bWA=document.createElement('button');
+        bWA.className='btn ok block';
+        bWA.textContent='💬 واتساب';
+        bWA.onclick=()=>sendWhatsAppMessage(guest);
+
+        const bDel=document.createElement('button');
+        bDel.className='btn warn block';
+        bDel.textContent='🗑️ حذف';
+        bDel.onclick=()=>deleteGuest(guest.internalId);
+
+        [bPNG,bWA,bDel].forEach(b=>{ b.style.marginTop='8px'; tdAct.appendChild(b) });
+        tr.appendChild(tdAct);
+
+        body.appendChild(tr);
+      });
+
+      updateKPIs();
+      refreshStockKPIs();
+      persistAll();
+    }
+
+    // حفظ نص الرسالة تلقائياً
+    (function bindMsgAutoSave(){
+      const el=document.getElementById('messageTemplate');
+      if(!el) return;
+      el.addEventListener('input', ()=>{ localStorage.setItem(LS_MSG, el.value||''); });
+    })();
+  </script>
+</body>
+</html>
