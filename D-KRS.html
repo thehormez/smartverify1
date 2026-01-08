@@ -3,34 +3,38 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KRS — لوحة التحكم / Dashboard (Lux)</title>
+  <title>KRS INVITE — Dashboard + Final Report (Ultra Lux)</title>
 
   <style>
     :root{
-      /* Dark Lux */
-      --bg0:#06080f; --bg1:#0a0f1d;
-      --card:rgba(255,255,255,.06);
-      --card2:rgba(255,255,255,.04);
-      --stroke:rgba(255,255,255,.10);
-      --stroke2:rgba(255,255,255,.14);
-      --ink:#e9edf5; --muted:#a7b0c3;
+      /* ===== Dark Ultra Lux ===== */
+      --bg0:#050711; --bg1:#0a1020;
+      --ink:#eef2ff; --muted:#a7b0c3;
+      --card:rgba(255,255,255,.07);
+      --card2:rgba(255,255,255,.045);
+      --stroke:rgba(255,255,255,.11);
+      --stroke2:rgba(255,255,255,.16);
+
       --gold:#d6b15e; --gold2:#b48a18;
       --blue:#1e40af; --rose:#be123c; --green:#047857;
-      --shadow:0 18px 60px rgba(0,0,0,.45);
-      --r16:16px; --r20:20px; --r24:24px;
-      --focus: 0 0 0 4px rgba(214,177,94,.12);
+
+      --shadow:0 20px 70px rgba(0,0,0,.50);
+      --shadow2:0 14px 45px rgba(0,0,0,.30);
+      --r16:16px; --r20:20px; --r24:24px; --r28:28px;
+      --focus:0 0 0 4px rgba(214,177,94,.14);
     }
 
-    /* Light Minimal */
     [data-theme="light"]{
+      /* ===== Light Ultra Clean ===== */
       --bg0:#f8fafc; --bg1:#eef2ff;
-      --card:rgba(0,0,0,.04);
-      --card2:rgba(0,0,0,.03);
-      --stroke:rgba(0,0,0,.10);
-      --stroke2:rgba(0,0,0,.14);
       --ink:#0b1220; --muted:#475569;
-      --shadow:0 18px 60px rgba(2,6,23,.12);
-      --focus: 0 0 0 4px rgba(180,138,24,.14);
+      --card:rgba(0,0,0,.05);
+      --card2:rgba(0,0,0,.035);
+      --stroke:rgba(0,0,0,.12);
+      --stroke2:rgba(0,0,0,.16);
+      --shadow:0 20px 70px rgba(2,6,23,.14);
+      --shadow2:0 14px 45px rgba(2,6,23,.10);
+      --focus:0 0 0 4px rgba(180,138,24,.16);
     }
 
     *{box-sizing:border-box}
@@ -40,103 +44,87 @@
       color:var(--ink);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;
       background:
-        radial-gradient(1200px 700px at 18% 8%, rgba(214,177,94,.14), transparent 55%),
-        radial-gradient(900px 500px at 82% 15%, rgba(30,64,175,.12), transparent 60%),
+        radial-gradient(1200px 700px at 18% 6%, rgba(214,177,94,.18), transparent 55%),
+        radial-gradient(900px 500px at 82% 15%, rgba(30,64,175,.14), transparent 60%),
         radial-gradient(900px 500px at 70% 92%, rgba(190,18,60,.10), transparent 60%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
       overflow-x:hidden;
     }
 
     .container{max-width:1120px;margin:0 auto;padding:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 
     /* ===== Topbar ===== */
     .topbar{
       position:sticky;top:0;z-index:30;
-      background: rgba(6,8,15,.72);
-      backdrop-filter: blur(10px);
+      background: rgba(6,8,15,.70);
       border-bottom:1px solid var(--stroke);
+      backdrop-filter: blur(12px);
     }
-    [data-theme="light"] .topbar{ background: rgba(248,250,252,.72); }
+    [data-theme="light"] .topbar{background: rgba(248,250,252,.75)}
 
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .brand{display:flex;align-items:center;gap:12px;min-width:290px}
-
+    .brand{display:flex;align-items:center;gap:12px;min-width:300px}
     .logoWrap{
-      width:44px;height:44px;border-radius:18px;
-      background:
-        radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.22), transparent 55%),
-        linear-gradient(145deg, rgba(214,177,94,.25), rgba(180,138,24,.08));
+      width:46px;height:46px;border-radius:18px;
       border:1px solid rgba(214,177,94,.35);
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      display:grid;place-items:center;
-      position:relative;overflow:hidden;
+      background:
+        radial-gradient(12px 12px at 28% 30%, rgba(255,255,255,.22), transparent 55%),
+        linear-gradient(145deg, rgba(214,177,94,.28), rgba(180,138,24,.10));
+      box-shadow: 0 12px 34px rgba(0,0,0,.28);
+      display:grid;place-items:center;position:relative;overflow:hidden;
     }
     .logoWrap:after{
       content:"";
       position:absolute; inset:-40%;
       background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
       transform: rotate(25deg);
-      animation: sheen 6s linear infinite;
+      animation: sheen 6.5s linear infinite;
       pointer-events:none;
     }
     @keyframes sheen{
-      0%{transform:translateX(-30%) rotate(25deg)}
-      100%{transform:translateX(30%) rotate(25deg)}
+      0%{transform:translateX(-32%) rotate(25deg)}
+      100%{transform:translateX(32%) rotate(25deg)}
     }
-    .logoImg{
-      width:34px;height:34px;border-radius:999px;
-      object-fit:contain; z-index:1;
-      filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
-      display:none;
-    }
-    .logoFallback{
-      z-index:1;
-      font-weight:1100;letter-spacing:.6px;
-      color:#1b1405;
-      background: linear-gradient(180deg,#1b1405,#000);
-      -webkit-background-clip:text;background-clip:text;color:transparent;
-      font-size:12px;
-    }
+    .logoImg{width:34px;height:34px;object-fit:contain;border-radius:999px;display:none;filter:drop-shadow(0 10px 20px rgba(0,0,0,.35))}
+    .logoFallback{font-weight:1100;letter-spacing:.8px;color:#1b1405;background:linear-gradient(180deg,#1b1405,#000);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:12px}
 
-    .hdrOrg{color:var(--muted);font-size:12px;letter-spacing:.6px}
+    .hdrOrg{color:var(--muted);font-size:12px;letter-spacing:.8px}
     .hdrTitle{font-weight:1100;font-size:15px;letter-spacing:.2px}
-    .hdrTitle small{font-weight:800;color:var(--muted)}
-    .subtitle{font-size:12px;color:var(--muted);margin-top:3px}
+    .hdrSub{color:var(--muted);font-size:12px;margin-top:3px}
 
     .actions{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap}
 
     .btn{
-      appearance:none;
-      border:1px solid var(--stroke2);
-      background: rgba(255,255,255,.05);
+      appearance:none;border:1px solid var(--stroke2);
+      background:rgba(255,255,255,.06);
       color:var(--ink);
       border-radius:14px;
       padding:10px 12px;
       cursor:pointer;
       min-height:42px;
       font-size:14px;
-      display:inline-flex; align-items:center; justify-content:center;
-      gap:8px;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
       box-shadow: 0 10px 22px rgba(0,0,0,.14);
       transition: transform .12s ease, background .12s ease, border-color .12s ease;
-      user-select:none;
-      white-space:nowrap;
+      user-select:none;white-space:nowrap;
     }
-    .btn:hover{background:rgba(255,255,255,.08); border-color:rgba(214,177,94,.30); transform: translateY(-1px)}
-    .btn:active{transform: translateY(0px)}
+    .btn:hover{background:rgba(255,255,255,.09);border-color:rgba(214,177,94,.32);transform:translateY(-1px)}
+    .btn:active{transform:translateY(0)}
     .btn.primary{
-      background: linear-gradient(135deg, rgba(214,177,94,.30), rgba(180,138,24,.12));
-      border-color: rgba(214,177,94,.35);
+      background: linear-gradient(135deg, rgba(214,177,94,.34), rgba(180,138,24,.12));
+      border-color: rgba(214,177,94,.40);
     }
-    .btn.ghost{background:transparent}
-    .btn.block{width:100%}
+    .btn.danger{
+      background: linear-gradient(135deg, rgba(190,18,60,.26), rgba(190,18,60,.08));
+      border-color: rgba(244,63,94,.25);
+    }
 
     .select,.input{
       width:100%;
       padding:12px 12px;
       border-radius:14px;
       border:1px solid var(--stroke2);
-      background: rgba(255,255,255,.05);
+      background: rgba(255,255,255,.06);
       color:var(--ink);
       min-height:44px;
       font-size:14px;
@@ -144,66 +132,58 @@
       transition: border-color .12s ease, background .12s ease, box-shadow .12s ease;
     }
     .select:focus,.input:focus{
-      border-color: rgba(214,177,94,.42);
-      background: rgba(255,255,255,.07);
+      border-color: rgba(214,177,94,.46);
+      background: rgba(255,255,255,.08);
       box-shadow: var(--focus);
     }
 
     .card{
       background: var(--card);
-      border: 1px solid var(--stroke);
-      border-radius: var(--r20);
-      padding: 14px;
-      box-shadow: var(--shadow);
+      border:1px solid var(--stroke);
+      border-radius: var(--r24);
+      padding:14px;
+      box-shadow: var(--shadow2);
     }
-    .card.soft{background:var(--card2); box-shadow:0 14px 40px rgba(0,0,0,.18)}
+    .card.soft{background:var(--card2)}
     .muted{color:var(--muted);font-size:12px}
+    .titleMini{font-weight:1100;font-size:12px;letter-spacing:.35px;color:var(--muted);margin-bottom:8px}
 
     .grid{display:grid;gap:12px}
     .grid-3{grid-template-columns:1fr 1fr 1fr}
     .grid-4{grid-template-columns:repeat(4,1fr)}
-    @media(max-width:900px){.grid-3{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}}
+    .grid-2{grid-template-columns:1.1fr .9fr}
+    @media(max-width:920px){.grid-3{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}}
     @media(max-width:560px){.grid-4{grid-template-columns:1fr}.container{padding:12px}}
 
-    /* ===== KPI ===== */
+    /* ===== KPI Cards ===== */
     .kpi{
       position:relative; overflow:hidden;
       border:none;
-      border-radius: var(--r20);
+      border-radius: var(--r24);
       padding:14px;
-      min-height:92px;
+      min-height:98px;
       display:flex; flex-direction:column; justify-content:space-between;
       color:#fff;
+      box-shadow: var(--shadow);
     }
-    .kpi .t{font-weight:1000;font-size:12px;letter-spacing:.35px;opacity:.95}
-    .kpi .n{font-size:26px;font-weight:1100;letter-spacing:.4px}
+    .kpi .t{font-weight:1100;font-size:12px;letter-spacing:.4px;opacity:.95}
+    .kpi .n{font-size:28px;font-weight:1200;letter-spacing:.5px}
     .kpi:before{
       content:"";
-      position:absolute; inset:-60%;
+      position:absolute; inset:-65%;
       background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 55%);
       transform: rotate(15deg);
       pointer-events:none;
     }
-    .kpi.blue{background:linear-gradient(135deg, rgba(30,64,175,1), rgba(30,64,175,.45))}
-    .kpi.gold{background:linear-gradient(135deg, rgba(214,177,94,1), rgba(180,138,24,.40)); color:#161106}
-    .kpi.gold .t,.kpi.gold .n{color:#161106}
-    .kpi.rose{background:linear-gradient(135deg, rgba(190,18,60,1), rgba(190,18,60,.40))}
-    .kpi.green{background:linear-gradient(135deg, rgba(4,120,87,1), rgba(4,120,87,.40))}
-
-    /* ===== Badges ===== */
-    .badge{
-      padding:6px 10px;border-radius:999px;
-      font-weight:1000;font-size:12px;
-      display:inline-flex;align-items:center;gap:6px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-    }
-    .badge.ok{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.10);color:rgba(34,197,94,.95)}
-    .badge.no{border-color:rgba(244,63,94,.25);background:rgba(244,63,94,.10);color:rgba(244,63,94,.95)}
+    .kpi.blue{background:linear-gradient(135deg, rgba(30,64,175,1), rgba(30,64,175,.55))}
+    .kpi.gold{background:linear-gradient(135deg, rgba(214,177,94,1), rgba(180,138,24,.42)); color:#1b1405}
+    .kpi.gold .t,.kpi.gold .n{color:#1b1405}
+    .kpi.rose{background:linear-gradient(135deg, rgba(190,18,60,1), rgba(190,18,60,.45))}
+    .kpi.green{background:linear-gradient(135deg, rgba(4,120,87,1), rgba(4,120,87,.45))}
 
     /* ===== Table ===== */
     .tableWrap{
-      border-radius: var(--r20);
+      border-radius: var(--r24);
       overflow:auto;
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.03);
@@ -224,34 +204,51 @@
     tbody tr:hover td{background: rgba(214,177,94,.06)}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
 
-    /* ===== Date filter chips-style hint ===== */
-    .hintBox{
-      padding:8px 10px;
-      border-radius:999px;
+    .badge{
+      padding:6px 10px;border-radius:999px;
+      font-weight:1100;font-size:12px;
+      display:inline-flex;align-items:center;gap:8px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+    }
+    .badge.ok{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.10);color:rgba(34,197,94,.95)}
+    .badge.no{border-color:rgba(244,63,94,.25);background:rgba(244,63,94,.10);color:rgba(244,63,94,.95)}
+
+    /* ===== Small Insight list ===== */
+    .insGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:640px){.insGrid{grid-template-columns:1fr}}
+    .insItem{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      border-radius: var(--r20);
+      padding:12px;
+    }
+    .insK{font-size:12px;color:var(--muted);font-weight:1100}
+    .insV{margin-top:6px;font-weight:1200}
+
+    /* ===== Print hint ===== */
+    .hintPill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.05);
+      color: var(--muted);
       font-size:12px;
-      color:var(--muted);
       white-space:nowrap;
     }
 
-    /* ===== Print styles ===== */
-    #printHeader{display:none}
-    @media print {
+    /* ===== Print (for dashboard print only) ===== */
+    @media print{
+      *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
       body{background:#fff;color:#000}
-      .topbar,.grid.grid-3 .card:last-child{display:none!important}
-      .card,.tableWrap{border:1px solid #ddd;background:#fff;box-shadow:none}
+      .topbar,.noPrint{display:none !important}
+      .card,.tableWrap{background:#fff;border:1px solid #ddd;box-shadow:none}
       thead th{background:#f5f5f5;color:#111}
       tbody td{color:#111}
-      .badge{border:1px solid #333;background:#fff}
-      #printHeader{display:block;margin:0 0 12px 0}
-      .printRow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-      .printBrand{display:flex;align-items:center;gap:10px}
-      .printLogo{width:42px;height:42px;border-radius:12px;border:1px solid #ddd;display:grid;place-items:center;overflow:hidden}
-      .printLogo img{width:34px;height:34px;object-fit:contain}
-      .printTitle{font-weight:900;font-size:16px}
-      .printMeta{font-size:12px;color:#333}
     }
+
+    /* Hidden chart canvases (we still render for report export) */
+    .hiddenCanvases{position:absolute;left:-99999px;top:-99999px;opacity:0;pointer-events:none}
   </style>
 </head>
 
@@ -261,21 +258,21 @@
     <div class="container row">
       <div class="brand">
         <div class="logoWrap">
-          <!-- OPTIONAL: ضع رابط شعارك هنا داخل LOGO_URL في الجافاسكربت -->
           <img id="logoImg" class="logoImg" alt="Logo" />
           <div id="logoFallback" class="logoFallback">KRS</div>
         </div>
         <div>
           <div class="hdrOrg" id="hdrOrg">KRS INVITE</div>
           <div class="hdrTitle">
-            <span id="hdrMain">لوحة الشركه / </span><small>KRS Dashboard</small>
+            <span id="hdrMain">لوحة التحكم — </span><span id="hdrEvent">—</span>
           </div>
-          <div class="subtitle" id="hdrSub">الحضور المباشر وحالة الدعوات • Live attendance & status</div>
+          <div class="hdrSub" id="hdrSub">الحضور المباشر وحالة الدعوات • Live attendance & status</div>
         </div>
       </div>
 
-      <div class="actions">
-        <button id="themeBtn" class="btn ghost">🌓</button>
+      <div class="actions noPrint">
+        <span class="hintPill" id="printHint">🖨️ فعّل (Print Backgrounds) لطباعة الألوان</span>
+        <button id="themeBtn" class="btn">🌓</button>
         <button id="langBtn" class="btn">AR</button>
         <button id="refreshBtn" class="btn">↻ <span id="refreshTxt">تحديث</span></button>
       </div>
@@ -283,41 +280,22 @@
   </div>
 
   <div class="container">
-
-    <!-- PRINT HEADER -->
-    <div id="printHeader">
-      <div class="printRow">
-        <div class="printBrand">
-          <div class="printLogo">
-            <img id="printLogoImg" alt="Logo" style="display:none" />
-            <div id="printLogoFallback" style="font-weight:900">KRS</div>
-          </div>
-          <div>
-            <div class="printTitle" id="printTitle">تقرير الحضور</div>
-            <div class="printMeta">
-              الحدث: <b id="printEvent">—</b> • التاريخ: <b id="printDate">—</b>
-            </div>
-          </div>
-        </div>
-        <div class="printMeta">Powered by KRS INVITE</div>
-      </div>
-    </div>
-
     <!-- Filters -->
     <div class="grid grid-3" style="margin-top:14px">
       <div class="card soft">
-        <div class="muted" id="lblEvent" style="margin-bottom:8px">الحدث</div>
+        <div class="titleMini" id="lblEvent">الحدث</div>
         <select id="eventSelect" class="select"></select>
       </div>
 
       <div class="card soft">
-        <div class="muted" id="lblSearch" style="margin-bottom:8px">ابحث عن كود…</div>
+        <div class="titleMini" id="lblSearch">ابحث عن كود…</div>
         <input id="searchInput" class="input" placeholder="KH_001" />
       </div>
 
-      <div class="card soft" style="display:flex;align-items:end;gap:10px">
+      <div class="card soft noPrint" style="display:flex;align-items:end;gap:10px">
         <button id="exportBtn" class="btn primary" style="flex:1">⤓ تصدير CSV</button>
         <button id="printBtn" class="btn" style="flex:1">🖨️ طباعة</button>
+        <button id="reportBtn" class="btn primary" style="flex:1">📄 تقرير نهائي فاخر</button>
       </div>
     </div>
 
@@ -325,21 +303,18 @@
     <div class="card soft" style="margin-top:12px">
       <div class="row" style="align-items:end">
         <div style="flex:1;min-width:200px">
-          <div class="muted" id="lblFrom" style="margin-bottom:8px">من تاريخ</div>
+          <div class="titleMini" id="lblFrom">من تاريخ</div>
           <input id="dateFrom" type="date" class="input" />
         </div>
-
         <div style="flex:1;min-width:200px">
-          <div class="muted" id="lblTo" style="margin-bottom:8px">إلى تاريخ</div>
+          <div class="titleMini" id="lblTo">إلى تاريخ</div>
           <input id="dateTo" type="date" class="input" />
         </div>
-
-        <div style="display:flex;gap:8px;align-items:end">
+        <div class="noPrint" style="display:flex;gap:8px;align-items:end">
           <button id="applyDate" class="btn primary">تطبيق</button>
           <button id="clearDate" class="btn">مسح</button>
         </div>
-
-        <div id="activeFilter" class="hintBox" style="margin-inline-start:auto;display:none"></div>
+        <div id="activeFilter" class="hintPill" style="margin-inline-start:auto;display:none"></div>
       </div>
     </div>
 
@@ -350,7 +325,7 @@
         <div id="kpiTotal" class="n">—</div>
       </div>
       <div class="kpi gold">
-        <div class="t" id="kpiUsedLbl">المستخدم</div>
+        <div class="t" id="kpiUsedLbl">الحضور</div>
         <div id="kpiUsed" class="n">—</div>
       </div>
       <div class="kpi rose">
@@ -363,74 +338,113 @@
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="card soft" style="margin-top:12px">
-      <div class="muted" id="recentLbl" style="font-size:12px">أحدث المسحات (آخر 100)</div>
-
-      <div id="printArea" class="tableWrap">
-        <table>
-          <thead>
-            <tr>
-              <th id="thCode">الكود</th>
-              <th id="thStatus">الحالة</th>
-              <th id="thTime">الوقت</th>
-            </tr>
-          </thead>
-          <tbody id="rowsBody"></tbody>
-        </table>
+    <!-- Insights + Table -->
+    <div class="grid grid-2" style="margin-top:12px">
+      <div class="card soft">
+        <div class="titleMini" id="insTitle">مؤشرات سريعة يحب العميل يشوفها</div>
+        <div class="insGrid">
+          <div class="insItem">
+            <div class="insK" id="insFirstK">أول دخول</div>
+            <div class="insV" id="insFirstV">—</div>
+          </div>
+          <div class="insItem">
+            <div class="insK" id="insLastK">آخر دخول</div>
+            <div class="insV" id="insLastV">—</div>
+          </div>
+          <div class="insItem">
+            <div class="insK" id="insPeakK">أكثر ساعة ازدحام</div>
+            <div class="insV" id="insPeakV">—</div>
+          </div>
+          <div class="insItem">
+            <div class="insK" id="insTodayK">مسحات اليوم</div>
+            <div class="insV" id="insTodayV">—</div>
+          </div>
+        </div>
+        <div class="muted" id="insNote" style="margin-top:10px;line-height:1.7">
+          * التقرير النهائي الفاخر يعطي العميل صورة كاملة: النسبة، الأعداد، وأهم مؤشرات الدخول + رسوم ملونة.
+        </div>
       </div>
+
+      <div class="card soft">
+        <div class="titleMini" id="recentLbl">أحدث المسحات (آخر 100)</div>
+        <div id="printArea" class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th id="thCode">الكود</th>
+                <th id="thStatus">الحالة</th>
+                <th id="thTime">الوقت</th>
+              </tr>
+            </thead>
+            <tbody id="rowsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden canvases used for final report images -->
+    <div class="hiddenCanvases">
+      <canvas id="donut" width="900" height="520"></canvas>
+      <canvas id="bars" width="900" height="520"></canvas>
     </div>
   </div>
 
-  <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getFirestore, collection, query, where, onSnapshot, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-    /* ===== OPTIONAL: ضع رابط شعارك PNG شفاف هنا ===== */
-    const LOGO_URL = ""; // مثال: "https://your-domain.com/krs-logo.png"
+    /* ========= OPTIONAL: ضع رابط شعار KRS INVITE الشفاف ========= */
+    const LOGO_URL = ""; // مثال: "https://example.com/krs-invite-logo.png"
 
-    // ===== i18n =====
+    /* ========= i18n ========= */
     const STR = {
       en: {
         org:"KRS INVITE",
-        hdrMain:"Company Dashboard / ",
+        hdrMain:"Dashboard — ",
         hdrSub:"Live attendance & invitation status",
+        hint:"Enable Print Backgrounds for colors",
         event:"Event",
         search:"Search code…",
         export:"Export CSV",
         print:"Print",
+        report:"Final Luxury Report",
         total:"Total",
-        used:"Checked-in",
+        used:"Attendance",
         left:"Remaining",
-        rate:"Attendance",
+        rate:"Attendance rate",
         recent:"Recent scans (latest 100)",
         code:"Code",
         status:"Status",
         time:"Time",
         all:"All events",
-        refreshed:"Refreshed",
+        refresh:"Refresh",
         from:"From",
         to:"To",
         apply:"Apply",
         clear:"Clear",
-        refresh:"Refresh",
         yes:"Checked-in",
         no:"Not yet",
         noRows:"No scans yet",
+        insights:"Client-friendly insights",
+        first:"First check-in",
+        last:"Last check-in",
+        peak:"Peak hour",
+        today:"Today scans",
         filterActive:(f,t)=>`Filter: ${f||'—'} → ${t||'—'}`,
-        printTitle:"Attendance Report"
+        note:"* Final report includes KPIs + luxury charts + executive summary."
       },
       ar: {
         org:"KRS INVITE",
-        hdrMain:"لوحة الشركه / ",
+        hdrMain:"لوحة التحكم — ",
         hdrSub:"الحضور المباشر وحالة الدعوات • Live attendance & status",
+        hint:"🖨️ فعّل (Print Backgrounds) لطباعة الألوان",
         event:"الحدث",
         search:"ابحث عن كود…",
         export:"تصدير CSV",
         print:"طباعة",
+        report:"تقرير نهائي فاخر",
         total:"الإجمالي",
-        used:"المستخدم",
+        used:"الحضور",
         left:"المتبقي",
         rate:"نسبة الحضور",
         recent:"أحدث المسحات (آخر 100)",
@@ -438,46 +452,48 @@
         status:"الحالة",
         time:"الوقت",
         all:"كل الفعاليات",
-        refreshed:"تم التحديث",
+        refresh:"تحديث",
         from:"من تاريخ",
         to:"إلى تاريخ",
         apply:"تطبيق",
         clear:"مسح",
-        refresh:"تحديث",
         yes:"تم الدخول",
         no:"لم يدخل",
         noRows:"لا توجد مسحات",
+        insights:"مؤشرات سريعة يحب العميل يشوفها",
+        first:"أول دخول",
+        last:"آخر دخول",
+        peak:"أكثر ساعة ازدحام",
+        today:"مسحات اليوم",
         filterActive:(f,t)=>`تفعيل الفلتر: ${f||'—'} → ${t||'—'}`,
-        printTitle:"تقرير الحضور"
+        note:"* التقرير النهائي يحتوي KPI + رسوم فاخرة + ملخص تنفيذي."
       }
     };
 
     const $ = (s,root=document)=>root.querySelector(s);
     const state = {
-      lang: localStorage.getItem('hs:dash:lang')||'ar',
-      theme: localStorage.getItem('hs:dash:theme')||'dark',
-      event: localStorage.getItem('hs:dash:event')||'',
+      lang: localStorage.getItem('krs:dash:lang') || 'ar',
+      theme: localStorage.getItem('krs:dash:theme') || 'dark',
+      event: localStorage.getItem('krs:dash:event') || '',
       from:'', to:''
     };
 
     function setTheme(t){
       state.theme=t;
       document.documentElement.setAttribute('data-theme', t);
-      localStorage.setItem('hs:dash:theme', t);
+      localStorage.setItem('krs:dash:theme', t);
     }
 
     function applyLogo(){
       const img = $('#logoImg');
       const fb  = $('#logoFallback');
-      const pimg = $('#printLogoImg');
-      const pfb  = $('#printLogoFallback');
-
       if(LOGO_URL){
-        img.src = LOGO_URL; img.style.display='block'; fb.style.display='none';
-        pimg.src = LOGO_URL; pimg.style.display='block'; pfb.style.display='none';
+        img.src = LOGO_URL;
+        img.style.display='block';
+        fb.style.display='none';
       }else{
-        img.style.display='none'; fb.style.display='block';
-        pimg.style.display='none'; pfb.style.display='block';
+        img.style.display='none';
+        fb.style.display='block';
       }
     }
 
@@ -486,19 +502,22 @@
       const isAr = state.lang==='ar';
 
       document.documentElement.lang = state.lang;
-      document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+      document.documentElement.dir  = isAr ? 'rtl' : 'ltr';
 
       $('#hdrOrg').textContent = L.org;
       $('#hdrMain').textContent = L.hdrMain;
-      $('#hdrSub').textContent  = L.hdrSub;
+      $('#hdrSub').textContent = L.hdrSub;
+      $('#printHint').textContent = L.hint;
 
       $('#langBtn').textContent = isAr ? 'EN' : 'AR';
       $('#refreshTxt').textContent = L.refresh;
 
       $('#lblEvent').textContent = L.event;
       $('#lblSearch').textContent = L.search;
+
       $('#exportBtn').textContent = '⤓ ' + L.export;
       $('#printBtn').textContent  = '🖨️ ' + L.print;
+      $('#reportBtn').textContent = '📄 ' + L.report;
 
       $('#lblFrom').textContent = L.from;
       $('#lblTo').textContent   = L.to;
@@ -515,14 +534,17 @@
       $('#thStatus').textContent  = L.status;
       $('#thTime').textContent    = L.time;
 
-      // Print header
-      $('#printTitle').textContent = L.printTitle;
-      $('#printDate').textContent  = new Date().toLocaleDateString(isAr?'ar-EG':'en-GB');
+      $('#insTitle').textContent  = L.insights;
+      $('#insFirstK').textContent = L.first;
+      $('#insLastK').textContent  = L.last;
+      $('#insPeakK').textContent  = L.peak;
+      $('#insTodayK').textContent = L.today;
+      $('#insNote').textContent   = L.note;
 
       renderActiveFilter();
     }
 
-    // ===== Firebase =====
+    /* ========= Firebase ========= */
     const firebaseConfig = {
       apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
       authDomain:"hormez-inv.firebaseapp.com",
@@ -534,10 +556,13 @@
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
-    // ===== Populate events =====
+    /* ========= Data ========= */
+    let unsub=null, rowsAll=[], rowsView=[];
+    // rowsAll contains only scanned entries that have scannedAt (for table/reports). KPIs are computed from full snap.
+
     async function loadEvents(){
       const ref = collection(db,'invites');
-      const snap = await getDocs(query(ref, limit(500)));
+      const snap = await getDocs(query(ref, limit(800)));
 
       const setE = new Set();
       snap.forEach(d=>{
@@ -546,9 +571,9 @@
       });
 
       const list = ['__ALL__', ...Array.from(setE).sort((a,b)=>a.localeCompare(b))];
-
       const sel = $('#eventSelect');
-      sel.innerHTML = '';
+      sel.innerHTML='';
+
       for(const ev of list){
         const opt = document.createElement('option');
         opt.value = ev;
@@ -558,13 +583,9 @@
 
       sel.value = (state.event && list.includes(state.event)) ? state.event : '__ALL__';
       state.event = sel.value;
-      localStorage.setItem('hs:dash:event', state.event);
-
-      $('#printEvent').textContent = (state.event==='__ALL__') ? (STR[state.lang].all) : state.event;
+      localStorage.setItem('krs:dash:event', state.event);
+      $('#hdrEvent').textContent = (state.event==='__ALL__') ? STR[state.lang].all : state.event;
     }
-
-    // ===== Live KPIs & table =====
-    let unsub = null, rowsAll = [], rows = [];
 
     function startStream(){
       if(unsub) unsub();
@@ -575,28 +596,43 @@
         : query(ref);
 
       unsub = onSnapshot(qAll, snap=>{
-        let t=0,u=0;
-        const rec=[];
+        let total=0, used=0;
+        const rec=[]; // scanned entries with time
 
         snap.forEach(d=>{
           const x=d.data();
-          t++;
-          if((x.Status||'').toLowerCase()==='yes') u++;
+          total++;
+          if((x.Status||'').toLowerCase()==='yes') used++;
 
           if(x.scannedAt?.toDate?.()){
             rec.push({
               id:d.id,
-              Code:x.Code||d.id,
-              Status:x.Status||'no',
-              scannedAt:x.scannedAt.toDate()
+              Code: x.Code || d.id,
+              Status: String(x.Status || 'no'),
+              scannedAt: x.scannedAt.toDate()
             });
           }
         });
 
-        renderKPIs(t,u);
-        rowsAll = rec.sort((a,b)=>(b.scannedAt?.getTime?.()||0)-(a.scannedAt?.getTime?.()||0));
+        renderKPIs(total, used);
+
+        rowsAll = rec.sort((a,b)=> (b.scannedAt?.getTime?.()||0) - (a.scannedAt?.getTime?.()||0));
         applyFilters();
+
+        // Insights + charts refresh
+        renderInsights(total, used, rowsAll);
+        drawCharts(total, used, rowsAll);
       });
+    }
+
+    function renderKPIs(total, used){
+      const left = Math.max(total-used,0);
+      const rate = total>0 ? Math.round((used/total)*100) : 0;
+
+      $('#kpiTotal').textContent = total;
+      $('#kpiUsed').textContent  = used;
+      $('#kpiLeft').textContent  = left;
+      $('#kpiRate').textContent  = rate + '%';
     }
 
     function withinDateRange(d){
@@ -614,41 +650,30 @@
     }
 
     function applyFilters(){
-      const s = ($('#searchInput').value||'').trim().toLowerCase();
+      const q = ($('#searchInput').value || '').trim().toLowerCase();
       let list = rowsAll;
 
       if(state.from || state.to) list = list.filter(r=> withinDateRange(r.scannedAt));
-      if(s) list = list.filter(r=> (r.Code||'').toLowerCase().includes(s));
+      if(q) list = list.filter(r=> (r.Code||'').toLowerCase().includes(q));
 
-      rows = list.slice(0,100);
-      renderRows();
+      rowsView = list.slice(0,100);
+      renderRows(rowsView);
       renderActiveFilter();
     }
 
     function renderActiveFilter(){
       const L = STR[state.lang] || STR.en;
       const box = $('#activeFilter');
-
       if(state.from || state.to){
-        box.style.display='inline-flex';
+        box.style.display = 'inline-flex';
         box.textContent = L.filterActive(state.from, state.to);
       }else{
-        box.style.display='none';
+        box.style.display = 'none';
         box.textContent = '';
       }
     }
 
-    function renderKPIs(total, used){
-      const left = Math.max(total-used,0);
-      const rate = total>0 ? Math.round((used/total)*100) : 0;
-
-      $('#kpiTotal').textContent = total;
-      $('#kpiUsed').textContent  = used;
-      $('#kpiLeft').textContent  = left;
-      $('#kpiRate').textContent  = rate + '%';
-    }
-
-    function renderRows(){
+    function renderRows(rows){
       const L = STR[state.lang] || STR.en;
       const isAr = state.lang==='ar';
       const tb = $('#rowsBody');
@@ -673,20 +698,18 @@
         const td1=document.createElement('td');
         td1.className='mono';
         td1.textContent=r.Code;
-        tr.appendChild(td1);
 
         const td2=document.createElement('td');
         const b=document.createElement('span');
         const ok=(r.Status||'no').toLowerCase()==='yes';
-        b.className='badge ' + (ok? 'ok':'no');
+        b.className='badge ' + (ok?'ok':'no');
         b.textContent = ok ? L.yes : L.no;
         td2.appendChild(b);
-        tr.appendChild(td2);
 
         const td3=document.createElement('td');
         td3.textContent = r.scannedAt ? r.scannedAt.toLocaleString(isAr?'ar-EG':'en-GB') : '—';
-        tr.appendChild(td3);
 
+        tr.append(td1,td2,td3);
         tb.appendChild(tr);
       }
     }
@@ -702,11 +725,11 @@
       const header=[L.code,L.status,'EventName',L.time].join(',');
       const evName = (state.event==='__ALL__') ? 'ALL' : state.event;
 
-      const lines = rows.map(r=>[
+      const lines = rowsView.map(r=>[
         safeCSV(r.Code),
         safeCSV(r.Status),
         safeCSV(evName),
-        safeCSV(r.scannedAt? new Date(r.scannedAt).toISOString() : '')
+        safeCSV(r.scannedAt ? r.scannedAt.toISOString() : '')
       ].join(','));
 
       const csv=[header,...lines].join('\n');
@@ -720,9 +743,658 @@
       URL.revokeObjectURL(url);
     }
 
-    function printTable(){ window.print(); }
+    function printDashboard(){ window.print(); }
 
-    // ===== Wire UI =====
+    /* ========= Insights ========= */
+    function fmtDate(d){
+      if(!d) return '—';
+      return d.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB');
+    }
+
+    function computeInsights(scans){
+      const arr = (scans||[]).filter(r=>r.scannedAt instanceof Date).sort((a,b)=>a.scannedAt-b.scannedAt);
+      const first = arr[0]?.scannedAt || null;
+      const last  = arr[arr.length-1]?.scannedAt || null;
+
+      // Peak hour
+      const byHour = new Map();
+      for(const r of arr){
+        const h = String(r.scannedAt.getHours()).padStart(2,'0');
+        byHour.set(h, (byHour.get(h)||0)+1);
+      }
+      let peakHour='—', peakCount=0;
+      for(const [h,c] of byHour.entries()){
+        if(c>peakCount){ peakCount=c; peakHour=h; }
+      }
+
+      // Today count
+      const start = new Date(); start.setHours(0,0,0,0);
+      let today = 0;
+      for(const r of arr){
+        if(r.scannedAt >= start) today++;
+      }
+
+      return { first, last, peakHour, peakCount, today };
+    }
+
+    function renderInsights(total, used, scans){
+      const L = STR[state.lang] || STR.en;
+      const ins = computeInsights(scans);
+
+      $('#insFirstV').textContent = fmtDate(ins.first);
+      $('#insLastV').textContent  = fmtDate(ins.last);
+
+      if(ins.peakHour==='—'){
+        $('#insPeakV').textContent = '—';
+      }else{
+        $('#insPeakV').textContent = (state.lang==='ar')
+          ? `${ins.peakHour}:00 (عدد ${ins.peakCount})`
+          : `${ins.peakHour}:00 (count ${ins.peakCount})`;
+      }
+
+      $('#insTodayV').textContent = String(ins.today);
+    }
+
+    /* ========= Charts (Canvas) ========= */
+    function clearCanvas(ctx,w,h){
+      ctx.clearRect(0,0,w,h);
+    }
+
+    function drawDonut(total, used){
+      const c = document.getElementById('donut');
+      const ctx = c.getContext('2d');
+      const W=c.width, H=c.height;
+      clearCanvas(ctx,W,H);
+
+      const left = Math.max(total-used,0);
+      const rate = total>0 ? Math.round((used/total)*100) : 0;
+
+      // Background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,W,H);
+
+      // Lux header line
+      ctx.fillStyle = '#0b1220';
+      ctx.font = '900 28px system-ui';
+      ctx.textAlign = 'start';
+      ctx.fillText(state.lang==='ar' ? 'توزيع الحضور' : 'Attendance Distribution', 52, 70);
+
+      ctx.fillStyle = '#475569';
+      ctx.font = '700 14px system-ui';
+      ctx.fillText(state.lang==='ar' ? 'حضور / متبقي' : 'Checked-in / Remaining', 52, 98);
+
+      // Donut settings
+      const cx = W*0.32, cy = H*0.58;
+      const rOuter = 170, rInner = 105;
+
+      const totalVal = Math.max(total, 1);
+      const usedAng = (used/totalVal) * Math.PI*2;
+
+      // ring bg
+      ctx.beginPath();
+      ctx.arc(cx, cy, rOuter, 0, Math.PI*2);
+      ctx.arc(cx, cy, rInner, Math.PI*2, 0, true);
+      ctx.closePath();
+      ctx.fillStyle = '#eef2f7';
+      ctx.fill();
+
+      // used arc (gold)
+      const start = -Math.PI/2;
+      const end = start + usedAng;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rOuter, start, end);
+      ctx.arc(cx, cy, rInner, end, start, true);
+      ctx.closePath();
+      ctx.fillStyle = '#d6b15e';
+      ctx.fill();
+
+      // remaining arc (blue tint)
+      ctx.beginPath();
+      ctx.arc(cx, cy, rOuter, end, start + Math.PI*2);
+      ctx.arc(cx, cy, rInner, start + Math.PI*2, end, true);
+      ctx.closePath();
+      ctx.fillStyle = '#1e40af';
+      ctx.globalAlpha = 0.22;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Center text
+      ctx.fillStyle = '#0b1220';
+      ctx.font = '1000 44px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText(rate + '%', cx, cy+12);
+      ctx.fillStyle = '#475569';
+      ctx.font = '800 14px system-ui';
+      ctx.fillText(state.lang==='ar' ? 'نسبة الحضور' : 'Attendance', cx, cy+44);
+
+      // Right KPIs
+      const bx = W*0.62, by = H*0.28;
+      const boxW = W*0.33, boxH = 90, gap=16;
+
+      function kpiBox(y, title, val, color){
+        // shadow
+        ctx.fillStyle = 'rgba(2,6,23,.08)';
+        roundRect(ctx, bx+4, y+4, boxW, boxH, 18, true, false);
+
+        // box
+        ctx.fillStyle = '#ffffff';
+        roundRect(ctx, bx, y, boxW, boxH, 18, true, false);
+
+        // border
+        ctx.strokeStyle = 'rgba(15,23,42,.10)';
+        ctx.lineWidth = 2;
+        roundRect(ctx, bx, y, boxW, boxH, 18, false, true);
+
+        // left color bar
+        ctx.fillStyle = color;
+        roundRect(ctx, bx+14, y+18, 10, boxH-36, 10, true, false);
+
+        // text
+        ctx.fillStyle = '#475569';
+        ctx.font = '900 14px system-ui';
+        ctx.textAlign = 'start';
+        ctx.fillText(title, bx+34, y+36);
+
+        ctx.fillStyle = '#0b1220';
+        ctx.font = '1000 30px system-ui';
+        ctx.fillText(val, bx+34, y+70);
+      }
+
+      const L = STR[state.lang] || STR.en;
+      kpiBox(by, L.total, String(total), '#1e40af');
+      kpiBox(by + boxH + gap, L.used, String(used), '#d6b15e');
+      kpiBox(by + (boxH + gap)*2, L.left, String(left), '#be123c');
+
+      // Footer watermark
+      ctx.save();
+      ctx.globalAlpha = 0.06;
+      ctx.translate(W*0.78, H*0.86);
+      ctx.rotate(-0.22);
+      ctx.fillStyle = '#0b1220';
+      ctx.font = '1100 44px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('KRS INVITE', 0, 0);
+      ctx.restore();
+    }
+
+    function drawBars(scans){
+      const c = document.getElementById('bars');
+      const ctx = c.getContext('2d');
+      const W=c.width, H=c.height;
+      clearCanvas(ctx,W,H);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,W,H);
+
+      ctx.fillStyle = '#0b1220';
+      ctx.font = '900 28px system-ui';
+      ctx.textAlign = 'start';
+      ctx.fillText(state.lang==='ar' ? 'نشاط الدخول' : 'Check-in Activity', 52, 70);
+
+      ctx.fillStyle = '#475569';
+      ctx.font = '700 14px system-ui';
+      ctx.fillText(state.lang==='ar' ? 'آخر 60 دقيقة (مقسمة كل 5 دقائق)' : 'Last 60 minutes (5-min bins)', 52, 98);
+
+      // bins: last 60 minutes, 12 bins of 5 min
+      const now = new Date();
+      const bins = Array(12).fill(0);
+      const start = new Date(now.getTime() - 60*60*1000);
+
+      for(const r of (scans||[])){
+        if(!(r.scannedAt instanceof Date)) continue;
+        const t = r.scannedAt.getTime();
+        if(t < start.getTime() || t > now.getTime()) continue;
+        const minsAgo = Math.floor((now.getTime() - t)/60000); // 0..60
+        const bin = Math.min(11, Math.floor((59 - minsAgo)/5)); // newest on right
+        bins[bin] += 1;
+      }
+
+      const maxV = Math.max(1, ...bins);
+      const chartX=52, chartY=150, chartW=W-104, chartH=300;
+
+      // background box
+      ctx.fillStyle = 'rgba(2,6,23,.04)';
+      roundRect(ctx, chartX, chartY, chartW, chartH, 22, true, false);
+
+      // grid lines
+      ctx.strokeStyle = 'rgba(15,23,42,.10)';
+      ctx.lineWidth = 1;
+      for(let i=0;i<=4;i++){
+        const y = chartY + (chartH*(i/4));
+        ctx.beginPath(); ctx.moveTo(chartX+20, y); ctx.lineTo(chartX+chartW-20, y); ctx.stroke();
+      }
+
+      // bars
+      const pad=18;
+      const innerX = chartX + 20;
+      const innerY = chartY + 18;
+      const innerW = chartW - 40;
+      const innerH = chartH - 36;
+
+      const barW = innerW / 12;
+      for(let i=0;i<12;i++){
+        const v = bins[i];
+        const h = Math.round((v/maxV)*innerH);
+        const x = innerX + i*barW + pad*0.25;
+        const y = innerY + (innerH - h);
+        const w = barW - pad*0.5;
+
+        // gradient-ish: gold for high, blue for low (simple rule)
+        const t = v/maxV;
+        const color = t>0.55 ? '#d6b15e' : '#1e40af';
+        const alpha = t>0.55 ? 0.95 : 0.35 + t*0.5;
+
+        ctx.fillStyle = color;
+        ctx.globalAlpha = alpha;
+        roundRect(ctx, x, y, w, h, 14, true, false);
+        ctx.globalAlpha = 1;
+
+        // value
+        ctx.fillStyle = '#0b1220';
+        ctx.font = '900 13px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(v), x + w/2, y - 8);
+      }
+
+      // X labels
+      ctx.fillStyle = '#475569';
+      ctx.font = '800 12px system-ui';
+      ctx.textAlign = 'center';
+      for(let i=0;i<=12;i+=3){
+        const mins = 60 - i*5;
+        const lbl = state.lang==='ar' ? `-${mins}د` : `-${mins}m`;
+        const x = innerX + i*barW;
+        ctx.fillText(lbl, x, chartY + chartH + 34);
+      }
+
+      // watermark
+      ctx.save();
+      ctx.globalAlpha = 0.06;
+      ctx.translate(W*0.78, H*0.86);
+      ctx.rotate(-0.22);
+      ctx.fillStyle = '#0b1220';
+      ctx.font = '1100 44px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('KRS INVITE', 0, 0);
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, w, h, r, fill, stroke){
+      const rr = Math.min(r, w/2, h/2);
+      ctx.beginPath();
+      ctx.moveTo(x+rr, y);
+      ctx.arcTo(x+w, y, x+w, y+h, rr);
+      ctx.arcTo(x+w, y+h, x, y+h, rr);
+      ctx.arcTo(x, y+h, x, y, rr);
+      ctx.arcTo(x, y, x+w, y, rr);
+      ctx.closePath();
+      if(fill) ctx.fill();
+      if(stroke) ctx.stroke();
+    }
+
+    function drawCharts(total, used, scans){
+      drawDonut(total, used);
+      drawBars(scans);
+    }
+
+    function canvasToImg(id){
+      const c = document.getElementById(id);
+      if(!c) return '';
+      try{ return c.toDataURL('image/png'); }catch(e){ return ''; }
+    }
+
+    /* ========= Final Report (Ultra Lux Multi-Section) ========= */
+    function buildFinalReportHTML(payload){
+      const {
+        lang, theme, logoUrl,
+        eventName, total, used, left, rate,
+        insights, donutImg, barImg,
+        createdAt, filterFrom, filterTo
+      } = payload;
+
+      const isAr = lang==='ar';
+      const L = STR[lang] || STR.en;
+
+      const peakText = (insights.peakHour==='—')
+        ? '—'
+        : (isAr ? `${insights.peakHour}:00 (عدد ${insights.peakCount})` : `${insights.peakHour}:00 (count ${insights.peakCount})`);
+
+      const reportCSS = `
+        :root{
+          --ink:#0b1220; --muted:#475569; --line:#e5e7eb;
+          --gold:#d6b15e; --gold2:#b48a18; --blue:#1e40af; --rose:#be123c; --green:#047857;
+          --shadow:0 18px 55px rgba(2,6,23,.12);
+          --r18:18px; --r22:22px; --r26:26px;
+        }
+        *{box-sizing:border-box; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;color:var(--ink);background:#fff}
+        .page{max-width:1020px;margin:0 auto;padding:22px}
+
+        /* ===== Cover ===== */
+        .cover{
+          border-radius:28px;
+          border:1px solid var(--line);
+          padding:22px;
+          box-shadow:var(--shadow);
+          background:
+            radial-gradient(950px 300px at 10% 0%, rgba(214,177,94,.22), transparent 60%),
+            radial-gradient(900px 280px at 88% 60%, rgba(30,64,175,.12), transparent 62%),
+            radial-gradient(900px 280px at 72% 100%, rgba(190,18,60,.10), transparent 62%),
+            #fff;
+          position:relative;
+          overflow:hidden;
+        }
+        .wm{
+          position:absolute; inset:0;
+          display:grid;place-items:center;
+          pointer-events:none;
+          opacity:.06;
+          transform:rotate(-12deg);
+          font-weight:1000;
+          font-size:72px;
+          letter-spacing:1px;
+          color:#0b1220;
+        }
+        .coverTop{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}
+        .brand{display:flex;align-items:center;gap:12px}
+        .logo{
+          width:64px;height:64px;border-radius:20px;
+          border:1px solid var(--line);
+          display:grid;place-items:center;overflow:hidden;background:#fff;
+          box-shadow:0 12px 30px rgba(2,6,23,.10);
+        }
+        .logo img{width:52px;height:52px;object-fit:contain}
+        .brandText h1{margin:0;font-size:20px;font-weight:1000;letter-spacing:.2px}
+        .brandText .sub{margin-top:6px;color:var(--muted);font-size:12px;line-height:1.7}
+
+        .badgeRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+        .pill{
+          display:inline-flex;gap:8px;align-items:center;
+          padding:8px 10px;border-radius:999px;border:1px solid var(--line);
+          background:rgba(214,177,94,.12); color:#1f2937;
+          font-weight:900;font-size:12px;
+        }
+
+        .hero{
+          margin-top:16px;
+          display:grid;grid-template-columns:1.1fr .9fr;gap:12px;
+        }
+        @media(max-width:860px){.hero{grid-template-columns:1fr}}
+        .heroCard{
+          border:1px solid var(--line);
+          border-radius:22px;
+          padding:16px;
+          background:#fff;
+          box-shadow:0 14px 40px rgba(2,6,23,.08);
+        }
+        .heroTitle{font-weight:1000;margin:0 0 10px;font-size:14px}
+        .bigRate{
+          font-size:52px;font-weight:1100;letter-spacing:.4px;margin:6px 0 0;
+          background:linear-gradient(135deg, var(--gold), var(--gold2));
+          -webkit-background-clip:text;background-clip:text;color:transparent;
+        }
+        .heroMeta{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.8}
+        .divider{height:1px;background:var(--line);margin:14px 0}
+
+        .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+        @media(max-width:860px){.kpis{grid-template-columns:1fr 1fr}}
+        .kpi{
+          border-radius:22px;padding:14px;color:#fff;border:0;
+          box-shadow:0 16px 44px rgba(2,6,23,.14);
+          min-height:98px;display:flex;flex-direction:column;justify-content:space-between;
+          position:relative;overflow:hidden;
+        }
+        .kpi:before{
+          content:"";position:absolute;inset:-60%;
+          background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 55%);
+          transform:rotate(15deg);
+        }
+        .kpi .t{font-size:12px;font-weight:1000;opacity:.95}
+        .kpi .n{font-size:30px;font-weight:1100}
+        .blue{background:linear-gradient(135deg, var(--blue), rgba(30,64,175,.55))}
+        .gold{background:linear-gradient(135deg, var(--gold), rgba(180,138,24,.40));color:#1b1405}
+        .gold .t,.gold .n{color:#1b1405}
+        .rose{background:linear-gradient(135deg, var(--rose), rgba(190,18,60,.45))}
+        .green{background:linear-gradient(135deg, var(--green), rgba(4,120,87,.45))}
+
+        .section{
+          margin-top:14px;
+          border-radius:26px;
+          border:1px solid var(--line);
+          padding:16px;
+          background:#fff;
+          box-shadow:0 14px 40px rgba(2,6,23,.08);
+        }
+        .section h2{margin:0 0 12px;font-size:14px;font-weight:1100}
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        @media(max-width:860px){.grid2{grid-template-columns:1fr}}
+        .imgbox{
+          border:1px solid var(--line);
+          border-radius:22px;
+          padding:10px;background:#fff;
+        }
+        .imgbox img{width:100%;height:auto;display:block;border-radius:16px}
+
+        .insGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        @media(max-width:640px){.insGrid{grid-template-columns:1fr}}
+        .insItem{
+          border:1px solid var(--line);
+          border-radius:20px;
+          padding:12px;background:rgba(2,6,23,.02);
+        }
+        .k{font-size:12px;color:var(--muted);font-weight:1000}
+        .v{margin-top:6px;font-weight:1100}
+
+        .exec{
+          border:1px dashed rgba(180,138,24,.55);
+          background:rgba(214,177,94,.10);
+          border-radius:22px;
+          padding:14px;
+          line-height:1.85;
+          font-size:12px;
+          color:#111827;
+        }
+        .exec b{font-weight:1100}
+
+        .footer{
+          margin-top:14px;
+          border-radius:26px;
+          border:1px solid var(--line);
+          padding:14px;
+          display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+          background:rgba(2,6,23,.02);
+          color:var(--muted);
+          font-size:12px;
+          line-height:1.7;
+        }
+        .sign{display:flex;gap:10px;align-items:center}
+        .line{width:220px;border-bottom:1px solid #94a3b8}
+
+        @page { margin: 14mm; }
+      `;
+
+      const createdStr = new Date(createdAt).toLocaleString(isAr?'ar-EG':'en-GB');
+
+      const filterStr = (filterFrom || filterTo)
+        ? (isAr
+            ? `فلتر التاريخ: ${filterFrom||'—'} → ${filterTo||'—'}`
+            : `Date filter: ${filterFrom||'—'} → ${filterTo||'—'}`)
+        : (isAr ? 'بدون فلتر تاريخ' : 'No date filter');
+
+      const execText = isAr
+        ? `ملخص تنفيذي: إجمالي الدعوات <b>${total}</b>، عدد الحضور <b>${used}</b>، المتبقي <b>${left}</b>، ونسبة الحضور <b>${rate}%</b>. 
+           أول دخول كان <b>${fmtDate(new Date(insights.first))}</b> وآخر دخول <b>${fmtDate(new Date(insights.last))}</b> (إن توفرت البيانات). 
+           أكثر ساعة ازدحامًا كانت <b>${peakText}</b>.`
+        : `Executive summary: Total invites <b>${total}</b>, checked-in <b>${used}</b>, remaining <b>${left}</b>, attendance rate <b>${rate}%</b>.
+           First check-in <b>${fmtDate(new Date(insights.first))}</b> and last check-in <b>${fmtDate(new Date(insights.last))}</b> (if available).
+           Peak hour: <b>${peakText}</b>.`;
+
+      const reportTitle = isAr ? 'التقرير النهائي للفعالية' : 'Final Event Report';
+
+      return `
+<!doctype html>
+<html lang="${lang}" dir="${isAr?'rtl':'ltr'}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>${reportTitle} — KRS INVITE</title>
+  <style>${reportCSS}</style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="cover">
+      <div class="wm">KRS INVITE</div>
+
+      <div class="coverTop">
+        <div class="brand">
+          <div class="logo">
+            ${logoUrl ? `<img src="${logoUrl}" alt="logo">` : `<div style="font-weight:1100">KRS</div>`}
+          </div>
+          <div class="brandText">
+            <h1>${reportTitle} — <span style="color:#111827">${eventName}</span></h1>
+            <div class="sub">
+              <div><b>KRS INVITE</b> • ${isAr?'تقرير فاخر وملوّن للحضور':'Luxury colored attendance report'}</div>
+              <div>${isAr?'تاريخ الإنشاء':'Created'}: <b>${createdStr}</b> • ${filterStr}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="badgeRow">
+          <div class="pill">✨ KRS INVITE</div>
+          <div class="pill">🖨️ ${isAr?'اطبع مع الخلفيات للألوان':'Print with backgrounds for colors'}</div>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="heroCard">
+          <div class="heroTitle">${isAr?'النسبة النهائية للحضور':'Final Attendance Rate'}</div>
+          <div class="bigRate">${rate}%</div>
+          <div class="heroMeta">
+            <div>${isAr?'عدد الحضور':'Checked-in'}: <b>${used}</b> / ${isAr?'الإجمالي':'Total'}: <b>${total}</b></div>
+            <div>${isAr?'المتبقي':'Remaining'}: <b>${left}</b></div>
+          </div>
+          <div class="divider"></div>
+          <div class="exec">${execText}</div>
+        </div>
+
+        <div class="heroCard">
+          <div class="heroTitle">${isAr?'شهادة مختصرة للعميل':'Client Snapshot'}</div>
+          <div class="insGrid">
+            <div class="insItem">
+              <div class="k">${isAr?'أول دخول':'First check-in'}</div>
+              <div class="v">${insights.first ? fmtDate(new Date(insights.first)) : '—'}</div>
+            </div>
+            <div class="insItem">
+              <div class="k">${isAr?'آخر دخول':'Last check-in'}</div>
+              <div class="v">${insights.last ? fmtDate(new Date(insights.last)) : '—'}</div>
+            </div>
+            <div class="insItem">
+              <div class="k">${isAr?'أكثر ساعة ازدحام':'Peak hour'}</div>
+              <div class="v">${peakText}</div>
+            </div>
+            <div class="insItem">
+              <div class="k">${isAr?'مسحات اليوم':'Today scans'}</div>
+              <div class="v">${insights.today ?? 0}</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;color:var(--muted);font-size:12px;line-height:1.7">
+            ${isAr
+              ? 'هذه الصفحة مصممة لتكون “واجهة فاخرة” يطلع عليها العميل مباشرة.'
+              : 'This page is designed as a luxury front-page for the client.'}
+          </div>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi blue"><div class="t">${isAr?'الإجمالي':'Total'}</div><div class="n">${total}</div></div>
+        <div class="kpi gold"><div class="t">${isAr?'الحضور':'Checked-in'}</div><div class="n">${used}</div></div>
+        <div class="kpi rose"><div class="t">${isAr?'المتبقي':'Remaining'}</div><div class="n">${left}</div></div>
+        <div class="kpi green"><div class="t">${isAr?'نسبة الحضور':'Attendance'}</div><div class="n">${rate}%</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>${isAr?'رسوم ملونة فاخرة':'Luxury Colored Charts'}</h2>
+      <div class="grid2">
+        <div class="imgbox">
+          <img src="${donutImg}" alt="donut">
+        </div>
+        <div class="imgbox">
+          <img src="${barImg}" alt="bars">
+        </div>
+      </div>
+      <div style="margin-top:10px;color:var(--muted);font-size:12px;line-height:1.7">
+        ${isAr
+          ? 'الرسوم أعلاه تعطي العميل فهم سريع لتوزيع الحضور ونشاط الدخول.'
+          : 'Charts above provide quick understanding of attendance distribution and activity.'}
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <b>KRS INVITE</b><br/>
+        ${isAr?'تقرير رسمي للحضور مبني على نظام الباركود':'Official attendance report based on barcode access system'}
+      </div>
+      <div class="sign">
+        <div>${isAr?'التوقيع':'Signature'}</div>
+        <div class="line"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    window.addEventListener('load', ()=>{ setTimeout(()=>window.print(), 220); });
+  </script>
+</body>
+</html>
+      `;
+    }
+
+    function openFinalReport(){
+      const total = Number(($('#kpiTotal').textContent||'0').replace(/[^\d]/g,''))||0;
+      const used  = Number(($('#kpiUsed').textContent||'0').replace(/[^\d]/g,''))||0;
+      const left  = Number(($('#kpiLeft').textContent||'0').replace(/[^\d]/g,''))||0;
+      const rate  = total>0 ? Math.round((used/total)*100) : 0;
+
+      const ins = computeInsights(rowsAll || []);
+
+      // Ensure charts are up-to-date
+      drawCharts(total, used, rowsAll || []);
+      const donutImg = canvasToImg('donut');
+      const barImg   = canvasToImg('bars');
+
+      const eventName = (state.event && state.event!=='__ALL__')
+        ? state.event
+        : (STR[state.lang].all || 'ALL');
+
+      const html = buildFinalReportHTML({
+        lang: state.lang,
+        theme: state.theme,
+        logoUrl: LOGO_URL,
+        eventName,
+        total, used, left, rate,
+        insights: {
+          first: ins.first ? ins.first.toISOString() : null,
+          last:  ins.last  ? ins.last.toISOString()  : null,
+          peakHour: ins.peakHour,
+          peakCount: ins.peakCount,
+          today: ins.today
+        },
+        donutImg, barImg,
+        createdAt: new Date().toISOString(),
+        filterFrom: state.from || '',
+        filterTo: state.to || ''
+      });
+
+      const w = window.open('', '_blank');
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+    }
+
+    /* ========= Wire UI ========= */
     document.addEventListener('DOMContentLoaded', async ()=>{
       setTheme(state.theme);
       applyLogo();
@@ -737,7 +1409,7 @@
 
       $('#langBtn').addEventListener('click', ()=>{
         state.lang = state.lang==='ar' ? 'en' : 'ar';
-        localStorage.setItem('hs:dash:lang', state.lang);
+        localStorage.setItem('krs:dash:lang', state.lang);
         applyLang();
         loadEvents().then(()=>startStream());
         applyFilters();
@@ -747,15 +1419,15 @@
 
       $('#eventSelect').addEventListener('change', (e)=>{
         state.event = e.target.value;
-        localStorage.setItem('hs:dash:event', state.event);
-        $('#printEvent').textContent = (state.event==='__ALL__') ? (STR[state.lang].all) : state.event;
+        localStorage.setItem('krs:dash:event', state.event);
+        $('#hdrEvent').textContent = (state.event==='__ALL__') ? STR[state.lang].all : state.event;
         startStream();
       });
 
       $('#searchInput').addEventListener('input', applyFilters);
 
       $('#exportBtn').addEventListener('click', exportCSV);
-      $('#printBtn').addEventListener('click', printTable);
+      $('#printBtn').addEventListener('click', printDashboard);
 
       $('#applyDate').addEventListener('click', ()=>{
         state.from = $('#dateFrom').value || '';
@@ -768,6 +1440,8 @@
         $('#dateFrom').value=''; $('#dateTo').value='';
         applyFilters();
       });
+
+      $('#reportBtn').addEventListener('click', openFinalReport);
     });
   </script>
 </body>
