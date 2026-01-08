@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KRS — لوحة التحكم / Dashboard (Lux)</title>
+
+  <style>
+    :root{
+      /* Dark Lux */
+      --bg0:#06080f; --bg1:#0a0f1d;
+      --card:rgba(255,255,255,.06);
+      --card2:rgba(255,255,255,.04);
+      --stroke:rgba(255,255,255,.10);
+      --stroke2:rgba(255,255,255,.14);
+      --ink:#e9edf5; --muted:#a7b0c3;
+      --gold:#d6b15e; --gold2:#b48a18;
+      --blue:#1e40af; --rose:#be123c; --green:#047857;
+      --shadow:0 18px 60px rgba(0,0,0,.45);
+      --r16:16px; --r20:20px; --r24:24px;
+      --focus: 0 0 0 4px rgba(214,177,94,.12);
+    }
+
+    /* Light Minimal */
+    [data-theme="light"]{
+      --bg0:#f8fafc; --bg1:#eef2ff;
+      --card:rgba(0,0,0,.04);
+      --card2:rgba(0,0,0,.03);
+      --stroke:rgba(0,0,0,.10);
+      --stroke2:rgba(0,0,0,.14);
+      --ink:#0b1220; --muted:#475569;
+      --shadow:0 18px 60px rgba(2,6,23,.12);
+      --focus: 0 0 0 4px rgba(180,138,24,.14);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--ink);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;
+      background:
+        radial-gradient(1200px 700px at 18% 8%, rgba(214,177,94,.14), transparent 55%),
+        radial-gradient(900px 500px at 82% 15%, rgba(30,64,175,.12), transparent 60%),
+        radial-gradient(900px 500px at 70% 92%, rgba(190,18,60,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    .container{max-width:1120px;margin:0 auto;padding:14px}
+
+    /* ===== Topbar ===== */
+    .topbar{
+      position:sticky;top:0;z-index:30;
+      background: rgba(6,8,15,.72);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--stroke);
+    }
+    [data-theme="light"] .topbar{ background: rgba(248,250,252,.72); }
+
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .brand{display:flex;align-items:center;gap:12px;min-width:290px}
+
+    .logoWrap{
+      width:44px;height:44px;border-radius:18px;
+      background:
+        radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.22), transparent 55%),
+        linear-gradient(145deg, rgba(214,177,94,.25), rgba(180,138,24,.08));
+      border:1px solid rgba(214,177,94,.35);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      display:grid;place-items:center;
+      position:relative;overflow:hidden;
+    }
+    .logoWrap:after{
+      content:"";
+      position:absolute; inset:-40%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
+      transform: rotate(25deg);
+      animation: sheen 6s linear infinite;
+      pointer-events:none;
+    }
+    @keyframes sheen{
+      0%{transform:translateX(-30%) rotate(25deg)}
+      100%{transform:translateX(30%) rotate(25deg)}
+    }
+    .logoImg{
+      width:34px;height:34px;border-radius:999px;
+      object-fit:contain; z-index:1;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
+      display:none;
+    }
+    .logoFallback{
+      z-index:1;
+      font-weight:1100;letter-spacing:.6px;
+      color:#1b1405;
+      background: linear-gradient(180deg,#1b1405,#000);
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+      font-size:12px;
+    }
+
+    .hdrOrg{color:var(--muted);font-size:12px;letter-spacing:.6px}
+    .hdrTitle{font-weight:1100;font-size:15px;letter-spacing:.2px}
+    .hdrTitle small{font-weight:800;color:var(--muted)}
+    .subtitle{font-size:12px;color:var(--muted);margin-top:3px}
+
+    .actions{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+    .btn{
+      appearance:none;
+      border:1px solid var(--stroke2);
+      background: rgba(255,255,255,.05);
+      color:var(--ink);
+      border-radius:14px;
+      padding:10px 12px;
+      cursor:pointer;
+      min-height:42px;
+      font-size:14px;
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:8px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.14);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{background:rgba(255,255,255,.08); border-color:rgba(214,177,94,.30); transform: translateY(-1px)}
+    .btn:active{transform: translateY(0px)}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(214,177,94,.30), rgba(180,138,24,.12));
+      border-color: rgba(214,177,94,.35);
+    }
+    .btn.ghost{background:transparent}
+    .btn.block{width:100%}
+
+    .select,.input{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--stroke2);
+      background: rgba(255,255,255,.05);
+      color:var(--ink);
+      min-height:44px;
+      font-size:14px;
+      outline:none;
+      transition: border-color .12s ease, background .12s ease, box-shadow .12s ease;
+    }
+    .select:focus,.input:focus{
+      border-color: rgba(214,177,94,.42);
+      background: rgba(255,255,255,.07);
+      box-shadow: var(--focus);
+    }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r20);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .card.soft{background:var(--card2); box-shadow:0 14px 40px rgba(0,0,0,.18)}
+    .muted{color:var(--muted);font-size:12px}
+
+    .grid{display:grid;gap:12px}
+    .grid-3{grid-template-columns:1fr 1fr 1fr}
+    .grid-4{grid-template-columns:repeat(4,1fr)}
+    @media(max-width:900px){.grid-3{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}}
+    @media(max-width:560px){.grid-4{grid-template-columns:1fr}.container{padding:12px}}
+
+    /* ===== KPI ===== */
+    .kpi{
+      position:relative; overflow:hidden;
+      border:none;
+      border-radius: var(--r20);
+      padding:14px;
+      min-height:92px;
+      display:flex; flex-direction:column; justify-content:space-between;
+      color:#fff;
+    }
+    .kpi .t{font-weight:1000;font-size:12px;letter-spacing:.35px;opacity:.95}
+    .kpi .n{font-size:26px;font-weight:1100;letter-spacing:.4px}
+    .kpi:before{
+      content:"";
+      position:absolute; inset:-60%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 55%);
+      transform: rotate(15deg);
+      pointer-events:none;
+    }
+    .kpi.blue{background:linear-gradient(135deg, rgba(30,64,175,1), rgba(30,64,175,.45))}
+    .kpi.gold{background:linear-gradient(135deg, rgba(214,177,94,1), rgba(180,138,24,.40)); color:#161106}
+    .kpi.gold .t,.kpi.gold .n{color:#161106}
+    .kpi.rose{background:linear-gradient(135deg, rgba(190,18,60,1), rgba(190,18,60,.40))}
+    .kpi.green{background:linear-gradient(135deg, rgba(4,120,87,1), rgba(4,120,87,.40))}
+
+    /* ===== Badges ===== */
+    .badge{
+      padding:6px 10px;border-radius:999px;
+      font-weight:1000;font-size:12px;
+      display:inline-flex;align-items:center;gap:6px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+    }
+    .badge.ok{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.10);color:rgba(34,197,94,.95)}
+    .badge.no{border-color:rgba(244,63,94,.25);background:rgba(244,63,94,.10);color:rgba(244,63,94,.95)}
+
+    /* ===== Table ===== */
+    .tableWrap{
+      border-radius: var(--r20);
+      overflow:auto;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.03);
+      max-height:60vh;
+      margin-top:10px;
+    }
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-top:1px solid rgba(255,255,255,.08);font-size:14px}
+    thead th{
+      position:sticky;top:0;
+      background: rgba(255,255,255,.06);
+      border-bottom:1px solid var(--stroke);
+      font-weight:1100;
+      letter-spacing:.2px;
+      text-align:start;
+      backdrop-filter: blur(8px);
+    }
+    tbody tr:hover td{background: rgba(214,177,94,.06)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+
+    /* ===== Date filter chips-style hint ===== */
+    .hintBox{
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    /* ===== Print styles ===== */
+    #printHeader{display:none}
+    @media print {
+      body{background:#fff;color:#000}
+      .topbar,.grid.grid-3 .card:last-child{display:none!important}
+      .card,.tableWrap{border:1px solid #ddd;background:#fff;box-shadow:none}
+      thead th{background:#f5f5f5;color:#111}
+      tbody td{color:#111}
+      .badge{border:1px solid #333;background:#fff}
+      #printHeader{display:block;margin:0 0 12px 0}
+      .printRow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+      .printBrand{display:flex;align-items:center;gap:10px}
+      .printLogo{width:42px;height:42px;border-radius:12px;border:1px solid #ddd;display:grid;place-items:center;overflow:hidden}
+      .printLogo img{width:34px;height:34px;object-fit:contain}
+      .printTitle{font-weight:900;font-size:16px}
+      .printMeta{font-size:12px;color:#333}
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <div class="topbar">
+    <div class="container row">
+      <div class="brand">
+        <div class="logoWrap">
+          <!-- OPTIONAL: ضع رابط شعارك هنا داخل LOGO_URL في الجافاسكربت -->
+          <img id="logoImg" class="logoImg" alt="Logo" />
+          <div id="logoFallback" class="logoFallback">KRS</div>
+        </div>
+        <div>
+          <div class="hdrOrg" id="hdrOrg">KRS INVITE</div>
+          <div class="hdrTitle">
+            <span id="hdrMain">لوحة الشركه / </span><small>KRS Dashboard</small>
+          </div>
+          <div class="subtitle" id="hdrSub">الحضور المباشر وحالة الدعوات • Live attendance & status</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="themeBtn" class="btn ghost">🌓</button>
+        <button id="langBtn" class="btn">AR</button>
+        <button id="refreshBtn" class="btn">↻ <span id="refreshTxt">تحديث</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- PRINT HEADER -->
+    <div id="printHeader">
+      <div class="printRow">
+        <div class="printBrand">
+          <div class="printLogo">
+            <img id="printLogoImg" alt="Logo" style="display:none" />
+            <div id="printLogoFallback" style="font-weight:900">KRS</div>
+          </div>
+          <div>
+            <div class="printTitle" id="printTitle">تقرير الحضور</div>
+            <div class="printMeta">
+              الحدث: <b id="printEvent">—</b> • التاريخ: <b id="printDate">—</b>
+            </div>
+          </div>
+        </div>
+        <div class="printMeta">Powered by KRS INVITE</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="grid grid-3" style="margin-top:14px">
+      <div class="card soft">
+        <div class="muted" id="lblEvent" style="margin-bottom:8px">الحدث</div>
+        <select id="eventSelect" class="select"></select>
+      </div>
+
+      <div class="card soft">
+        <div class="muted" id="lblSearch" style="margin-bottom:8px">ابحث عن كود…</div>
+        <input id="searchInput" class="input" placeholder="KH_001" />
+      </div>
+
+      <div class="card soft" style="display:flex;align-items:end;gap:10px">
+        <button id="exportBtn" class="btn primary" style="flex:1">⤓ تصدير CSV</button>
+        <button id="printBtn" class="btn" style="flex:1">🖨️ طباعة</button>
+      </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card soft" style="margin-top:12px">
+      <div class="row" style="align-items:end">
+        <div style="flex:1;min-width:200px">
+          <div class="muted" id="lblFrom" style="margin-bottom:8px">من تاريخ</div>
+          <input id="dateFrom" type="date" class="input" />
+        </div>
+
+        <div style="flex:1;min-width:200px">
+          <div class="muted" id="lblTo" style="margin-bottom:8px">إلى تاريخ</div>
+          <input id="dateTo" type="date" class="input" />
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:end">
+          <button id="applyDate" class="btn primary">تطبيق</button>
+          <button id="clearDate" class="btn">مسح</button>
+        </div>
+
+        <div id="activeFilter" class="hintBox" style="margin-inline-start:auto;display:none"></div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-4" style="margin-top:12px">
+      <div class="kpi blue">
+        <div class="t" id="kpiTotalLbl">الإجمالي</div>
+        <div id="kpiTotal" class="n">—</div>
+      </div>
+      <div class="kpi gold">
+        <div class="t" id="kpiUsedLbl">المستخدم</div>
+        <div id="kpiUsed" class="n">—</div>
+      </div>
+      <div class="kpi rose">
+        <div class="t" id="kpiLeftLbl">المتبقي</div>
+        <div id="kpiLeft" class="n">—</div>
+      </div>
+      <div class="kpi green">
+        <div class="t" id="kpiRateLbl">نسبة الحضور</div>
+        <div id="kpiRate" class="n">—%</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card soft" style="margin-top:12px">
+      <div class="muted" id="recentLbl" style="font-size:12px">أحدث المسحات (آخر 100)</div>
+
+      <div id="printArea" class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th id="thCode">الكود</th>
+              <th id="thStatus">الحالة</th>
+              <th id="thTime">الوقت</th>
+            </tr>
+          </thead>
+          <tbody id="rowsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getFirestore, collection, query, where, onSnapshot, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    /* ===== OPTIONAL: ضع رابط شعارك PNG شفاف هنا ===== */
+    const LOGO_URL = ""; // مثال: "https://your-domain.com/krs-logo.png"
+
+    // ===== i18n =====
+    const STR = {
+      en: {
+        org:"KRS INVITE",
+        hdrMain:"Company Dashboard / ",
+        hdrSub:"Live attendance & invitation status",
+        event:"Event",
+        search:"Search code…",
+        export:"Export CSV",
+        print:"Print",
+        total:"Total",
+        used:"Checked-in",
+        left:"Remaining",
+        rate:"Attendance",
+        recent:"Recent scans (latest 100)",
+        code:"Code",
+        status:"Status",
+        time:"Time",
+        all:"All events",
+        refreshed:"Refreshed",
+        from:"From",
+        to:"To",
+        apply:"Apply",
+        clear:"Clear",
+        refresh:"Refresh",
+        yes:"Checked-in",
+        no:"Not yet",
+        noRows:"No scans yet",
+        filterActive:(f,t)=>`Filter: ${f||'—'} → ${t||'—'}`,
+        printTitle:"Attendance Report"
+      },
+      ar: {
+        org:"KRS INVITE",
+        hdrMain:"لوحة الشركه / ",
+        hdrSub:"الحضور المباشر وحالة الدعوات • Live attendance & status",
+        event:"الحدث",
+        search:"ابحث عن كود…",
+        export:"تصدير CSV",
+        print:"طباعة",
+        total:"الإجمالي",
+        used:"المستخدم",
+        left:"المتبقي",
+        rate:"نسبة الحضور",
+        recent:"أحدث المسحات (آخر 100)",
+        code:"الكود",
+        status:"الحالة",
+        time:"الوقت",
+        all:"كل الفعاليات",
+        refreshed:"تم التحديث",
+        from:"من تاريخ",
+        to:"إلى تاريخ",
+        apply:"تطبيق",
+        clear:"مسح",
+        refresh:"تحديث",
+        yes:"تم الدخول",
+        no:"لم يدخل",
+        noRows:"لا توجد مسحات",
+        filterActive:(f,t)=>`تفعيل الفلتر: ${f||'—'} → ${t||'—'}`,
+        printTitle:"تقرير الحضور"
+      }
+    };
+
+    const $ = (s,root=document)=>root.querySelector(s);
+    const state = {
+      lang: localStorage.getItem('hs:dash:lang')||'ar',
+      theme: localStorage.getItem('hs:dash:theme')||'dark',
+      event: localStorage.getItem('hs:dash:event')||'',
+      from:'', to:''
+    };
+
+    function setTheme(t){
+      state.theme=t;
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('hs:dash:theme', t);
+    }
+
+    function applyLogo(){
+      const img = $('#logoImg');
+      const fb  = $('#logoFallback');
+      const pimg = $('#printLogoImg');
+      const pfb  = $('#printLogoFallback');
+
+      if(LOGO_URL){
+        img.src = LOGO_URL; img.style.display='block'; fb.style.display='none';
+        pimg.src = LOGO_URL; pimg.style.display='block'; pfb.style.display='none';
+      }else{
+        img.style.display='none'; fb.style.display='block';
+        pimg.style.display='none'; pfb.style.display='block';
+      }
+    }
+
+    function applyLang(){
+      const L = STR[state.lang] || STR.en;
+      const isAr = state.lang==='ar';
+
+      document.documentElement.lang = state.lang;
+      document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+
+      $('#hdrOrg').textContent = L.org;
+      $('#hdrMain').textContent = L.hdrMain;
+      $('#hdrSub').textContent  = L.hdrSub;
+
+      $('#langBtn').textContent = isAr ? 'EN' : 'AR';
+      $('#refreshTxt').textContent = L.refresh;
+
+      $('#lblEvent').textContent = L.event;
+      $('#lblSearch').textContent = L.search;
+      $('#exportBtn').textContent = '⤓ ' + L.export;
+      $('#printBtn').textContent  = '🖨️ ' + L.print;
+
+      $('#lblFrom').textContent = L.from;
+      $('#lblTo').textContent   = L.to;
+      $('#applyDate').textContent = L.apply;
+      $('#clearDate').textContent = L.clear;
+
+      $('#kpiTotalLbl').textContent = L.total;
+      $('#kpiUsedLbl').textContent  = L.used;
+      $('#kpiLeftLbl').textContent  = L.left;
+      $('#kpiRateLbl').textContent  = L.rate;
+
+      $('#recentLbl').textContent = L.recent;
+      $('#thCode').textContent    = L.code;
+      $('#thStatus').textContent  = L.status;
+      $('#thTime').textContent    = L.time;
+
+      // Print header
+      $('#printTitle').textContent = L.printTitle;
+      $('#printDate').textContent  = new Date().toLocaleDateString(isAr?'ar-EG':'en-GB');
+
+      renderActiveFilter();
+    }
+
+    // ===== Firebase =====
+    const firebaseConfig = {
+      apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain:"hormez-inv.firebaseapp.com",
+      projectId:"hormez-inv",
+      storageBucket:"hormez-inv.firebasestorage.app",
+      messagingSenderId:"747519941805",
+      appId:"1:747519941805:web:468fada2492700e9da3a24"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // ===== Populate events =====
+    async function loadEvents(){
+      const ref = collection(db,'invites');
+      const snap = await getDocs(query(ref, limit(500)));
+
+      const setE = new Set();
+      snap.forEach(d=>{
+        const ev = d.data().EventName || '';
+        if(ev) setE.add(ev);
+      });
+
+      const list = ['__ALL__', ...Array.from(setE).sort((a,b)=>a.localeCompare(b))];
+
+      const sel = $('#eventSelect');
+      sel.innerHTML = '';
+      for(const ev of list){
+        const opt = document.createElement('option');
+        opt.value = ev;
+        opt.textContent = (ev==='__ALL__') ? (STR[state.lang].all) : ev;
+        sel.appendChild(opt);
+      }
+
+      sel.value = (state.event && list.includes(state.event)) ? state.event : '__ALL__';
+      state.event = sel.value;
+      localStorage.setItem('hs:dash:event', state.event);
+
+      $('#printEvent').textContent = (state.event==='__ALL__') ? (STR[state.lang].all) : state.event;
+    }
+
+    // ===== Live KPIs & table =====
+    let unsub = null, rowsAll = [], rows = [];
+
+    function startStream(){
+      if(unsub) unsub();
+
+      const ref = collection(db,'invites');
+      const qAll = (state.event && state.event!=='__ALL__')
+        ? query(ref, where('EventName','==', state.event))
+        : query(ref);
+
+      unsub = onSnapshot(qAll, snap=>{
+        let t=0,u=0;
+        const rec=[];
+
+        snap.forEach(d=>{
+          const x=d.data();
+          t++;
+          if((x.Status||'').toLowerCase()==='yes') u++;
+
+          if(x.scannedAt?.toDate?.()){
+            rec.push({
+              id:d.id,
+              Code:x.Code||d.id,
+              Status:x.Status||'no',
+              scannedAt:x.scannedAt.toDate()
+            });
+          }
+        });
+
+        renderKPIs(t,u);
+        rowsAll = rec.sort((a,b)=>(b.scannedAt?.getTime?.()||0)-(a.scannedAt?.getTime?.()||0));
+        applyFilters();
+      });
+    }
+
+    function withinDateRange(d){
+      if(!d) return false;
+      const ts = d.getTime();
+      if(state.from){
+        const fromTs = new Date(state.from+"T00:00:00").getTime();
+        if(ts < fromTs) return false;
+      }
+      if(state.to){
+        const toTs = new Date(state.to+"T23:59:59").getTime();
+        if(ts > toTs) return false;
+      }
+      return true;
+    }
+
+    function applyFilters(){
+      const s = ($('#searchInput').value||'').trim().toLowerCase();
+      let list = rowsAll;
+
+      if(state.from || state.to) list = list.filter(r=> withinDateRange(r.scannedAt));
+      if(s) list = list.filter(r=> (r.Code||'').toLowerCase().includes(s));
+
+      rows = list.slice(0,100);
+      renderRows();
+      renderActiveFilter();
+    }
+
+    function renderActiveFilter(){
+      const L = STR[state.lang] || STR.en;
+      const box = $('#activeFilter');
+
+      if(state.from || state.to){
+        box.style.display='inline-flex';
+        box.textContent = L.filterActive(state.from, state.to);
+      }else{
+        box.style.display='none';
+        box.textContent = '';
+      }
+    }
+
+    function renderKPIs(total, used){
+      const left = Math.max(total-used,0);
+      const rate = total>0 ? Math.round((used/total)*100) : 0;
+
+      $('#kpiTotal').textContent = total;
+      $('#kpiUsed').textContent  = used;
+      $('#kpiLeft').textContent  = left;
+      $('#kpiRate').textContent  = rate + '%';
+    }
+
+    function renderRows(){
+      const L = STR[state.lang] || STR.en;
+      const isAr = state.lang==='ar';
+      const tb = $('#rowsBody');
+      tb.innerHTML='';
+
+      if(rows.length===0){
+        const tr=document.createElement('tr');
+        const td=document.createElement('td');
+        td.colSpan=3;
+        td.className='muted';
+        td.style.textAlign='center';
+        td.style.padding='18px';
+        td.textContent = L.noRows;
+        tr.appendChild(td);
+        tb.appendChild(tr);
+        return;
+      }
+
+      for(const r of rows){
+        const tr=document.createElement('tr');
+
+        const td1=document.createElement('td');
+        td1.className='mono';
+        td1.textContent=r.Code;
+        tr.appendChild(td1);
+
+        const td2=document.createElement('td');
+        const b=document.createElement('span');
+        const ok=(r.Status||'no').toLowerCase()==='yes';
+        b.className='badge ' + (ok? 'ok':'no');
+        b.textContent = ok ? L.yes : L.no;
+        td2.appendChild(b);
+        tr.appendChild(td2);
+
+        const td3=document.createElement('td');
+        td3.textContent = r.scannedAt ? r.scannedAt.toLocaleString(isAr?'ar-EG':'en-GB') : '—';
+        tr.appendChild(td3);
+
+        tb.appendChild(tr);
+      }
+    }
+
+    function safeCSV(v){
+      const s=String(v??'');
+      if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+      return s;
+    }
+
+    function exportCSV(){
+      const L = STR[state.lang] || STR.en;
+      const header=[L.code,L.status,'EventName',L.time].join(',');
+      const evName = (state.event==='__ALL__') ? 'ALL' : state.event;
+
+      const lines = rows.map(r=>[
+        safeCSV(r.Code),
+        safeCSV(r.Status),
+        safeCSV(evName),
+        safeCSV(r.scannedAt? new Date(r.scannedAt).toISOString() : '')
+      ].join(','));
+
+      const csv=[header,...lines].join('\n');
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=`krs-${evName}-scans.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function printTable(){ window.print(); }
+
+    // ===== Wire UI =====
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      setTheme(state.theme);
+      applyLogo();
+      applyLang();
+
+      await loadEvents();
+      startStream();
+
+      $('#themeBtn').addEventListener('click', ()=>{
+        setTheme(state.theme==='dark' ? 'light' : 'dark');
+      });
+
+      $('#langBtn').addEventListener('click', ()=>{
+        state.lang = state.lang==='ar' ? 'en' : 'ar';
+        localStorage.setItem('hs:dash:lang', state.lang);
+        applyLang();
+        loadEvents().then(()=>startStream());
+        applyFilters();
+      });
+
+      $('#refreshBtn').addEventListener('click', ()=> location.reload());
+
+      $('#eventSelect').addEventListener('change', (e)=>{
+        state.event = e.target.value;
+        localStorage.setItem('hs:dash:event', state.event);
+        $('#printEvent').textContent = (state.event==='__ALL__') ? (STR[state.lang].all) : state.event;
+        startStream();
+      });
+
+      $('#searchInput').addEventListener('input', applyFilters);
+
+      $('#exportBtn').addEventListener('click', exportCSV);
+      $('#printBtn').addEventListener('click', printTable);
+
+      $('#applyDate').addEventListener('click', ()=>{
+        state.from = $('#dateFrom').value || '';
+        state.to   = $('#dateTo').value || '';
+        applyFilters();
+      });
+
+      $('#clearDate').addEventListener('click', ()=>{
+        state.from=''; state.to='';
+        $('#dateFrom').value=''; $('#dateTo').value='';
+        applyFilters();
+      });
+    });
+  </script>
+</body>
+</html>
