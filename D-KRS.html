@@ -1,1245 +1,1270 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KRS INVITE — Dashboard + Final Report</title>
+  <title>KRS INVITE — التقرير النهائي للمناسبة</title>
 
   <style>
     :root{
-      --bg0:#050711; --bg1:#0a1020;
-      --ink:#eef2ff; --muted:#a7b0c3;
-      --card:rgba(255,255,255,.07);
-      --card2:rgba(255,255,255,.045);
-      --stroke:rgba(255,255,255,.11);
-      --stroke2:rgba(255,255,255,.16);
-      --gold:#d6b15e; --gold2:#b48a18;
-      --blue:#1e40af; --rose:#be123c; --green:#047857;
-      --shadow:0 20px 70px rgba(0,0,0,.50);
-      --shadow2:0 14px 45px rgba(0,0,0,.30);
-      --r20:20px; --r24:24px;
-      --focus:0 0 0 4px rgba(214,177,94,.14);
-    }
+      --bg1:#070A12;
+      --bg2:#0B1020;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.08);
+      --stroke: rgba(255,255,255,.12);
+      --stroke2: rgba(255,255,255,.18);
+      --ink:#E9EEF7;
+      --muted:#A8B3C6;
 
-    [data-theme="light"]{
-      --bg0:#f8fafc; --bg1:#eef2ff;
-      --ink:#0b1220; --muted:#475569;
-      --card:rgba(0,0,0,.05);
-      --card2:rgba(0,0,0,.035);
-      --stroke:rgba(0,0,0,.12);
-      --stroke2:rgba(0,0,0,.16);
-      --shadow:0 20px 70px rgba(2,6,23,.14);
-      --shadow2:0 14px 45px rgba(2,6,23,.10);
-      --focus:0 0 0 4px rgba(180,138,24,.16);
+      --gold1:#F7D37A;
+      --gold2:#CFA24A;
+      --gold3:#8E6A2B;
+
+      --good:#39d98a;
+      --warn:#ffce4a;
+      --bad:#ff5c7a;
+
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius: 18px;
+      --radius2: 28px;
+
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans Arabic", "Tahoma", Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+      --g: linear-gradient(135deg, rgba(247,211,122,.18), rgba(207,162,74,.08), rgba(255,255,255,.02));
+      --g2: linear-gradient(135deg, rgba(247,211,122,.26), rgba(207,162,74,.12), rgba(255,255,255,.03));
+      --glow: 0 0 0 1px rgba(247,211,122,.08), 0 0 60px rgba(247,211,122,.08);
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
+      font-family:var(--font);
       color:var(--ink);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;
       background:
-        radial-gradient(1200px 700px at 18% 6%, rgba(214,177,94,.18), transparent 55%),
-        radial-gradient(900px 500px at 82% 15%, rgba(30,64,175,.14), transparent 60%),
-        radial-gradient(900px 500px at 70% 92%, rgba(190,18,60,.10), transparent 60%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
+        radial-gradient(1200px 700px at 80% -10%, rgba(247,211,122,.20), transparent 60%),
+        radial-gradient(900px 520px at 20% 0%, rgba(90,120,255,.12), transparent 55%),
+        radial-gradient(900px 520px at 60% 110%, rgba(255,92,122,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
       overflow-x:hidden;
     }
 
-    .container{max-width:1120px;margin:0 auto;padding:14px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    a{color:inherit}
+    .wrap{
+      width:min(1200px, 94vw);
+      margin: 28px auto 60px;
+    }
 
+    /* Top header */
     .topbar{
-      position:sticky;top:0;z-index:30;
-      background: rgba(6,8,15,.70);
-      border-bottom:1px solid var(--stroke);
-      backdrop-filter: blur(12px);
+      display:flex;
+      gap:14px;
+      align-items:stretch;
+      justify-content:space-between;
+      margin-bottom:18px;
     }
-    [data-theme="light"] .topbar{background: rgba(248,250,252,.75)}
-
-    .brand{display:flex;align-items:center;gap:12px}
-    .logoWrap{
-      width:46px;height:46px;border-radius:18px;
-      border:1px solid rgba(214,177,94,.35);
-      background:
-        radial-gradient(12px 12px at 28% 30%, rgba(255,255,255,.22), transparent 55%),
-        linear-gradient(145deg, rgba(214,177,94,.28), rgba(180,138,24,.10));
-      box-shadow: 0 12px 34px rgba(0,0,0,.28);
-      display:grid;place-items:center;position:relative;overflow:hidden;
+    .brandCard{
+      flex:1;
+      padding:18px 18px 16px;
+      border-radius: var(--radius2);
+      background: var(--g);
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
     }
-    .logoWrap:after{
+    .brandCard:before{
       content:"";
-      position:absolute; inset:-40%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
-      transform: rotate(25deg);
-      animation: sheen 6.5s linear infinite;
+      position:absolute; inset:-1px;
+      background:
+        radial-gradient(600px 140px at 70% 0%, rgba(247,211,122,.35), transparent 60%),
+        radial-gradient(500px 260px at 15% 110%, rgba(120,180,255,.18), transparent 65%);
+      pointer-events:none;
+      opacity:.8;
+    }
+    .brandRow{
+      position:relative;
+      display:flex;
+      gap:14px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .brandLeft{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      min-width: 260px;
+    }
+    .logo{
+      width:56px;height:56px;border-radius:18px;
+      background: linear-gradient(135deg, rgba(247,211,122,.34), rgba(207,162,74,.16), rgba(255,255,255,.04));
+      border: 1px solid rgba(247,211,122,.22);
+      box-shadow: var(--glow);
+      position:relative;
+      display:grid; place-items:center;
+      overflow:hidden;
+    }
+    .logo:after{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        radial-gradient(32px 32px at 30% 35%, rgba(255,255,255,.22), transparent 60%),
+        radial-gradient(80px 60px at 70% 80%, rgba(247,211,122,.18), transparent 60%);
       pointer-events:none;
     }
-    @keyframes sheen{
-      0%{transform:translateX(-32%) rotate(25deg)}
-      100%{transform:translateX(32%) rotate(25deg)}
+    .logo span{
+      font-weight:900;
+      letter-spacing:.6px;
+      color:var(--gold1);
+      text-shadow: 0 10px 25px rgba(0,0,0,.35);
+      font-size:18px;
+      position:relative;
+    }
+    .brandTitle{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .brandTitle h1{
+      margin:0;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: .2px;
+    }
+    .brandTitle p{
+      margin:0;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height:1.3;
     }
 
-    .logoImg{width:34px;height:34px;object-fit:contain;border-radius:999px;display:none}
-    .logoFallback{font-weight:1100;letter-spacing:.8px;color:#1b1405;background:linear-gradient(180deg,#1b1405,#000);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:12px}
-
-    .hdrOrg{color:var(--muted);font-size:12px;letter-spacing:.8px}
-    .hdrTitle{font-weight:1100;font-size:15px}
-    .hdrSub{color:var(--muted);font-size:12px;margin-top:3px}
-
-    .actions{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap}
-
+    .brandRight{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      min-width: 260px;
+    }
     .btn{
-      appearance:none;border:1px solid var(--stroke2);
-      background:rgba(255,255,255,.06);
-      color:var(--ink);
-      border-radius:14px;
-      padding:10px 12px;
-      cursor:pointer;
-      min-height:42px;
-      font-size:14px;
-      display:inline-flex;align-items:center;justify-content:center;gap:8px;
-      box-shadow: 0 10px 22px rgba(0,0,0,.14);
-      transition: transform .12s ease, background .12s ease, border-color .12s ease;
-      user-select:none;white-space:nowrap;
-    }
-    .btn:hover{background:rgba(255,255,255,.09);border-color:rgba(214,177,94,.32);transform:translateY(-1px)}
-    .btn:active{transform:translateY(0)}
-    .btn.primary{
-      background: linear-gradient(135deg, rgba(214,177,94,.34), rgba(180,138,24,.12));
-      border-color: rgba(214,177,94,.40);
-    }
-
-    .select,.input{
-      width:100%;
-      padding:12px 12px;
-      border-radius:14px;
       border:1px solid var(--stroke2);
       background: rgba(255,255,255,.06);
-      color:var(--ink);
-      min-height:44px;
-      font-size:14px;
-      outline:none;
-      transition: border-color .12s ease, background .12s ease, box-shadow .12s ease;
+      color: var(--ink);
+      padding:10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-weight:800;
+      font-size: 13px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      transition:.18s ease;
+      user-select:none;
+      white-space:nowrap;
     }
-    .select:focus,.input:focus{
-      border-color: rgba(214,177,94,.46);
-      background: rgba(255,255,255,.08);
-      box-shadow: var(--focus);
+    .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
+    .btn:active{ transform: translateY(0px); }
+    .btn.primary{
+      border-color: rgba(247,211,122,.30);
+      background: linear-gradient(135deg, rgba(247,211,122,.26), rgba(207,162,74,.10));
+      box-shadow: var(--glow);
+    }
+    .pill{
+      padding:8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke2);
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight:800;
+    }
+    .pill strong{color:var(--ink)}
+    .divider{
+      height:1px;
+      background: linear-gradient(90deg, transparent, rgba(247,211,122,.22), rgba(255,255,255,.10), transparent);
+      margin: 14px 0 0;
+      opacity:.9;
+    }
+
+    /* Summary grid */
+    .grid{
+      display:grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap:16px;
+      margin-top:16px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+      .brandRight{justify-content:flex-start}
+      .brandLeft{min-width:auto}
+      .brandRight{min-width:auto}
     }
 
     .card{
-      background: var(--card);
-      border:1px solid var(--stroke);
-      border-radius: var(--r24);
-      padding:14px;
-      box-shadow: var(--shadow2);
+      border-radius: var(--radius2);
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
     }
-    .card.soft{background:var(--card2)}
-    .muted{color:var(--muted);font-size:12px}
-    .titleMini{font-weight:1100;font-size:12px;letter-spacing:.35px;color:var(--muted);margin-bottom:8px}
+    .card .head{
+      padding:16px 16px 12px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: linear-gradient(135deg, rgba(255,255,255,.05), rgba(247,211,122,.06));
+    }
+    .card .head h2{
+      margin:0;
+      font-size: 14.5px;
+      font-weight: 900;
+      letter-spacing:.2px;
+    }
+    .card .head p{
+      margin:6px 0 0;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height:1.35;
+    }
+    .card .body{ padding:16px; }
 
-    .grid{display:grid;gap:12px}
-    .grid-3{grid-template-columns:1fr 1fr 1fr}
-    .grid-4{grid-template-columns:repeat(4,1fr)}
-    .grid-2{grid-template-columns:1.1fr .9fr}
-    @media(max-width:920px){.grid-3{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}}
-    @media(max-width:560px){.grid-4{grid-template-columns:1fr}.container{padding:12px}}
+    /* KPI cards */
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:12px;
+    }
+    @media (max-width: 980px){ .kpis{grid-template-columns: repeat(2, 1fr);} }
+    @media (max-width: 520px){ .kpis{grid-template-columns: 1fr;} }
 
     .kpi{
-      position:relative; overflow:hidden;
-      border:none;
-      border-radius: var(--r24);
-      padding:14px;
-      min-height:98px;
-      display:flex; flex-direction:column; justify-content:space-between;
-      color:#fff;
-      box-shadow: var(--shadow);
+      border-radius: 18px;
+      background: rgba(0,0,0,.20);
+      border: 1px solid rgba(255,255,255,.10);
+      padding: 14px;
+      position:relative;
+      overflow:hidden;
+      min-height: 92px;
     }
-    .kpi .t{font-weight:1100;font-size:12px;letter-spacing:.4px;opacity:.95}
-    .kpi .n{font-size:28px;font-weight:1200}
     .kpi:before{
       content:"";
-      position:absolute; inset:-65%;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 55%);
-      transform: rotate(15deg);
+      position:absolute; inset:-1px;
+      background:
+        radial-gradient(260px 140px at 10% 10%, rgba(247,211,122,.18), transparent 60%),
+        radial-gradient(200px 120px at 90% 70%, rgba(120,180,255,.12), transparent 60%);
+      opacity:.8;
       pointer-events:none;
     }
-    .kpi.blue{background:linear-gradient(135deg, rgba(30,64,175,1), rgba(30,64,175,.55))}
-    .kpi.gold{background:linear-gradient(135deg, rgba(214,177,94,1), rgba(180,138,24,.42)); color:#1b1405}
-    .kpi.gold .t,.kpi.gold .n{color:#1b1405}
-    .kpi.rose{background:linear-gradient(135deg, rgba(190,18,60,1), rgba(190,18,60,.45))}
-    .kpi.green{background:linear-gradient(135deg, rgba(4,120,87,1), rgba(4,120,87,.45))}
-
-    .tableWrap{
-      border-radius: var(--r24);
-      overflow:auto;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.03);
-      max-height:60vh;
-      margin-top:10px;
-    }
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:12px 10px;border-top:1px solid rgba(255,255,255,.08);font-size:14px}
-    thead th{
-      position:sticky;top:0;
+    .kpi .t{ position:relative; color:var(--muted); font-size:12px; font-weight:900; }
+    .kpi .v{ position:relative; margin-top:8px; font-size:22px; font-weight:1000; letter-spacing:.2px; }
+    .kpi .s{ position:relative; margin-top:6px; font-size:12px; color:var(--muted); }
+    .kpi .badge{
+      position:absolute; inset:auto 10px 10px auto;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size: 11px;
+      font-weight:1000;
+      border: 1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.06);
-      border-bottom:1px solid var(--stroke);
-      font-weight:1100;
-      text-align:start;
-      backdrop-filter: blur(8px);
+      color: var(--ink);
     }
-    tbody tr:hover td{background: rgba(214,177,94,.06)}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .b-good{ border-color: rgba(57,217,138,.30)!important; background: rgba(57,217,138,.10)!important; }
+    .b-warn{ border-color: rgba(255,206,74,.30)!important; background: rgba(255,206,74,.10)!important; }
+    .b-bad{  border-color: rgba(255,92,122,.30)!important; background: rgba(255,92,122,.10)!important; }
 
-    .badge{
-      padding:6px 10px;border-radius:999px;
-      font-weight:1100;font-size:12px;
-      display:inline-flex;align-items:center;gap:8px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
+    /* Charts */
+    .charts{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
     }
-    .badge.ok{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.10);color:rgba(34,197,94,.95)}
-    .badge.no{border-color:rgba(244,63,94,.25);background:rgba(244,63,94,.10);color:rgba(244,63,94,.95)}
+    @media (max-width: 980px){ .charts{grid-template-columns:1fr;} }
 
-    .insGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    @media(max-width:640px){.insGrid{grid-template-columns:1fr}}
-    .insItem{
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.04);
-      border-radius: var(--r20);
-      padding:12px;
+    .chartBox{
+      border-radius: 18px;
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.10);
+      padding: 14px;
+      overflow:hidden;
     }
-    .insK{font-size:12px;color:var(--muted);font-weight:1100}
-    .insV{margin-top:6px;font-weight:1200}
-
-    .hintPill{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:8px 10px;border-radius:999px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.05);
+    .chartTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .chartTop .title{
+      font-weight: 1000;
+      font-size: 12.5px;
+      color: var(--ink);
+    }
+    .chartTop .meta{
+      font-weight: 900;
+      font-size: 12px;
       color: var(--muted);
-      font-size:12px;
       white-space:nowrap;
     }
+    canvas{ width:100%; height: 240px; display:block; }
 
-    /* Print dashboard (not report) */
-    @media print{
-      *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
-      body{background:#fff;color:#000}
-      .topbar,.noPrint{display:none !important}
-      .card,.tableWrap{background:#fff;border:1px solid #ddd;box-shadow:none}
-      thead th{background:#f5f5f5;color:#111}
-      tbody td{color:#111}
+    /* Details table */
+    .tableWrap{
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+      background: rgba(0,0,0,.16);
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size: 12.5px;
+    }
+    thead th{
+      background: rgba(255,255,255,.06);
+      border-bottom:1px solid rgba(255,255,255,.10);
+      text-align:start;
+      padding: 12px 10px;
+      font-weight: 1000;
+      color: var(--ink);
+    }
+    tbody td{
+      padding: 11px 10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      color: var(--ink);
+      vertical-align:top;
+    }
+    tbody tr:hover{ background: rgba(255,255,255,.04); }
+    .mono{ font-family: var(--mono); letter-spacing: .2px; }
+    .tag{
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      font-weight:1000;
+      font-size: 11px;
+      white-space:nowrap;
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--muted);display:inline-block}
+    .dot.good{background:var(--good)}
+    .dot.warn{background:var(--warn)}
+    .dot.bad{background:var(--bad)}
+
+    /* Notes */
+    .notes{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 980px){ .notes{grid-template-columns:1fr;} }
+    .note{
+      border-radius: 18px;
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.10);
+      padding: 14px;
+    }
+    .note h3{ margin:0; font-size: 12.5px; font-weight:1000; }
+    .note p{ margin:10px 0 0; color: var(--muted); font-size: 12.5px; line-height:1.5; }
+    ul{ margin:10px 0 0; padding:0 18px; color: var(--muted); font-size: 12.5px; line-height:1.6; }
+    li{ margin:6px 0; }
+
+    /* Footer */
+    .footer{
+      margin-top: 14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .footLeft{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .stamp{
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(247,211,122,.22);
+      background: rgba(247,211,122,.10);
+      color: var(--gold1);
+      font-weight:1000;
     }
 
-    .hiddenCanvases{position:absolute;left:-99999px;top:-99999px;opacity:0;pointer-events:none}
+    /* Print */
+    @media print{
+      body{
+        background:white !important;
+        color:#111 !important;
+      }
+      .btn, .pill, #langToggle, #printBtn, #exportBtn { display:none !important; }
+      .wrap{ width: 100% !important; margin: 0 !important; }
+      .card, .brandCard{
+        box-shadow:none !important;
+        border: 1px solid #ddd !important;
+        background: white !important;
+      }
+      .kpi, .chartBox, .note{
+        background: white !important;
+        border: 1px solid #e6e6e6 !important;
+      }
+      thead th{ background: #f5f5f5 !important; color:#111 !important; }
+      tbody td{ color:#111 !important; }
+      .brandTitle p, .kpi .t, .kpi .s, .note p, ul, .footer{ color:#444 !important; }
+      .stamp{ color:#111 !important; background:#f3f3f3 !important; border-color:#ddd !important; }
+      .logo{ border-color:#ddd !important; box-shadow:none !important; }
+      .logo span{ color:#111 !important; text-shadow:none !important; }
+    }
   </style>
 </head>
 
 <body>
-  <div class="topbar">
-    <div class="container row">
-      <div class="brand">
-        <div class="logoWrap">
-          <img id="logoImg" class="logoImg" alt="Logo" />
-          <div id="logoFallback" class="logoFallback">KRS</div>
-        </div>
-        <div>
-          <div class="hdrOrg" id="hdrOrg">KRS INVITE</div>
-          <div class="hdrTitle"><span id="hdrMain">لوحة التحكم — </span><span id="hdrEvent">—</span></div>
-          <div class="hdrSub" id="hdrSub">الحضور المباشر وحالة الدعوات • Live attendance & status</div>
-        </div>
-      </div>
-
-      <div class="actions noPrint">
-        <span class="hintPill" id="printHint">🖨️ فعّل (Print Backgrounds) لطباعة الألوان</span>
-        <button id="themeBtn" class="btn">🌓</button>
-        <button id="langBtn" class="btn">AR</button>
-        <button id="refreshBtn" class="btn">↻ <span id="refreshTxt">تحديث</span></button>
-      </div>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="grid grid-3" style="margin-top:14px">
-      <div class="card soft">
-        <div class="titleMini" id="lblEvent">الحدث</div>
-        <select id="eventSelect" class="select"></select>
-      </div>
-
-      <div class="card soft">
-        <div class="titleMini" id="lblSearch">ابحث عن كود…</div>
-        <input id="searchInput" class="input" placeholder="KH_001" />
-      </div>
-
-      <div class="card soft noPrint" style="display:flex;align-items:end;gap:10px">
-        <button id="exportBtn" class="btn primary" style="flex:1">⤓ تصدير CSV</button>
-        <button id="printBtn" class="btn" style="flex:1">🖨️ طباعة</button>
-        <button id="reportBtn" class="btn primary" style="flex:1">📄 تقرير نهائي فاخر</button>
-      </div>
-    </div>
-
-    <div class="card soft" style="margin-top:12px">
-      <div class="row" style="align-items:end">
-        <div style="flex:1;min-width:200px">
-          <div class="titleMini" id="lblFrom">من تاريخ</div>
-          <input id="dateFrom" type="date" class="input" />
-        </div>
-        <div style="flex:1;min-width:200px">
-          <div class="titleMini" id="lblTo">إلى تاريخ</div>
-          <input id="dateTo" type="date" class="input" />
-        </div>
-        <div class="noPrint" style="display:flex;gap:8px;align-items:end">
-          <button id="applyDate" class="btn primary">تطبيق</button>
-          <button id="clearDate" class="btn">مسح</button>
-        </div>
-        <div id="activeFilter" class="hintPill" style="margin-inline-start:auto;display:none"></div>
-      </div>
-    </div>
-
-    <div class="grid grid-4" style="margin-top:12px">
-      <div class="kpi blue"><div class="t" id="kpiTotalLbl">الإجمالي</div><div id="kpiTotal" class="n">—</div></div>
-      <div class="kpi gold"><div class="t" id="kpiUsedLbl">الحضور</div><div id="kpiUsed" class="n">—</div></div>
-      <div class="kpi rose"><div class="t" id="kpiLeftLbl">المتبقي</div><div id="kpiLeft" class="n">—</div></div>
-      <div class="kpi green"><div class="t" id="kpiRateLbl">نسبة الحضور</div><div id="kpiRate" class="n">—%</div></div>
-    </div>
-
-    <div class="grid grid-2" style="margin-top:12px">
-      <div class="card soft">
-        <div class="titleMini" id="insTitle">مؤشرات سريعة يحب العميل يشوفها</div>
-        <div class="insGrid">
-          <div class="insItem"><div class="insK" id="insFirstK">أول دخول</div><div class="insV" id="insFirstV">—</div></div>
-          <div class="insItem"><div class="insK" id="insLastK">آخر دخول</div><div class="insV" id="insLastV">—</div></div>
-          <div class="insItem"><div class="insK" id="insPeakK">أكثر ساعة ازدحام</div><div class="insV" id="insPeakV">—</div></div>
-          <div class="insItem"><div class="insK" id="insTodayK">مسحات اليوم</div><div class="insV" id="insTodayV">—</div></div>
-        </div>
-        <div class="muted" id="insNote" style="margin-top:10px;line-height:1.7">
-          * التقرير النهائي الفاخر يعطي العميل صورة كاملة: النسبة، الأعداد، وأهم مؤشرات الدخول + رسوم ملونة.
-        </div>
-      </div>
-
-      <div class="card soft">
-        <div class="titleMini" id="recentLbl">أحدث المسحات (آخر 100)</div>
-        <div id="printArea" class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th id="thCode">الكود</th>
-                <th id="thStatus">الحالة</th>
-                <th id="thTime">الوقت</th>
-              </tr>
-            </thead>
-            <tbody id="rowsBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="hiddenCanvases">
-      <canvas id="donut" width="900" height="520"></canvas>
-      <canvas id="bars" width="900" height="520"></canvas>
-    </div>
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-    import { getFirestore, collection, query, where, onSnapshot, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-
-    /* ========= ضع رابط شعار KRS INVITE (اختياري) ========= */
-    const LOGO_URL = ""; // مثال: "https://.../krs-invite.png"
-
-    /* ========= i18n ========= */
-    const STR = {
-      en: {
-        org:"KRS INVITE",
-        hdrMain:"Dashboard — ",
-        hdrSub:"Live attendance & invitation status",
-        hint:"Enable Print Backgrounds for colors",
-        event:"Event",
-        search:"Search code…",
-        export:"Export CSV",
-        print:"Print",
-        report:"Final Luxury Report",
-        total:"Total",
-        used:"Attendance",
-        left:"Remaining",
-        rate:"Attendance rate",
-        recent:"Recent scans (latest 100)",
-        code:"Code",
-        status:"Status",
-        time:"Time",
-        all:"All events",
-        refresh:"Refresh",
-        from:"From",
-        to:"To",
-        apply:"Apply",
-        clear:"Clear",
-        yes:"Checked-in",
-        no:"Not yet",
-        noRows:"No scans yet",
-        insights:"Client-friendly insights",
-        first:"First check-in",
-        last:"Last check-in",
-        peak:"Peak hour",
-        today:"Today scans",
-        filterActive:(f,t)=>`Filter: ${f||'—'} → ${t||'—'}`,
-        note:"* Final report includes KPIs + luxury charts + executive summary."
-      },
-      ar: {
-        org:"KRS INVITE",
-        hdrMain:"لوحة التحكم — ",
-        hdrSub:"الحضور المباشر وحالة الدعوات • Live attendance & status",
-        hint:"🖨️ فعّل (Print Backgrounds) لطباعة الألوان",
-        event:"الحدث",
-        search:"ابحث عن كود…",
-        export:"تصدير CSV",
-        print:"طباعة",
-        report:"تقرير نهائي فاخر",
-        total:"الإجمالي",
-        used:"الحضور",
-        left:"المتبقي",
-        rate:"نسبة الحضور",
-        recent:"أحدث المسحات (آخر 100)",
-        code:"الكود",
-        status:"الحالة",
-        time:"الوقت",
-        all:"كل الفعاليات",
-        refresh:"تحديث",
-        from:"من تاريخ",
-        to:"إلى تاريخ",
-        apply:"تطبيق",
-        clear:"مسح",
-        yes:"تم الدخول",
-        no:"لم يدخل",
-        noRows:"لا توجد مسحات",
-        insights:"مؤشرات سريعة يحب العميل يشوفها",
-        first:"أول دخول",
-        last:"آخر دخول",
-        peak:"أكثر ساعة ازدحام",
-        today:"مسحات اليوم",
-        filterActive:(f,t)=>`تفعيل الفلتر: ${f||'—'} → ${t||'—'}`,
-        note:"* التقرير النهائي يحتوي KPI + رسوم فاخرة + ملخص تنفيذي."
-      }
-    };
-
-    const $ = (s,root=document)=>root.querySelector(s);
-    const state = {
-      lang: localStorage.getItem('krs:dash:lang') || 'ar',
-      theme: localStorage.getItem('krs:dash:theme') || 'dark',
-      event: localStorage.getItem('krs:dash:event') || '',
-      from:'', to:''
-    };
-
-    function setTheme(t){
-      state.theme=t;
-      document.documentElement.setAttribute('data-theme', t);
-      localStorage.setItem('krs:dash:theme', t);
-    }
-
-    function applyLogo(){
-      const img = $('#logoImg');
-      const fb  = $('#logoFallback');
-      if(LOGO_URL){
-        img.src = LOGO_URL;
-        img.style.display='block';
-        fb.style.display='none';
-      }else{
-        img.style.display='none';
-        fb.style.display='block';
-      }
-    }
-
-    function applyLang(){
-      const L = STR[state.lang] || STR.en;
-      const isAr = state.lang==='ar';
-
-      document.documentElement.lang = state.lang;
-      document.documentElement.dir  = isAr ? 'rtl' : 'ltr';
-
-      $('#hdrOrg').textContent = L.org;
-      $('#hdrMain').textContent = L.hdrMain;
-      $('#hdrSub').textContent = L.hdrSub;
-      $('#printHint').textContent = L.hint;
-
-      $('#langBtn').textContent = isAr ? 'EN' : 'AR';
-      $('#refreshTxt').textContent = L.refresh;
-
-      $('#lblEvent').textContent = L.event;
-      $('#lblSearch').textContent = L.search;
-
-      $('#exportBtn').textContent = '⤓ ' + L.export;
-      $('#printBtn').textContent  = '🖨️ ' + L.print;
-      $('#reportBtn').textContent = '📄 ' + L.report;
-
-      $('#lblFrom').textContent = L.from;
-      $('#lblTo').textContent   = L.to;
-      $('#applyDate').textContent = L.apply;
-      $('#clearDate').textContent = L.clear;
-
-      $('#kpiTotalLbl').textContent = L.total;
-      $('#kpiUsedLbl').textContent  = L.used;
-      $('#kpiLeftLbl').textContent  = L.left;
-      $('#kpiRateLbl').textContent  = L.rate;
-
-      $('#recentLbl').textContent = L.recent;
-      $('#thCode').textContent    = L.code;
-      $('#thStatus').textContent  = L.status;
-      $('#thTime').textContent    = L.time;
-
-      $('#insTitle').textContent  = L.insights;
-      $('#insFirstK').textContent = L.first;
-      $('#insLastK').textContent  = L.last;
-      $('#insPeakK').textContent  = L.peak;
-      $('#insTodayK').textContent = L.today;
-      $('#insNote').textContent   = L.note;
-
-      renderActiveFilter();
-    }
-
-    /* ========= Firebase ========= */
-    const firebaseConfig = {
-      apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-      authDomain:"hormez-inv.firebaseapp.com",
-      projectId:"hormez-inv",
-      storageBucket:"hormez-inv.firebasestorage.app",
-      messagingSenderId:"747519941805",
-      appId:"1:747519941805:web:468fada2492700e9da3a24"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
-
-    /* ========= Data ========= */
-    let unsub=null, rowsAll=[], rowsView=[];
-    // rowsAll = only records that have scannedAt (for insights/report tables)
-    // KPIs computed from full snapshot (total/used)
-
-    async function loadEvents(){
-      const ref = collection(db,'invites');
-      const snap = await getDocs(query(ref, limit(1200)));
-
-      const setE = new Set();
-      snap.forEach(d=>{
-        const ev = d.data().EventName || '';
-        if(ev) setE.add(ev);
-      });
-
-      const list = ['__ALL__', ...Array.from(setE).sort((a,b)=>a.localeCompare(b))];
-      const sel = $('#eventSelect');
-      sel.innerHTML='';
-
-      for(const ev of list){
-        const opt = document.createElement('option');
-        opt.value = ev;
-        opt.textContent = (ev==='__ALL__') ? (STR[state.lang].all) : ev;
-        sel.appendChild(opt);
-      }
-
-      sel.value = (state.event && list.includes(state.event)) ? state.event : '__ALL__';
-      state.event = sel.value;
-      localStorage.setItem('krs:dash:event', state.event);
-      $('#hdrEvent').textContent = (state.event==='__ALL__') ? STR[state.lang].all : state.event;
-    }
-
-    function startStream(){
-      if(unsub) unsub();
-
-      const ref = collection(db,'invites');
-      const qAll = (state.event && state.event!=='__ALL__')
-        ? query(ref, where('EventName','==', state.event))
-        : query(ref);
-
-      unsub = onSnapshot(qAll, snap=>{
-        let total=0, used=0;
-        const rec=[];
-
-        snap.forEach(d=>{
-          const x=d.data();
-          total++;
-          if((x.Status||'').toLowerCase()==='yes') used++;
-
-          if(x.scannedAt?.toDate?.()){
-            rec.push({
-              id:d.id,
-              Code: x.Code || d.id,
-              Status: String(x.Status || 'no'),
-              scannedAt: x.scannedAt.toDate()
-            });
-          }
-        });
-
-        renderKPIs(total, used);
-
-        rowsAll = rec.sort((a,b)=> (b.scannedAt?.getTime?.()||0) - (a.scannedAt?.getTime?.()||0));
-        applyFilters();
-
-        const ins = computeInsights(rowsAll);
-        renderInsights(ins);
-        drawCharts(total, used, rowsAll);
-      });
-    }
-
-    function renderKPIs(total, used){
-      const left = Math.max(total-used,0);
-      const rate = total>0 ? Math.round((used/total)*100) : 0;
-
-      $('#kpiTotal').textContent = total;
-      $('#kpiUsed').textContent  = used;
-      $('#kpiLeft').textContent  = left;
-      $('#kpiRate').textContent  = rate + '%';
-    }
-
-    function withinDateRange(d){
-      if(!d) return false;
-      const ts = d.getTime();
-      if(state.from){
-        const fromTs = new Date(state.from+"T00:00:00").getTime();
-        if(ts < fromTs) return false;
-      }
-      if(state.to){
-        const toTs = new Date(state.to+"T23:59:59").getTime();
-        if(ts > toTs) return false;
-      }
-      return true;
-    }
-
-    function applyFilters(){
-      const q = ($('#searchInput').value || '').trim().toLowerCase();
-      let list = rowsAll;
-
-      if(state.from || state.to) list = list.filter(r=> withinDateRange(r.scannedAt));
-      if(q) list = list.filter(r=> (r.Code||'').toLowerCase().includes(q));
-
-      rowsView = list.slice(0,100);
-      renderRows(rowsView);
-      renderActiveFilter();
-    }
-
-    function renderActiveFilter(){
-      const L = STR[state.lang] || STR.en;
-      const box = $('#activeFilter');
-      if(state.from || state.to){
-        box.style.display = 'inline-flex';
-        box.textContent = L.filterActive(state.from, state.to);
-      }else{
-        box.style.display = 'none';
-        box.textContent = '';
-      }
-    }
-
-    function renderRows(rows){
-      const L = STR[state.lang] || STR.en;
-      const isAr = state.lang==='ar';
-      const tb = $('#rowsBody');
-      tb.innerHTML='';
-
-      if(rows.length===0){
-        const tr=document.createElement('tr');
-        const td=document.createElement('td');
-        td.colSpan=3;
-        td.className='muted';
-        td.style.textAlign='center';
-        td.style.padding='18px';
-        td.textContent = L.noRows;
-        tr.appendChild(td);
-        tb.appendChild(tr);
-        return;
-      }
-
-      for(const r of rows){
-        const tr=document.createElement('tr');
-
-        const td1=document.createElement('td');
-        td1.className='mono';
-        td1.textContent=r.Code;
-
-        const td2=document.createElement('td');
-        const b=document.createElement('span');
-        const ok=(r.Status||'no').toLowerCase()==='yes';
-        b.className='badge ' + (ok?'ok':'no');
-        b.textContent = ok ? L.yes : L.no;
-        td2.appendChild(b);
-
-        const td3=document.createElement('td');
-        td3.textContent = r.scannedAt ? r.scannedAt.toLocaleString(isAr?'ar-EG':'en-GB') : '—';
-
-        tr.append(td1,td2,td3);
-        tb.appendChild(tr);
-      }
-    }
-
-    function safeCSV(v){
-      const s=String(v??'');
-      if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
-      return s;
-    }
-
-    function exportCSV(){
-      const L = STR[state.lang] || STR.en;
-      const header=[L.code,L.status,'EventName',L.time].join(',');
-      const evName = (state.event==='__ALL__') ? 'ALL' : state.event;
-
-      const lines = rowsView.map(r=>[
-        safeCSV(r.Code),
-        safeCSV(r.Status),
-        safeCSV(evName),
-        safeCSV(r.scannedAt ? r.scannedAt.toISOString() : '')
-      ].join(','));
-
-      const csv=[header,...lines].join('\n');
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-      const url=URL.createObjectURL(blob);
-
-      const a=document.createElement('a');
-      a.href=url;
-      a.download=`krs-${evName}-scans.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function printDashboard(){ window.print(); }
-
-    /* ========= Insights (SAFE) ========= */
-    function fmtDate(d){
-      if(!(d instanceof Date) || isNaN(d.getTime())) return '—';
-      return d.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB');
-    }
-
-    function computeInsights(scans){
-      const arr = (scans||[]).filter(r=>r.scannedAt instanceof Date && !isNaN(r.scannedAt.getTime()))
-                             .sort((a,b)=>a.scannedAt-b.scannedAt);
-
-      const first = arr[0]?.scannedAt || null;
-      const last  = arr[arr.length-1]?.scannedAt || null;
-
-      const byHour = new Map();
-      for(const r of arr){
-        const h = String(r.scannedAt.getHours()).padStart(2,'0');
-        byHour.set(h, (byHour.get(h)||0)+1);
-      }
-      let peakHour='—', peakCount=0;
-      for(const [h,c] of byHour.entries()){
-        if(c>peakCount){ peakCount=c; peakHour=h; }
-      }
-
-      const start = new Date(); start.setHours(0,0,0,0);
-      let today = 0;
-      for(const r of arr){
-        if(r.scannedAt >= start) today++;
-      }
-
-      return { first, last, peakHour, peakCount, today };
-    }
-
-    function renderInsights(ins){
-      $('#insFirstV').textContent = fmtDate(ins.first);
-      $('#insLastV').textContent  = fmtDate(ins.last);
-
-      if(ins.peakHour==='—'){
-        $('#insPeakV').textContent = '—';
-      }else{
-        $('#insPeakV').textContent = (state.lang==='ar')
-          ? `${ins.peakHour}:00 (عدد ${ins.peakCount})`
-          : `${ins.peakHour}:00 (count ${ins.peakCount})`;
-      }
-
-      $('#insTodayV').textContent = String(ins.today ?? 0);
-    }
-
-    /* ========= Charts (Canvas) ========= */
-    function roundRect(ctx, x, y, w, h, r, fill, stroke){
-      const rr = Math.min(r, w/2, h/2);
-      ctx.beginPath();
-      ctx.moveTo(x+rr, y);
-      ctx.arcTo(x+w, y, x+w, y+h, rr);
-      ctx.arcTo(x+w, y+h, x, y+h, rr);
-      ctx.arcTo(x, y+h, x, y, rr);
-      ctx.arcTo(x, y, x+w, y, rr);
-      ctx.closePath();
-      if(fill) ctx.fill();
-      if(stroke) ctx.stroke();
-    }
-
-    function drawDonut(total, used){
-      const c = document.getElementById('donut');
-      const ctx = c.getContext('2d');
-      const W=c.width, H=c.height;
-      ctx.clearRect(0,0,W,H);
-
-      const left = Math.max(total-used,0);
-      const rate = total>0 ? Math.round((used/total)*100) : 0;
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0,0,W,H);
-
-      ctx.fillStyle = '#0b1220';
-      ctx.font = '900 28px system-ui';
-      ctx.textAlign = 'start';
-      ctx.fillText(state.lang==='ar' ? 'توزيع الحضور' : 'Attendance Distribution', 52, 70);
-
-      ctx.fillStyle = '#475569';
-      ctx.font = '700 14px system-ui';
-      ctx.fillText(state.lang==='ar' ? 'حضور / متبقي' : 'Checked-in / Remaining', 52, 98);
-
-      const cx = W*0.32, cy = H*0.58;
-      const rOuter = 170, rInner = 105;
-
-      const totalVal = Math.max(total, 1);
-      const usedAng = (used/totalVal) * Math.PI*2;
-
-      const start = -Math.PI/2;
-      const end = start + usedAng;
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, rOuter, 0, Math.PI*2);
-      ctx.arc(cx, cy, rInner, Math.PI*2, 0, true);
-      ctx.closePath();
-      ctx.fillStyle = '#eef2f7';
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, rOuter, start, end);
-      ctx.arc(cx, cy, rInner, end, start, true);
-      ctx.closePath();
-      ctx.fillStyle = '#d6b15e';
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, rOuter, end, start + Math.PI*2);
-      ctx.arc(cx, cy, rInner, start + Math.PI*2, end, true);
-      ctx.closePath();
-      ctx.fillStyle = '#1e40af';
-      ctx.globalAlpha = 0.22;
-      ctx.fill();
-      ctx.globalAlpha = 1;
-
-      ctx.fillStyle = '#0b1220';
-      ctx.font = '1000 44px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText(rate + '%', cx, cy+12);
-
-      ctx.fillStyle = '#475569';
-      ctx.font = '800 14px system-ui';
-      ctx.fillText(state.lang==='ar' ? 'نسبة الحضور' : 'Attendance', cx, cy+44);
-
-      const bx = W*0.62, by = H*0.28;
-      const boxW = W*0.33, boxH = 90, gap=16;
-      const L = STR[state.lang] || STR.en;
-
-      function kpiBox(y, title, val, color){
-        ctx.fillStyle = 'rgba(2,6,23,.08)';
-        roundRect(ctx, bx+4, y+4, boxW, boxH, 18, true, false);
-
-        ctx.fillStyle = '#ffffff';
-        roundRect(ctx, bx, y, boxW, boxH, 18, true, false);
-
-        ctx.strokeStyle = 'rgba(15,23,42,.10)';
-        ctx.lineWidth = 2;
-        roundRect(ctx, bx, y, boxW, boxH, 18, false, true);
-
-        ctx.fillStyle = color;
-        roundRect(ctx, bx+14, y+18, 10, boxH-36, 10, true, false);
-
-        ctx.fillStyle = '#475569';
-        ctx.font = '900 14px system-ui';
-        ctx.textAlign = 'start';
-        ctx.fillText(title, bx+34, y+36);
-
-        ctx.fillStyle = '#0b1220';
-        ctx.font = '1000 30px system-ui';
-        ctx.fillText(val, bx+34, y+70);
-      }
-
-      kpiBox(by, L.total, String(total), '#1e40af');
-      kpiBox(by + boxH + gap, L.used, String(used), '#d6b15e');
-      kpiBox(by + (boxH + gap)*2, L.left, String(left), '#be123c');
-
-      ctx.save();
-      ctx.globalAlpha = 0.06;
-      ctx.translate(W*0.78, H*0.86);
-      ctx.rotate(-0.22);
-      ctx.fillStyle = '#0b1220';
-      ctx.font = '1100 44px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText('KRS INVITE', 0, 0);
-      ctx.restore();
-    }
-
-    function drawBars(scans){
-      const c = document.getElementById('bars');
-      const ctx = c.getContext('2d');
-      const W=c.width, H=c.height;
-      ctx.clearRect(0,0,W,H);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0,0,W,H);
-
-      ctx.fillStyle = '#0b1220';
-      ctx.font = '900 28px system-ui';
-      ctx.textAlign = 'start';
-      ctx.fillText(state.lang==='ar' ? 'نشاط الدخول' : 'Check-in Activity', 52, 70);
-
-      ctx.fillStyle = '#475569';
-      ctx.font = '700 14px system-ui';
-      ctx.fillText(state.lang==='ar' ? 'آخر 60 دقيقة (كل 5 دقائق)' : 'Last 60 minutes (5-min bins)', 52, 98);
-
-      const now = new Date();
-      const bins = Array(12).fill(0);
-      const start = new Date(now.getTime() - 60*60*1000);
-
-      for(const r of (scans||[])){
-        if(!(r.scannedAt instanceof Date)) continue;
-        const t = r.scannedAt.getTime();
-        if(t < start.getTime() || t > now.getTime()) continue;
-
-        const minsAgo = Math.floor((now.getTime() - t)/60000);
-        const idx = Math.max(0, Math.min(11, Math.floor((59 - minsAgo)/5)));
-        bins[idx] += 1;
-      }
-
-      const maxV = Math.max(1, ...bins);
-      const chartX=52, chartY=150, chartW=W-104, chartH=300;
-
-      ctx.fillStyle = 'rgba(2,6,23,.04)';
-      roundRect(ctx, chartX, chartY, chartW, chartH, 22, true, false);
-
-      ctx.strokeStyle = 'rgba(15,23,42,.10)';
-      ctx.lineWidth = 1;
-      for(let i=0;i<=4;i++){
-        const y = chartY + (chartH*(i/4));
-        ctx.beginPath(); ctx.moveTo(chartX+20, y); ctx.lineTo(chartX+chartW-20, y); ctx.stroke();
-      }
-
-      const pad=18;
-      const innerX = chartX + 20;
-      const innerY = chartY + 18;
-      const innerW = chartW - 40;
-      const innerH = chartH - 36;
-
-      const barW = innerW / 12;
-
-      for(let i=0;i<12;i++){
-        const v = bins[i];
-        const h = Math.round((v/maxV)*innerH);
-        const x = innerX + i*barW + pad*0.25;
-        const y = innerY + (innerH - h);
-        const w = barW - pad*0.5;
-
-        const t = v/maxV;
-        const color = t>0.55 ? '#d6b15e' : '#1e40af';
-        const alpha = t>0.55 ? 0.95 : 0.35 + t*0.5;
-
-        ctx.fillStyle = color;
-        ctx.globalAlpha = alpha;
-        roundRect(ctx, x, y, w, h, 14, true, false);
-        ctx.globalAlpha = 1;
-
-        ctx.fillStyle = '#0b1220';
-        ctx.font = '900 13px system-ui';
-        ctx.textAlign = 'center';
-        ctx.fillText(String(v), x + w/2, y - 8);
-      }
-
-      ctx.fillStyle = '#475569';
-      ctx.font = '800 12px system-ui';
-      ctx.textAlign = 'center';
-      for(let i=0;i<=12;i+=3){
-        const mins = 60 - i*5;
-        const lbl = state.lang==='ar' ? `-${mins}د` : `-${mins}m`;
-        const x = innerX + i*barW;
-        ctx.fillText(lbl, x, chartY + chartH + 34);
-      }
-
-      ctx.save();
-      ctx.globalAlpha = 0.06;
-      ctx.translate(W*0.78, H*0.86);
-      ctx.rotate(-0.22);
-      ctx.fillStyle = '#0b1220';
-      ctx.font = '1100 44px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText('KRS INVITE', 0, 0);
-      ctx.restore();
-    }
-
-    function drawCharts(total, used, scans){
-      drawDonut(total, used);
-      drawBars(scans);
-    }
-
-    function canvasToImg(id){
-      try{
-        const c = document.getElementById(id);
-        if(!c) return '';
-        return c.toDataURL('image/png');
-      }catch(e){
-        return '';
-      }
-    }
-
-    /* ========= Final Report (NO external dependencies / no errors) ========= */
-    function buildFinalReportHTML(payload){
-      const {
-        lang, logoUrl,
-        eventName, total, used, left, rate,
-        firstStr, lastStr, peakStr, todayStr,
-        donutImg, barImg,
-        createdStr, filterStr
-      } = payload;
-
-      const isAr = lang==='ar';
-      const reportTitle = isAr ? 'التقرير النهائي للفعالية' : 'Final Event Report';
-
-      const css = `
-        *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;background:#fff;color:#0b1220}
-        .page{max-width:1040px;margin:0 auto;padding:22px}
-        .cover{
-          border:1px solid #e5e7eb;border-radius:28px;padding:22px;
-          box-shadow:0 18px 55px rgba(2,6,23,.12);
-          background:
-            radial-gradient(950px 300px at 10% 0%, rgba(214,177,94,.22), transparent 60%),
-            radial-gradient(900px 280px at 88% 60%, rgba(30,64,175,.12), transparent 62%),
-            radial-gradient(900px 280px at 72% 100%, rgba(190,18,60,.10), transparent 62%),
-            #fff;
-          position:relative;overflow:hidden;
-        }
-        .wm{
-          position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
-          opacity:.06;transform:rotate(-12deg);font-weight:1000;font-size:74px;letter-spacing:1px;
-        }
-        .top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}
-        .brand{display:flex;gap:12px;align-items:center}
-        .logo{width:66px;height:66px;border-radius:20px;border:1px solid #e5e7eb;display:grid;place-items:center;overflow:hidden;background:#fff;box-shadow:0 12px 30px rgba(2,6,23,.10)}
-        .logo img{width:52px;height:52px;object-fit:contain}
-        h1{margin:0;font-size:20px;font-weight:1000}
-        .sub{margin-top:6px;color:#475569;font-size:12px;line-height:1.7}
-        .pillRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-        .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 10px;border-radius:999px;border:1px solid #e5e7eb;background:rgba(214,177,94,.12);font-weight:900;font-size:12px}
-        .hero{margin-top:16px;display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
-        @media(max-width:880px){.hero{grid-template-columns:1fr}}
-        .card{border:1px solid #e5e7eb;border-radius:24px;padding:16px;background:#fff;box-shadow:0 14px 40px rgba(2,6,23,.08)}
-        .card h2{margin:0 0 10px;font-size:14px;font-weight:1100}
-        .big{
-          font-size:56px;font-weight:1100;margin:6px 0 0;letter-spacing:.4px;
-          background:linear-gradient(135deg,#d6b15e,#b48a18);-webkit-background-clip:text;background-clip:text;color:transparent;
-        }
-        .meta{margin-top:8px;color:#475569;font-size:12px;line-height:1.8}
-        .exec{
-          margin-top:12px;border:1px dashed rgba(180,138,24,.55);background:rgba(214,177,94,.10);
-          border-radius:22px;padding:14px;line-height:1.85;font-size:12px;color:#111827
-        }
-        .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
-        @media(max-width:880px){.kpis{grid-template-columns:1fr 1fr}}
-        .kpi{border-radius:22px;padding:14px;color:#fff;box-shadow:0 16px 44px rgba(2,6,23,.14);min-height:98px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
-        .kpi:before{content:"";position:absolute;inset:-60%;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 55%);transform:rotate(15deg)}
-        .kpi .t{font-size:12px;font-weight:1000;opacity:.95}
-        .kpi .n{font-size:30px;font-weight:1100}
-        .blue{background:linear-gradient(135deg,#1e40af,rgba(30,64,175,.55))}
-        .gold{background:linear-gradient(135deg,#d6b15e,rgba(180,138,24,.40));color:#1b1405}
-        .gold .t,.gold .n{color:#1b1405}
-        .rose{background:linear-gradient(135deg,#be123c,rgba(190,18,60,.45))}
-        .green{background:linear-gradient(135deg,#047857,rgba(4,120,87,.45))}
-        .section{margin-top:14px;border-radius:26px;border:1px solid #e5e7eb;padding:16px;background:#fff;box-shadow:0 14px 40px rgba(2,6,23,.08)}
-        .section h3{margin:0 0 12px;font-size:14px;font-weight:1100}
-        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        @media(max-width:880px){.grid2{grid-template-columns:1fr}}
-        .imgbox{border:1px solid #e5e7eb;border-radius:22px;padding:10px;background:#fff}
-        .imgbox img{width:100%;height:auto;display:block;border-radius:16px}
-        .ins{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-        @media(max-width:640px){.ins{grid-template-columns:1fr}}
-        .insItem{border:1px solid #e5e7eb;border-radius:20px;padding:12px;background:rgba(2,6,23,.02)}
-        .k{font-size:12px;color:#475569;font-weight:1000}
-        .v{margin-top:6px;font-weight:1100}
-        .footer{margin-top:14px;border-radius:26px;border:1px solid #e5e7eb;padding:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;background:rgba(2,6,23,.02);color:#475569;font-size:12px;line-height:1.7}
-        .sign{display:flex;gap:10px;align-items:center}
-        .line{width:220px;border-bottom:1px solid #94a3b8}
-        @page { margin: 14mm; }
-      `;
-
-      const execText = isAr
-        ? `ملخص تنفيذي: إجمالي الدعوات <b>${total}</b>، عدد الحضور <b>${used}</b>، المتبقي <b>${left}</b>، ونسبة الحضور <b>${rate}%</b>.`
-        : `Executive summary: Total invites <b>${total}</b>, checked-in <b>${used}</b>, remaining <b>${left}</b>, attendance rate <b>${rate}%</b>.`;
-
-      return `
-<!doctype html>
-<html lang="${lang}" dir="${isAr?'rtl':'ltr'}">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${reportTitle} — KRS INVITE</title>
-<style>${css}</style></head>
-<body>
-  <div class="page">
-    <div class="cover">
-      <div class="wm">KRS INVITE</div>
-
-      <div class="top">
-        <div class="brand">
-          <div class="logo">
-            ${logoUrl ? `<img src="${logoUrl}" alt="logo">` : `<div style="font-weight:1100">KRS</div>`}
-          </div>
-          <div>
-            <h1>${reportTitle} — <span style="color:#111827">${eventName}</span></h1>
-            <div class="sub">
-              <div><b>KRS INVITE</b> • ${isAr?'تقرير فاخر وملوّن للحضور':'Luxury colored attendance report'}</div>
-              <div>${isAr?'تاريخ الإنشاء':'Created'}: <b>${createdStr}</b> • ${filterStr}</div>
+  <div class="wrap">
+    <!-- Top -->
+    <div class="topbar">
+      <div class="brandCard">
+        <div class="brandRow">
+          <div class="brandLeft">
+            <div class="logo" aria-label="KRS INVITE logo"><span>KRS</span></div>
+            <div class="brandTitle">
+              <h1 id="reportTitle">KRS INVITE — التقرير النهائي للمناسبة</h1>
+              <p id="reportSub">تقرير ملخص الحضور والتحقق — نسخة احترافية للطباعة وPDF</p>
             </div>
           </div>
-        </div>
 
-        <div class="pillRow">
-          <div class="pill">✨ KRS INVITE</div>
-          <div class="pill">🖨️ ${isAr?'اطبع مع الخلفيات للألوان':'Print with backgrounds for colors'}</div>
-        </div>
-      </div>
-
-      <div class="hero">
-        <div class="card">
-          <h2>${isAr?'النسبة النهائية للحضور':'Final Attendance Rate'}</h2>
-          <div class="big">${rate}%</div>
-          <div class="meta">
-            <div>${isAr?'عدد الحضور':'Checked-in'}: <b>${used}</b> / ${isAr?'الإجمالي':'Total'}: <b>${total}</b></div>
-            <div>${isAr?'المتبقي':'Remaining'}: <b>${left}</b></div>
+          <div class="brandRight">
+            <span class="pill"><strong id="evNamePill">—</strong> · <span id="evDatePill">—</span></span>
+            <button class="btn" id="langToggle" title="تبديل اللغة">🌐 <span id="langLabel">English</span></button>
+            <button class="btn primary" id="printBtn" title="طباعة / حفظ PDF">🖨️ <span id="printLabel">طباعة / PDF</span></button>
+            <button class="btn" id="exportBtn" title="تصدير CSV">⬇️ <span id="exportLabel">تصدير CSV</span></button>
           </div>
-          <div class="exec">${execText}</div>
         </div>
-
-        <div class="card">
-          <h2>${isAr?'مؤشرات للعميل':'Client Insights'}</h2>
-          <div class="ins">
-            <div class="insItem"><div class="k">${isAr?'أول دخول':'First check-in'}</div><div class="v">${firstStr}</div></div>
-            <div class="insItem"><div class="k">${isAr?'آخر دخول':'Last check-in'}</div><div class="v">${lastStr}</div></div>
-            <div class="insItem"><div class="k">${isAr?'أكثر ساعة ازدحام':'Peak hour'}</div><div class="v">${peakStr}</div></div>
-            <div class="insItem"><div class="k">${isAr?'مسحات اليوم':'Today scans'}</div><div class="v">${todayStr}</div></div>
+        <div class="divider"></div>
+        <div class="footer" style="margin-top:12px">
+          <div class="footLeft">
+            <span class="stamp" id="generatedStamp">تم الإنشاء: —</span>
+            <span id="venueLine">—</span>
           </div>
-          <div class="sub" style="margin-top:10px">${isAr?'هذه الصفحة جاهزة للعرض والطباعة للعميل بشكل فاخر.':'This page is client-ready for luxury print.'}</div>
+          <div id="contactLine">—</div>
         </div>
-      </div>
-
-      <div class="kpis">
-        <div class="kpi blue"><div class="t">${isAr?'الإجمالي':'Total'}</div><div class="n">${total}</div></div>
-        <div class="kpi gold"><div class="t">${isAr?'الحضور':'Checked-in'}</div><div class="n">${used}</div></div>
-        <div class="kpi rose"><div class="t">${isAr?'المتبقي':'Remaining'}</div><div class="n">${left}</div></div>
-        <div class="kpi green"><div class="t">${isAr?'نسبة الحضور':'Attendance'}</div><div class="n">${rate}%</div></div>
       </div>
     </div>
 
-    <div class="section">
-      <h3>${isAr?'رسوم ملونة فاخرة':'Luxury Colored Charts'}</h3>
-      <div class="grid2">
-        <div class="imgbox">${donutImg ? `<img src="${donutImg}" alt="donut">` : '<div style="color:#475569">—</div>'}</div>
-        <div class="imgbox">${barImg ? `<img src="${barImg}" alt="bars">` : '<div style="color:#475569">—</div>'}</div>
-      </div>
-      <div class="sub" style="margin-top:10px">${isAr?'الرسوم تعطي فهم سريع لتوزيع الحضور ونشاط الدخول.':'Charts give quick understanding of attendance and activity.'}</div>
-    </div>
+    <!-- Main grid -->
+    <div class="grid">
+      <!-- Left: KPIs + Charts + Table -->
+      <div class="card">
+        <div class="head">
+          <div>
+            <h2 id="summaryHead">ملخص سريع</h2>
+            <p id="summaryDesc">أرقام رئيسية ونِسَب الأداء لعملية الدخول والتحقق.</p>
+          </div>
+          <span class="pill" id="statusPill">—</span>
+        </div>
 
-    <div class="footer">
-      <div><b>KRS INVITE</b><br/>${isAr?'تقرير رسمي للحضور مبني على نظام الباركود':'Official attendance report based on barcode system'}</div>
-      <div class="sign"><div>${isAr?'التوقيع':'Signature'}</div><div class="line"></div></div>
+        <div class="body">
+          <div class="kpis" id="kpiGrid"></div>
+
+          <div style="height:12px"></div>
+
+          <div class="charts">
+            <div class="chartBox">
+              <div class="chartTop">
+                <div class="title" id="donutTitle">نسبة الحضور (Checked-in)</div>
+                <div class="meta" id="donutMeta">—</div>
+              </div>
+              <canvas id="donut"></canvas>
+            </div>
+
+            <div class="chartBox">
+              <div class="chartTop">
+                <div class="title" id="barTitle">توزيع الحضور حسب الوقت</div>
+                <div class="meta" id="barMeta">—</div>
+              </div>
+              <canvas id="bars"></canvas>
+            </div>
+          </div>
+
+          <div style="height:12px"></div>
+
+          <div class="card" style="border-radius:18px; box-shadow:none; background:rgba(0,0,0,.14); border:1px solid rgba(255,255,255,.10);">
+            <div class="head" style="border-bottom:1px solid rgba(255,255,255,.08)">
+              <div>
+                <h2 id="detailsHead">تفاصيل الدعوات (عينة)</h2>
+                <p id="detailsDesc">يعرض آخر العمليات أو عينة من السجل — يمكن استبداله ببياناتك الكاملة.</p>
+              </div>
+              <span class="pill" id="detailsCount">—</span>
+            </div>
+            <div class="body">
+              <div class="tableWrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th id="thCode">الكود</th>
+                      <th id="thOwner">الاسم</th>
+                      <th id="thStatus">الحالة</th>
+                      <th id="thTime">وقت الدخول</th>
+                      <th id="thGate">البوابة/الموظف</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody"></tbody>
+                </table>
+              </div>
+              <div style="margin-top:10px; color:var(--muted); font-size:12px" id="tableHint">
+                ملاحظة: هذا جدول قابل للتوسعة. إذا عندك CSV/Excel من النظام، أقول لك كيف تربطه مباشرة.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Right: Insights + Notes -->
+      <div class="card">
+        <div class="head">
+          <div>
+            <h2 id="insightsHead">أهم ما يهم العميل</h2>
+            <p id="insightsDesc">مؤشرات ذكية: الذروة، سرعة الدخول، الاستثناءات، وجودة التشغيل.</p>
+          </div>
+          <span class="pill" id="qualityPill">—</span>
+        </div>
+        <div class="body">
+          <div class="notes" style="grid-template-columns:1fr; gap:12px;">
+            <div class="note">
+              <h3 id="peakHead">ذروة الحضور</h3>
+              <p id="peakText">—</p>
+            </div>
+
+            <div class="note">
+              <h3 id="speedHead">سرعة عملية الدخول</h3>
+              <ul id="speedList"></ul>
+            </div>
+
+            <div class="note">
+              <h3 id="exceptionsHead">الاستثناءات والتنبيهات</h3>
+              <ul id="exceptionsList"></ul>
+            </div>
+
+            <div class="note">
+              <h3 id="opsHead">ملاحظات تشغيلية</h3>
+              <ul id="opsList"></ul>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div class="footLeft">
+              <span id="reportIdLine" class="mono">—</span>
+              <span class="pill" id="versionLine">v1.0</span>
+            </div>
+            <div class="mono" id="signatureLine">KRS INVITE</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <script>
-    window.addEventListener('load', ()=>{ setTimeout(()=>window.print(), 240); });
-  </script>
-</body>
-</html>`;
+<script>
+/** =========================
+ *  عدّل بياناتك هنا فقط
+ *  ========================= */
+const REPORT_DATA = {
+  brand: "KRS INVITE",
+  reportId: "KRS-INVITE-REP-0001",
+  version: "v1.0",
+  languageDefault: "ar", // "ar" or "en"
+
+  event: {
+    name_ar: "زفاف خالد",
+    name_en: "Khaled Wedding",
+    date: "15-01-2026",
+    timeRange: "5:30 PM – 11:30 PM",
+    venue_ar: "دبي — قاعة مستقلة",
+    venue_en: "Dubai — Standalone Hall",
+    contact: "WhatsApp: +971 XX XXX XXXX  ·  Email: krs2.store@gmail.com"
+  },
+
+  totals: {
+    totalInvites: 300,       // إجمالي الأكواد/الدعوات
+    checkedIn: 214,          // تم الدخول
+    rejected: 6,             // محاولات مرفوضة (مكرر/غير صالح/مغلق)
+    manualOverrides: 3,      // إدخال يدوي/استثناء (اختياري)
+    staffCount: 2,           // عدد الموظفين على البوابة (اختياري)
+    gates: 1                 // عدد البوابات/المداخل (اختياري)
+  },
+
+  // توزيع الحضور حسب الوقت (كل عنصر يمثل 15 دقيقة مثلاً)
+  timeline: [
+    { label: "5:30", count: 6 },
+    { label: "5:45", count: 14 },
+    { label: "6:00", count: 22 },
+    { label: "6:15", count: 28 },
+    { label: "6:30", count: 33 },
+    { label: "6:45", count: 29 },
+    { label: "7:00", count: 26 },
+    { label: "7:15", count: 18 },
+    { label: "7:30", count: 14 },
+    { label: "7:45", count: 10 },
+    { label: "8:00", count: 8 },
+    { label: "8:15", count: 6 }
+  ],
+
+  // عينة من التفاصيل (تقدر تستبدلها ببياناتك)
+  rowsSample: [
+    { code:"KRS_001", owner_ar:"محمد", owner_en:"Mohammed", status:"checked", time:"5:36 PM", gate:"Gate 1 / Staff A" },
+    { code:"KRS_017", owner_ar:"نورا",  owner_en:"Noura",    status:"checked", time:"5:48 PM", gate:"Gate 1 / Staff A" },
+    { code:"KRS_102", owner_ar:"سالم",  owner_en:"Salem",    status:"checked", time:"6:07 PM", gate:"Gate 1 / Staff B" },
+    { code:"KRS_144", owner_ar:"شيخة",  owner_en:"Sheikha",  status:"rejected_duplicate", time:"6:22 PM", gate:"Gate 1 / Staff A" },
+    { code:"KRS_210", owner_ar:"علي",   owner_en:"Ali",      status:"checked", time:"6:33 PM", gate:"Gate 1 / Staff B" },
+    { code:"KRS_255", owner_ar:"فاطمة", owner_en:"Fatima",   status:"manual", time:"6:55 PM", gate:"Gate 1 / Supervisor" }
+  ],
+
+  notes: {
+    ops_ar: [
+      "تم تجهيز نقطة استقبال واحدة مع جهاز ماسح وربط مباشر بالنظام.",
+      "تم تفعيل تنبيه المحاولات المكررة لتجنب إعادة الدخول.",
+      "يوصى بزيادة الإضاءة على منطقة المسح لتحسين سرعة الالتقاط."
+    ],
+    ops_en: [
+      "Single reception point with scanner connected to the system.",
+      "Duplicate attempts alerts enabled to prevent re-entry.",
+      "Recommended: enhance lighting at scanning spot to improve speed."
+    ],
+    exceptions_ar: [
+      "محاولات مكررة: 6",
+      "استثناءات يدوية: 3",
+      "لا توجد انقطاعات كبيرة بالنظام أثناء الحدث."
+    ],
+    exceptions_en: [
+      "Duplicate attempts: 6",
+      "Manual overrides: 3",
+      "No major system downtime during the event."
+    ],
+    speed_ar: [
+      "متوسط تدفق الحضور يُقدّر حسب الذروة والزمن المعروض.",
+      "يوصى بتخصيص موظف إضافي عند الذروة لتقليل الازدحام."
+    ],
+    speed_en: [
+      "Average flow estimated based on peak window and timeline.",
+      "Recommended: add one more staff during peak to reduce queue."
+    ]
+  }
+};
+
+/** =========================
+ *  i18n
+ *  ========================= */
+const I18N = {
+  ar: {
+    reportTitle: "KRS INVITE — التقرير النهائي للمناسبة",
+    reportSub: "تقرير ملخص الحضور والتحقق — نسخة احترافية للطباعة وPDF",
+    printLabel:"طباعة / PDF",
+    exportLabel:"تصدير CSV",
+    summaryHead:"ملخص سريع",
+    summaryDesc:"أرقام رئيسية ونِسَب الأداء لعملية الدخول والتحقق.",
+    donutTitle:"نسبة الحضور (Checked-in)",
+    barTitle:"توزيع الحضور حسب الوقت",
+    detailsHead:"تفاصيل الدعوات (عينة)",
+    detailsDesc:"يعرض آخر العمليات أو عينة من السجل — يمكن استبداله ببياناتك الكاملة.",
+    thCode:"الكود",
+    thOwner:"الاسم",
+    thStatus:"الحالة",
+    thTime:"وقت الدخول",
+    thGate:"البوابة/الموظف",
+    insightsHead:"أهم ما يهم العميل",
+    insightsDesc:"مؤشرات ذكية: الذروة، سرعة الدخول، الاستثناءات، وجودة التشغيل.",
+    peakHead:"ذروة الحضور",
+    speedHead:"سرعة عملية الدخول",
+    exceptionsHead:"الاستثناءات والتنبيهات",
+    opsHead:"ملاحظات تشغيلية",
+    tableHint:"ملاحظة: هذا جدول قابل للتوسعة. إذا عندك CSV/Excel من النظام، أقول لك كيف تربطه مباشرة.",
+    langLabel:"English",
+    statusLive:"الحالة: مكتمل",
+    quality:"جودة التشغيل"
+  },
+  en: {
+    reportTitle: "KRS INVITE — Final Event Report",
+    reportSub: "Attendance & verification summary — Print/PDF ready",
+    printLabel:"Print / PDF",
+    exportLabel:"Export CSV",
+    summaryHead:"Quick Summary",
+    summaryDesc:"Key numbers and performance ratios for entry verification.",
+    donutTitle:"Attendance Ratio (Checked-in)",
+    barTitle:"Attendance by Time",
+    detailsHead:"Invites Details (Sample)",
+    detailsDesc:"Shows recent activity or a sample — replace with full dataset.",
+    thCode:"Code",
+    thOwner:"Name",
+    thStatus:"Status",
+    thTime:"Check-in Time",
+    thGate:"Gate/Staff",
+    insightsHead:"Client Highlights",
+    insightsDesc:"Smart indicators: peak, speed, exceptions, and operations quality.",
+    peakHead:"Peak Window",
+    speedHead:"Entry Speed",
+    exceptionsHead:"Exceptions & Alerts",
+    opsHead:"Operational Notes",
+    tableHint:"Note: This table is expandable. If you have CSV/Excel from your system, tell me and I’ll connect it.",
+    langLabel:"العربية",
+    statusLive:"Status: Completed",
+    quality:"Operations Quality"
+  }
+};
+
+let LANG = REPORT_DATA.languageDefault === "en" ? "en" : "ar";
+
+/** =========================
+ *  Helpers
+ *  ========================= */
+const $ = (id)=>document.getElementById(id);
+
+function nowStamp(){
+  const d = new Date();
+  const pad=(n)=>String(n).padStart(2,"0");
+  const dd = pad(d.getDate());
+  const mm = pad(d.getMonth()+1);
+  const yyyy = d.getFullYear();
+  let hh = d.getHours(); const min = pad(d.getMinutes());
+  const ampm = hh>=12 ? "PM":"AM";
+  hh = hh%12; if(hh===0) hh=12;
+  return `${dd}-${mm}-${yyyy}  ${hh}:${min} ${ampm}`;
+}
+
+function pct(n, d){
+  if(!d) return 0;
+  return Math.round((n/d)*1000)/10; // 1 decimal
+}
+
+function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
+
+function statusLabel(s){
+  if(LANG==="ar"){
+    if(s==="checked") return `<span class="tag"><span class="dot good"></span> تم الدخول</span>`;
+    if(s==="manual") return `<span class="tag"><span class="dot warn"></span> استثناء يدوي</span>`;
+    if(s==="rejected_duplicate") return `<span class="tag"><span class="dot bad"></span> مكرر</span>`;
+    if(s==="rejected_invalid") return `<span class="tag"><span class="dot bad"></span> غير صالح</span>`;
+    return `<span class="tag"><span class="dot"></span> —</span>`;
+  } else {
+    if(s==="checked") return `<span class="tag"><span class="dot good"></span> Checked-in</span>`;
+    if(s==="manual") return `<span class="tag"><span class="dot warn"></span> Manual</span>`;
+    if(s==="rejected_duplicate") return `<span class="tag"><span class="dot bad"></span> Duplicate</span>`;
+    if(s==="rejected_invalid") return `<span class="tag"><span class="dot bad"></span> Invalid</span>`;
+    return `<span class="tag"><span class="dot"></span> —</span>`;
+  }
+}
+
+function kpiBadgeStyle(type){
+  if(type==="good") return "badge b-good";
+  if(type==="warn") return "badge b-warn";
+  if(type==="bad") return "badge b-bad";
+  return "badge";
+}
+
+function formatNumber(n){
+  return (n??0).toLocaleString("en-US");
+}
+
+/** =========================
+ *  Compute metrics
+ *  ========================= */
+function compute(){
+  const T = REPORT_DATA.totals;
+  const total = Math.max(0, Number(T.totalInvites||0));
+  const checked = clamp(Number(T.checkedIn||0), 0, total);
+  const rejected = Math.max(0, Number(T.rejected||0));
+  const manual = Math.max(0, Number(T.manualOverrides||0));
+  const notUsed = Math.max(0, total - checked);
+
+  const attendancePct = pct(checked, total);
+  const notUsedPct = pct(notUsed, total);
+
+  const timeline = Array.isArray(REPORT_DATA.timeline) ? REPORT_DATA.timeline : [];
+  const sumTimeline = timeline.reduce((a,x)=>a+(Number(x.count)||0),0);
+  // Peak window
+  let peak = {label:"—", count:0};
+  for(const x of timeline){
+    const c = Number(x.count)||0;
+    if(c > peak.count) peak = {label:x.label, count:c};
+  }
+  const peakPctOfChecked = checked ? pct(peak.count, checked) : 0;
+
+  // Simple quality scoring (0..100)
+  const dupPenalty = Math.min(20, rejected*2);
+  const coverageBonus = Math.min(60, attendancePct*0.6);
+  const stabilityBonus = 20;
+  const quality = clamp(Math.round(coverageBonus + stabilityBonus - dupPenalty), 0, 100);
+
+  // Flow estimate
+  const windows = Math.max(1, timeline.length);
+  const avgPerWindow = (sumTimeline||checked) / windows;
+  const estPerHour = avgPerWindow * 4; // assuming 15-min windows
+  return {
+    total, checked, rejected, manual, notUsed,
+    attendancePct, notUsedPct,
+    timeline, sumTimeline,
+    peak, peakPctOfChecked,
+    quality,
+    avgPerWindow: Math.round(avgPerWindow),
+    estPerHour: Math.round(estPerHour)
+  };
+}
+
+/** =========================
+ *  Render
+ *  ========================= */
+function applyLang(){
+  const t = I18N[LANG];
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = (LANG==="ar") ? "rtl" : "ltr";
+
+  $("reportTitle").textContent = t.reportTitle;
+  $("reportSub").textContent = t.reportSub;
+
+  $("printLabel").textContent = t.printLabel;
+  $("exportLabel").textContent = t.exportLabel;
+
+  $("summaryHead").textContent = t.summaryHead;
+  $("summaryDesc").textContent = t.summaryDesc;
+
+  $("donutTitle").textContent = t.donutTitle;
+  $("barTitle").textContent = t.barTitle;
+
+  $("detailsHead").textContent = t.detailsHead;
+  $("detailsDesc").textContent = t.detailsDesc;
+
+  $("thCode").textContent = t.thCode;
+  $("thOwner").textContent = t.thOwner;
+  $("thStatus").textContent = t.thStatus;
+  $("thTime").textContent = t.thTime;
+  $("thGate").textContent = t.thGate;
+
+  $("insightsHead").textContent = t.insightsHead;
+  $("insightsDesc").textContent = t.insightsDesc;
+
+  $("peakHead").textContent = t.peakHead;
+  $("speedHead").textContent = t.speedHead;
+  $("exceptionsHead").textContent = t.exceptionsHead;
+  $("opsHead").textContent = t.opsHead;
+
+  $("tableHint").textContent = t.tableHint;
+
+  $("langLabel").textContent = t.langLabel;
+
+  $("statusPill").textContent = t.statusLive;
+  $("qualityPill").textContent = `${t.quality}: —`;
+
+  // Event pills
+  const ev = REPORT_DATA.event;
+  $("evNamePill").textContent = (LANG==="ar") ? (ev.name_ar||"—") : (ev.name_en||"—");
+  $("evDatePill").textContent = `${ev.date||"—"} · ${ev.timeRange||"—"}`;
+
+  $("venueLine").textContent = (LANG==="ar") ? (ev.venue_ar||"—") : (ev.venue_en||"—");
+  $("contactLine").textContent = ev.contact || "—";
+
+  $("generatedStamp").textContent = (LANG==="ar") ? `تم الإنشاء: ${nowStamp()}` : `Generated: ${nowStamp()}`;
+  $("reportIdLine").textContent = `REPORT ID: ${REPORT_DATA.reportId || "—"}`;
+  $("versionLine").textContent = REPORT_DATA.version || "v1.0";
+  $("signatureLine").textContent = REPORT_DATA.brand || "KRS INVITE";
+}
+
+function renderKPIs(m){
+  const kpiDefs = [
+    {
+      key:"total",
+      t_ar:"إجمالي الدعوات",
+      t_en:"Total Invites",
+      v: formatNumber(m.total),
+      s_ar:"إجمالي الأكواد المولدة",
+      s_en:"Total generated codes",
+      badge: "—",
+      tone:""
+    },
+    {
+      key:"checked",
+      t_ar:"تم الدخول",
+      t_en:"Checked-in",
+      v: formatNumber(m.checked),
+      s_ar:`نسبة الحضور: ${m.attendancePct}%`,
+      s_en:`Attendance: ${m.attendancePct}%`,
+      badge: (m.attendancePct>=80) ? ((LANG==="ar")?"ممتاز":"Excellent") : (m.attendancePct>=60 ? ((LANG==="ar")?"جيد":"Good") : ((LANG==="ar")?"متوسط":"Average")),
+      tone: (m.attendancePct>=80) ? "good" : (m.attendancePct>=60 ? "warn" : "bad")
+    },
+    {
+      key:"notUsed",
+      t_ar:"لم يتم استخدامه",
+      t_en:"Not used",
+      v: formatNumber(m.notUsed),
+      s_ar:`نسبة غير المستخدم: ${m.notUsedPct}%`,
+      s_en:`Unused: ${m.notUsedPct}%`,
+      badge: (m.notUsedPct<=20) ? ((LANG==="ar")?"منخفض":"Low") : (m.notUsedPct<=40 ? ((LANG==="ar")?"طبيعي":"Normal") : ((LANG==="ar")?"مرتفع":"High")),
+      tone: (m.notUsedPct<=20) ? "good" : (m.notUsedPct<=40 ? "warn" : "bad")
+    },
+    {
+      key:"rejected",
+      t_ar:"محاولات مرفوضة",
+      t_en:"Rejected attempts",
+      v: formatNumber(m.rejected),
+      s_ar:`استثناءات يدوية: ${formatNumber(m.manual)}`,
+      s_en:`Manual overrides: ${formatNumber(m.manual)}`,
+      badge: (m.rejected<=5) ? ((LANG==="ar")?"مسيطر":"Controlled") : (m.rejected<=12 ? ((LANG==="ar")?"تنبيه":"Attention") : ((LANG==="ar")?"مرتفع":"High")),
+      tone: (m.rejected<=5) ? "good" : (m.rejected<=12 ? "warn" : "bad")
+    },
+  ];
+
+  const grid = $("kpiGrid");
+  grid.innerHTML = "";
+  for(const k of kpiDefs){
+    const title = (LANG==="ar") ? k.t_ar : k.t_en;
+    const sub = (LANG==="ar") ? k.s_ar : k.s_en;
+    const badgeCls = kpiBadgeStyle(k.tone);
+    const el = document.createElement("div");
+    el.className = "kpi";
+    el.innerHTML = `
+      <div class="t">${title}</div>
+      <div class="v">${k.v}</div>
+      <div class="s">${sub}</div>
+      <div class="${badgeCls}">${k.badge}</div>
+    `;
+    grid.appendChild(el);
+  }
+
+  // Quality pill
+  const qText = (LANG==="ar") ? `جودة التشغيل: ${m.quality}/100` : `Operations Quality: ${m.quality}/100`;
+  $("qualityPill").textContent = qText;
+
+  // Status pill details
+  const staff = REPORT_DATA.totals.staffCount ?? "—";
+  const gates = REPORT_DATA.totals.gates ?? "—";
+  $("statusPill").textContent = (LANG==="ar")
+    ? `الحالة: مكتمل · بوابات: ${gates} · طاقم: ${staff}`
+    : `Status: Completed · Gates: ${gates} · Staff: ${staff}`;
+}
+
+function renderTable(){
+  const rows = Array.isArray(REPORT_DATA.rowsSample) ? REPORT_DATA.rowsSample : [];
+  $("detailsCount").textContent = (LANG==="ar") ? `عدد السجلات المعروضة: ${rows.length}` : `Shown rows: ${rows.length}`;
+  const tb = $("tbody");
+  tb.innerHTML = "";
+  for(const r of rows){
+    const tr = document.createElement("tr");
+    const owner = (LANG==="ar") ? (r.owner_ar||"—") : (r.owner_en||"—");
+    tr.innerHTML = `
+      <td class="mono">${escapeHtml(r.code||"—")}</td>
+      <td>${escapeHtml(owner)}</td>
+      <td>${statusLabel(r.status||"")}</td>
+      <td class="mono">${escapeHtml(r.time||"—")}</td>
+      <td>${escapeHtml(r.gate||"—")}</td>
+    `;
+    tb.appendChild(tr);
+  }
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, (m)=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[m]));
+}
+
+/** =========================
+ *  Canvas charts (no libs)
+ *  ========================= */
+function setupCanvas(canvas){
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+  canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+function getCssVar(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function drawDonut(m){
+  const canvas = $("donut");
+  const ctx = setupCanvas(canvas);
+  const w = canvas.getBoundingClientRect().width;
+  const h = canvas.getBoundingClientRect().height;
+  ctx.clearRect(0,0,w,h);
+
+  const cx = w/2, cy = h/2;
+  const r = Math.min(w,h)*0.34;
+  const thick = Math.max(16, r*0.30);
+
+  const used = m.checked;
+  const total = Math.max(1, m.total);
+  const ratio = used/total;
+
+  // background ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.strokeStyle = "rgba(255,255,255,.10)";
+  ctx.lineWidth = thick;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  // gradient stroke
+  const grad = ctx.createLinearGradient(cx-r, cy-r, cx+r, cy+r);
+  grad.addColorStop(0, "rgba(247,211,122,.95)");
+  grad.addColorStop(1, "rgba(207,162,74,.60)");
+
+  const start = -Math.PI/2;
+  const end = start + (Math.PI*2*ratio);
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, start, end);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = thick;
+  ctx.lineCap = "round";
+  ctx.shadowColor = "rgba(247,211,122,.20)";
+  ctx.shadowBlur = 18;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // center text
+  ctx.fillStyle = "rgba(233,238,247,.95)";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "800 34px " + getCssVar("--font");
+  ctx.fillText(`${m.attendancePct}%`, cx, cy - 10);
+
+  ctx.fillStyle = "rgba(168,179,198,.95)";
+  ctx.font = "800 13px " + getCssVar("--font");
+  const sub = (LANG==="ar") ? `تم الدخول ${formatNumber(m.checked)} من ${formatNumber(m.total)}` : `${formatNumber(m.checked)} of ${formatNumber(m.total)} checked`;
+  ctx.fillText(sub, cx, cy + 22);
+
+  $("donutMeta").textContent = (LANG==="ar")
+    ? `حضور: ${formatNumber(m.checked)} · غير مستخدم: ${formatNumber(m.notUsed)}`
+    : `Checked: ${formatNumber(m.checked)} · Unused: ${formatNumber(m.notUsed)}`;
+}
+
+function drawBars(m){
+  const canvas = $("bars");
+  const ctx = setupCanvas(canvas);
+  const w = canvas.getBoundingClientRect().width;
+  const h = canvas.getBoundingClientRect().height;
+  ctx.clearRect(0,0,w,h);
+
+  const pad = 18;
+  const chartW = w - pad*2;
+  const chartH = h - pad*2 - 18;
+
+  const tl = m.timeline || [];
+  const maxV = Math.max(1, ...tl.map(x=>Number(x.count)||0));
+  const barCount = tl.length || 1;
+  const gap = 8;
+  const barW = (chartW - gap*(barCount-1)) / barCount;
+
+  // axis baseline
+  ctx.strokeStyle = "rgba(255,255,255,.10)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, pad + chartH);
+  ctx.lineTo(pad + chartW, pad + chartH);
+  ctx.stroke();
+
+  // bars
+  for(let i=0;i<tl.length;i++){
+    const v = Number(tl[i].count)||0;
+    const x = pad + i*(barW+gap);
+    const bh = (v/maxV) * (chartH - 8);
+    const y = pad + chartH - bh;
+
+    // gradient
+    const g = ctx.createLinearGradient(x, y, x, y+bh);
+    g.addColorStop(0, "rgba(247,211,122,.75)");
+    g.addColorStop(1, "rgba(255,255,255,.08)");
+
+    roundRect(ctx, x, y, barW, bh, 10);
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    // top value
+    ctx.fillStyle = "rgba(233,238,247,.9)";
+    ctx.font = "900 11px " + getCssVar("--font");
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillText(String(v), x + barW/2, y - 6);
+
+    // bottom label (sparse)
+    if(i % 2 === 0){
+      ctx.fillStyle = "rgba(168,179,198,.9)";
+      ctx.font = "900 11px " + getCssVar("--font");
+      ctx.textBaseline = "top";
+      ctx.fillText(tl[i].label || "", x + barW/2, pad + chartH + 6);
     }
+  }
 
-    function openFinalReport(){
-      const total = Number(($('#kpiTotal').textContent||'0').replace(/[^\d]/g,''))||0;
-      const used  = Number(($('#kpiUsed').textContent||'0').replace(/[^\d]/g,''))||0;
-      const left  = Number(($('#kpiLeft').textContent||'0').replace(/[^\d]/g,''))||0;
-      const rate  = total>0 ? Math.round((used/total)*100) : 0;
+  $("barMeta").textContent = (LANG==="ar")
+    ? `متوسط/نافذة: ${formatNumber(m.avgPerWindow)} · تقديري/ساعة: ${formatNumber(m.estPerHour)}`
+    : `Avg/window: ${formatNumber(m.avgPerWindow)} · Est/hour: ${formatNumber(m.estPerHour)}`;
+}
 
-      const ins = computeInsights(rowsAll || []);
+function roundRect(ctx, x, y, w, h, r){
+  const rr = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr, y);
+  ctx.arcTo(x+w, y, x+w, y+h, rr);
+  ctx.arcTo(x+w, y+h, x, y+h, rr);
+  ctx.arcTo(x, y+h, x, y, rr);
+  ctx.arcTo(x, y, x+w, y, rr);
+  ctx.closePath();
+}
 
-      // update charts then export images
-      drawCharts(total, used, rowsAll || []);
-      const donutImg = canvasToImg('donut');
-      const barImg   = canvasToImg('bars');
+/** =========================
+ *  Insights
+ *  ========================= */
+function renderInsights(m){
+  // Peak
+  const peakLine = (LANG==="ar")
+    ? `أعلى نافذة حضور كانت عند <strong>${m.peak.label}</strong> بعدد <strong>${formatNumber(m.peak.count)}</strong> دخول (${m.peakPctOfChecked}% من إجمالي الحضور).`
+    : `Peak window was <strong>${m.peak.label}</strong> with <strong>${formatNumber(m.peak.count)}</strong> entries (${m.peakPctOfChecked}% of total checked-in).`;
+  $("peakText").innerHTML = peakLine;
 
-      const isAr = state.lang==='ar';
-      const createdStr = new Date().toLocaleString(isAr?'ar-EG':'en-GB');
+  // Speed
+  const speed = $("speedList");
+  speed.innerHTML = "";
+  const speedItems = (LANG==="ar")
+    ? [
+        `تقدير التدفق: <strong>${formatNumber(m.estPerHour)}</strong> ضيف/ساعة (تقريبي).`,
+        `متوسط كل نافذة: <strong>${formatNumber(m.avgPerWindow)}</strong> دخول.`,
+        ...(REPORT_DATA.notes.speed_ar || [])
+      ]
+    : [
+        `Estimated flow: <strong>${formatNumber(m.estPerHour)}</strong> guests/hour (approx).`,
+        `Average per window: <strong>${formatNumber(m.avgPerWindow)}</strong> entries.`,
+        ...(REPORT_DATA.notes.speed_en || [])
+      ];
+  for(const it of speedItems){
+    const li = document.createElement("li");
+    li.innerHTML = it;
+    speed.appendChild(li);
+  }
 
-      const filterStr = (state.from || state.to)
-        ? (isAr ? `فلتر التاريخ: ${state.from||'—'} → ${state.to||'—'}` : `Date filter: ${state.from||'—'} → ${state.to||'—'}`)
-        : (isAr ? 'بدون فلتر تاريخ' : 'No date filter');
+  // Exceptions
+  const ex = $("exceptionsList");
+  ex.innerHTML = "";
+  const exItems = (LANG==="ar")
+    ? [
+        `محاولات مرفوضة: <strong>${formatNumber(m.rejected)}</strong>`,
+        `استثناءات يدوية: <strong>${formatNumber(m.manual)}</strong>`,
+        ...(REPORT_DATA.notes.exceptions_ar || [])
+      ]
+    : [
+        `Rejected attempts: <strong>${formatNumber(m.rejected)}</strong>`,
+        `Manual overrides: <strong>${formatNumber(m.manual)}</strong>`,
+        ...(REPORT_DATA.notes.exceptions_en || [])
+      ];
+  for(const it of exItems){
+    const li = document.createElement("li");
+    li.innerHTML = it;
+    ex.appendChild(li);
+  }
 
-      const firstStr = ins.first ? fmtDate(ins.first) : '—';
-      const lastStr  = ins.last  ? fmtDate(ins.last)  : '—';
-      const peakStr  = (ins.peakHour==='—')
-        ? '—'
-        : (isAr ? `${ins.peakHour}:00 (عدد ${ins.peakCount})` : `${ins.peakHour}:00 (count ${ins.peakCount})`);
-      const todayStr = String(ins.today ?? 0);
+  // Ops
+  const ops = $("opsList");
+  ops.innerHTML = "";
+  const opsItems = (LANG==="ar")
+    ? [
+        `نقطة دخول/بوابة: <strong>${formatNumber(REPORT_DATA.totals.gates||1)}</strong>`,
+        `عدد الطاقم: <strong>${formatNumber(REPORT_DATA.totals.staffCount||1)}</strong>`,
+        ...(REPORT_DATA.notes.ops_ar || [])
+      ]
+    : [
+        `Gate(s): <strong>${formatNumber(REPORT_DATA.totals.gates||1)}</strong>`,
+        `Staff: <strong>${formatNumber(REPORT_DATA.totals.staffCount||1)}</strong>`,
+        ...(REPORT_DATA.notes.ops_en || [])
+      ];
+  for(const it of opsItems){
+    const li = document.createElement("li");
+    li.innerHTML = it;
+    ops.appendChild(li);
+  }
+}
 
-      const eventName = (state.event && state.event!=='__ALL__')
-        ? state.event
-        : (STR[state.lang].all || 'ALL');
+/** =========================
+ *  Export CSV
+ *  ========================= */
+function exportCSV(){
+  const rows = Array.isArray(REPORT_DATA.rowsSample) ? REPORT_DATA.rowsSample : [];
+  const header = (LANG==="ar")
+    ? ["Code","Owner","Status","Time","Gate"]
+    : ["Code","Owner","Status","Time","Gate"];
+  const lines = [header.join(",")];
 
-      const html = buildFinalReportHTML({
-        lang: state.lang,
-        logoUrl: LOGO_URL,
-        eventName, total, used, left, rate,
-        firstStr, lastStr, peakStr, todayStr,
-        donutImg, barImg,
-        createdStr, filterStr
-      });
+  for(const r of rows){
+    const owner = (LANG==="ar") ? (r.owner_ar||"") : (r.owner_en||"");
+    const status = r.status||"";
+    const cols = [
+      safeCsv(r.code||""),
+      safeCsv(owner),
+      safeCsv(status),
+      safeCsv(r.time||""),
+      safeCsv(r.gate||"")
+    ];
+    lines.push(cols.join(","));
+  }
 
-      const w = window.open('', '_blank');
-      w.document.open();
-      w.document.write(html);
-      w.document.close();
-    }
+  const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  const ev = (LANG==="ar") ? (REPORT_DATA.event.name_ar||"event") : (REPORT_DATA.event.name_en||"event");
+  a.download = `${REPORT_DATA.brand}-report-${ev}-${REPORT_DATA.event.date}.csv`.replace(/\s+/g,"_");
+  a.href = URL.createObjectURL(blob);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+}
+function safeCsv(v){
+  const s = String(v).replace(/"/g,'""');
+  return `"${s}"`;
+}
 
-    /* ========= Wire UI ========= */
-    document.addEventListener('DOMContentLoaded', async ()=>{
-      setTheme(state.theme);
-      applyLogo();
-      applyLang();
+/** =========================
+ *  Boot
+ *  ========================= */
+function renderAll(){
+  applyLang();
 
-      await loadEvents();
-      startStream();
+  const ev = REPORT_DATA.event;
+  $("evNamePill").textContent = (LANG==="ar") ? (ev.name_ar||"—") : (ev.name_en||"—");
+  $("evDatePill").textContent = `${ev.date||"—"} · ${ev.timeRange||"—"}`;
 
-      $('#themeBtn').addEventListener('click', ()=>{
-        setTheme(state.theme==='dark' ? 'light' : 'dark');
-      });
+  $("reportIdLine").textContent = `REPORT ID: ${REPORT_DATA.reportId || "—"}`;
 
-      $('#langBtn').addEventListener('click', ()=>{
-        state.lang = state.lang==='ar' ? 'en' : 'ar';
-        localStorage.setItem('krs:dash:lang', state.lang);
-        applyLang();
-        loadEvents().then(()=>startStream());
-        applyFilters();
-      });
+  const m = compute();
+  renderKPIs(m);
+  renderTable();
+  renderInsights(m);
 
-      $('#refreshBtn').addEventListener('click', ()=> location.reload());
+  // Redraw charts after layout settles
+  requestAnimationFrame(()=>{
+    drawDonut(m);
+    drawBars(m);
+  });
+}
 
-      $('#eventSelect').addEventListener('change', (e)=>{
-        state.event = e.target.value;
-        localStorage.setItem('krs:dash:event', state.event);
-        $('#hdrEvent').textContent = (state.event==='__ALL__') ? STR[state.lang].all : state.event;
-        startStream();
-      });
+$("printBtn").addEventListener("click", ()=> window.print());
+$("exportBtn").addEventListener("click", exportCSV);
+$("langToggle").addEventListener("click", ()=>{
+  LANG = (LANG==="ar") ? "en" : "ar";
+  renderAll();
+});
 
-      $('#searchInput').addEventListener('input', applyFilters);
+// Responsive redraw on resize (debounced)
+let tmr=null;
+window.addEventListener("resize", ()=>{
+  clearTimeout(tmr);
+  tmr=setTimeout(()=>renderAll(), 160);
+});
 
-      $('#exportBtn').addEventListener('click', exportCSV);
-      $('#printBtn').addEventListener('click', printDashboard);
-
-      $('#applyDate').addEventListener('click', ()=>{
-        state.from = $('#dateFrom').value || '';
-        state.to   = $('#dateTo').value || '';
-        applyFilters();
-      });
-
-      $('#clearDate').addEventListener('click', ()=>{
-        state.from=''; state.to='';
-        $('#dateFrom').value=''; $('#dateTo').value='';
-        applyFilters();
-      });
-
-      $('#reportBtn').addEventListener('click', openFinalReport);
-    });
-  </script>
+// Start
+renderAll();
+</script>
 </body>
 </html>
