@@ -1,31 +1,27 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KRS INVITE — Dashboard + Final Report (Ultra Lux)</title>
+  <title>KRS INVITE — Dashboard + Final Report</title>
 
   <style>
     :root{
-      /* ===== Dark Ultra Lux ===== */
       --bg0:#050711; --bg1:#0a1020;
       --ink:#eef2ff; --muted:#a7b0c3;
       --card:rgba(255,255,255,.07);
       --card2:rgba(255,255,255,.045);
       --stroke:rgba(255,255,255,.11);
       --stroke2:rgba(255,255,255,.16);
-
       --gold:#d6b15e; --gold2:#b48a18;
       --blue:#1e40af; --rose:#be123c; --green:#047857;
-
       --shadow:0 20px 70px rgba(0,0,0,.50);
       --shadow2:0 14px 45px rgba(0,0,0,.30);
-      --r16:16px; --r20:20px; --r24:24px; --r28:28px;
+      --r20:20px; --r24:24px;
       --focus:0 0 0 4px rgba(214,177,94,.14);
     }
 
     [data-theme="light"]{
-      /* ===== Light Ultra Clean ===== */
       --bg0:#f8fafc; --bg1:#eef2ff;
       --ink:#0b1220; --muted:#475569;
       --card:rgba(0,0,0,.05);
@@ -54,7 +50,6 @@
     .container{max-width:1120px;margin:0 auto;padding:14px}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 
-    /* ===== Topbar ===== */
     .topbar{
       position:sticky;top:0;z-index:30;
       background: rgba(6,8,15,.70);
@@ -63,7 +58,7 @@
     }
     [data-theme="light"] .topbar{background: rgba(248,250,252,.75)}
 
-    .brand{display:flex;align-items:center;gap:12px;min-width:300px}
+    .brand{display:flex;align-items:center;gap:12px}
     .logoWrap{
       width:46px;height:46px;border-radius:18px;
       border:1px solid rgba(214,177,94,.35);
@@ -85,11 +80,12 @@
       0%{transform:translateX(-32%) rotate(25deg)}
       100%{transform:translateX(32%) rotate(25deg)}
     }
-    .logoImg{width:34px;height:34px;object-fit:contain;border-radius:999px;display:none;filter:drop-shadow(0 10px 20px rgba(0,0,0,.35))}
+
+    .logoImg{width:34px;height:34px;object-fit:contain;border-radius:999px;display:none}
     .logoFallback{font-weight:1100;letter-spacing:.8px;color:#1b1405;background:linear-gradient(180deg,#1b1405,#000);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:12px}
 
     .hdrOrg{color:var(--muted);font-size:12px;letter-spacing:.8px}
-    .hdrTitle{font-weight:1100;font-size:15px;letter-spacing:.2px}
+    .hdrTitle{font-weight:1100;font-size:15px}
     .hdrSub{color:var(--muted);font-size:12px;margin-top:3px}
 
     .actions{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap}
@@ -113,10 +109,6 @@
     .btn.primary{
       background: linear-gradient(135deg, rgba(214,177,94,.34), rgba(180,138,24,.12));
       border-color: rgba(214,177,94,.40);
-    }
-    .btn.danger{
-      background: linear-gradient(135deg, rgba(190,18,60,.26), rgba(190,18,60,.08));
-      border-color: rgba(244,63,94,.25);
     }
 
     .select,.input{
@@ -155,7 +147,6 @@
     @media(max-width:920px){.grid-3{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}}
     @media(max-width:560px){.grid-4{grid-template-columns:1fr}.container{padding:12px}}
 
-    /* ===== KPI Cards ===== */
     .kpi{
       position:relative; overflow:hidden;
       border:none;
@@ -167,7 +158,7 @@
       box-shadow: var(--shadow);
     }
     .kpi .t{font-weight:1100;font-size:12px;letter-spacing:.4px;opacity:.95}
-    .kpi .n{font-size:28px;font-weight:1200;letter-spacing:.5px}
+    .kpi .n{font-size:28px;font-weight:1200}
     .kpi:before{
       content:"";
       position:absolute; inset:-65%;
@@ -181,7 +172,6 @@
     .kpi.rose{background:linear-gradient(135deg, rgba(190,18,60,1), rgba(190,18,60,.45))}
     .kpi.green{background:linear-gradient(135deg, rgba(4,120,87,1), rgba(4,120,87,.45))}
 
-    /* ===== Table ===== */
     .tableWrap{
       border-radius: var(--r24);
       overflow:auto;
@@ -197,7 +187,6 @@
       background: rgba(255,255,255,.06);
       border-bottom:1px solid var(--stroke);
       font-weight:1100;
-      letter-spacing:.2px;
       text-align:start;
       backdrop-filter: blur(8px);
     }
@@ -214,7 +203,6 @@
     .badge.ok{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.10);color:rgba(34,197,94,.95)}
     .badge.no{border-color:rgba(244,63,94,.25);background:rgba(244,63,94,.10);color:rgba(244,63,94,.95)}
 
-    /* ===== Small Insight list ===== */
     .insGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     @media(max-width:640px){.insGrid{grid-template-columns:1fr}}
     .insItem{
@@ -226,7 +214,6 @@
     .insK{font-size:12px;color:var(--muted);font-weight:1100}
     .insV{margin-top:6px;font-weight:1200}
 
-    /* ===== Print hint ===== */
     .hintPill{
       display:inline-flex;align-items:center;gap:8px;
       padding:8px 10px;border-radius:999px;
@@ -237,7 +224,7 @@
       white-space:nowrap;
     }
 
-    /* ===== Print (for dashboard print only) ===== */
+    /* Print dashboard (not report) */
     @media print{
       *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
       body{background:#fff;color:#000}
@@ -247,13 +234,11 @@
       tbody td{color:#111}
     }
 
-    /* Hidden chart canvases (we still render for report export) */
     .hiddenCanvases{position:absolute;left:-99999px;top:-99999px;opacity:0;pointer-events:none}
   </style>
 </head>
 
 <body>
-  <!-- Header -->
   <div class="topbar">
     <div class="container row">
       <div class="brand">
@@ -263,9 +248,7 @@
         </div>
         <div>
           <div class="hdrOrg" id="hdrOrg">KRS INVITE</div>
-          <div class="hdrTitle">
-            <span id="hdrMain">لوحة التحكم — </span><span id="hdrEvent">—</span>
-          </div>
+          <div class="hdrTitle"><span id="hdrMain">لوحة التحكم — </span><span id="hdrEvent">—</span></div>
           <div class="hdrSub" id="hdrSub">الحضور المباشر وحالة الدعوات • Live attendance & status</div>
         </div>
       </div>
@@ -280,7 +263,6 @@
   </div>
 
   <div class="container">
-    <!-- Filters -->
     <div class="grid grid-3" style="margin-top:14px">
       <div class="card soft">
         <div class="titleMini" id="lblEvent">الحدث</div>
@@ -299,7 +281,6 @@
       </div>
     </div>
 
-    <!-- Date Filter -->
     <div class="card soft" style="margin-top:12px">
       <div class="row" style="align-items:end">
         <div style="flex:1;min-width:200px">
@@ -318,47 +299,21 @@
       </div>
     </div>
 
-    <!-- KPIs -->
     <div class="grid grid-4" style="margin-top:12px">
-      <div class="kpi blue">
-        <div class="t" id="kpiTotalLbl">الإجمالي</div>
-        <div id="kpiTotal" class="n">—</div>
-      </div>
-      <div class="kpi gold">
-        <div class="t" id="kpiUsedLbl">الحضور</div>
-        <div id="kpiUsed" class="n">—</div>
-      </div>
-      <div class="kpi rose">
-        <div class="t" id="kpiLeftLbl">المتبقي</div>
-        <div id="kpiLeft" class="n">—</div>
-      </div>
-      <div class="kpi green">
-        <div class="t" id="kpiRateLbl">نسبة الحضور</div>
-        <div id="kpiRate" class="n">—%</div>
-      </div>
+      <div class="kpi blue"><div class="t" id="kpiTotalLbl">الإجمالي</div><div id="kpiTotal" class="n">—</div></div>
+      <div class="kpi gold"><div class="t" id="kpiUsedLbl">الحضور</div><div id="kpiUsed" class="n">—</div></div>
+      <div class="kpi rose"><div class="t" id="kpiLeftLbl">المتبقي</div><div id="kpiLeft" class="n">—</div></div>
+      <div class="kpi green"><div class="t" id="kpiRateLbl">نسبة الحضور</div><div id="kpiRate" class="n">—%</div></div>
     </div>
 
-    <!-- Insights + Table -->
     <div class="grid grid-2" style="margin-top:12px">
       <div class="card soft">
         <div class="titleMini" id="insTitle">مؤشرات سريعة يحب العميل يشوفها</div>
         <div class="insGrid">
-          <div class="insItem">
-            <div class="insK" id="insFirstK">أول دخول</div>
-            <div class="insV" id="insFirstV">—</div>
-          </div>
-          <div class="insItem">
-            <div class="insK" id="insLastK">آخر دخول</div>
-            <div class="insV" id="insLastV">—</div>
-          </div>
-          <div class="insItem">
-            <div class="insK" id="insPeakK">أكثر ساعة ازدحام</div>
-            <div class="insV" id="insPeakV">—</div>
-          </div>
-          <div class="insItem">
-            <div class="insK" id="insTodayK">مسحات اليوم</div>
-            <div class="insV" id="insTodayV">—</div>
-          </div>
+          <div class="insItem"><div class="insK" id="insFirstK">أول دخول</div><div class="insV" id="insFirstV">—</div></div>
+          <div class="insItem"><div class="insK" id="insLastK">آخر دخول</div><div class="insV" id="insLastV">—</div></div>
+          <div class="insItem"><div class="insK" id="insPeakK">أكثر ساعة ازدحام</div><div class="insV" id="insPeakV">—</div></div>
+          <div class="insItem"><div class="insK" id="insTodayK">مسحات اليوم</div><div class="insV" id="insTodayV">—</div></div>
         </div>
         <div class="muted" id="insNote" style="margin-top:10px;line-height:1.7">
           * التقرير النهائي الفاخر يعطي العميل صورة كاملة: النسبة، الأعداد، وأهم مؤشرات الدخول + رسوم ملونة.
@@ -382,7 +337,6 @@
       </div>
     </div>
 
-    <!-- Hidden canvases used for final report images -->
     <div class="hiddenCanvases">
       <canvas id="donut" width="900" height="520"></canvas>
       <canvas id="bars" width="900" height="520"></canvas>
@@ -393,8 +347,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getFirestore, collection, query, where, onSnapshot, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-    /* ========= OPTIONAL: ضع رابط شعار KRS INVITE الشفاف ========= */
-    const LOGO_URL = ""; // مثال: "https://example.com/krs-invite-logo.png"
+    /* ========= ضع رابط شعار KRS INVITE (اختياري) ========= */
+    const LOGO_URL = ""; // مثال: "https://.../krs-invite.png"
 
     /* ========= i18n ========= */
     const STR = {
@@ -558,11 +512,12 @@
 
     /* ========= Data ========= */
     let unsub=null, rowsAll=[], rowsView=[];
-    // rowsAll contains only scanned entries that have scannedAt (for table/reports). KPIs are computed from full snap.
+    // rowsAll = only records that have scannedAt (for insights/report tables)
+    // KPIs computed from full snapshot (total/used)
 
     async function loadEvents(){
       const ref = collection(db,'invites');
-      const snap = await getDocs(query(ref, limit(800)));
+      const snap = await getDocs(query(ref, limit(1200)));
 
       const setE = new Set();
       snap.forEach(d=>{
@@ -597,7 +552,7 @@
 
       unsub = onSnapshot(qAll, snap=>{
         let total=0, used=0;
-        const rec=[]; // scanned entries with time
+        const rec=[];
 
         snap.forEach(d=>{
           const x=d.data();
@@ -619,8 +574,8 @@
         rowsAll = rec.sort((a,b)=> (b.scannedAt?.getTime?.()||0) - (a.scannedAt?.getTime?.()||0));
         applyFilters();
 
-        // Insights + charts refresh
-        renderInsights(total, used, rowsAll);
+        const ins = computeInsights(rowsAll);
+        renderInsights(ins);
         drawCharts(total, used, rowsAll);
       });
     }
@@ -745,18 +700,19 @@
 
     function printDashboard(){ window.print(); }
 
-    /* ========= Insights ========= */
+    /* ========= Insights (SAFE) ========= */
     function fmtDate(d){
-      if(!d) return '—';
+      if(!(d instanceof Date) || isNaN(d.getTime())) return '—';
       return d.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB');
     }
 
     function computeInsights(scans){
-      const arr = (scans||[]).filter(r=>r.scannedAt instanceof Date).sort((a,b)=>a.scannedAt-b.scannedAt);
+      const arr = (scans||[]).filter(r=>r.scannedAt instanceof Date && !isNaN(r.scannedAt.getTime()))
+                             .sort((a,b)=>a.scannedAt-b.scannedAt);
+
       const first = arr[0]?.scannedAt || null;
       const last  = arr[arr.length-1]?.scannedAt || null;
 
-      // Peak hour
       const byHour = new Map();
       for(const r of arr){
         const h = String(r.scannedAt.getHours()).padStart(2,'0');
@@ -767,7 +723,6 @@
         if(c>peakCount){ peakCount=c; peakHour=h; }
       }
 
-      // Today count
       const start = new Date(); start.setHours(0,0,0,0);
       let today = 0;
       for(const r of arr){
@@ -777,10 +732,7 @@
       return { first, last, peakHour, peakCount, today };
     }
 
-    function renderInsights(total, used, scans){
-      const L = STR[state.lang] || STR.en;
-      const ins = computeInsights(scans);
-
+    function renderInsights(ins){
       $('#insFirstV').textContent = fmtDate(ins.first);
       $('#insLastV').textContent  = fmtDate(ins.last);
 
@@ -792,28 +744,35 @@
           : `${ins.peakHour}:00 (count ${ins.peakCount})`;
       }
 
-      $('#insTodayV').textContent = String(ins.today);
+      $('#insTodayV').textContent = String(ins.today ?? 0);
     }
 
     /* ========= Charts (Canvas) ========= */
-    function clearCanvas(ctx,w,h){
-      ctx.clearRect(0,0,w,h);
+    function roundRect(ctx, x, y, w, h, r, fill, stroke){
+      const rr = Math.min(r, w/2, h/2);
+      ctx.beginPath();
+      ctx.moveTo(x+rr, y);
+      ctx.arcTo(x+w, y, x+w, y+h, rr);
+      ctx.arcTo(x+w, y+h, x, y+h, rr);
+      ctx.arcTo(x, y+h, x, y, rr);
+      ctx.arcTo(x, y, x+w, y, rr);
+      ctx.closePath();
+      if(fill) ctx.fill();
+      if(stroke) ctx.stroke();
     }
 
     function drawDonut(total, used){
       const c = document.getElementById('donut');
       const ctx = c.getContext('2d');
       const W=c.width, H=c.height;
-      clearCanvas(ctx,W,H);
+      ctx.clearRect(0,0,W,H);
 
       const left = Math.max(total-used,0);
       const rate = total>0 ? Math.round((used/total)*100) : 0;
 
-      // Background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0,0,W,H);
 
-      // Lux header line
       ctx.fillStyle = '#0b1220';
       ctx.font = '900 28px system-ui';
       ctx.textAlign = 'start';
@@ -823,14 +782,15 @@
       ctx.font = '700 14px system-ui';
       ctx.fillText(state.lang==='ar' ? 'حضور / متبقي' : 'Checked-in / Remaining', 52, 98);
 
-      // Donut settings
       const cx = W*0.32, cy = H*0.58;
       const rOuter = 170, rInner = 105;
 
       const totalVal = Math.max(total, 1);
       const usedAng = (used/totalVal) * Math.PI*2;
 
-      // ring bg
+      const start = -Math.PI/2;
+      const end = start + usedAng;
+
       ctx.beginPath();
       ctx.arc(cx, cy, rOuter, 0, Math.PI*2);
       ctx.arc(cx, cy, rInner, Math.PI*2, 0, true);
@@ -838,9 +798,6 @@
       ctx.fillStyle = '#eef2f7';
       ctx.fill();
 
-      // used arc (gold)
-      const start = -Math.PI/2;
-      const end = start + usedAng;
       ctx.beginPath();
       ctx.arc(cx, cy, rOuter, start, end);
       ctx.arc(cx, cy, rInner, end, start, true);
@@ -848,7 +805,6 @@
       ctx.fillStyle = '#d6b15e';
       ctx.fill();
 
-      // remaining arc (blue tint)
       ctx.beginPath();
       ctx.arc(cx, cy, rOuter, end, start + Math.PI*2);
       ctx.arc(cx, cy, rInner, start + Math.PI*2, end, true);
@@ -858,38 +814,33 @@
       ctx.fill();
       ctx.globalAlpha = 1;
 
-      // Center text
       ctx.fillStyle = '#0b1220';
       ctx.font = '1000 44px system-ui';
       ctx.textAlign = 'center';
       ctx.fillText(rate + '%', cx, cy+12);
+
       ctx.fillStyle = '#475569';
       ctx.font = '800 14px system-ui';
       ctx.fillText(state.lang==='ar' ? 'نسبة الحضور' : 'Attendance', cx, cy+44);
 
-      // Right KPIs
       const bx = W*0.62, by = H*0.28;
       const boxW = W*0.33, boxH = 90, gap=16;
+      const L = STR[state.lang] || STR.en;
 
       function kpiBox(y, title, val, color){
-        // shadow
         ctx.fillStyle = 'rgba(2,6,23,.08)';
         roundRect(ctx, bx+4, y+4, boxW, boxH, 18, true, false);
 
-        // box
         ctx.fillStyle = '#ffffff';
         roundRect(ctx, bx, y, boxW, boxH, 18, true, false);
 
-        // border
         ctx.strokeStyle = 'rgba(15,23,42,.10)';
         ctx.lineWidth = 2;
         roundRect(ctx, bx, y, boxW, boxH, 18, false, true);
 
-        // left color bar
         ctx.fillStyle = color;
         roundRect(ctx, bx+14, y+18, 10, boxH-36, 10, true, false);
 
-        // text
         ctx.fillStyle = '#475569';
         ctx.font = '900 14px system-ui';
         ctx.textAlign = 'start';
@@ -900,12 +851,10 @@
         ctx.fillText(val, bx+34, y+70);
       }
 
-      const L = STR[state.lang] || STR.en;
       kpiBox(by, L.total, String(total), '#1e40af');
       kpiBox(by + boxH + gap, L.used, String(used), '#d6b15e');
       kpiBox(by + (boxH + gap)*2, L.left, String(left), '#be123c');
 
-      // Footer watermark
       ctx.save();
       ctx.globalAlpha = 0.06;
       ctx.translate(W*0.78, H*0.86);
@@ -921,7 +870,7 @@
       const c = document.getElementById('bars');
       const ctx = c.getContext('2d');
       const W=c.width, H=c.height;
-      clearCanvas(ctx,W,H);
+      ctx.clearRect(0,0,W,H);
 
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0,0,W,H);
@@ -933,9 +882,8 @@
 
       ctx.fillStyle = '#475569';
       ctx.font = '700 14px system-ui';
-      ctx.fillText(state.lang==='ar' ? 'آخر 60 دقيقة (مقسمة كل 5 دقائق)' : 'Last 60 minutes (5-min bins)', 52, 98);
+      ctx.fillText(state.lang==='ar' ? 'آخر 60 دقيقة (كل 5 دقائق)' : 'Last 60 minutes (5-min bins)', 52, 98);
 
-      // bins: last 60 minutes, 12 bins of 5 min
       const now = new Date();
       const bins = Array(12).fill(0);
       const start = new Date(now.getTime() - 60*60*1000);
@@ -944,19 +892,18 @@
         if(!(r.scannedAt instanceof Date)) continue;
         const t = r.scannedAt.getTime();
         if(t < start.getTime() || t > now.getTime()) continue;
-        const minsAgo = Math.floor((now.getTime() - t)/60000); // 0..60
-        const bin = Math.min(11, Math.floor((59 - minsAgo)/5)); // newest on right
-        bins[bin] += 1;
+
+        const minsAgo = Math.floor((now.getTime() - t)/60000);
+        const idx = Math.max(0, Math.min(11, Math.floor((59 - minsAgo)/5)));
+        bins[idx] += 1;
       }
 
       const maxV = Math.max(1, ...bins);
       const chartX=52, chartY=150, chartW=W-104, chartH=300;
 
-      // background box
       ctx.fillStyle = 'rgba(2,6,23,.04)';
       roundRect(ctx, chartX, chartY, chartW, chartH, 22, true, false);
 
-      // grid lines
       ctx.strokeStyle = 'rgba(15,23,42,.10)';
       ctx.lineWidth = 1;
       for(let i=0;i<=4;i++){
@@ -964,7 +911,6 @@
         ctx.beginPath(); ctx.moveTo(chartX+20, y); ctx.lineTo(chartX+chartW-20, y); ctx.stroke();
       }
 
-      // bars
       const pad=18;
       const innerX = chartX + 20;
       const innerY = chartY + 18;
@@ -972,6 +918,7 @@
       const innerH = chartH - 36;
 
       const barW = innerW / 12;
+
       for(let i=0;i<12;i++){
         const v = bins[i];
         const h = Math.round((v/maxV)*innerH);
@@ -979,7 +926,6 @@
         const y = innerY + (innerH - h);
         const w = barW - pad*0.5;
 
-        // gradient-ish: gold for high, blue for low (simple rule)
         const t = v/maxV;
         const color = t>0.55 ? '#d6b15e' : '#1e40af';
         const alpha = t>0.55 ? 0.95 : 0.35 + t*0.5;
@@ -989,14 +935,12 @@
         roundRect(ctx, x, y, w, h, 14, true, false);
         ctx.globalAlpha = 1;
 
-        // value
         ctx.fillStyle = '#0b1220';
         ctx.font = '900 13px system-ui';
         ctx.textAlign = 'center';
         ctx.fillText(String(v), x + w/2, y - 8);
       }
 
-      // X labels
       ctx.fillStyle = '#475569';
       ctx.font = '800 12px system-ui';
       ctx.textAlign = 'center';
@@ -1007,7 +951,6 @@
         ctx.fillText(lbl, x, chartY + chartH + 34);
       }
 
-      // watermark
       ctx.save();
       ctx.globalAlpha = 0.06;
       ctx.translate(W*0.78, H*0.86);
@@ -1019,239 +962,122 @@
       ctx.restore();
     }
 
-    function roundRect(ctx, x, y, w, h, r, fill, stroke){
-      const rr = Math.min(r, w/2, h/2);
-      ctx.beginPath();
-      ctx.moveTo(x+rr, y);
-      ctx.arcTo(x+w, y, x+w, y+h, rr);
-      ctx.arcTo(x+w, y+h, x, y+h, rr);
-      ctx.arcTo(x, y+h, x, y, rr);
-      ctx.arcTo(x, y, x+w, y, rr);
-      ctx.closePath();
-      if(fill) ctx.fill();
-      if(stroke) ctx.stroke();
-    }
-
     function drawCharts(total, used, scans){
       drawDonut(total, used);
       drawBars(scans);
     }
 
     function canvasToImg(id){
-      const c = document.getElementById(id);
-      if(!c) return '';
-      try{ return c.toDataURL('image/png'); }catch(e){ return ''; }
+      try{
+        const c = document.getElementById(id);
+        if(!c) return '';
+        return c.toDataURL('image/png');
+      }catch(e){
+        return '';
+      }
     }
 
-    /* ========= Final Report (Ultra Lux Multi-Section) ========= */
+    /* ========= Final Report (NO external dependencies / no errors) ========= */
     function buildFinalReportHTML(payload){
       const {
-        lang, theme, logoUrl,
+        lang, logoUrl,
         eventName, total, used, left, rate,
-        insights, donutImg, barImg,
-        createdAt, filterFrom, filterTo
+        firstStr, lastStr, peakStr, todayStr,
+        donutImg, barImg,
+        createdStr, filterStr
       } = payload;
 
       const isAr = lang==='ar';
-      const L = STR[lang] || STR.en;
+      const reportTitle = isAr ? 'التقرير النهائي للفعالية' : 'Final Event Report';
 
-      const peakText = (insights.peakHour==='—')
-        ? '—'
-        : (isAr ? `${insights.peakHour}:00 (عدد ${insights.peakCount})` : `${insights.peakHour}:00 (count ${insights.peakCount})`);
-
-      const reportCSS = `
-        :root{
-          --ink:#0b1220; --muted:#475569; --line:#e5e7eb;
-          --gold:#d6b15e; --gold2:#b48a18; --blue:#1e40af; --rose:#be123c; --green:#047857;
-          --shadow:0 18px 55px rgba(2,6,23,.12);
-          --r18:18px; --r22:22px; --r26:26px;
-        }
-        *{box-sizing:border-box; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;}
-        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;color:var(--ink);background:#fff}
-        .page{max-width:1020px;margin:0 auto;padding:22px}
-
-        /* ===== Cover ===== */
+      const css = `
+        *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;background:#fff;color:#0b1220}
+        .page{max-width:1040px;margin:0 auto;padding:22px}
         .cover{
-          border-radius:28px;
-          border:1px solid var(--line);
-          padding:22px;
-          box-shadow:var(--shadow);
+          border:1px solid #e5e7eb;border-radius:28px;padding:22px;
+          box-shadow:0 18px 55px rgba(2,6,23,.12);
           background:
             radial-gradient(950px 300px at 10% 0%, rgba(214,177,94,.22), transparent 60%),
             radial-gradient(900px 280px at 88% 60%, rgba(30,64,175,.12), transparent 62%),
             radial-gradient(900px 280px at 72% 100%, rgba(190,18,60,.10), transparent 62%),
             #fff;
-          position:relative;
-          overflow:hidden;
-        }
-        .wm{
-          position:absolute; inset:0;
-          display:grid;place-items:center;
-          pointer-events:none;
-          opacity:.06;
-          transform:rotate(-12deg);
-          font-weight:1000;
-          font-size:72px;
-          letter-spacing:1px;
-          color:#0b1220;
-        }
-        .coverTop{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}
-        .brand{display:flex;align-items:center;gap:12px}
-        .logo{
-          width:64px;height:64px;border-radius:20px;
-          border:1px solid var(--line);
-          display:grid;place-items:center;overflow:hidden;background:#fff;
-          box-shadow:0 12px 30px rgba(2,6,23,.10);
-        }
-        .logo img{width:52px;height:52px;object-fit:contain}
-        .brandText h1{margin:0;font-size:20px;font-weight:1000;letter-spacing:.2px}
-        .brandText .sub{margin-top:6px;color:var(--muted);font-size:12px;line-height:1.7}
-
-        .badgeRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-        .pill{
-          display:inline-flex;gap:8px;align-items:center;
-          padding:8px 10px;border-radius:999px;border:1px solid var(--line);
-          background:rgba(214,177,94,.12); color:#1f2937;
-          font-weight:900;font-size:12px;
-        }
-
-        .hero{
-          margin-top:16px;
-          display:grid;grid-template-columns:1.1fr .9fr;gap:12px;
-        }
-        @media(max-width:860px){.hero{grid-template-columns:1fr}}
-        .heroCard{
-          border:1px solid var(--line);
-          border-radius:22px;
-          padding:16px;
-          background:#fff;
-          box-shadow:0 14px 40px rgba(2,6,23,.08);
-        }
-        .heroTitle{font-weight:1000;margin:0 0 10px;font-size:14px}
-        .bigRate{
-          font-size:52px;font-weight:1100;letter-spacing:.4px;margin:6px 0 0;
-          background:linear-gradient(135deg, var(--gold), var(--gold2));
-          -webkit-background-clip:text;background-clip:text;color:transparent;
-        }
-        .heroMeta{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.8}
-        .divider{height:1px;background:var(--line);margin:14px 0}
-
-        .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
-        @media(max-width:860px){.kpis{grid-template-columns:1fr 1fr}}
-        .kpi{
-          border-radius:22px;padding:14px;color:#fff;border:0;
-          box-shadow:0 16px 44px rgba(2,6,23,.14);
-          min-height:98px;display:flex;flex-direction:column;justify-content:space-between;
           position:relative;overflow:hidden;
         }
-        .kpi:before{
-          content:"";position:absolute;inset:-60%;
-          background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 55%);
-          transform:rotate(15deg);
+        .wm{
+          position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
+          opacity:.06;transform:rotate(-12deg);font-weight:1000;font-size:74px;letter-spacing:1px;
         }
+        .top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}
+        .brand{display:flex;gap:12px;align-items:center}
+        .logo{width:66px;height:66px;border-radius:20px;border:1px solid #e5e7eb;display:grid;place-items:center;overflow:hidden;background:#fff;box-shadow:0 12px 30px rgba(2,6,23,.10)}
+        .logo img{width:52px;height:52px;object-fit:contain}
+        h1{margin:0;font-size:20px;font-weight:1000}
+        .sub{margin-top:6px;color:#475569;font-size:12px;line-height:1.7}
+        .pillRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+        .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 10px;border-radius:999px;border:1px solid #e5e7eb;background:rgba(214,177,94,.12);font-weight:900;font-size:12px}
+        .hero{margin-top:16px;display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+        @media(max-width:880px){.hero{grid-template-columns:1fr}}
+        .card{border:1px solid #e5e7eb;border-radius:24px;padding:16px;background:#fff;box-shadow:0 14px 40px rgba(2,6,23,.08)}
+        .card h2{margin:0 0 10px;font-size:14px;font-weight:1100}
+        .big{
+          font-size:56px;font-weight:1100;margin:6px 0 0;letter-spacing:.4px;
+          background:linear-gradient(135deg,#d6b15e,#b48a18);-webkit-background-clip:text;background-clip:text;color:transparent;
+        }
+        .meta{margin-top:8px;color:#475569;font-size:12px;line-height:1.8}
+        .exec{
+          margin-top:12px;border:1px dashed rgba(180,138,24,.55);background:rgba(214,177,94,.10);
+          border-radius:22px;padding:14px;line-height:1.85;font-size:12px;color:#111827
+        }
+        .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+        @media(max-width:880px){.kpis{grid-template-columns:1fr 1fr}}
+        .kpi{border-radius:22px;padding:14px;color:#fff;box-shadow:0 16px 44px rgba(2,6,23,.14);min-height:98px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+        .kpi:before{content:"";position:absolute;inset:-60%;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 55%);transform:rotate(15deg)}
         .kpi .t{font-size:12px;font-weight:1000;opacity:.95}
         .kpi .n{font-size:30px;font-weight:1100}
-        .blue{background:linear-gradient(135deg, var(--blue), rgba(30,64,175,.55))}
-        .gold{background:linear-gradient(135deg, var(--gold), rgba(180,138,24,.40));color:#1b1405}
+        .blue{background:linear-gradient(135deg,#1e40af,rgba(30,64,175,.55))}
+        .gold{background:linear-gradient(135deg,#d6b15e,rgba(180,138,24,.40));color:#1b1405}
         .gold .t,.gold .n{color:#1b1405}
-        .rose{background:linear-gradient(135deg, var(--rose), rgba(190,18,60,.45))}
-        .green{background:linear-gradient(135deg, var(--green), rgba(4,120,87,.45))}
-
-        .section{
-          margin-top:14px;
-          border-radius:26px;
-          border:1px solid var(--line);
-          padding:16px;
-          background:#fff;
-          box-shadow:0 14px 40px rgba(2,6,23,.08);
-        }
-        .section h2{margin:0 0 12px;font-size:14px;font-weight:1100}
+        .rose{background:linear-gradient(135deg,#be123c,rgba(190,18,60,.45))}
+        .green{background:linear-gradient(135deg,#047857,rgba(4,120,87,.45))}
+        .section{margin-top:14px;border-radius:26px;border:1px solid #e5e7eb;padding:16px;background:#fff;box-shadow:0 14px 40px rgba(2,6,23,.08)}
+        .section h3{margin:0 0 12px;font-size:14px;font-weight:1100}
         .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        @media(max-width:860px){.grid2{grid-template-columns:1fr}}
-        .imgbox{
-          border:1px solid var(--line);
-          border-radius:22px;
-          padding:10px;background:#fff;
-        }
+        @media(max-width:880px){.grid2{grid-template-columns:1fr}}
+        .imgbox{border:1px solid #e5e7eb;border-radius:22px;padding:10px;background:#fff}
         .imgbox img{width:100%;height:auto;display:block;border-radius:16px}
-
-        .insGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-        @media(max-width:640px){.insGrid{grid-template-columns:1fr}}
-        .insItem{
-          border:1px solid var(--line);
-          border-radius:20px;
-          padding:12px;background:rgba(2,6,23,.02);
-        }
-        .k{font-size:12px;color:var(--muted);font-weight:1000}
+        .ins{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        @media(max-width:640px){.ins{grid-template-columns:1fr}}
+        .insItem{border:1px solid #e5e7eb;border-radius:20px;padding:12px;background:rgba(2,6,23,.02)}
+        .k{font-size:12px;color:#475569;font-weight:1000}
         .v{margin-top:6px;font-weight:1100}
-
-        .exec{
-          border:1px dashed rgba(180,138,24,.55);
-          background:rgba(214,177,94,.10);
-          border-radius:22px;
-          padding:14px;
-          line-height:1.85;
-          font-size:12px;
-          color:#111827;
-        }
-        .exec b{font-weight:1100}
-
-        .footer{
-          margin-top:14px;
-          border-radius:26px;
-          border:1px solid var(--line);
-          padding:14px;
-          display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
-          background:rgba(2,6,23,.02);
-          color:var(--muted);
-          font-size:12px;
-          line-height:1.7;
-        }
+        .footer{margin-top:14px;border-radius:26px;border:1px solid #e5e7eb;padding:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;background:rgba(2,6,23,.02);color:#475569;font-size:12px;line-height:1.7}
         .sign{display:flex;gap:10px;align-items:center}
         .line{width:220px;border-bottom:1px solid #94a3b8}
-
         @page { margin: 14mm; }
       `;
 
-      const createdStr = new Date(createdAt).toLocaleString(isAr?'ar-EG':'en-GB');
-
-      const filterStr = (filterFrom || filterTo)
-        ? (isAr
-            ? `فلتر التاريخ: ${filterFrom||'—'} → ${filterTo||'—'}`
-            : `Date filter: ${filterFrom||'—'} → ${filterTo||'—'}`)
-        : (isAr ? 'بدون فلتر تاريخ' : 'No date filter');
-
       const execText = isAr
-        ? `ملخص تنفيذي: إجمالي الدعوات <b>${total}</b>، عدد الحضور <b>${used}</b>، المتبقي <b>${left}</b>، ونسبة الحضور <b>${rate}%</b>. 
-           أول دخول كان <b>${fmtDate(new Date(insights.first))}</b> وآخر دخول <b>${fmtDate(new Date(insights.last))}</b> (إن توفرت البيانات). 
-           أكثر ساعة ازدحامًا كانت <b>${peakText}</b>.`
-        : `Executive summary: Total invites <b>${total}</b>, checked-in <b>${used}</b>, remaining <b>${left}</b>, attendance rate <b>${rate}%</b>.
-           First check-in <b>${fmtDate(new Date(insights.first))}</b> and last check-in <b>${fmtDate(new Date(insights.last))}</b> (if available).
-           Peak hour: <b>${peakText}</b>.`;
-
-      const reportTitle = isAr ? 'التقرير النهائي للفعالية' : 'Final Event Report';
+        ? `ملخص تنفيذي: إجمالي الدعوات <b>${total}</b>، عدد الحضور <b>${used}</b>، المتبقي <b>${left}</b>، ونسبة الحضور <b>${rate}%</b>.`
+        : `Executive summary: Total invites <b>${total}</b>, checked-in <b>${used}</b>, remaining <b>${left}</b>, attendance rate <b>${rate}%</b>.`;
 
       return `
 <!doctype html>
 <html lang="${lang}" dir="${isAr?'rtl':'ltr'}">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>${reportTitle} — KRS INVITE</title>
-  <style>${reportCSS}</style>
-</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${reportTitle} — KRS INVITE</title>
+<style>${css}</style></head>
 <body>
   <div class="page">
-
     <div class="cover">
       <div class="wm">KRS INVITE</div>
 
-      <div class="coverTop">
+      <div class="top">
         <div class="brand">
           <div class="logo">
             ${logoUrl ? `<img src="${logoUrl}" alt="logo">` : `<div style="font-weight:1100">KRS</div>`}
           </div>
-          <div class="brandText">
+          <div>
             <h1>${reportTitle} — <span style="color:#111827">${eventName}</span></h1>
             <div class="sub">
               <div><b>KRS INVITE</b> • ${isAr?'تقرير فاخر وملوّن للحضور':'Luxury colored attendance report'}</div>
@@ -1260,49 +1086,32 @@
           </div>
         </div>
 
-        <div class="badgeRow">
+        <div class="pillRow">
           <div class="pill">✨ KRS INVITE</div>
           <div class="pill">🖨️ ${isAr?'اطبع مع الخلفيات للألوان':'Print with backgrounds for colors'}</div>
         </div>
       </div>
 
       <div class="hero">
-        <div class="heroCard">
-          <div class="heroTitle">${isAr?'النسبة النهائية للحضور':'Final Attendance Rate'}</div>
-          <div class="bigRate">${rate}%</div>
-          <div class="heroMeta">
+        <div class="card">
+          <h2>${isAr?'النسبة النهائية للحضور':'Final Attendance Rate'}</h2>
+          <div class="big">${rate}%</div>
+          <div class="meta">
             <div>${isAr?'عدد الحضور':'Checked-in'}: <b>${used}</b> / ${isAr?'الإجمالي':'Total'}: <b>${total}</b></div>
             <div>${isAr?'المتبقي':'Remaining'}: <b>${left}</b></div>
           </div>
-          <div class="divider"></div>
           <div class="exec">${execText}</div>
         </div>
 
-        <div class="heroCard">
-          <div class="heroTitle">${isAr?'شهادة مختصرة للعميل':'Client Snapshot'}</div>
-          <div class="insGrid">
-            <div class="insItem">
-              <div class="k">${isAr?'أول دخول':'First check-in'}</div>
-              <div class="v">${insights.first ? fmtDate(new Date(insights.first)) : '—'}</div>
-            </div>
-            <div class="insItem">
-              <div class="k">${isAr?'آخر دخول':'Last check-in'}</div>
-              <div class="v">${insights.last ? fmtDate(new Date(insights.last)) : '—'}</div>
-            </div>
-            <div class="insItem">
-              <div class="k">${isAr?'أكثر ساعة ازدحام':'Peak hour'}</div>
-              <div class="v">${peakText}</div>
-            </div>
-            <div class="insItem">
-              <div class="k">${isAr?'مسحات اليوم':'Today scans'}</div>
-              <div class="v">${insights.today ?? 0}</div>
-            </div>
+        <div class="card">
+          <h2>${isAr?'مؤشرات للعميل':'Client Insights'}</h2>
+          <div class="ins">
+            <div class="insItem"><div class="k">${isAr?'أول دخول':'First check-in'}</div><div class="v">${firstStr}</div></div>
+            <div class="insItem"><div class="k">${isAr?'آخر دخول':'Last check-in'}</div><div class="v">${lastStr}</div></div>
+            <div class="insItem"><div class="k">${isAr?'أكثر ساعة ازدحام':'Peak hour'}</div><div class="v">${peakStr}</div></div>
+            <div class="insItem"><div class="k">${isAr?'مسحات اليوم':'Today scans'}</div><div class="v">${todayStr}</div></div>
           </div>
-          <div style="margin-top:12px;color:var(--muted);font-size:12px;line-height:1.7">
-            ${isAr
-              ? 'هذه الصفحة مصممة لتكون “واجهة فاخرة” يطلع عليها العميل مباشرة.'
-              : 'This page is designed as a luxury front-page for the client.'}
-          </div>
+          <div class="sub" style="margin-top:10px">${isAr?'هذه الصفحة جاهزة للعرض والطباعة للعميل بشكل فاخر.':'This page is client-ready for luxury print.'}</div>
         </div>
       </div>
 
@@ -1315,41 +1124,25 @@
     </div>
 
     <div class="section">
-      <h2>${isAr?'رسوم ملونة فاخرة':'Luxury Colored Charts'}</h2>
+      <h3>${isAr?'رسوم ملونة فاخرة':'Luxury Colored Charts'}</h3>
       <div class="grid2">
-        <div class="imgbox">
-          <img src="${donutImg}" alt="donut">
-        </div>
-        <div class="imgbox">
-          <img src="${barImg}" alt="bars">
-        </div>
+        <div class="imgbox">${donutImg ? `<img src="${donutImg}" alt="donut">` : '<div style="color:#475569">—</div>'}</div>
+        <div class="imgbox">${barImg ? `<img src="${barImg}" alt="bars">` : '<div style="color:#475569">—</div>'}</div>
       </div>
-      <div style="margin-top:10px;color:var(--muted);font-size:12px;line-height:1.7">
-        ${isAr
-          ? 'الرسوم أعلاه تعطي العميل فهم سريع لتوزيع الحضور ونشاط الدخول.'
-          : 'Charts above provide quick understanding of attendance distribution and activity.'}
-      </div>
+      <div class="sub" style="margin-top:10px">${isAr?'الرسوم تعطي فهم سريع لتوزيع الحضور ونشاط الدخول.':'Charts give quick understanding of attendance and activity.'}</div>
     </div>
 
     <div class="footer">
-      <div>
-        <b>KRS INVITE</b><br/>
-        ${isAr?'تقرير رسمي للحضور مبني على نظام الباركود':'Official attendance report based on barcode access system'}
-      </div>
-      <div class="sign">
-        <div>${isAr?'التوقيع':'Signature'}</div>
-        <div class="line"></div>
-      </div>
+      <div><b>KRS INVITE</b><br/>${isAr?'تقرير رسمي للحضور مبني على نظام الباركود':'Official attendance report based on barcode system'}</div>
+      <div class="sign"><div>${isAr?'التوقيع':'Signature'}</div><div class="line"></div></div>
     </div>
-
   </div>
 
   <script>
-    window.addEventListener('load', ()=>{ setTimeout(()=>window.print(), 220); });
+    window.addEventListener('load', ()=>{ setTimeout(()=>window.print(), 240); });
   </script>
 </body>
-</html>
-      `;
+</html>`;
     }
 
     function openFinalReport(){
@@ -1360,10 +1153,24 @@
 
       const ins = computeInsights(rowsAll || []);
 
-      // Ensure charts are up-to-date
+      // update charts then export images
       drawCharts(total, used, rowsAll || []);
       const donutImg = canvasToImg('donut');
       const barImg   = canvasToImg('bars');
+
+      const isAr = state.lang==='ar';
+      const createdStr = new Date().toLocaleString(isAr?'ar-EG':'en-GB');
+
+      const filterStr = (state.from || state.to)
+        ? (isAr ? `فلتر التاريخ: ${state.from||'—'} → ${state.to||'—'}` : `Date filter: ${state.from||'—'} → ${state.to||'—'}`)
+        : (isAr ? 'بدون فلتر تاريخ' : 'No date filter');
+
+      const firstStr = ins.first ? fmtDate(ins.first) : '—';
+      const lastStr  = ins.last  ? fmtDate(ins.last)  : '—';
+      const peakStr  = (ins.peakHour==='—')
+        ? '—'
+        : (isAr ? `${ins.peakHour}:00 (عدد ${ins.peakCount})` : `${ins.peakHour}:00 (count ${ins.peakCount})`);
+      const todayStr = String(ins.today ?? 0);
 
       const eventName = (state.event && state.event!=='__ALL__')
         ? state.event
@@ -1371,21 +1178,11 @@
 
       const html = buildFinalReportHTML({
         lang: state.lang,
-        theme: state.theme,
         logoUrl: LOGO_URL,
-        eventName,
-        total, used, left, rate,
-        insights: {
-          first: ins.first ? ins.first.toISOString() : null,
-          last:  ins.last  ? ins.last.toISOString()  : null,
-          peakHour: ins.peakHour,
-          peakCount: ins.peakCount,
-          today: ins.today
-        },
+        eventName, total, used, left, rate,
+        firstStr, lastStr, peakStr, todayStr,
         donutImg, barImg,
-        createdAt: new Date().toISOString(),
-        filterFrom: state.from || '',
-        filterTo: state.to || ''
+        createdStr, filterStr
       });
 
       const w = window.open('', '_blank');
