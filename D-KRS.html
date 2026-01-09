@@ -3,30 +3,42 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KRS INVITE — Dashboard</title>
+  <title>KRS INVITE — التقرير النهائي</title>
+
   <style>
     :root{
-      --bg1:#070A12; --bg2:#0B1020;
+      --bg1:#070A12;
+      --bg2:#0B1020;
       --panel: rgba(255,255,255,.06);
-      --panel2: rgba(255,255,255,.08);
       --stroke: rgba(255,255,255,.12);
       --stroke2: rgba(255,255,255,.18);
-      --ink:#E9EEF7; --muted:#A8B3C6;
+      --ink:#E9EEF7;
+      --muted:#A8B3C6;
 
-      --gold1:#F7D37A; --gold2:#CFA24A;
-      --good:#39d98a; --warn:#ffce4a; --bad:#ff5c7a;
+      --gold1:#F7D37A;
+      --gold2:#CFA24A;
+
+      --good:#39d98a;
+      --warn:#ffce4a;
+      --bad:#ff5c7a;
 
       --shadow: 0 18px 50px rgba(0,0,0,.45);
-      --radius: 18px; --radius2: 28px;
+      --radius: 18px;
+      --radius2: 28px;
+
       --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans Arabic", "Tahoma", Arial, sans-serif;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
       --g: linear-gradient(135deg, rgba(247,211,122,.18), rgba(207,162,74,.08), rgba(255,255,255,.02));
       --glow: 0 0 0 1px rgba(247,211,122,.08), 0 0 60px rgba(247,211,122,.08);
     }
+
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; font-family:var(--font); color:var(--ink);
+      margin:0;
+      font-family:var(--font);
+      color:var(--ink);
       background:
         radial-gradient(1200px 700px at 80% -10%, rgba(247,211,122,.20), transparent 60%),
         radial-gradient(900px 520px at 20% 0%, rgba(90,120,255,.12), transparent 55%),
@@ -34,59 +46,84 @@
         linear-gradient(180deg, var(--bg1), var(--bg2));
       overflow-x:hidden;
     }
-    .wrap{ width:min(1280px, 94vw); margin: 26px auto 60px; }
-    .topbar{
-      display:flex; gap:14px; align-items:stretch; justify-content:space-between; margin-bottom:16px;
-    }
+
+    .wrap{ width:min(1200px, 94vw); margin: 28px auto 60px; }
+
     .brandCard{
-      flex:1; padding:18px; border-radius: var(--radius2);
-      background: var(--g); border: 1px solid var(--stroke); box-shadow: var(--shadow);
-      position:relative; overflow:hidden;
+      padding:18px 18px 16px;
+      border-radius: var(--radius2);
+      background: var(--g);
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
     }
     .brandCard:before{
-      content:""; position:absolute; inset:-1px;
+      content:"";
+      position:absolute; inset:-1px;
       background:
         radial-gradient(600px 140px at 70% 0%, rgba(247,211,122,.35), transparent 60%),
         radial-gradient(500px 260px at 15% 110%, rgba(120,180,255,.18), transparent 65%);
-      opacity:.85; pointer-events:none;
+      pointer-events:none;
+      opacity:.85;
     }
-    .brandRow{ position:relative; display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
-    .brandLeft{ display:flex; align-items:center; gap:14px; min-width: 280px;}
+    .brandRow{
+      position:relative;
+      display:flex;
+      gap:14px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .brandLeft{display:flex;align-items:center;gap:14px;min-width:260px}
     .logo{
       width:56px;height:56px;border-radius:18px;
       background: linear-gradient(135deg, rgba(247,211,122,.34), rgba(207,162,74,.16), rgba(255,255,255,.04));
       border: 1px solid rgba(247,211,122,.22);
       box-shadow: var(--glow);
-      display:grid; place-items:center; overflow:hidden;
+      display:grid; place-items:center;
       position:relative;
+      overflow:hidden;
     }
     .logo:after{
-      content:""; position:absolute; inset:0;
+      content:"";
+      position:absolute; inset:0;
       background:
         radial-gradient(32px 32px at 30% 35%, rgba(255,255,255,.22), transparent 60%),
         radial-gradient(80px 60px at 70% 80%, rgba(247,211,122,.18), transparent 60%);
       pointer-events:none;
     }
     .logo span{ position:relative; font-weight:1000; color:var(--gold1); letter-spacing:.6px; }
-    .brandTitle h1{ margin:0; font-size:18px; font-weight:1000;}
-    .brandTitle p{ margin:6px 0 0; color:var(--muted); font-size:12.5px; line-height:1.35;}
-    .brandRight{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-end; }
+    .brandTitle{display:flex;flex-direction:column;gap:4px}
+    .brandTitle h1{margin:0;font-size:18px;font-weight:1000}
+    .brandTitle p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.35}
+
+    .brandRight{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}
     .pill{
       padding:8px 10px; border-radius:999px;
       border:1px solid var(--stroke2);
       background: rgba(255,255,255,.05);
-      color: var(--muted); font-size: 12px; font-weight:900;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight:900;
       white-space:nowrap;
     }
-    .pill strong{ color: var(--ink); }
+    .pill strong{color:var(--ink)}
     .btn{
       border:1px solid var(--stroke2);
       background: rgba(255,255,255,.06);
       color: var(--ink);
-      padding:10px 12px; border-radius: 14px;
-      cursor:pointer; font-weight:1000; font-size: 13px;
-      display:flex; gap:8px; align-items:center;
-      transition:.18s ease; user-select:none; white-space:nowrap;
+      padding:10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-weight:1000;
+      font-size: 13px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      transition:.18s ease;
+      user-select:none;
+      white-space:nowrap;
     }
     .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
     .btn.primary{
@@ -103,7 +140,7 @@
 
     .grid{
       display:grid;
-      grid-template-columns: 1.25fr .75fr;
+      grid-template-columns: 1.3fr .7fr;
       gap:16px;
       margin-top:16px;
     }
@@ -118,12 +155,15 @@
     }
     .card .head{
       padding:16px 16px 12px;
-      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
       border-bottom: 1px solid rgba(255,255,255,.08);
       background: linear-gradient(135deg, rgba(255,255,255,.05), rgba(247,211,122,.06));
     }
-    .card .head h2{ margin:0; font-size:14.5px; font-weight:1000;}
-    .card .head p{ margin:6px 0 0; color:var(--muted); font-size:12.5px; line-height:1.35;}
+    .card .head h2{ margin:0; font-size: 14.5px; font-weight: 1000; }
+    .card .head p{ margin:6px 0 0; color: var(--muted); font-size: 12.5px; line-height:1.35; }
     .card .body{ padding:16px; }
 
     .kpis{
@@ -144,68 +184,25 @@
       min-height: 92px;
     }
     .kpi:before{
-      content:""; position:absolute; inset:-1px;
+      content:"";
+      position:absolute; inset:-1px;
       background:
         radial-gradient(260px 140px at 10% 10%, rgba(247,211,122,.18), transparent 60%),
         radial-gradient(200px 120px at 90% 70%, rgba(120,180,255,.12), transparent 60%);
-      opacity:.8; pointer-events:none;
+      opacity:.8;
+      pointer-events:none;
     }
     .kpi .t{ position:relative; color:var(--muted); font-size:12px; font-weight:1000; }
     .kpi .v{ position:relative; margin-top:8px; font-size:22px; font-weight:1000; letter-spacing:.2px; }
     .kpi .s{ position:relative; margin-top:6px; font-size:12px; color:var(--muted); }
-    .kpi .badge{
-      position:absolute; inset:auto 10px 10px auto;
-      border-radius:999px;
-      padding:6px 10px;
-      font-size: 11px;
-      font-weight:1000;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color: var(--ink);
-    }
-    .b-good{ border-color: rgba(57,217,138,.30)!important; background: rgba(57,217,138,.10)!important; }
-    .b-warn{ border-color: rgba(255,206,74,.30)!important; background: rgba(255,206,74,.10)!important; }
-    .b-bad{  border-color: rgba(255,92,122,.30)!important; background: rgba(255,92,122,.10)!important; }
-
-    .controls{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-      margin-top:12px;
-    }
-    @media (max-width: 980px){ .controls{grid-template-columns:1fr} }
-
-    .field{
-      background: rgba(0,0,0,.18);
-      border: 1px solid rgba(255,255,255,.10);
-      border-radius: 16px;
-      padding: 12px;
-    }
-    .field label{
-      display:block; font-size:12px; color:var(--muted); font-weight:1000; margin-bottom:8px;
-    }
-    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    input[type="text"], input[type="number"], select{
-      width:100%;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color: var(--ink);
-      outline:none;
-      font-weight:900;
-    }
-    input::placeholder{ color: rgba(168,179,198,.7); }
-    .small{ font-size:12px; color:var(--muted); line-height:1.4; margin-top:8px; }
-    .mono{ font-family: var(--mono); }
 
     .charts{
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap:12px;
-      margin-top: 12px;
     }
     @media (max-width: 980px){ .charts{grid-template-columns:1fr;} }
+
     .chartBox{
       border-radius: 18px;
       background: rgba(0,0,0,.18);
@@ -213,461 +210,237 @@
       padding: 14px;
       overflow:hidden;
     }
-    .chartTop{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
-    .chartTop .title{ font-weight: 1000; font-size: 12.5px; color: var(--ink); }
-    .chartTop .meta{ font-weight: 900; font-size: 12px; color: var(--muted); white-space:nowrap; }
-
-    canvas{ width:100%; height: 220px; display:block; }
+    .chartTop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+    .chartTop .title{font-weight:1000;font-size:12.5px}
+    .chartTop .meta{font-weight:900;font-size:12px;color:var(--muted);white-space:nowrap}
+    canvas{ width:100%; height:240px; display:block; }
 
     .tableWrap{
-      margin-top: 12px;
       border-radius: 18px;
       border:1px solid rgba(255,255,255,.10);
       overflow:hidden;
       background: rgba(0,0,0,.16);
     }
-    table{ width:100%; border-collapse:collapse; font-size: 12.5px; }
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
     thead th{
       background: rgba(255,255,255,.06);
       border-bottom:1px solid rgba(255,255,255,.10);
       text-align:start;
       padding: 12px 10px;
       font-weight: 1000;
-      color: var(--ink);
     }
     tbody td{
       padding: 11px 10px;
       border-bottom:1px solid rgba(255,255,255,.08);
-      color: var(--ink);
       vertical-align:top;
     }
     tbody tr:hover{ background: rgba(255,255,255,.04); }
+    .mono{ font-family: var(--mono); letter-spacing:.2px; }
 
     .tag{
-      display:inline-flex;
-      gap:6px;
-      align-items:center;
-      padding: 6px 10px;
-      border-radius: 999px;
+      display:inline-flex; gap:6px; align-items:center;
+      padding: 6px 10px; border-radius: 999px;
       border: 1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.06);
-      font-weight:1000;
-      font-size: 11px;
-      white-space:nowrap;
+      font-weight:1000; font-size: 11px; white-space:nowrap;
     }
     .dot{width:8px;height:8px;border-radius:999px;background:var(--muted);display:inline-block}
     .dot.good{background:var(--good)}
     .dot.warn{background:var(--warn)}
     .dot.bad{background:var(--bad)}
 
+    .note{
+      border-radius: 18px;
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.10);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .note h3{margin:0;font-size:12.5px;font-weight:1000}
+    .note p, .note ul{margin:10px 0 0;color:var(--muted);font-size:12.5px;line-height:1.55}
+    ul{padding:0 18px}
+
     .footer{
       margin-top: 14px;
-      display:flex; flex-wrap:wrap; gap:10px;
-      align-items:center; justify-content:space-between;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
       color: var(--muted);
       font-size: 12px;
     }
     .stamp{
-      padding: 8px 12px; border-radius: 999px;
+      padding: 8px 12px;
+      border-radius: 999px;
       border: 1px solid rgba(247,211,122,.22);
       background: rgba(247,211,122,.10);
       color: var(--gold1);
       font-weight:1000;
     }
 
-    .toast{
-      position:fixed;
-      inset:auto 18px 18px 18px;
-      max-width: 680px;
-      margin:auto;
-      background: rgba(0,0,0,.70);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius: 16px;
-      padding: 12px 14px;
-      color: var(--ink);
-      box-shadow: var(--shadow);
-      display:none;
-      z-index: 9999;
+    @media print{
+      body{ background:white !important; color:#111 !important; }
+      .btn, #langToggle, #printBtn { display:none !important; }
+      .wrap{ width:100% !important; margin:0 !important; }
+      .brandCard, .card{ box-shadow:none !important; border: 1px solid #ddd !important; background: white !important; }
+      .kpi, .chartBox, .note{ background:white !important; border: 1px solid #e6e6e6 !important; }
+      thead th{ background:#f5f5f5 !important; color:#111 !important; }
+      tbody td{ color:#111 !important; }
+      .brandTitle p, .kpi .t, .kpi .s, .note p, .note ul, .footer{ color:#444 !important; }
+      .stamp{ color:#111 !important; background:#f3f3f3 !important; border-color:#ddd !important; }
+      .logo{ border-color:#ddd !important; box-shadow:none !important; }
+      .logo span{ color:#111 !important; text-shadow:none !important; }
+      .pill{ color:#333 !important; border-color:#ddd !important; background:#f7f7f7 !important; }
     }
-    .toast.show{ display:block; }
-    .toast b{ color: var(--gold1); }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="topbar">
-      <div class="brandCard">
-        <div class="brandRow">
-          <div class="brandLeft">
-            <div class="logo"><span>KRS</span></div>
-            <div class="brandTitle">
-              <h1 id="title">KRS INVITE — Dashboard</h1>
-              <p id="subtitle">لوحة تحكم فاخرة لإدارة الدعوات والحضور + توليد التقرير النهائي للطباعة</p>
-            </div>
-          </div>
-          <div class="brandRight">
-            <span class="pill"><strong id="evPill">—</strong> · <span id="datePill">—</span></span>
-            <button class="btn" id="langBtn">🌐 <span id="langText">English</span></button>
-            <button class="btn" id="resetBtn" title="مسح البيانات">🧹 <span id="resetText">Reset</span></button>
-            <button class="btn primary" id="reportBtn" title="فتح التقرير النهائي">📄 <span id="reportText">توليد التقرير النهائي</span></button>
+    <div class="brandCard">
+      <div class="brandRow">
+        <div class="brandLeft">
+          <div class="logo"><span>KRS</span></div>
+          <div class="brandTitle">
+            <h1 id="reportTitle">KRS INVITE — التقرير النهائي للمناسبة</h1>
+            <p id="reportSub">تقرير ملخص الحضور والتحقق — نسخة احترافية للطباعة وPDF</p>
           </div>
         </div>
-        <div class="divider"></div>
-        <div class="footer" style="margin-top:12px">
-          <div class="stamp" id="stamp">تم التحديث: —</div>
-          <div class="mono" id="storeKey">STORE: —</div>
+        <div class="brandRight">
+          <span class="pill"><strong id="evNamePill">—</strong> · <span id="evDatePill">—</span></span>
+          <button class="btn" id="langToggle">🌐 <span id="langLabel">English</span></button>
+          <button class="btn primary" id="printBtn">🖨️ <span id="printLabel">طباعة / PDF</span></button>
         </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="footer" style="margin-top:12px">
+        <div class="stamp" id="generatedStamp">تم الإنشاء: —</div>
+        <div id="venueLine">—</div>
+        <div id="contactLine" class="mono">—</div>
       </div>
     </div>
 
     <div class="grid">
-      <!-- Left -->
       <div class="card">
         <div class="head">
           <div>
-            <h2 id="summaryHead">ملخص الإحصائيات</h2>
-            <p id="summaryDesc">أرقام حية + رسوم + جدول، مع دعم استيراد CSV وتصدير.</p>
+            <h2 id="summaryHead">ملخص سريع</h2>
+            <p id="summaryDesc">أرقام رئيسية ونِسَب الأداء لعملية الدخول والتحقق.</p>
           </div>
           <span class="pill" id="qualityPill">—</span>
         </div>
-
         <div class="body">
           <div class="kpis" id="kpiGrid"></div>
+
+          <div style="height:12px"></div>
 
           <div class="charts">
             <div class="chartBox">
               <div class="chartTop">
-                <div class="title" id="donutTitle">نسبة الحضور</div>
+                <div class="title" id="donutTitle">نسبة الحضور (Checked-in)</div>
                 <div class="meta" id="donutMeta">—</div>
               </div>
               <canvas id="donut"></canvas>
             </div>
+
             <div class="chartBox">
               <div class="chartTop">
-                <div class="title" id="barTitle">الحضور حسب الوقت</div>
+                <div class="title" id="barTitle">توزيع الحضور حسب الوقت</div>
                 <div class="meta" id="barMeta">—</div>
               </div>
               <canvas id="bars"></canvas>
             </div>
           </div>
 
-          <div class="controls">
-            <div class="field">
-              <label id="evLabel">بيانات المناسبة</label>
-              <div class="row">
-                <div style="flex:1; min-width:220px">
-                  <input id="eventName" type="text" placeholder="مثال: زفاف خالد" />
-                </div>
-                <div style="flex:1; min-width:220px">
-                  <input id="eventDate" type="text" placeholder="15-01-2026 · 5:30 PM – 11:30 PM" />
-                </div>
-              </div>
-              <div class="row" style="margin-top:10px">
-                <div style="flex:1; min-width:220px">
-                  <input id="venue" type="text" placeholder="دبي — قاعة ..." />
-                </div>
-                <div style="flex:1; min-width:220px">
-                  <input id="contact" type="text" placeholder="WhatsApp / Email" />
-                </div>
-              </div>
-              <div class="small" id="evHint">هذه البيانات تظهر في التقرير النهائي تلقائياً.</div>
-            </div>
+          <div style="height:12px"></div>
 
-            <div class="field">
-              <label id="dataLabel">البيانات (استيراد/تصدير)</label>
-              <div class="row">
-                <input id="csvFile" type="file" accept=".csv,text/csv" style="flex:1" />
-                <button class="btn" id="importBtn">⬆️ <span id="importText">استيراد CSV</span></button>
+          <div class="card" style="border-radius:18px; box-shadow:none; background:rgba(0,0,0,.14); border:1px solid rgba(255,255,255,.10);">
+            <div class="head" style="border-bottom:1px solid rgba(255,255,255,.08)">
+              <div>
+                <h2 id="detailsHead">تفاصيل الدعوات (عينة)</h2>
+                <p id="detailsDesc">يعرض بيانات من اللوحة — ويمكن توسيعه حسب حاجتك.</p>
               </div>
-              <div class="row" style="margin-top:10px">
-                <button class="btn" id="sampleBtn">✨ <span id="sampleText">تحميل بيانات تجريبية</span></button>
-                <button class="btn" id="exportBtn">⬇️ <span id="exportText">تصدير CSV</span></button>
-                <button class="btn" id="saveBtn">💾 <span id="saveText">حفظ</span></button>
-              </div>
-              <div class="small mono" id="csvHint">
-                CSV columns (recommended): Code,Owner,Status,Time,Gate,EventName
+              <span class="pill" id="detailsCount">—</span>
+            </div>
+            <div class="body">
+              <div class="tableWrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th id="thCode">الكود</th>
+                      <th id="thOwner">الاسم</th>
+                      <th id="thStatus">الحالة</th>
+                      <th id="thTime">وقت الدخول</th>
+                      <th id="thGate">البوابة/الموظف</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody"></tbody>
+                </table>
               </div>
             </div>
-          </div>
-
-          <div class="field" style="margin-top:12px">
-            <label id="filterLabel">فلترة / بحث</label>
-            <div class="row">
-              <input id="search" type="text" placeholder="ابحث بالكود أو الاسم..." style="flex:1; min-width:240px" />
-              <select id="statusFilter" style="width:220px">
-                <option value="all">الكل</option>
-                <option value="checked">تم الدخول</option>
-                <option value="unused">غير مستخدم</option>
-                <option value="rejected">مرفوض</option>
-                <option value="manual">يدوي</option>
-              </select>
-            </div>
-            <div class="small" id="filterHint">الجدول أدناه يتغير مباشرة حسب الفلاتر.</div>
-          </div>
-
-          <div class="tableWrap">
-            <table>
-              <thead>
-                <tr>
-                  <th id="thCode">الكود</th>
-                  <th id="thOwner">الاسم</th>
-                  <th id="thStatus">الحالة</th>
-                  <th id="thTime">وقت الدخول</th>
-                  <th id="thGate">البوابة/الموظف</th>
-                </tr>
-              </thead>
-              <tbody id="tbody"></tbody>
-            </table>
           </div>
 
           <div class="footer">
-            <div class="stamp" id="countLine">—</div>
-            <div class="mono" id="noteLine">KRS INVITE</div>
+            <div class="mono" id="reportIdLine">—</div>
+            <div class="mono" id="signatureLine">KRS INVITE</div>
           </div>
+
         </div>
       </div>
 
-      <!-- Right -->
       <div class="card">
         <div class="head">
           <div>
-            <h2 id="opsHead">أدوات سريعة</h2>
-            <p id="opsDesc">إضافة سريعة + توليد أوقات + تنظيف بيانات.</p>
+            <h2 id="insightsHead">أهم ما يهم العميل</h2>
+            <p id="insightsDesc">الذروة، الجودة، والتنبيهات بشكل واضح.</p>
           </div>
-          <span class="pill" id="opsPill">—</span>
+          <span class="pill" id="statusPill">—</span>
         </div>
         <div class="body">
-          <div class="field">
-            <label id="addLabel">إضافة سجل سريع</label>
-            <div class="row">
-              <input id="addCode" type="text" placeholder="Code (مثال: KRS_301)" style="flex:1; min-width:220px" />
-              <input id="addOwner" type="text" placeholder="اسم الضيف" style="flex:1; min-width:220px" />
-            </div>
-            <div class="row" style="margin-top:10px">
-              <select id="addStatus" style="flex:1; min-width:220px">
-                <option value="checked">تم الدخول</option>
-                <option value="unused">غير مستخدم</option>
-                <option value="rejected_duplicate">مكرر</option>
-                <option value="rejected_invalid">غير صالح</option>
-                <option value="manual">يدوي</option>
-              </select>
-              <input id="addTime" type="text" placeholder="Time (مثال: 6:22 PM)" style="flex:1; min-width:220px" />
-            </div>
-            <div class="row" style="margin-top:10px">
-              <input id="addGate" type="text" placeholder="Gate/Staff" style="flex:1; min-width:220px" />
-              <button class="btn primary" id="addBtn">➕ <span id="addText">إضافة</span></button>
-            </div>
-            <div class="small" id="addHint">عند ترك الوقت فارغاً سيتم وضع الوقت الحالي تلقائياً.</div>
+          <div class="note">
+            <h3 id="peakHead">ذروة الحضور</h3>
+            <p id="peakText">—</p>
           </div>
 
-          <div class="field" style="margin-top:12px">
-            <label id="toolsLabel">أدوات</label>
-            <div class="row">
-              <button class="btn" id="normalizeBtn">🧼 <span id="normalizeText">تنظيف/توحيد البيانات</span></button>
-              <button class="btn" id="autoTimeBtn">⏱️ <span id="autoTimeText">توليد Timeline تلقائي</span></button>
-            </div>
-            <div class="small" id="toolsHint">
-              "Timeline" يستخدم لرسوم توزيع الحضور حسب الوقت في التقرير.
-            </div>
+          <div class="note">
+            <h3 id="opsHead">ملاحظات تشغيلية</h3>
+            <ul id="opsList"></ul>
           </div>
 
-          <div class="field" style="margin-top:12px">
-            <label id="aboutLabel">مهم</label>
-            <div class="small" id="aboutText">
-              - افتح التقرير النهائي من زر 📄 وسيقرأ البيانات من اللوحة تلقائياً.<br>
-              - لو عندك ملف Excel: احفظه CSV ثم استورده هنا.<br>
-              - الأعمدة المقترحة: Code,Owner,Status,Time,Gate,EventName
-            </div>
+          <div class="note">
+            <h3 id="alertsHead">تنبيهات</h3>
+            <ul id="alertsList"></ul>
           </div>
 
           <div class="footer">
-            <div class="mono" id="versionLine">v1.0</div>
-            <div class="mono" id="storageLine">localStorage</div>
+            <div class="stamp" id="verLine">v1.1</div>
+            <div class="mono" id="genLine">—</div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
-
 <script>
 (() => {
   "use strict";
 
-  const STORE_KEY = "KRS_INVITE_DATA_V1";
-  const DEFAULT_LANG = "ar";
-  let LANG = DEFAULT_LANG;
+  const REPORT_STORE = "KRS_INVITE_REPORT_V1";
+  let DATA = null;
 
-  const $ = (id) => document.getElementById(id);
-
-  const I18N = {
-    ar: {
-      title: "KRS INVITE — Dashboard",
-      subtitle: "لوحة تحكم فاخرة لإدارة الدعوات والحضور + توليد التقرير النهائي للطباعة",
-      summaryHead: "ملخص الإحصائيات",
-      summaryDesc: "أرقام حية + رسوم + جدول، مع دعم استيراد CSV وتصدير.",
-      donutTitle: "نسبة الحضور",
-      barTitle: "الحضور حسب الوقت",
-      evLabel: "بيانات المناسبة",
-      evHint: "هذه البيانات تظهر في التقرير النهائي تلقائياً.",
-      dataLabel: "البيانات (استيراد/تصدير)",
-      importText: "استيراد CSV",
-      sampleText: "تحميل بيانات تجريبية",
-      exportText: "تصدير CSV",
-      saveText: "حفظ",
-      filterLabel: "فلترة / بحث",
-      filterHint: "الجدول أدناه يتغير مباشرة حسب الفلاتر.",
-      thCode: "الكود",
-      thOwner: "الاسم",
-      thStatus: "الحالة",
-      thTime: "وقت الدخول",
-      thGate: "البوابة/الموظف",
-      opsHead: "أدوات سريعة",
-      opsDesc: "إضافة سريعة + توليد أوقات + تنظيف بيانات.",
-      addLabel: "إضافة سجل سريع",
-      addText: "إضافة",
-      addHint: "عند ترك الوقت فارغاً سيتم وضع الوقت الحالي تلقائياً.",
-      toolsLabel: "أدوات",
-      normalizeText: "تنظيف/توحيد البيانات",
-      autoTimeText: "توليد Timeline تلقائي",
-      toolsHint: "\"Timeline\" يستخدم لرسوم توزيع الحضور حسب الوقت في التقرير.",
-      aboutLabel: "مهم",
-      reportText: "توليد التقرير النهائي",
-      resetText: "Reset",
-      langText: "English"
-    },
-    en: {
-      title: "KRS INVITE — Dashboard",
-      subtitle: "Luxury dashboard for invites & attendance + final report generator (Print/PDF)",
-      summaryHead: "Live Summary",
-      summaryDesc: "KPIs + charts + table, with CSV import/export support.",
-      donutTitle: "Attendance Ratio",
-      barTitle: "Attendance by Time",
-      evLabel: "Event Info",
-      evHint: "This information will appear automatically in the final report.",
-      dataLabel: "Data (Import/Export)",
-      importText: "Import CSV",
-      sampleText: "Load sample data",
-      exportText: "Export CSV",
-      saveText: "Save",
-      filterLabel: "Filter / Search",
-      filterHint: "The table updates instantly based on filters.",
-      thCode: "Code",
-      thOwner: "Name",
-      thStatus: "Status",
-      thTime: "Check-in Time",
-      thGate: "Gate/Staff",
-      opsHead: "Quick Tools",
-      opsDesc: "Quick add + timeline + clean data.",
-      addLabel: "Quick Add Row",
-      addText: "Add",
-      addHint: "If time is empty, current time will be used.",
-      toolsLabel: "Tools",
-      normalizeText: "Normalize/Clean Data",
-      autoTimeText: "Auto-generate Timeline",
-      toolsHint: "Timeline is used for time distribution charts in the report.",
-      aboutLabel: "Important",
-      reportText: "Generate Final Report",
-      resetText: "Reset",
-      langText: "العربية"
-    }
-  };
-
-  function toast(msg){
-    const el = $("toast");
-    el.innerHTML = msg;
-    el.classList.add("show");
-    clearTimeout(toast._t);
-    toast._t = setTimeout(()=> el.classList.remove("show"), 2400);
-  }
-
-  function nowStamp(){
-    const d = new Date();
-    const pad=(n)=>String(n).padStart(2,"0");
-    const dd=pad(d.getDate()), mm=pad(d.getMonth()+1), yyyy=d.getFullYear();
-    let hh=d.getHours(); const min=pad(d.getMinutes());
-    const ampm = hh>=12 ? "PM":"AM";
-    hh = hh%12; if(hh===0) hh=12;
-    return `${dd}-${mm}-${yyyy}  ${hh}:${min} ${ampm}`;
-  }
-  function formatNumber(n){ return (n??0).toLocaleString("en-US"); }
-  function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
-  function pct(n,d){ if(!d) return 0; return Math.round((n/d)*1000)/10; }
+  const $ = (id)=>document.getElementById(id);
+  const getFont = ()=>getComputedStyle(document.documentElement).getPropertyValue("--font").trim();
+  const formatNumber = (n)=> (n??0).toLocaleString("en-US");
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const pct=(n,d)=>!d?0:Math.round((n/d)*1000)/10;
 
   function escapeHtml(s){
     return String(s ?? "").replace(/[&<>"']/g, (m)=>({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
     }[m]));
-  }
-
-  function statusTag(status){
-    const ar = (t, cls) => `<span class="tag"><span class="dot ${cls}"></span>${t}</span>`;
-    const en = (t, cls) => `<span class="tag"><span class="dot ${cls}"></span>${t}</span>`;
-    const s = String(status||"").toLowerCase();
-
-    if(LANG==="ar"){
-      if(s==="checked") return ar("تم الدخول","good");
-      if(s==="unused") return ar("غير مستخدم","warn");
-      if(s==="manual") return ar("يدوي","warn");
-      if(s==="rejected_duplicate") return ar("مكرر","bad");
-      if(s==="rejected_invalid") return ar("غير صالح","bad");
-      if(s==="rejected") return ar("مرفوض","bad");
-      return ar("—","");
-    }else{
-      if(s==="checked") return en("Checked","good");
-      if(s==="unused") return en("Unused","warn");
-      if(s==="manual") return en("Manual","warn");
-      if(s==="rejected_duplicate") return en("Duplicate","bad");
-      if(s==="rejected_invalid") return en("Invalid","bad");
-      if(s==="rejected") return en("Rejected","bad");
-      return en("—","");
-    }
-  }
-
-  function normalizeStatus(s){
-    s = String(s||"").trim().toLowerCase();
-    if(!s) return "unused";
-    if(["yes","y","checked","check","checkin","checked-in","in","used"].includes(s)) return "checked";
-    if(["no","n","unused","notused","not-used","pending"].includes(s)) return "unused";
-    if(["manual","override"].includes(s)) return "manual";
-    if(["dup","duplicate","rejected_duplicate"].includes(s)) return "rejected_duplicate";
-    if(["invalid","rejected_invalid"].includes(s)) return "rejected_invalid";
-    if(["rejected","رفض","مرفوض"].includes(s)) return "rejected";
-    return s;
-  }
-
-  function safeText(s){ return String(s ?? "").trim(); }
-
-  function parseTimeToMinutes(t){
-    // expects like "6:22 PM" or "18:22"
-    const s = String(t||"").trim();
-    if(!s) return null;
-    let m = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-    if(m){
-      let hh = parseInt(m[1],10);
-      const mm = parseInt(m[2],10);
-      const ap = m[3].toUpperCase();
-      if(ap==="PM" && hh!==12) hh+=12;
-      if(ap==="AM" && hh===12) hh=0;
-      return hh*60 + mm;
-    }
-    m = s.match(/^(\d{1,2}):(\d{2})$/);
-    if(m){
-      const hh=parseInt(m[1],10), mm=parseInt(m[2],10);
-      return hh*60 + mm;
-    }
-    return null;
-  }
-
-  function minutesToLabel(min){
-    min = Math.max(0, Math.min(24*60-1, min));
-    let hh = Math.floor(min/60);
-    const mm = String(min%60).padStart(2,"0");
-    const ap = hh>=12 ? "PM":"AM";
-    hh = hh%12; if(hh===0) hh=12;
-    return `${hh}:${mm} ${ap}`;
   }
 
   function setupCanvas(canvas){
@@ -678,62 +451,6 @@
     const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr,0,0,dpr,0,0);
     return ctx;
-  }
-
-  function drawDonut({checked,total,unused}){
-    const canvas = $("donut");
-    const ctx = setupCanvas(canvas);
-    const w = canvas.getBoundingClientRect().width;
-    const h = canvas.getBoundingClientRect().height;
-    ctx.clearRect(0,0,w,h);
-
-    const cx = w/2, cy = h/2;
-    const r = Math.min(w,h)*0.33;
-    const thick = Math.max(14, r*0.30);
-
-    const ratio = total ? checked/total : 0;
-
-    // bg ring
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI*2);
-    ctx.strokeStyle = "rgba(255,255,255,.10)";
-    ctx.lineWidth = thick;
-    ctx.lineCap = "round";
-    ctx.stroke();
-
-    const grad = ctx.createLinearGradient(cx-r, cy-r, cx+r, cy+r);
-    grad.addColorStop(0, "rgba(247,211,122,.95)");
-    grad.addColorStop(1, "rgba(207,162,74,.55)");
-
-    const start = -Math.PI/2;
-    const end = start + (Math.PI*2*ratio);
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, start, end);
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = thick;
-    ctx.lineCap = "round";
-    ctx.shadowColor = "rgba(247,211,122,.20)";
-    ctx.shadowBlur = 16;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    const attendancePct = pct(checked,total);
-
-    ctx.fillStyle = "rgba(233,238,247,.95)";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = "1000 34px " + getComputedStyle(document.documentElement).getPropertyValue("--font").trim();
-    ctx.fillText(`${attendancePct}%`, cx, cy - 8);
-
-    ctx.fillStyle = "rgba(168,179,198,.95)";
-    ctx.font = "1000 12.5px " + getComputedStyle(document.documentElement).getPropertyValue("--font").trim();
-    const sub = (LANG==="ar") ? `تم الدخول ${formatNumber(checked)} من ${formatNumber(total)}` : `${formatNumber(checked)} of ${formatNumber(total)} checked`;
-    ctx.fillText(sub, cx, cy + 22);
-
-    $("donutMeta").textContent = (LANG==="ar")
-      ? `حضور: ${formatNumber(checked)} · غير مستخدم: ${formatNumber(unused)}`
-      : `Checked: ${formatNumber(checked)} · Unused: ${formatNumber(unused)}`;
   }
 
   function roundRect(ctx, x, y, w, h, r){
@@ -747,7 +464,206 @@
     ctx.closePath();
   }
 
-  function drawBars(timeline){
+  const I18N = {
+    ar: {
+      reportTitle:"KRS INVITE — التقرير النهائي للمناسبة",
+      reportSub:"تقرير ملخص الحضور والتحقق — نسخة احترافية للطباعة وPDF",
+      printLabel:"طباعة / PDF",
+      langLabel:"English",
+      summaryHead:"ملخص سريع",
+      summaryDesc:"أرقام رئيسية ونِسَب الأداء لعملية الدخول والتحقق.",
+      donutTitle:"نسبة الحضور (Checked-in)",
+      barTitle:"توزيع الحضور حسب الوقت",
+      detailsHead:"تفاصيل الدعوات (عينة)",
+      detailsDesc:"يعرض بيانات من اللوحة — ويمكن توسيعه حسب حاجتك.",
+      thCode:"الكود", thOwner:"الاسم", thStatus:"الحالة", thTime:"وقت الدخول", thGate:"البوابة/الموظف",
+      insightsHead:"أهم ما يهم العميل",
+      insightsDesc:"الذروة، الجودة، والتنبيهات بشكل واضح.",
+      peakHead:"ذروة الحضور",
+      opsHead:"ملاحظات تشغيلية",
+      alertsHead:"تنبيهات"
+    },
+    en: {
+      reportTitle:"KRS INVITE — Final Event Report",
+      reportSub:"Attendance & verification summary — Print/PDF ready",
+      printLabel:"Print / PDF",
+      langLabel:"العربية",
+      summaryHead:"Quick Summary",
+      summaryDesc:"Key numbers and performance ratios for entry verification.",
+      donutTitle:"Attendance Ratio (Checked-in)",
+      barTitle:"Attendance by Time",
+      detailsHead:"Invites Details (Sample)",
+      detailsDesc:"Loaded from dashboard — expandable as needed.",
+      thCode:"Code", thOwner:"Name", thStatus:"Status", thTime:"Check-in Time", thGate:"Gate/Staff",
+      insightsHead:"Client Highlights",
+      insightsDesc:"Peak, quality, and alerts — clearly presented.",
+      peakHead:"Peak Window",
+      opsHead:"Operational Notes",
+      alertsHead:"Alerts"
+    }
+  };
+
+  let LANG = "ar";
+
+  function statusTag(status){
+    const s = String(status||"").toLowerCase();
+    const tag = (txt, cls)=>`<span class="tag"><span class="dot ${cls}"></span>${txt}</span>`;
+    if(LANG==="ar"){
+      if(s==="checked") return tag("تم الدخول","good");
+      if(s==="unused") return tag("غير مستخدم","warn");
+      if(s==="manual") return tag("يدوي","warn");
+      if(s.startsWith("rejected")||s==="rejected") return tag("مرفوض","bad");
+      return tag("—","");
+    }else{
+      if(s==="checked") return tag("Checked","good");
+      if(s==="unused") return tag("Unused","warn");
+      if(s==="manual") return tag("Manual","warn");
+      if(s.startsWith("rejected")||s==="rejected") return tag("Rejected","bad");
+      return tag("—","");
+    }
+  }
+
+  function applyLang(){
+    const t = I18N[LANG];
+    document.documentElement.lang = LANG;
+    document.documentElement.dir = (LANG==="ar") ? "rtl" : "ltr";
+
+    $("reportTitle").textContent = t.reportTitle;
+    $("reportSub").textContent = t.reportSub;
+    $("printLabel").textContent = t.printLabel;
+    $("langLabel").textContent = t.langLabel;
+
+    $("summaryHead").textContent = t.summaryHead;
+    $("summaryDesc").textContent = t.summaryDesc;
+    $("donutTitle").textContent = t.donutTitle;
+    $("barTitle").textContent = t.barTitle;
+    $("detailsHead").textContent = t.detailsHead;
+    $("detailsDesc").textContent = t.detailsDesc;
+
+    $("thCode").textContent = t.thCode;
+    $("thOwner").textContent = t.thOwner;
+    $("thStatus").textContent = t.thStatus;
+    $("thTime").textContent = t.thTime;
+    $("thGate").textContent = t.thGate;
+
+    $("insightsHead").textContent = t.insightsHead;
+    $("insightsDesc").textContent = t.insightsDesc;
+    $("peakHead").textContent = t.peakHead;
+    $("opsHead").textContent = t.opsHead;
+    $("alertsHead").textContent = t.alertsHead;
+  }
+
+  function renderHeader(){
+    const ev = DATA.event || {};
+    $("evNamePill").textContent = (LANG==="ar") ? (ev.name_ar||"—") : (ev.name_en||"—");
+    $("evDatePill").textContent = `${ev.date||"—"}`;
+    $("generatedStamp").textContent = (LANG==="ar") ? `تم الإنشاء: ${DATA.generatedAt||"—"}` : `Generated: ${DATA.generatedAt||"—"}`;
+    $("venueLine").textContent = (LANG==="ar") ? (ev.venue_ar||"—") : (ev.venue_en||"—");
+    $("contactLine").textContent = ev.contact || "—";
+
+    $("signatureLine").textContent = DATA.brand || "KRS INVITE";
+    $("reportIdLine").textContent = `REPORT ID: ${DATA.reportId || "—"}`;
+    $("verLine").textContent = DATA.version || "v1.1";
+    $("genLine").textContent = DATA.generatedAt || "—";
+  }
+
+  function renderKPIs(){
+    const T = DATA.totals || {};
+    const total = Math.max(0, Number(T.totalInvites||0));
+    const checked = clamp(Number(T.checkedIn||0), 0, total);
+    const rejected = Math.max(0, Number(T.rejected||0));
+    const manual = Math.max(0, Number(T.manualOverrides||0));
+    const unused = Math.max(0, total - checked);
+
+    const attendancePct = pct(checked,total);
+    const unusedPct = pct(unused,total);
+
+    const kpiDefs = (LANG==="ar") ? [
+      {t:"إجمالي الدعوات", v:formatNumber(total), s:"Total codes"},
+      {t:"تم الدخول", v:formatNumber(checked), s:`نسبة الحضور: ${attendancePct}%`},
+      {t:"غير مستخدم", v:formatNumber(unused), s:`نسبة غير المستخدم: ${unusedPct}%`},
+      {t:"مرفوض/تنبيهات", v:formatNumber(rejected), s:`استثناءات يدوية: ${formatNumber(manual)}`}
+    ] : [
+      {t:"Total Invites", v:formatNumber(total), s:"Total codes"},
+      {t:"Checked-in", v:formatNumber(checked), s:`Attendance: ${attendancePct}%`},
+      {t:"Unused", v:formatNumber(unused), s:`Unused: ${unusedPct}%`},
+      {t:"Rejected/Alerts", v:formatNumber(rejected), s:`Manual overrides: ${formatNumber(manual)}`}
+    ];
+
+    const grid = $("kpiGrid");
+    grid.innerHTML = "";
+    for(const k of kpiDefs){
+      const el = document.createElement("div");
+      el.className = "kpi";
+      el.innerHTML = `
+        <div class="t">${escapeHtml(k.t)}</div>
+        <div class="v">${escapeHtml(k.v)}</div>
+        <div class="s">${escapeHtml(k.s)}</div>
+      `;
+      grid.appendChild(el);
+    }
+
+    const q = Number(DATA.insights?.quality ?? 0);
+    $("qualityPill").textContent = (LANG==="ar") ? `جودة التشغيل: ${q}/100` : `Ops Quality: ${q}/100`;
+    $("statusPill").textContent = (LANG==="ar") ? "الحالة: مكتمل" : "Status: Completed";
+
+    $("donutMeta").textContent = (LANG==="ar")
+      ? `حضور: ${formatNumber(checked)} · غير مستخدم: ${formatNumber(unused)}`
+      : `Checked: ${formatNumber(checked)} · Unused: ${formatNumber(unused)}`;
+
+    return { total, checked, rejected, manual, unused, attendancePct };
+  }
+
+  function drawDonut(m){
+    const canvas = $("donut");
+    const ctx = setupCanvas(canvas);
+    const w = canvas.getBoundingClientRect().width;
+    const h = canvas.getBoundingClientRect().height;
+    ctx.clearRect(0,0,w,h);
+
+    const cx = w/2, cy = h/2;
+    const r = Math.min(w,h)*0.34;
+    const thick = Math.max(16, r*0.30);
+
+    const ratio = m.total ? m.checked/m.total : 0;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.strokeStyle = "rgba(255,255,255,.10)";
+    ctx.lineWidth = thick;
+    ctx.lineCap = "round";
+    ctx.stroke();
+
+    const grad = ctx.createLinearGradient(cx-r, cy-r, cx+r, cy+r);
+    grad.addColorStop(0, "rgba(247,211,122,.95)");
+    grad.addColorStop(1, "rgba(207,162,74,.60)");
+
+    const start = -Math.PI/2;
+    const end = start + (Math.PI*2*ratio);
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, start, end);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = thick;
+    ctx.lineCap = "round";
+    ctx.shadowColor = "rgba(247,211,122,.20)";
+    ctx.shadowBlur = 18;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = "rgba(233,238,247,.95)";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "1000 34px " + getFont();
+    ctx.fillText(`${m.attendancePct}%`, cx, cy - 10);
+
+    ctx.fillStyle = "rgba(168,179,198,.95)";
+    ctx.font = "1000 13px " + getFont();
+    const sub = (LANG==="ar") ? `تم الدخول ${formatNumber(m.checked)} من ${formatNumber(m.total)}` : `${formatNumber(m.checked)} of ${formatNumber(m.total)} checked`;
+    ctx.fillText(sub, cx, cy + 22);
+  }
+
+  function drawBars(){
     const canvas = $("bars");
     const ctx = setupCanvas(canvas);
     const w = canvas.getBoundingClientRect().width;
@@ -758,13 +674,12 @@
     const chartW = w - pad*2;
     const chartH = h - pad*2 - 18;
 
-    const tl = Array.isArray(timeline) ? timeline : [];
+    const tl = Array.isArray(DATA.timeline) ? DATA.timeline : [];
     const maxV = Math.max(1, ...tl.map(x=>Number(x.count)||0));
     const barCount = Math.max(1, tl.length);
     const gap = 8;
     const barW = (chartW - gap*(barCount-1)) / barCount;
 
-    // baseline
     ctx.strokeStyle = "rgba(255,255,255,.10)";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -787,14 +702,14 @@
       ctx.fill();
 
       ctx.fillStyle = "rgba(233,238,247,.9)";
-      ctx.font = "1000 11px " + getComputedStyle(document.documentElement).getPropertyValue("--font").trim();
+      ctx.font = "1000 11px " + getFont();
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
       ctx.fillText(String(v), x + barW/2, y - 6);
 
       if(i % 2 === 0){
         ctx.fillStyle = "rgba(168,179,198,.9)";
-        ctx.font = "1000 11px " + getComputedStyle(document.documentElement).getPropertyValue("--font").trim();
+        ctx.font = "1000 11px " + getFont();
         ctx.textBaseline = "top";
         ctx.fillText(String(tl[i].label||""), x + barW/2, pad + chartH + 6);
       }
@@ -810,687 +725,116 @@
       : `Avg/window: ${formatNumber(avgPerWindow)} · Est/hour: ${formatNumber(estPerHour)}`;
   }
 
-  function computeMetrics(data){
-    const rows = data.rows || [];
-    const total = Math.max(0, Number(data.totals?.totalInvites || rows.length || 0));
-    const checked = rows.filter(r=>r.status==="checked").length;
-    const rejected = rows.filter(r=>String(r.status).startsWith("rejected") || r.status==="rejected").length;
-    const manual = rows.filter(r=>r.status==="manual").length;
-    const unused = Math.max(0, total - checked);
-
-    const attendancePct = pct(checked,total);
-    const unusedPct = pct(unused,total);
-
-    // quality score
-    const dupPenalty = Math.min(20, rejected*2);
-    const coverageBonus = Math.min(60, attendancePct*0.6);
-    const stabilityBonus = 20;
-    const quality = clamp(Math.round(coverageBonus + stabilityBonus - dupPenalty), 0, 100);
-
-    return { total, checked, rejected, manual, unused, attendancePct, unusedPct, quality };
-  }
-
-  function computeTimelineFromRows(rows){
-    // build 15-min buckets from check-in times of checked rows
-    const mins = rows
-      .filter(r=>r.status==="checked" && r.time)
-      .map(r=>parseTimeToMinutes(r.time))
-      .filter(v=>v!==null);
-
-    if(mins.length < 3){
-      // fallback small default
-      return [
-        {label:"5:30",count:6},{label:"5:45",count:14},{label:"6:00",count:22},
-        {label:"6:15",count:28},{label:"6:30",count:33},{label:"6:45",count:29},
-      ];
-    }
-
-    const minM = Math.min(...mins);
-    const maxM = Math.max(...mins);
-    const start = Math.floor(minM/15)*15;
-    const end = Math.ceil((maxM+1)/15)*15;
-
-    const buckets = new Map();
-    for(let t=start; t<=end; t+=15){
-      buckets.set(t, 0);
-    }
-    for(const m of mins){
-      const b = Math.floor(m/15)*15;
-      buckets.set(b, (buckets.get(b)||0) + 1);
-    }
-
-    const arr = Array.from(buckets.entries()).map(([k,v])=>({ label: minutesToLabel(k).replace(":00",""), count: v }));
-    // keep max 14 buckets for nice view
-    if(arr.length > 14){
-      const step = Math.ceil(arr.length/14);
-      const compact = [];
-      for(let i=0;i<arr.length;i+=step){
-        const slice = arr.slice(i, i+step);
-        compact.push({
-          label: slice[0].label,
-          count: slice.reduce((a,x)=>a+x.count,0)
-        });
-      }
-      return compact;
-    }
-    return arr;
-  }
-
-  function defaultData(){
-    return {
-      brand: "KRS INVITE",
-      version: "v1.0",
-      languageDefault: "ar",
-      event: {
-        name: "زفاف خالد",
-        date: "15-01-2026 · 5:30 PM – 11:30 PM",
-        venue: "Dubai — Standalone Hall",
-        contact: "WhatsApp: +971 XX XXX XXXX · Email: krs2.store@gmail.com"
-      },
-      totals: { totalInvites: 300 },
-      rows: [
-        { code:"KRS_001", owner:"محمد", status:"checked", time:"5:36 PM", gate:"Gate 1 / Staff A", eventName:"زفاف خالد" },
-        { code:"KRS_017", owner:"نورا",  status:"checked", time:"5:48 PM", gate:"Gate 1 / Staff A", eventName:"زفاف خالد" },
-        { code:"KRS_102", owner:"سالم",  status:"checked", time:"6:07 PM", gate:"Gate 1 / Staff B", eventName:"زفاف خالد" },
-        { code:"KRS_144", owner:"شيخة",  status:"rejected_duplicate", time:"6:22 PM", gate:"Gate 1 / Staff A", eventName:"زفاف خالد" },
-        { code:"KRS_210", owner:"علي",   status:"checked", time:"6:33 PM", gate:"Gate 1 / Staff B", eventName:"زفاف خالد" },
-        { code:"KRS_255", owner:"فاطمة", status:"manual", time:"6:55 PM", gate:"Gate 1 / Supervisor", eventName:"زفاف خالد" },
-      ],
-      timeline: []
-    };
-  }
-
-  function load(){
-    try{
-      const raw = localStorage.getItem(STORE_KEY);
-      if(!raw) return defaultData();
-      const obj = JSON.parse(raw);
-      // basic shape safety
-      if(!obj || typeof obj !== "object") return defaultData();
-      obj.rows = Array.isArray(obj.rows) ? obj.rows : [];
-      obj.event = obj.event || {};
-      obj.totals = obj.totals || {};
-      obj.timeline = Array.isArray(obj.timeline) ? obj.timeline : [];
-      return obj;
-    }catch(e){
-      console.warn(e);
-      return defaultData();
-    }
-  }
-
-  function save(data){
-    localStorage.setItem(STORE_KEY, JSON.stringify(data));
-    $("stamp").textContent = (LANG==="ar") ? `تم التحديث: ${nowStamp()}` : `Updated: ${nowStamp()}`;
-    toast(`✅ <b>${LANG==="ar" ? "تم الحفظ" : "Saved"}</b>`);
-  }
-
-  function applyLang(){
-    const t = I18N[LANG];
-    document.documentElement.lang = LANG;
-    document.documentElement.dir = (LANG==="ar") ? "rtl" : "ltr";
-
-    $("title").textContent = t.title;
-    $("subtitle").textContent = t.subtitle;
-    $("summaryHead").textContent = t.summaryHead;
-    $("summaryDesc").textContent = t.summaryDesc;
-    $("donutTitle").textContent = t.donutTitle;
-    $("barTitle").textContent = t.barTitle;
-    $("evLabel").textContent = t.evLabel;
-    $("evHint").textContent = t.evHint;
-    $("dataLabel").textContent = t.dataLabel;
-    $("importText").textContent = t.importText;
-    $("sampleText").textContent = t.sampleText;
-    $("exportText").textContent = t.exportText;
-    $("saveText").textContent = t.saveText;
-    $("filterLabel").textContent = t.filterLabel;
-    $("filterHint").textContent = t.filterHint;
-
-    $("thCode").textContent = t.thCode;
-    $("thOwner").textContent = t.thOwner;
-    $("thStatus").textContent = t.thStatus;
-    $("thTime").textContent = t.thTime;
-    $("thGate").textContent = t.thGate;
-
-    $("opsHead").textContent = t.opsHead;
-    $("opsDesc").textContent = t.opsDesc;
-    $("addLabel").textContent = t.addLabel;
-    $("addText").textContent = t.addText;
-    $("addHint").textContent = t.addHint;
-    $("toolsLabel").textContent = t.toolsLabel;
-    $("normalizeText").textContent = t.normalizeText;
-    $("autoTimeText").textContent = t.autoTimeText;
-    $("toolsHint").textContent = t.toolsHint;
-    $("aboutLabel").textContent = t.aboutLabel;
-
-    $("reportText").textContent = t.reportText;
-    $("resetText").textContent = t.resetText;
-    $("langText").textContent = t.langText;
-
-    // status filter options
-    const sf = $("statusFilter");
-    sf.innerHTML = "";
-    const opts = (LANG==="ar")
-      ? [
-        ["all","الكل"],
-        ["checked","تم الدخول"],
-        ["unused","غير مستخدم"],
-        ["rejected","مرفوض"],
-        ["manual","يدوي"],
-      ]
-      : [
-        ["all","All"],
-        ["checked","Checked"],
-        ["unused","Unused"],
-        ["rejected","Rejected"],
-        ["manual","Manual"],
-      ];
-    for(const [v,l] of opts){
-      const o = document.createElement("option");
-      o.value=v; o.textContent=l;
-      sf.appendChild(o);
-    }
-
-    // placeholder updates
-    $("search").placeholder = (LANG==="ar") ? "ابحث بالكود أو الاسم..." : "Search code or name...";
-  }
-
-  function renderKPIs(metrics){
-    const grid = $("kpiGrid");
-    grid.innerHTML = "";
-
-    const items = (LANG==="ar") ? [
-      {t:"إجمالي الدعوات", v:formatNumber(metrics.total), s:"Total codes", badge:"—", tone:""},
-      {t:"تم الدخول", v:formatNumber(metrics.checked), s:`نسبة: ${metrics.attendancePct}%`, badge: metrics.attendancePct>=80?"ممتاز":(metrics.attendancePct>=60?"جيد":"متوسط"), tone: metrics.attendancePct>=80?"good":(metrics.attendancePct>=60?"warn":"bad")},
-      {t:"غير مستخدم", v:formatNumber(metrics.unused), s:`نسبة: ${metrics.unusedPct}%`, badge: metrics.unusedPct<=20?"منخفض":(metrics.unusedPct<=40?"طبيعي":"مرتفع"), tone: metrics.unusedPct<=20?"good":(metrics.unusedPct<=40?"warn":"bad")},
-      {t:"مرفوض/تنبيهات", v:formatNumber(metrics.rejected), s:`يدوي: ${formatNumber(metrics.manual)}`, badge: metrics.rejected<=5?"مسيطر":(metrics.rejected<=12?"تنبيه":"مرتفع"), tone: metrics.rejected<=5?"good":(metrics.rejected<=12?"warn":"bad")},
-    ] : [
-      {t:"Total Invites", v:formatNumber(metrics.total), s:"Total codes", badge:"—", tone:""},
-      {t:"Checked-in", v:formatNumber(metrics.checked), s:`Rate: ${metrics.attendancePct}%`, badge: metrics.attendancePct>=80?"Excellent":(metrics.attendancePct>=60?"Good":"Average"), tone: metrics.attendancePct>=80?"good":(metrics.attendancePct>=60?"warn":"bad")},
-      {t:"Unused", v:formatNumber(metrics.unused), s:`Rate: ${metrics.unusedPct}%`, badge: metrics.unusedPct<=20?"Low":(metrics.unusedPct<=40?"Normal":"High"), tone: metrics.unusedPct<=20?"good":(metrics.unusedPct<=40?"warn":"bad")},
-      {t:"Rejected/Alerts", v:formatNumber(metrics.rejected), s:`Manual: ${formatNumber(metrics.manual)}`, badge: metrics.rejected<=5?"Controlled":(metrics.rejected<=12?"Attention":"High"), tone: metrics.rejected<=5?"good":(metrics.rejected<=12?"warn":"bad")},
-    ];
-
-    for(const it of items){
-      const el = document.createElement("div");
-      el.className = "kpi";
-      const badgeCls = it.tone==="good" ? "badge b-good" : (it.tone==="warn" ? "badge b-warn" : (it.tone==="bad" ? "badge b-bad" : "badge"));
-      el.innerHTML = `
-        <div class="t">${escapeHtml(it.t)}</div>
-        <div class="v">${escapeHtml(it.v)}</div>
-        <div class="s">${escapeHtml(it.s)}</div>
-        <div class="${badgeCls}">${escapeHtml(it.badge)}</div>
-      `;
-      grid.appendChild(el);
-    }
-
-    $("qualityPill").textContent = (LANG==="ar")
-      ? `جودة التشغيل: ${metrics.quality}/100`
-      : `Ops Quality: ${metrics.quality}/100`;
-  }
-
-  function renderTable(data){
-    const rows = data.rows || [];
-    const q = safeText($("search").value).toLowerCase();
-    const sf = $("statusFilter").value;
-
-    const filtered = rows.filter(r => {
-      const code = String(r.code||"").toLowerCase();
-      const owner = String(r.owner||"").toLowerCase();
-      const status = String(r.status||"").toLowerCase();
-
-      const matchQ = !q || code.includes(q) || owner.includes(q);
-      let matchS = true;
-      if(sf==="checked") matchS = (status==="checked");
-      else if(sf==="unused") matchS = (status==="unused");
-      else if(sf==="manual") matchS = (status==="manual");
-      else if(sf==="rejected") matchS = (status.startsWith("rejected") || status==="rejected");
-      return matchQ && matchS;
-    });
-
+  function renderTable(){
+    const rows = Array.isArray(DATA.rowsSample) ? DATA.rowsSample : [];
+    $("detailsCount").textContent = (LANG==="ar") ? `عدد السجلات: ${rows.length}` : `Rows: ${rows.length}`;
     const tb = $("tbody");
     tb.innerHTML = "";
-    for(const r of filtered){
+    for(const r of rows){
+      const owner = (LANG==="ar") ? (r.owner_ar||"—") : (r.owner_en||"—");
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="mono">${escapeHtml(r.code||"—")}</td>
-        <td>${escapeHtml(r.owner||"—")}</td>
+        <td>${escapeHtml(owner)}</td>
         <td>${statusTag(r.status)}</td>
         <td class="mono">${escapeHtml(r.time||"—")}</td>
         <td>${escapeHtml(r.gate||"—")}</td>
       `;
       tb.appendChild(tr);
     }
-
-    $("countLine").textContent = (LANG==="ar")
-      ? `عدد السجلات المعروضة: ${formatNumber(filtered.length)}`
-      : `Shown rows: ${formatNumber(filtered.length)}`;
   }
 
-  function renderHeader(data){
-    const ev = data.event || {};
-    const name = ev.name || "—";
-    const date = ev.date || "—";
-    $("evPill").textContent = name;
-    $("datePill").textContent = date;
+  function renderInsights(){
+    const peak = DATA.insights?.peak || {label:"—", count:0};
+    $("peakText").innerHTML = (LANG==="ar")
+      ? `أعلى ذروة كانت عند <strong>${escapeHtml(peak.label||"—")}</strong> بعدد <strong>${formatNumber(peak.count||0)}</strong> دخول.`
+      : `Peak window: <strong>${escapeHtml(peak.label||"—")}</strong> with <strong>${formatNumber(peak.count||0)}</strong> entries.`;
 
-    $("eventName").value = name;
-    $("eventDate").value = date;
-    $("venue").value = ev.venue || "";
-    $("contact").value = ev.contact || "";
-
-    $("stamp").textContent = (LANG==="ar") ? `تم التحديث: ${nowStamp()}` : `Updated: ${nowStamp()}`;
-    $("storeKey").textContent = `STORE: ${STORE_KEY}`;
-    $("opsPill").textContent = (LANG==="ar") ? "KRS INVITE" : "KRS INVITE";
-  }
-
-  function exportCSV(data){
-    const rows = data.rows || [];
-    const header = ["Code","Owner","Status","Time","Gate","EventName"];
-    const lines = [header.join(",")];
-    for(const r of rows){
-      lines.push([
-        csvCell(r.code),
-        csvCell(r.owner),
-        csvCell(r.status),
-        csvCell(r.time),
-        csvCell(r.gate),
-        csvCell(r.eventName || (data.event?.name || ""))
-      ].join(","));
+    const ops = $("opsList");
+    ops.innerHTML = "";
+    const opsItems = (LANG==="ar")
+      ? ["تم توليد التقرير للحدث المختار من لوحة التحكم.", "التقرير جاهز للطباعة/حفظ PDF.", "يوصى بحفظ نسخة PDF بعد انتهاء المناسبة مباشرة."]
+      : ["Report generated for the selected event from dashboard.", "Print/PDF ready layout.", "Recommended: save as PDF right after the event."];
+    for(const it of opsItems){
+      const li = document.createElement("li");
+      li.innerHTML = it;
+      ops.appendChild(li);
     }
-    const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `KRS_INVITE_${(data.event?.name||"event").replace(/\s+/g,"_")}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(a.href);
-    toast(`⬇️ <b>${LANG==="ar" ? "تم التصدير" : "Exported"}</b>`);
-  }
-  function csvCell(v){
-    const s = String(v ?? "").replace(/"/g,'""');
-    return `"${s}"`;
-  }
 
-  function parseCSV(text){
-    // Simple robust CSV parser (supports quoted commas/newlines)
-    const rows = [];
-    let cur = "", inQ = false;
-    const out = [[]];
-    for(let i=0;i<text.length;i++){
-      const ch = text[i];
-      const next = text[i+1];
-      if(ch === '"' ){
-        if(inQ && next === '"'){ cur += '"'; i++; }
-        else inQ = !inQ;
-      } else if(ch === "," && !inQ){
-        out[out.length-1].push(cur);
-        cur = "";
-      } else if((ch === "\n" || ch === "\r") && !inQ){
-        if(ch === "\r" && next === "\n") i++;
-        out[out.length-1].push(cur);
-        cur = "";
-        out.push([]);
-      } else {
-        cur += ch;
-      }
+    const alerts = $("alertsList");
+    alerts.innerHTML = "";
+    const T = DATA.totals || {};
+    const rejected = Number(T.rejected||0);
+    const manual = Number(T.manualOverrides||0);
+
+    const alertsItems = (LANG==="ar")
+      ? [`محاولات مرفوضة: <strong>${formatNumber(rejected)}</strong>`, `استثناءات يدوية: <strong>${formatNumber(manual)}</strong>`]
+      : [`Rejected attempts: <strong>${formatNumber(rejected)}</strong>`, `Manual overrides: <strong>${formatNumber(manual)}</strong>`];
+    for(const it of alertsItems){
+      const li = document.createElement("li");
+      li.innerHTML = it;
+      alerts.appendChild(li);
     }
-    out[out.length-1].push(cur);
+  }
 
-    // remove empty tail rows
-    const clean = out.filter(r => r.some(c => String(c||"").trim() !== ""));
-    if(clean.length === 0) return { headers: [], rows: [] };
-    const headers = clean[0].map(h => String(h||"").trim());
-    const body = clean.slice(1).map(r => {
-      const obj = {};
-      headers.forEach((h, idx) => obj[h] = (r[idx] ?? "").trim());
+  function load(){
+    try{
+      const raw = localStorage.getItem(REPORT_STORE);
+      if(!raw) return null;
+      const obj = JSON.parse(raw);
+      if(!obj || typeof obj !== "object") return null;
       return obj;
-    });
-    return { headers, rows: body };
+    }catch(e){ return null; }
   }
 
-  function importCSVToData(data, csvText){
-    const parsed = parseCSV(csvText);
-    if(parsed.rows.length === 0){
-      toast(`⚠️ <b>${LANG==="ar" ? "CSV فارغ" : "Empty CSV"}</b>`);
-      return data;
-    }
-
-    // map columns flexibly
-    const get = (obj, keys) => {
-      for(const k of keys){
-        const found = Object.keys(obj).find(h => h.toLowerCase() === k.toLowerCase());
-        if(found) return obj[found];
-      }
-      return "";
-    };
-
-    const rows = parsed.rows.map(o => {
-      const code = safeText(get(o, ["Code","code","CODE","InviteCode","invite_code"]));
-      const owner = safeText(get(o, ["Owner","owner","Name","name","Guest","guest"]));
-      const status = normalizeStatus(get(o, ["Status","status","Used","used","Checkin","checkin"]));
-      const time = safeText(get(o, ["Time","time","CheckinTime","checkin_time"]));
-      const gate = safeText(get(o, ["Gate","gate","Staff","staff","Device","device"]));
-      const eventName = safeText(get(o, ["EventName","eventname","Event","event"]));
-      return {
-        code: code || "",
-        owner: owner || "",
-        status,
-        time: time || "",
-        gate: gate || "",
-        eventName: eventName || ""
-      };
-    }).filter(r => r.code || r.owner);
-
-    data.rows = rows;
-    data.totals = data.totals || {};
-    // If totalInvites is missing, set to rows length
-    if(!data.totals.totalInvites || Number(data.totals.totalInvites) < rows.length){
-      data.totals.totalInvites = rows.length;
-    }
-    toast(`✅ <b>${LANG==="ar" ? "تم الاستيراد" : "Imported"}</b> · ${formatNumber(rows.length)}`);
-    return data;
-  }
-
-  function normalizeData(data){
-    data.event = data.event || {};
-    data.totals = data.totals || {};
-    data.rows = Array.isArray(data.rows) ? data.rows : [];
-    data.timeline = Array.isArray(data.timeline) ? data.timeline : [];
-
-    // trim fields + normalize status
-    const seen = new Set();
-    const cleaned = [];
-    for(const r of data.rows){
-      const code = safeText(r.code);
-      const key = code.toLowerCase();
-      if(code && seen.has(key)) continue;
-      if(code) seen.add(key);
-
-      cleaned.push({
-        code,
-        owner: safeText(r.owner),
-        status: normalizeStatus(r.status),
-        time: safeText(r.time),
-        gate: safeText(r.gate),
-        eventName: safeText(r.eventName || data.event.name || "")
-      });
-    }
-    data.rows = cleaned;
-
-    // ensure totals at least rows count
-    const total = Number(data.totals.totalInvites || 0);
-    if(total < cleaned.length) data.totals.totalInvites = cleaned.length;
-
-    toast(`🧼 <b>${LANG==="ar" ? "تم تنظيف البيانات" : "Normalized"}</b>`);
-    return data;
-  }
-
-  function setEventInfoToData(data){
-    data.event = data.event || {};
-    data.event.name = safeText($("eventName").value) || data.event.name || "—";
-    data.event.date = safeText($("eventDate").value) || data.event.date || "—";
-    data.event.venue = safeText($("venue").value) || data.event.venue || "";
-    data.event.contact = safeText($("contact").value) || data.event.contact || "";
-    return data;
-  }
-
-  function generateReportPayload(data){
-    // This payload is read by krs-report.html
-    const rows = data.rows || [];
-    const metrics = computeMetrics(data);
-
-    // timeline: prefer stored; otherwise compute
-    let timeline = (Array.isArray(data.timeline) && data.timeline.length) ? data.timeline : computeTimelineFromRows(rows);
-
-    // peak
-    let peak = {label:"—", count:0};
-    for(const x of timeline){
-      const c = Number(x.count)||0;
-      if(c > peak.count) peak = {label:x.label, count:c};
-    }
-
-    const payload = {
-      brand: "KRS INVITE",
-      reportId: `KRS-INVITE-${new Date().toISOString().slice(0,10)}`,
-      version: "v1.0",
-      languageDefault: LANG,
-      generatedAt: nowStamp(),
-      event: {
-        name_ar: data.event?.name || "—",
-        name_en: data.event?.name || "—",
-        date: (data.event?.date || "—"),
-        timeRange: "",
-        venue_ar: data.event?.venue || "",
-        venue_en: data.event?.venue || "",
-        contact: data.event?.contact || ""
-      },
-      totals: {
-        totalInvites: metrics.total,
-        checkedIn: metrics.checked,
-        rejected: metrics.rejected,
-        manualOverrides: metrics.manual,
-        staffCount: 1,
-        gates: 1
-      },
-      timeline,
-      rowsSample: rows.slice(0, 80).map(r => ({
-        code: r.code,
-        owner_ar: r.owner,
-        owner_en: r.owner,
-        status: r.status,
-        time: r.time,
-        gate: r.gate
-      })),
-      insights: {
-        quality: metrics.quality,
-        attendancePct: metrics.attendancePct,
-        peak
-      }
-    };
-    return payload;
-  }
-
-  function openReport(data){
-    const payload = generateReportPayload(data);
-    localStorage.setItem("KRS_INVITE_REPORT_V1", JSON.stringify(payload));
-    window.open("krs-report.html", "_blank");
-  }
-
-  function init(){
-    let data = load();
-
-    // initial lang from stored data if exists
-    LANG = (data.languageDefault === "en") ? "en" : "ar";
+  function renderAll(){
     applyLang();
+    renderHeader();
+    const metrics = renderKPIs();
+    requestAnimationFrame(()=>{
+      drawDonut(metrics);
+      drawBars();
+    });
+    renderTable();
+    renderInsights();
+  }
 
-    // render header
-    renderHeader(data);
-
-    // if no timeline, compute (for charts)
-    if(!Array.isArray(data.timeline) || data.timeline.length===0){
-      data.timeline = computeTimelineFromRows(data.rows||[]);
+  function boot(){
+    DATA = load();
+    if(!DATA){
+      document.body.innerHTML = `
+        <div style="min-height:100vh;display:grid;place-items:center;padding:24px;color:#111;">
+          <div style="width:min(800px,96vw);background:#fff;border:1px solid #ddd;border-radius:18px;padding:18px;font-family:system-ui;">
+            <h2 style="margin:0 0 8px;">No report data found</h2>
+            <p style="margin:0;color:#444;line-height:1.6;">
+              افتح <b>krs-dashboard.html</b> واختر الحدث ثم اضغط <b>تقرير الحدث</b>.<br>
+              Open <b>krs-dashboard.html</b>, select an event, then click <b>Event Report</b>.
+            </p>
+          </div>
+        </div>
+      `;
+      return;
     }
 
-    // render metrics/charts/table
-    const metrics = computeMetrics(data);
-    renderKPIs(metrics);
-    drawDonut(metrics);
-    drawBars(data.timeline);
-    renderTable(data);
-
-    $("noteLine").textContent = `KRS INVITE · ${nowStamp()}`;
-
-    // events
-    $("langBtn").addEventListener("click", ()=>{
+    LANG = (DATA.languageDefault === "en") ? "en" : "ar";
+    $("langToggle").addEventListener("click", ()=>{
       LANG = (LANG==="ar") ? "en" : "ar";
-      data.languageDefault = LANG;
-      applyLang();
-      renderHeader(data);
-      renderKPIs(computeMetrics(data));
-      drawDonut(computeMetrics(data));
-      drawBars(data.timeline);
-      renderTable(data);
-      save(data);
+      DATA.languageDefault = LANG;
+      localStorage.setItem(REPORT_STORE, JSON.stringify(DATA));
+      renderAll();
     });
+    $("printBtn").addEventListener("click", ()=> window.print());
 
-    $("saveBtn").addEventListener("click", ()=>{
-      data = setEventInfoToData(data);
-      data.languageDefault = LANG;
-      // refresh pill
-      renderHeader(data);
-      save(data);
-      // re-render (no heavy)
-      renderKPIs(computeMetrics(data));
-      renderTable(data);
-    });
+    renderAll();
 
-    $("resetBtn").addEventListener("click", ()=>{
-      localStorage.removeItem(STORE_KEY);
-      data = defaultData();
-      data.languageDefault = LANG;
-      data.timeline = computeTimelineFromRows(data.rows||[]);
-      save(data);
-      renderHeader(data);
-      renderKPIs(computeMetrics(data));
-      drawDonut(computeMetrics(data));
-      drawBars(data.timeline);
-      renderTable(data);
-      toast(`🧹 <b>${LANG==="ar" ? "تمت إعادة الضبط" : "Reset done"}</b>`);
-    });
-
-    $("sampleBtn").addEventListener("click", ()=>{
-      data = defaultData();
-      data.languageDefault = LANG;
-      data.timeline = computeTimelineFromRows(data.rows||[]);
-      save(data);
-      renderHeader(data);
-      renderKPIs(computeMetrics(data));
-      drawDonut(computeMetrics(data));
-      drawBars(data.timeline);
-      renderTable(data);
-    });
-
-    $("exportBtn").addEventListener("click", ()=> exportCSV(data));
-
-    $("importBtn").addEventListener("click", async ()=>{
-      const f = $("csvFile").files?.[0];
-      if(!f){
-        toast(`⚠️ <b>${LANG==="ar" ? "اختر ملف CSV" : "Select a CSV file"}</b>`);
-        return;
-      }
-      const text = await f.text();
-      data = importCSVToData(data, text);
-      data = normalizeData(data);
-      data = setEventInfoToData(data);
-      data.timeline = computeTimelineFromRows(data.rows||[]);
-      save(data);
-
-      renderHeader(data);
-      renderKPIs(computeMetrics(data));
-      drawDonut(computeMetrics(data));
-      drawBars(data.timeline);
-      renderTable(data);
-    });
-
-    $("search").addEventListener("input", ()=> renderTable(data));
-    $("statusFilter").addEventListener("change", ()=> renderTable(data));
-
-    $("normalizeBtn").addEventListener("click", ()=>{
-      data = normalizeData(data);
-      data = setEventInfoToData(data);
-      data.timeline = computeTimelineFromRows(data.rows||[]);
-      save(data);
-      renderKPIs(computeMetrics(data));
-      drawDonut(computeMetrics(data));
-      drawBars(data.timeline);
-      renderTable(data);
-    });
-
-    $("autoTimeBtn").addEventListener("click", ()=>{
-      data.timeline = computeTimelineFromRows(data.rows||[]);
-      save(data);
-      drawBars(data.timeline);
-      toast(`⏱️ <b>${LANG==="ar" ? "تم توليد Timeline" : "Timeline generated"}</b>`);
-    });
-
-    $("addBtn").addEventListener("click", ()=>{
-      const code = safeText($("addCode").value);
-      const owner = safeText($("addOwner").value);
-      const status = normalizeStatus($("addStatus").value);
-      let time = safeText($("addTime").value);
-      const gate = safeText($("addGate").value);
-
-      if(!code){
-        toast(`⚠️ <b>${LANG==="ar" ? "الكود مطلوب" : "Code is required"}</b>`);
-        return;
-      }
-      if(!time){
-        // current time label
-        const d = new Date();
-        const min = String(d.getMinutes()).padStart(2,"0");
-        let hh = d.getHours();
-        const ap = hh>=12 ? "PM":"AM";
-        hh = hh%12; if(hh===0) hh=12;
-        time = `${hh}:${min} ${ap}`;
-      }
-
-      data = setEventInfoToData(data);
-      const evName = data.event?.name || "";
-      data.rows.unshift({
-        code, owner, status, time, gate,
-        eventName: evName
-      });
-
-      // keep totals >= rows
-      data.totals = data.totals || {};
-      if(Number(data.totals.totalInvites||0) < data.rows.length){
-        data.totals.totalInvites = data.rows.length;
-      }
-
-      data = normalizeData(data);
-      data.timeline = computeTimelineFromRows(data.rows||[]);
-      save(data);
-
-      // clear quick add
-      $("addCode").value=""; $("addOwner").value=""; $("addTime").value=""; $("addGate").value="";
-      renderKPIs(computeMetrics(data));
-      drawDonut(computeMetrics(data));
-      drawBars(data.timeline);
-      renderTable(data);
-      toast(`➕ <b>${LANG==="ar" ? "تمت الإضافة" : "Added"}</b>`);
-    });
-
-    $("reportBtn").addEventListener("click", ()=>{
-      data = setEventInfoToData(data);
-      data.languageDefault = LANG;
-      save(data);
-      openReport(data);
-    });
-
-    // live header updates
-    ["eventName","eventDate","venue","contact"].forEach(id=>{
-      $(id).addEventListener("input", ()=>{
-        // reflect in pill only (no save)
-        const name = safeText($("eventName").value) || "—";
-        const date = safeText($("eventDate").value) || "—";
-        $("evPill").textContent = name;
-        $("datePill").textContent = date;
-      });
-    });
-
-    // resize redraw
     let t=null;
     window.addEventListener("resize", ()=>{
       clearTimeout(t);
-      t = setTimeout(()=>{
-        drawDonut(computeMetrics(data));
-        drawBars(data.timeline);
-      }, 160);
+      t=setTimeout(()=>renderAll(), 180);
     });
   }
 
-  init();
+  boot();
 })();
 </script>
 </body>
