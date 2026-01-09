@@ -3,42 +3,31 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KRS INVITE — التقرير النهائي</title>
+  <title>KRS INVITE — Dashboard + Final Report (One File)</title>
 
   <style>
     :root{
-      --bg1:#070A12;
-      --bg2:#0B1020;
+      --bg1:#070A12; --bg2:#0B1020;
       --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.08);
       --stroke: rgba(255,255,255,.12);
       --stroke2: rgba(255,255,255,.18);
-      --ink:#E9EEF7;
-      --muted:#A8B3C6;
+      --ink:#E9EEF7; --muted:#A8B3C6;
 
-      --gold1:#F7D37A;
-      --gold2:#CFA24A;
-
-      --good:#39d98a;
-      --warn:#ffce4a;
-      --bad:#ff5c7a;
+      --gold1:#F7D37A; --gold2:#CFA24A;
+      --good:#39d98a; --warn:#ffce4a; --bad:#ff5c7a;
 
       --shadow: 0 18px 50px rgba(0,0,0,.45);
-      --radius: 18px;
-      --radius2: 28px;
-
+      --radius: 18px; --radius2: 28px;
       --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans Arabic", "Tahoma", Arial, sans-serif;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-
       --g: linear-gradient(135deg, rgba(247,211,122,.18), rgba(207,162,74,.08), rgba(255,255,255,.02));
       --glow: 0 0 0 1px rgba(247,211,122,.08), 0 0 60px rgba(247,211,122,.08);
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;
-      font-family:var(--font);
-      color:var(--ink);
+      margin:0; font-family:var(--font); color:var(--ink);
       background:
         radial-gradient(1200px 700px at 80% -10%, rgba(247,211,122,.20), transparent 60%),
         radial-gradient(900px 520px at 20% 0%, rgba(90,120,255,.12), transparent 55%),
@@ -46,84 +35,58 @@
         linear-gradient(180deg, var(--bg1), var(--bg2));
       overflow-x:hidden;
     }
-
-    .wrap{ width:min(1200px, 94vw); margin: 28px auto 60px; }
-
+    .wrap{ width:min(1280px, 94vw); margin: 26px auto 60px; }
+    .topbar{ display:flex; gap:14px; align-items:stretch; justify-content:space-between; margin-bottom:16px; }
     .brandCard{
-      padding:18px 18px 16px;
-      border-radius: var(--radius2);
-      background: var(--g);
-      border: 1px solid var(--stroke);
-      box-shadow: var(--shadow);
-      position:relative;
-      overflow:hidden;
+      flex:1; padding:18px; border-radius: var(--radius2);
+      background: var(--g); border: 1px solid var(--stroke); box-shadow: var(--shadow);
+      position:relative; overflow:hidden;
     }
     .brandCard:before{
-      content:"";
-      position:absolute; inset:-1px;
+      content:""; position:absolute; inset:-1px;
       background:
         radial-gradient(600px 140px at 70% 0%, rgba(247,211,122,.35), transparent 60%),
         radial-gradient(500px 260px at 15% 110%, rgba(120,180,255,.18), transparent 65%);
-      pointer-events:none;
-      opacity:.85;
+      opacity:.85; pointer-events:none;
     }
-    .brandRow{
-      position:relative;
-      display:flex;
-      gap:14px;
-      align-items:center;
-      justify-content:space-between;
-      flex-wrap:wrap;
-    }
-    .brandLeft{display:flex;align-items:center;gap:14px;min-width:260px}
+    .brandRow{ position:relative; display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    .brandLeft{ display:flex; align-items:center; gap:14px; min-width: 280px;}
     .logo{
       width:56px;height:56px;border-radius:18px;
       background: linear-gradient(135deg, rgba(247,211,122,.34), rgba(207,162,74,.16), rgba(255,255,255,.04));
       border: 1px solid rgba(247,211,122,.22);
       box-shadow: var(--glow);
-      display:grid; place-items:center;
+      display:grid; place-items:center; overflow:hidden;
       position:relative;
-      overflow:hidden;
     }
     .logo:after{
-      content:"";
-      position:absolute; inset:0;
+      content:""; position:absolute; inset:0;
       background:
         radial-gradient(32px 32px at 30% 35%, rgba(255,255,255,.22), transparent 60%),
         radial-gradient(80px 60px at 70% 80%, rgba(247,211,122,.18), transparent 60%);
       pointer-events:none;
     }
     .logo span{ position:relative; font-weight:1000; color:var(--gold1); letter-spacing:.6px; }
-    .brandTitle{display:flex;flex-direction:column;gap:4px}
-    .brandTitle h1{margin:0;font-size:18px;font-weight:1000}
-    .brandTitle p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.35}
+    .brandTitle h1{ margin:0; font-size:18px; font-weight:1000;}
+    .brandTitle p{ margin:6px 0 0; color:var(--muted); font-size:12.5px; line-height:1.35;}
+    .brandRight{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-end; }
 
-    .brandRight{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}
     .pill{
       padding:8px 10px; border-radius:999px;
       border:1px solid var(--stroke2);
       background: rgba(255,255,255,.05);
-      color: var(--muted);
-      font-size: 12px;
-      font-weight:900;
+      color: var(--muted); font-size: 12px; font-weight:900;
       white-space:nowrap;
     }
-    .pill strong{color:var(--ink)}
+    .pill strong{ color: var(--ink); }
     .btn{
       border:1px solid var(--stroke2);
       background: rgba(255,255,255,.06);
       color: var(--ink);
-      padding:10px 12px;
-      border-radius: 14px;
-      cursor:pointer;
-      font-weight:1000;
-      font-size: 13px;
-      display:flex;
-      gap:8px;
-      align-items:center;
-      transition:.18s ease;
-      user-select:none;
-      white-space:nowrap;
+      padding:10px 12px; border-radius: 14px;
+      cursor:pointer; font-weight:1000; font-size: 13px;
+      display:flex; gap:8px; align-items:center;
+      transition:.18s ease; user-select:none; white-space:nowrap;
     }
     .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
     .btn.primary{
@@ -140,7 +103,7 @@
 
     .grid{
       display:grid;
-      grid-template-columns: 1.3fr .7fr;
+      grid-template-columns: 1.25fr .75fr;
       gap:16px;
       margin-top:16px;
     }
@@ -155,15 +118,12 @@
     }
     .card .head{
       padding:16px 16px 12px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:10px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
       border-bottom: 1px solid rgba(255,255,255,.08);
       background: linear-gradient(135deg, rgba(255,255,255,.05), rgba(247,211,122,.06));
     }
-    .card .head h2{ margin:0; font-size: 14.5px; font-weight: 1000; }
-    .card .head p{ margin:6px 0 0; color: var(--muted); font-size: 12.5px; line-height:1.35; }
+    .card .head h2{ margin:0; font-size:14.5px; font-weight:1000;}
+    .card .head p{ margin:6px 0 0; color:var(--muted); font-size:12.5px; line-height:1.35;}
     .card .body{ padding:16px; }
 
     .kpis{
@@ -184,13 +144,11 @@
       min-height: 92px;
     }
     .kpi:before{
-      content:"";
-      position:absolute; inset:-1px;
+      content:""; position:absolute; inset:-1px;
       background:
         radial-gradient(260px 140px at 10% 10%, rgba(247,211,122,.18), transparent 60%),
         radial-gradient(200px 120px at 90% 70%, rgba(120,180,255,.12), transparent 60%);
-      opacity:.8;
-      pointer-events:none;
+      opacity:.8; pointer-events:none;
     }
     .kpi .t{ position:relative; color:var(--muted); font-size:12px; font-weight:1000; }
     .kpi .v{ position:relative; margin-top:8px; font-size:22px; font-weight:1000; letter-spacing:.2px; }
@@ -200,9 +158,9 @@
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap:12px;
+      margin-top: 12px;
     }
     @media (max-width: 980px){ .charts{grid-template-columns:1fr;} }
-
     .chartBox{
       border-radius: 18px;
       background: rgba(0,0,0,.18);
@@ -210,32 +168,70 @@
       padding: 14px;
       overflow:hidden;
     }
-    .chartTop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
-    .chartTop .title{font-weight:1000;font-size:12.5px}
-    .chartTop .meta{font-weight:900;font-size:12px;color:var(--muted);white-space:nowrap}
-    canvas{ width:100%; height:240px; display:block; }
+    .chartTop{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+    .chartTop .title{ font-weight: 1000; font-size: 12.5px; color: var(--ink); }
+    .chartTop .meta{ font-weight: 900; font-size: 12px; color: var(--muted); white-space:nowrap; }
+    canvas{ width:100%; height: 220px; display:block; }
+
+    .controls{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+    @media (max-width: 980px){ .controls{grid-template-columns:1fr} }
+
+    .field{
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .field label{
+      display:block; font-size:12px; color:var(--muted); font-weight:1000; margin-bottom:8px;
+    }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    input[type="text"], input[type="number"], select{
+      width:100%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--ink);
+      outline:none;
+      font-weight:900;
+    }
+    input::placeholder{ color: rgba(168,179,198,.7); }
+    .small{ font-size:12px; color:var(--muted); line-height:1.4; margin-top:8px; }
+    .mono{ font-family: var(--mono); }
 
     .tableWrap{
+      margin-top: 12px;
       border-radius: 18px;
       border:1px solid rgba(255,255,255,.10);
       overflow:hidden;
       background: rgba(0,0,0,.16);
+      max-height: 520px;
+      overflow:auto;
     }
-    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    table{ width:100%; border-collapse:collapse; font-size: 12.5px; }
     thead th{
+      position:sticky; top:0;
       background: rgba(255,255,255,.06);
       border-bottom:1px solid rgba(255,255,255,.10);
       text-align:start;
       padding: 12px 10px;
       font-weight: 1000;
+      color: var(--ink);
+      z-index: 2;
     }
     tbody td{
       padding: 11px 10px;
       border-bottom:1px solid rgba(255,255,255,.08);
+      color: var(--ink);
       vertical-align:top;
     }
     tbody tr:hover{ background: rgba(255,255,255,.04); }
-    .mono{ font-family: var(--mono); letter-spacing:.2px; }
 
     .tag{
       display:inline-flex; gap:6px; align-items:center;
@@ -249,198 +245,521 @@
     .dot.warn{background:var(--warn)}
     .dot.bad{background:var(--bad)}
 
-    .note{
-      border-radius: 18px;
-      background: rgba(0,0,0,.18);
-      border: 1px solid rgba(255,255,255,.10);
-      padding: 14px;
-      margin-bottom: 12px;
-    }
-    .note h3{margin:0;font-size:12.5px;font-weight:1000}
-    .note p, .note ul{margin:10px 0 0;color:var(--muted);font-size:12.5px;line-height:1.55}
-    ul{padding:0 18px}
-
     .footer{
       margin-top: 14px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
+      display:flex; flex-wrap:wrap; gap:10px;
+      align-items:center; justify-content:space-between;
       color: var(--muted);
       font-size: 12px;
     }
     .stamp{
-      padding: 8px 12px;
-      border-radius: 999px;
+      padding: 8px 12px; border-radius: 999px;
       border: 1px solid rgba(247,211,122,.22);
       background: rgba(247,211,122,.10);
       color: var(--gold1);
       font-weight:1000;
     }
 
+    .toast{
+      position:fixed;
+      inset:auto 18px 18px 18px;
+      max-width: 680px;
+      margin:auto;
+      background: rgba(0,0,0,.70);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      padding: 12px 14px;
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      display:none;
+      z-index: 9999;
+    }
+    .toast.show{ display:block; }
+    .toast b{ color: var(--gold1); }
+
+    /* ===== Print Mode: show only report section ===== */
+    #reportSection{ display:none; }
+
     @media print{
       body{ background:white !important; color:#111 !important; }
-      .btn, #langToggle, #printBtn { display:none !important; }
+      .noPrint{ display:none !important; }
+      #dashboardSection{ display:none !important; }
+      #reportSection{ display:block !important; }
       .wrap{ width:100% !important; margin:0 !important; }
       .brandCard, .card{ box-shadow:none !important; border: 1px solid #ddd !important; background: white !important; }
-      .kpi, .chartBox, .note{ background:white !important; border: 1px solid #e6e6e6 !important; }
+      .kpi, .chartBox, .field{ background:white !important; border: 1px solid #e6e6e6 !important; }
       thead th{ background:#f5f5f5 !important; color:#111 !important; }
       tbody td{ color:#111 !important; }
-      .brandTitle p, .kpi .t, .kpi .s, .note p, .note ul, .footer{ color:#444 !important; }
+      .brandTitle p, .kpi .t, .kpi .s, .small, .footer{ color:#444 !important; }
       .stamp{ color:#111 !important; background:#f3f3f3 !important; border-color:#ddd !important; }
-      .logo{ border-color:#ddd !important; box-shadow:none !important; }
-      .logo span{ color:#111 !important; text-shadow:none !important; }
       .pill{ color:#333 !important; border-color:#ddd !important; background:#f7f7f7 !important; }
+      .logo{ border-color:#ddd !important; box-shadow:none !important; }
+      .logo span{ color:#111 !important; }
+      canvas{ height:240px !important; }
+      .tableWrap{ max-height:none !important; overflow:visible !important; }
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="brandCard">
-      <div class="brandRow">
-        <div class="brandLeft">
-          <div class="logo"><span>KRS</span></div>
-          <div class="brandTitle">
-            <h1 id="reportTitle">KRS INVITE — التقرير النهائي للمناسبة</h1>
-            <p id="reportSub">تقرير ملخص الحضور والتحقق — نسخة احترافية للطباعة وPDF</p>
-          </div>
-        </div>
-        <div class="brandRight">
-          <span class="pill"><strong id="evNamePill">—</strong> · <span id="evDatePill">—</span></span>
-          <button class="btn" id="langToggle">🌐 <span id="langLabel">English</span></button>
-          <button class="btn primary" id="printBtn">🖨️ <span id="printLabel">طباعة / PDF</span></button>
-        </div>
-      </div>
 
-      <div class="divider"></div>
-
-      <div class="footer" style="margin-top:12px">
-        <div class="stamp" id="generatedStamp">تم الإنشاء: —</div>
-        <div id="venueLine">—</div>
-        <div id="contactLine" class="mono">—</div>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <div class="head">
-          <div>
-            <h2 id="summaryHead">ملخص سريع</h2>
-            <p id="summaryDesc">أرقام رئيسية ونِسَب الأداء لعملية الدخول والتحقق.</p>
-          </div>
-          <span class="pill" id="qualityPill">—</span>
-        </div>
-        <div class="body">
-          <div class="kpis" id="kpiGrid"></div>
-
-          <div style="height:12px"></div>
-
-          <div class="charts">
-            <div class="chartBox">
-              <div class="chartTop">
-                <div class="title" id="donutTitle">نسبة الحضور (Checked-in)</div>
-                <div class="meta" id="donutMeta">—</div>
+    <!-- ================= DASHBOARD ================= -->
+    <section id="dashboardSection">
+      <div class="topbar">
+        <div class="brandCard">
+          <div class="brandRow">
+            <div class="brandLeft">
+              <div class="logo"><span>KRS</span></div>
+              <div class="brandTitle">
+                <h1 id="title">KRS INVITE — لوحة التحكم</h1>
+                <p id="subtitle">اختر الحدث من القائمة — ثم تابع الإحصائيات أو اطبع التقرير النهائي</p>
               </div>
-              <canvas id="donut"></canvas>
             </div>
-
-            <div class="chartBox">
-              <div class="chartTop">
-                <div class="title" id="barTitle">توزيع الحضور حسب الوقت</div>
-                <div class="meta" id="barMeta">—</div>
-              </div>
-              <canvas id="bars"></canvas>
+            <div class="brandRight noPrint">
+              <span class="pill"><strong id="evPill">—</strong> · <span id="datePill">—</span></span>
+              <button class="btn" id="langBtn">🌐 <span id="langText">English</span></button>
+              <button class="btn" id="resetBtn">🧹 <span id="resetText">Reset</span></button>
+              <button class="btn primary" id="printReportBtn">🖨️ <span id="printText">طباعة تقرير نهائي</span></button>
             </div>
           </div>
 
-          <div style="height:12px"></div>
+          <div class="divider"></div>
 
-          <div class="card" style="border-radius:18px; box-shadow:none; background:rgba(0,0,0,.14); border:1px solid rgba(255,255,255,.10);">
-            <div class="head" style="border-bottom:1px solid rgba(255,255,255,.08)">
-              <div>
-                <h2 id="detailsHead">تفاصيل الدعوات (عينة)</h2>
-                <p id="detailsDesc">يعرض بيانات من اللوحة — ويمكن توسيعه حسب حاجتك.</p>
-              </div>
-              <span class="pill" id="detailsCount">—</span>
-            </div>
-            <div class="body">
-              <div class="tableWrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th id="thCode">الكود</th>
-                      <th id="thOwner">الاسم</th>
-                      <th id="thStatus">الحالة</th>
-                      <th id="thTime">وقت الدخول</th>
-                      <th id="thGate">البوابة/الموظف</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div class="footer">
-            <div class="mono" id="reportIdLine">—</div>
-            <div class="mono" id="signatureLine">KRS INVITE</div>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="head">
-          <div>
-            <h2 id="insightsHead">أهم ما يهم العميل</h2>
-            <p id="insightsDesc">الذروة، الجودة، والتنبيهات بشكل واضح.</p>
-          </div>
-          <span class="pill" id="statusPill">—</span>
-        </div>
-        <div class="body">
-          <div class="note">
-            <h3 id="peakHead">ذروة الحضور</h3>
-            <p id="peakText">—</p>
-          </div>
-
-          <div class="note">
-            <h3 id="opsHead">ملاحظات تشغيلية</h3>
-            <ul id="opsList"></ul>
-          </div>
-
-          <div class="note">
-            <h3 id="alertsHead">تنبيهات</h3>
-            <ul id="alertsList"></ul>
-          </div>
-
-          <div class="footer">
-            <div class="stamp" id="verLine">v1.1</div>
-            <div class="mono" id="genLine">—</div>
+          <div class="footer" style="margin-top:12px">
+            <div class="stamp" id="stamp">تم التحديث: —</div>
+            <div class="mono" id="storeKey">STORE: —</div>
           </div>
         </div>
       </div>
-    </div>
+
+      <div class="grid">
+        <!-- Left -->
+        <div class="card">
+          <div class="head">
+            <div>
+              <h2 id="summaryHead">ملخص الإحصائيات</h2>
+              <p id="summaryDesc">الإحصائيات والرسوم تتحدث تلقائياً حسب الحدث المختار.</p>
+            </div>
+            <span class="pill" id="qualityPill">—</span>
+          </div>
+
+          <div class="body">
+            <div class="kpis" id="kpiGrid"></div>
+
+            <div class="charts">
+              <div class="chartBox">
+                <div class="chartTop">
+                  <div class="title" id="donutTitle">نسبة الحضور</div>
+                  <div class="meta" id="donutMeta">—</div>
+                </div>
+                <canvas id="donut"></canvas>
+              </div>
+              <div class="chartBox">
+                <div class="chartTop">
+                  <div class="title" id="barTitle">الحضور حسب الوقت</div>
+                  <div class="meta" id="barMeta">—</div>
+                </div>
+                <canvas id="bars"></canvas>
+              </div>
+            </div>
+
+            <div class="controls">
+              <div class="field">
+                <label id="evSelectLabel">اختيار الحدث</label>
+                <div class="row">
+                  <select id="eventSelect" style="flex:1; min-width:260px"></select>
+                  <button class="btn noPrint" id="newEventBtn">➕ <span id="newEventText">حدث جديد</span></button>
+                  <button class="btn noPrint" id="deleteEventBtn">🗑️ <span id="deleteEventText">حذف الحدث</span></button>
+                </div>
+                <div class="small" id="evSelectHint">القائمة تتعبى تلقائياً من بياناتك أو من CSV.</div>
+              </div>
+
+              <div class="field">
+                <label id="evLabel">بيانات الحدث المختار</label>
+                <div class="row">
+                  <div style="flex:1; min-width:220px">
+                    <input id="eventName" type="text" placeholder="مثال: زفاف خالد" />
+                  </div>
+                  <div style="flex:1; min-width:220px">
+                    <input id="eventDate" type="text" placeholder="15-01-2026 · 5:30 PM – 11:30 PM" />
+                  </div>
+                </div>
+                <div class="row" style="margin-top:10px">
+                  <div style="flex:1; min-width:220px">
+                    <input id="venue" type="text" placeholder="دبي — قاعة ..." />
+                  </div>
+                  <div style="flex:1; min-width:220px">
+                    <input id="contact" type="text" placeholder="WhatsApp / Email" />
+                  </div>
+                </div>
+                <div class="row" style="margin-top:10px">
+                  <div style="flex:1; min-width:220px">
+                    <input id="totalInvites" type="number" min="0" placeholder="إجمالي الدعوات للحدث" />
+                  </div>
+                  <button class="btn noPrint" id="saveBtn">💾 <span id="saveText">حفظ</span></button>
+                </div>
+                <div class="small" id="evHint">كل حدث له بياناته وإحصائياته وتقريره.</div>
+              </div>
+            </div>
+
+            <div class="controls" style="margin-top:12px">
+              <div class="field">
+                <label id="dataLabel">بيانات (استيراد/تصدير) للحدث الحالي</label>
+                <div class="row noPrint">
+                  <input id="csvFile" type="file" accept=".csv,text/csv" style="flex:1" />
+                  <button class="btn" id="importBtn">⬆️ <span id="importText">استيراد CSV</span></button>
+                </div>
+                <div class="row" style="margin-top:10px" class="noPrint">
+                  <button class="btn noPrint" id="sampleBtn">✨ <span id="sampleText">بيانات تجريبية</span></button>
+                  <button class="btn noPrint" id="exportBtn">⬇️ <span id="exportText">تصدير CSV</span></button>
+                </div>
+                <div class="small mono" id="csvHint">Recommended columns: Code,Owner,Status,Time,Gate,EventName</div>
+              </div>
+
+              <div class="field">
+                <label id="filterLabel">فلترة / بحث</label>
+                <div class="row">
+                  <input id="search" type="text" placeholder="ابحث بالكود أو الاسم..." style="flex:1; min-width:240px" />
+                  <select id="statusFilter" style="width:220px"></select>
+                </div>
+                <div class="small" id="filterHint">النتائج تخص الحدث المختار فقط.</div>
+              </div>
+            </div>
+
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th id="thCode">الكود</th>
+                    <th id="thOwner">الاسم</th>
+                    <th id="thStatus">الحالة</th>
+                    <th id="thTime">وقت الدخول</th>
+                    <th id="thGate">البوابة/الموظف</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+              </table>
+            </div>
+
+            <div class="footer">
+              <div class="stamp" id="countLine">—</div>
+              <div class="mono" id="noteLine">KRS INVITE</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right -->
+        <div class="card">
+          <div class="head">
+            <div>
+              <h2 id="opsHead">إضافة/أدوات</h2>
+              <p id="opsDesc">الإضافة هنا تنضاف للحدث الحالي فقط.</p>
+            </div>
+            <span class="pill">KRS INVITE</span>
+          </div>
+          <div class="body">
+            <div class="field">
+              <label id="addLabel">إضافة سجل سريع (للحدث الحالي)</label>
+              <div class="row">
+                <input id="addCode" type="text" placeholder="Code (مثال: KRS_301)" style="flex:1; min-width:220px" />
+                <input id="addOwner" type="text" placeholder="اسم الضيف" style="flex:1; min-width:220px" />
+              </div>
+              <div class="row" style="margin-top:10px">
+                <select id="addStatus" style="flex:1; min-width:220px"></select>
+                <input id="addTime" type="text" placeholder="Time (مثال: 6:22 PM)" style="flex:1; min-width:220px" />
+              </div>
+              <div class="row" style="margin-top:10px">
+                <input id="addGate" type="text" placeholder="Gate/Staff" style="flex:1; min-width:220px" />
+                <button class="btn primary noPrint" id="addBtn">➕ <span id="addText">إضافة</span></button>
+              </div>
+              <div class="small" id="addHint">إذا تركت الوقت فارغاً، نستخدم وقت الآن تلقائياً.</div>
+            </div>
+
+            <div class="field" style="margin-top:12px">
+              <label id="toolsLabel">أدوات</label>
+              <div class="row noPrint">
+                <button class="btn" id="normalizeBtn">🧼 <span id="normalizeText">تنظيف البيانات</span></button>
+                <button class="btn" id="autoTimeBtn">⏱️ <span id="autoTimeText">توليد Timeline</span></button>
+              </div>
+              <div class="small" id="toolsHint">Timeline للرسوم (حسب الوقت) للحدث الحالي.</div>
+            </div>
+
+            <div class="field" style="margin-top:12px">
+              <label id="aboutLabel">مهم</label>
+              <div class="small" id="aboutText">
+                - إذا CSV فيه EventName متعدد: راح يوزّع السجلات على أحداثها تلقائياً.<br>
+                - إذا ما فيه EventName: يدخل كله في الحدث الحالي.<br>
+                - زر طباعة التقرير يطلع تقرير نهائي فاخر للحدث المختار.
+              </div>
+            </div>
+
+            <div class="footer">
+              <div class="mono">v1.2 One-File</div>
+              <div class="mono">localStorage</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= REPORT (PRINT ONLY) ================= -->
+    <section id="reportSection">
+      <div class="brandCard" style="margin: 0 0 16px;">
+        <div class="brandRow">
+          <div class="brandLeft">
+            <div class="logo"><span>KRS</span></div>
+            <div class="brandTitle">
+              <h1 id="rTitle">KRS INVITE — التقرير النهائي للمناسبة</h1>
+              <p id="rSub">تقرير ملخص الحضور والتحقق — نسخة احترافية للطباعة وPDF</p>
+            </div>
+          </div>
+          <div class="brandRight">
+            <span class="pill"><strong id="rEvent">—</strong> · <span id="rDate">—</span></span>
+            <span class="pill"><strong id="rGen">—</strong></span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="footer" style="margin-top:12px">
+          <div class="stamp" id="rVenue">—</div>
+          <div class="mono" id="rContact">—</div>
+          <div class="mono" id="rReportId">—</div>
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns: 1.3fr .7fr;">
+        <div class="card">
+          <div class="head">
+            <div>
+              <h2 id="rSummaryHead">ملخص سريع</h2>
+              <p id="rSummaryDesc">أرقام رئيسية ونِسَب الأداء لعملية الدخول والتحقق.</p>
+            </div>
+            <span class="pill" id="rQuality">—</span>
+          </div>
+          <div class="body">
+            <div class="kpis" id="rKpiGrid"></div>
+
+            <div class="charts">
+              <div class="chartBox">
+                <div class="chartTop">
+                  <div class="title" id="rDonutTitle">نسبة الحضور (Checked-in)</div>
+                  <div class="meta" id="rDonutMeta">—</div>
+                </div>
+                <canvas id="rDonut"></canvas>
+              </div>
+
+              <div class="chartBox">
+                <div class="chartTop">
+                  <div class="title" id="rBarTitle">توزيع الحضور حسب الوقت</div>
+                  <div class="meta" id="rBarMeta">—</div>
+                </div>
+                <canvas id="rBars"></canvas>
+              </div>
+            </div>
+
+            <div class="footer">
+              <div class="stamp" id="rCountLine">—</div>
+              <div class="mono">KRS INVITE</div>
+            </div>
+
+            <div class="card" style="border-radius:18px; box-shadow:none; background:rgba(0,0,0,.14); border:1px solid rgba(255,255,255,.10); margin-top:12px;">
+              <div class="head" style="border-bottom:1px solid rgba(255,255,255,.08)">
+                <div>
+                  <h2 id="rDetailsHead">تفاصيل الدعوات (آخر 150 سجل)</h2>
+                  <p id="rDetailsDesc">قائمة مختصرة للطباعة (يمكن زيادتها من الكود).</p>
+                </div>
+                <span class="pill" id="rDetailsCount">—</span>
+              </div>
+              <div class="body">
+                <div class="tableWrap" style="max-height:none; overflow:visible;">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>الكود</th>
+                        <th>الاسم</th>
+                        <th>الحالة</th>
+                        <th>وقت الدخول</th>
+                        <th>البوابة/الموظف</th>
+                      </tr>
+                    </thead>
+                    <tbody id="rTbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="head">
+            <div>
+              <h2 id="rClientHead">أهم ما يهم العميل</h2>
+              <p id="rClientDesc">الذروة، الجودة، والتنبيهات بشكل واضح.</p>
+            </div>
+            <span class="pill" id="rStatusPill">الحالة: مكتمل</span>
+          </div>
+          <div class="body">
+            <div class="field" style="margin-bottom:12px">
+              <label id="rPeakHead">ذروة الحضور</label>
+              <div class="small" id="rPeakText">—</div>
+            </div>
+
+            <div class="field" style="margin-bottom:12px">
+              <label id="rOpsHead">ملاحظات تشغيلية</label>
+              <div class="small" id="rOpsText">—</div>
+            </div>
+
+            <div class="field">
+              <label id="rAlertsHead">تنبيهات</label>
+              <div class="small" id="rAlertsText">—</div>
+            </div>
+
+            <div class="footer">
+              <div class="stamp">Final Report</div>
+              <div class="mono" id="rFooterStamp">—</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </div>
+
+  <div class="toast" id="toast"></div>
 
 <script>
 (() => {
   "use strict";
 
-  const REPORT_STORE = "KRS_INVITE_REPORT_V1";
-  let DATA = null;
+  // ========= Storage =========
+  const STORE_KEY = "KRS_INVITE_ONEFILE_V1";
+  let STATE = null;
+  let ACTIVE_EVENT_ID = null;
+  let LANG = "ar";
 
-  const $ = (id)=>document.getElementById(id);
-  const getFont = ()=>getComputedStyle(document.documentElement).getPropertyValue("--font").trim();
-  const formatNumber = (n)=> (n??0).toLocaleString("en-US");
-  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-  const pct=(n,d)=>!d?0:Math.round((n/d)*1000)/10;
+  const $ = (id) => document.getElementById(id);
 
+  // ========= I18N (minimal) =========
+  const I18N = {
+    ar:{
+      title:"KRS INVITE — لوحة التحكم",
+      subtitle:"اختر الحدث من القائمة — ثم تابع الإحصائيات أو اطبع التقرير النهائي",
+      printText:"طباعة تقرير نهائي",
+      resetText:"Reset",
+      langText:"English",
+      newEventText:"حدث جديد",
+      deleteEventText:"حذف الحدث",
+      saveText:"حفظ",
+      donutTitle:"نسبة الحضور",
+      barTitle:"الحضور حسب الوقت",
+      filterPH:"ابحث بالكود أو الاسم..."
+    },
+    en:{
+      title:"KRS INVITE — Dashboard",
+      subtitle:"Select an event — monitor analytics or print the final report",
+      printText:"Print Final Report",
+      resetText:"Reset",
+      langText:"العربية",
+      newEventText:"New Event",
+      deleteEventText:"Delete Event",
+      saveText:"Save",
+      donutTitle:"Attendance Ratio",
+      barTitle:"Attendance by Time",
+      filterPH:"Search code or name..."
+    }
+  };
+
+  // ========= Helpers =========
+  function toast(msg){
+    const el = $("toast");
+    el.innerHTML = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=> el.classList.remove("show"), 2400);
+  }
+  function nowStamp(){
+    const d=new Date();
+    const pad=(n)=>String(n).padStart(2,"0");
+    const dd=pad(d.getDate()), mm=pad(d.getMonth()+1), yyyy=d.getFullYear();
+    let hh=d.getHours(); const min=pad(d.getMinutes());
+    const ampm = hh>=12 ? "PM":"AM";
+    hh = hh%12; if(hh===0) hh=12;
+    return `${dd}-${mm}-${yyyy}  ${hh}:${min} ${ampm}`;
+  }
+  function formatNumber(n){ return (n??0).toLocaleString("en-US"); }
+  function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
+  function pct(n,d){ if(!d) return 0; return Math.round((n/d)*1000)/10; }
   function escapeHtml(s){
     return String(s ?? "").replace(/[&<>"']/g, (m)=>({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
     }[m]));
+  }
+  function safeText(s){ return String(s ?? "").trim(); }
+
+  function normalizeStatus(s){
+    s = String(s||"").trim().toLowerCase();
+    if(!s) return "unused";
+    if(["yes","y","checked","check","checkin","checked-in","in","used"].includes(s)) return "checked";
+    if(["no","n","unused","notused","not-used","pending"].includes(s)) return "unused";
+    if(["manual","override"].includes(s)) return "manual";
+    if(["dup","duplicate","rejected_duplicate"].includes(s)) return "rejected_duplicate";
+    if(["invalid","rejected_invalid"].includes(s)) return "rejected_invalid";
+    if(["rejected","رفض","مرفوض"].includes(s)) return "rejected";
+    return s;
+  }
+
+  function statusTag(status, lang){
+    const s = String(status||"").toLowerCase();
+    const tag = (txt, cls)=>`<span class="tag"><span class="dot ${cls}"></span>${txt}</span>`;
+    if(lang==="ar"){
+      if(s==="checked") return tag("تم الدخول","good");
+      if(s==="unused") return tag("غير مستخدم","warn");
+      if(s==="manual") return tag("يدوي","warn");
+      if(s==="rejected_duplicate") return tag("مكرر","bad");
+      if(s==="rejected_invalid") return tag("غير صالح","bad");
+      if(s==="rejected") return tag("مرفوض","bad");
+      if(s.startsWith("rejected")) return tag("مرفوض","bad");
+      return tag("—","");
+    }else{
+      if(s==="checked") return tag("Checked","good");
+      if(s==="unused") return tag("Unused","warn");
+      if(s==="manual") return tag("Manual","warn");
+      if(s==="rejected_duplicate") return tag("Duplicate","bad");
+      if(s==="rejected_invalid") return tag("Invalid","bad");
+      if(s==="rejected") return tag("Rejected","bad");
+      if(s.startsWith("rejected")) return tag("Rejected","bad");
+      return tag("—","");
+    }
+  }
+
+  function parseTimeToMinutes(t){
+    const s = String(t||"").trim();
+    if(!s) return null;
+    let m = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if(m){
+      let hh=parseInt(m[1],10);
+      const mm=parseInt(m[2],10);
+      const ap=m[3].toUpperCase();
+      if(ap==="PM" && hh!==12) hh+=12;
+      if(ap==="AM" && hh===12) hh=0;
+      return hh*60+mm;
+    }
+    m = s.match(/^(\d{1,2}):(\d{2})$/);
+    if(m){
+      const hh=parseInt(m[1],10), mm=parseInt(m[2],10);
+      return hh*60+mm;
+    }
+    return null;
+  }
+  function minutesToLabel(min){
+    min = Math.max(0, Math.min(24*60-1, min));
+    let hh=Math.floor(min/60);
+    const mm=String(min%60).padStart(2,"0");
+    const ap=hh>=12 ? "PM":"AM";
+    hh=hh%12; if(hh===0) hh=12;
+    return `${hh}:${mm} ${ap}`;
   }
 
   function setupCanvas(canvas){
@@ -452,7 +771,6 @@
     ctx.setTransform(dpr,0,0,dpr,0,0);
     return ctx;
   }
-
   function roundRect(ctx, x, y, w, h, r){
     const rr = Math.min(r, w/2, h/2);
     ctx.beginPath();
@@ -464,63 +782,149 @@
     ctx.closePath();
   }
 
-  const I18N = {
-    ar: {
-      reportTitle:"KRS INVITE — التقرير النهائي للمناسبة",
-      reportSub:"تقرير ملخص الحضور والتحقق — نسخة احترافية للطباعة وPDF",
-      printLabel:"طباعة / PDF",
-      langLabel:"English",
-      summaryHead:"ملخص سريع",
-      summaryDesc:"أرقام رئيسية ونِسَب الأداء لعملية الدخول والتحقق.",
-      donutTitle:"نسبة الحضور (Checked-in)",
-      barTitle:"توزيع الحضور حسب الوقت",
-      detailsHead:"تفاصيل الدعوات (عينة)",
-      detailsDesc:"يعرض بيانات من اللوحة — ويمكن توسيعه حسب حاجتك.",
-      thCode:"الكود", thOwner:"الاسم", thStatus:"الحالة", thTime:"وقت الدخول", thGate:"البوابة/الموظف",
-      insightsHead:"أهم ما يهم العميل",
-      insightsDesc:"الذروة، الجودة، والتنبيهات بشكل واضح.",
-      peakHead:"ذروة الحضور",
-      opsHead:"ملاحظات تشغيلية",
-      alertsHead:"تنبيهات"
-    },
-    en: {
-      reportTitle:"KRS INVITE — Final Event Report",
-      reportSub:"Attendance & verification summary — Print/PDF ready",
-      printLabel:"Print / PDF",
-      langLabel:"العربية",
-      summaryHead:"Quick Summary",
-      summaryDesc:"Key numbers and performance ratios for entry verification.",
-      donutTitle:"Attendance Ratio (Checked-in)",
-      barTitle:"Attendance by Time",
-      detailsHead:"Invites Details (Sample)",
-      detailsDesc:"Loaded from dashboard — expandable as needed.",
-      thCode:"Code", thOwner:"Name", thStatus:"Status", thTime:"Check-in Time", thGate:"Gate/Staff",
-      insightsHead:"Client Highlights",
-      insightsDesc:"Peak, quality, and alerts — clearly presented.",
-      peakHead:"Peak Window",
-      opsHead:"Operational Notes",
-      alertsHead:"Alerts"
-    }
-  };
+  // ========= Multi-event model =========
+  function uid(){ return "EVT_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16); }
 
-  let LANG = "ar";
+  function defaultState(){
+    const id = uid();
+    return {
+      version:"v1.2",
+      languageDefault:"ar",
+      activeEventId:id,
+      events:{
+        [id]:{
+          id,
+          name:"زفاف خالد",
+          date:"15-01-2026 · 5:30 PM – 11:30 PM",
+          venue:"Dubai — Standalone Hall",
+          contact:"Email: krs2.store@gmail.com",
+          totalInvites:300,
+          rows:[
+            { code:"KRS_001", owner:"محمد", status:"checked", time:"5:36 PM", gate:"Gate 1 / Staff A" },
+            { code:"KRS_017", owner:"نورا",  status:"checked", time:"5:48 PM", gate:"Gate 1 / Staff A" },
+            { code:"KRS_102", owner:"سالم",  status:"checked", time:"6:07 PM", gate:"Gate 1 / Staff B" },
+            { code:"KRS_144", owner:"شيخة",  status:"rejected_duplicate", time:"6:22 PM", gate:"Gate 1 / Staff A" },
+            { code:"KRS_210", owner:"علي",   status:"checked", time:"6:33 PM", gate:"Gate 1 / Staff B" },
+            { code:"KRS_255", owner:"فاطمة", status:"manual", time:"6:55 PM", gate:"Gate 1 / Supervisor" },
+          ],
+          timeline:[]
+        }
+      }
+    };
+  }
 
-  function statusTag(status){
-    const s = String(status||"").toLowerCase();
-    const tag = (txt, cls)=>`<span class="tag"><span class="dot ${cls}"></span>${txt}</span>`;
-    if(LANG==="ar"){
-      if(s==="checked") return tag("تم الدخول","good");
-      if(s==="unused") return tag("غير مستخدم","warn");
-      if(s==="manual") return tag("يدوي","warn");
-      if(s.startsWith("rejected")||s==="rejected") return tag("مرفوض","bad");
-      return tag("—","");
-    }else{
-      if(s==="checked") return tag("Checked","good");
-      if(s==="unused") return tag("Unused","warn");
-      if(s==="manual") return tag("Manual","warn");
-      if(s.startsWith("rejected")||s==="rejected") return tag("Rejected","bad");
-      return tag("—","");
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if(!raw) return defaultState();
+      const obj = JSON.parse(raw);
+      if(!obj || typeof obj!=="object") return defaultState();
+      obj.events = obj.events && typeof obj.events==="object" ? obj.events : {};
+      const ids = Object.keys(obj.events);
+      if(ids.length===0) return defaultState();
+      obj.activeEventId = obj.activeEventId && obj.events[obj.activeEventId] ? obj.activeEventId : ids[0];
+      obj.languageDefault = obj.languageDefault==="en" ? "en" : "ar";
+      for(const id of Object.keys(obj.events)){
+        const e = obj.events[id] || {};
+        e.id = id;
+        e.name = String(e.name||"").trim() || "—";
+        e.date = String(e.date||"").trim() || "—";
+        e.venue = String(e.venue||"").trim();
+        e.contact = String(e.contact||"").trim();
+        e.totalInvites = Number(e.totalInvites||0);
+        e.rows = Array.isArray(e.rows) ? e.rows : [];
+        e.timeline = Array.isArray(e.timeline) ? e.timeline : [];
+        obj.events[id] = e;
+      }
+      return obj;
+    }catch(e){
+      return defaultState();
     }
+  }
+
+  function saveState(){
+    localStorage.setItem(STORE_KEY, JSON.stringify(STATE));
+    $("stamp").textContent = (LANG==="ar") ? `تم التحديث: ${nowStamp()}` : `Updated: ${nowStamp()}`;
+    $("storeKey").textContent = `STORE: ${STORE_KEY}`;
+  }
+
+  function getActiveEvent(){ return STATE.events[ACTIVE_EVENT_ID]; }
+
+  function normalizeRowsUniqueByCode(rows){
+    const seen = new Set();
+    const out = [];
+    for(const r of rows){
+      const code = safeText(r.code);
+      if(!code) continue;
+      const key = code.toLowerCase();
+      if(seen.has(key)) continue;
+      seen.add(key);
+      out.push({
+        code,
+        owner: safeText(r.owner),
+        status: normalizeStatus(r.status),
+        time: safeText(r.time),
+        gate: safeText(r.gate),
+      });
+    }
+    return out;
+  }
+
+  function computeTimelineFromRows(rows){
+    const mins = rows
+      .filter(r=>r.status==="checked" && r.time)
+      .map(r=>parseTimeToMinutes(r.time))
+      .filter(v=>v!==null);
+
+    if(mins.length < 3){
+      return [
+        {label:"5:30",count:6},{label:"5:45",count:14},{label:"6:00",count:22},
+        {label:"6:15",count:28},{label:"6:30",count:33},{label:"6:45",count:29},
+      ];
+    }
+
+    const minM = Math.min(...mins);
+    const maxM = Math.max(...mins);
+    const start = Math.floor(minM/15)*15;
+    const end = Math.ceil((maxM+1)/15)*15;
+
+    const buckets = new Map();
+    for(let t=start; t<=end; t+=15) buckets.set(t, 0);
+    for(const m of mins){
+      const b = Math.floor(m/15)*15;
+      buckets.set(b, (buckets.get(b)||0) + 1);
+    }
+
+    let arr = Array.from(buckets.entries()).map(([k,v])=>({ label: minutesToLabel(k).replace(":00",""), count: v }));
+    if(arr.length > 14){
+      const step = Math.ceil(arr.length/14);
+      const compact = [];
+      for(let i=0;i<arr.length;i+=step){
+        const slice = arr.slice(i, i+step);
+        compact.push({ label: slice[0].label, count: slice.reduce((a,x)=>a+x.count,0) });
+      }
+      arr = compact;
+    }
+    return arr;
+  }
+
+  function computeMetrics(ev){
+    const rows = ev.rows || [];
+    const total = Math.max(0, Number(ev.totalInvites || rows.length || 0));
+    const checked = rows.filter(r=>r.status==="checked").length;
+    const rejected = rows.filter(r=>String(r.status).startsWith("rejected") || r.status==="rejected").length;
+    const manual = rows.filter(r=>r.status==="manual").length;
+    const unused = Math.max(0, total - checked);
+
+    const attendancePct = pct(checked,total);
+    const unusedPct = pct(unused,total);
+
+    const dupPenalty = Math.min(20, rejected*2);
+    const coverageBonus = Math.min(60, attendancePct*0.6);
+    const stabilityBonus = 20;
+    const quality = clamp(Math.round(coverageBonus + stabilityBonus - dupPenalty), 0, 100);
+
+    return { total, checked, rejected, manual, unused, attendancePct, unusedPct, quality };
   }
 
   function applyLang(){
@@ -528,104 +932,173 @@
     document.documentElement.lang = LANG;
     document.documentElement.dir = (LANG==="ar") ? "rtl" : "ltr";
 
-    $("reportTitle").textContent = t.reportTitle;
-    $("reportSub").textContent = t.reportSub;
-    $("printLabel").textContent = t.printLabel;
-    $("langLabel").textContent = t.langLabel;
-
-    $("summaryHead").textContent = t.summaryHead;
-    $("summaryDesc").textContent = t.summaryDesc;
+    $("title").textContent = t.title;
+    $("subtitle").textContent = t.subtitle;
+    $("printText").textContent = t.printText;
+    $("resetText").textContent = t.resetText;
+    $("langText").textContent = t.langText;
+    $("newEventText").textContent = t.newEventText;
+    $("deleteEventText").textContent = t.deleteEventText;
+    $("saveText").textContent = t.saveText;
     $("donutTitle").textContent = t.donutTitle;
     $("barTitle").textContent = t.barTitle;
-    $("detailsHead").textContent = t.detailsHead;
-    $("detailsDesc").textContent = t.detailsDesc;
+    $("search").placeholder = t.filterPH;
 
-    $("thCode").textContent = t.thCode;
-    $("thOwner").textContent = t.thOwner;
-    $("thStatus").textContent = t.thStatus;
-    $("thTime").textContent = t.thTime;
-    $("thGate").textContent = t.thGate;
+    // Filters
+    const sf = $("statusFilter");
+    sf.innerHTML = "";
+    const opts = (LANG==="ar")
+      ? [["all","الكل"],["checked","تم الدخول"],["unused","غير مستخدم"],["rejected","مرفوض"],["manual","يدوي"]]
+      : [["all","All"],["checked","Checked"],["unused","Unused"],["rejected","Rejected"],["manual","Manual"]];
+    for(const [v,l] of opts){
+      const o=document.createElement("option"); o.value=v; o.textContent=l; sf.appendChild(o);
+    }
 
-    $("insightsHead").textContent = t.insightsHead;
-    $("insightsDesc").textContent = t.insightsDesc;
-    $("peakHead").textContent = t.peakHead;
-    $("opsHead").textContent = t.opsHead;
-    $("alertsHead").textContent = t.alertsHead;
+    const as = $("addStatus");
+    as.innerHTML = "";
+    const addOpts = (LANG==="ar")
+      ? [["checked","تم الدخول"],["unused","غير مستخدم"],["rejected_duplicate","مكرر"],["rejected_invalid","غير صالح"],["manual","يدوي"]]
+      : [["checked","Checked"],["unused","Unused"],["rejected_duplicate","Duplicate"],["rejected_invalid","Invalid"],["manual","Manual"]];
+    for(const [v,l] of addOpts){
+      const o=document.createElement("option"); o.value=v; o.textContent=l; as.appendChild(o);
+    }
+
+    // Report labels
+    $("rTitle").textContent = (LANG==="ar") ? "KRS INVITE — التقرير النهائي للمناسبة" : "KRS INVITE — Final Event Report";
+    $("rSub").textContent = (LANG==="ar") ? "تقرير ملخص الحضور والتحقق — نسخة احترافية للطباعة وPDF" : "Attendance & verification summary — Print/PDF ready";
+    $("rSummaryHead").textContent = (LANG==="ar") ? "ملخص سريع" : "Quick Summary";
+    $("rSummaryDesc").textContent = (LANG==="ar") ? "أرقام رئيسية ونِسَب الأداء لعملية الدخول والتحقق." : "Key numbers and performance ratios for entry verification.";
+    $("rDonutTitle").textContent = (LANG==="ar") ? "نسبة الحضور (Checked-in)" : "Attendance Ratio (Checked-in)";
+    $("rBarTitle").textContent = (LANG==="ar") ? "توزيع الحضور حسب الوقت" : "Attendance by Time";
+    $("rClientHead").textContent = (LANG==="ar") ? "أهم ما يهم العميل" : "Client Highlights";
+    $("rClientDesc").textContent = (LANG==="ar") ? "الذروة، الجودة، والتنبيهات بشكل واضح." : "Peak, quality, and alerts — clearly presented.";
+    $("rPeakHead").textContent = (LANG==="ar") ? "ذروة الحضور" : "Peak Window";
+    $("rOpsHead").textContent = (LANG==="ar") ? "ملاحظات تشغيلية" : "Operational Notes";
+    $("rAlertsHead").textContent = (LANG==="ar") ? "تنبيهات" : "Alerts";
   }
 
-  function renderHeader(){
-    const ev = DATA.event || {};
-    $("evNamePill").textContent = (LANG==="ar") ? (ev.name_ar||"—") : (ev.name_en||"—");
-    $("evDatePill").textContent = `${ev.date||"—"}`;
-    $("generatedStamp").textContent = (LANG==="ar") ? `تم الإنشاء: ${DATA.generatedAt||"—"}` : `Generated: ${DATA.generatedAt||"—"}`;
-    $("venueLine").textContent = (LANG==="ar") ? (ev.venue_ar||"—") : (ev.venue_en||"—");
-    $("contactLine").textContent = ev.contact || "—";
-
-    $("signatureLine").textContent = DATA.brand || "KRS INVITE";
-    $("reportIdLine").textContent = `REPORT ID: ${DATA.reportId || "—"}`;
-    $("verLine").textContent = DATA.version || "v1.1";
-    $("genLine").textContent = DATA.generatedAt || "—";
+  function buildEventList(){
+    const sel = $("eventSelect");
+    sel.innerHTML = "";
+    const events = Object.values(STATE.events).sort((a,b)=> String(a.name).localeCompare(String(b.name)));
+    for(const e of events){
+      const opt = document.createElement("option");
+      opt.value = e.id;
+      opt.textContent = e.name || e.id;
+      sel.appendChild(opt);
+    }
+    if(!ACTIVE_EVENT_ID || !STATE.events[ACTIVE_EVENT_ID]){
+      ACTIVE_EVENT_ID = events[0]?.id || null;
+      STATE.activeEventId = ACTIVE_EVENT_ID;
+    }
+    sel.value = ACTIVE_EVENT_ID || "";
   }
 
-  function renderKPIs(){
-    const T = DATA.totals || {};
-    const total = Math.max(0, Number(T.totalInvites||0));
-    const checked = clamp(Number(T.checkedIn||0), 0, total);
-    const rejected = Math.max(0, Number(T.rejected||0));
-    const manual = Math.max(0, Number(T.manualOverrides||0));
-    const unused = Math.max(0, total - checked);
+  function setHeaderPills(ev){
+    $("evPill").textContent = ev?.name || "—";
+    $("datePill").textContent = ev?.date || "—";
+  }
 
-    const attendancePct = pct(checked,total);
-    const unusedPct = pct(unused,total);
+  function loadEventToForm(ev){
+    $("eventName").value = ev.name || "";
+    $("eventDate").value = ev.date || "";
+    $("venue").value = ev.venue || "";
+    $("contact").value = ev.contact || "";
+    $("totalInvites").value = (ev.totalInvites ?? "");
+  }
 
-    const kpiDefs = (LANG==="ar") ? [
-      {t:"إجمالي الدعوات", v:formatNumber(total), s:"Total codes"},
-      {t:"تم الدخول", v:formatNumber(checked), s:`نسبة الحضور: ${attendancePct}%`},
-      {t:"غير مستخدم", v:formatNumber(unused), s:`نسبة غير المستخدم: ${unusedPct}%`},
-      {t:"مرفوض/تنبيهات", v:formatNumber(rejected), s:`استثناءات يدوية: ${formatNumber(manual)}`}
-    ] : [
-      {t:"Total Invites", v:formatNumber(total), s:"Total codes"},
-      {t:"Checked-in", v:formatNumber(checked), s:`Attendance: ${attendancePct}%`},
-      {t:"Unused", v:formatNumber(unused), s:`Unused: ${unusedPct}%`},
-      {t:"Rejected/Alerts", v:formatNumber(rejected), s:`Manual overrides: ${formatNumber(manual)}`}
-    ];
+  function saveFormToEvent(ev){
+    ev.name = safeText($("eventName").value) || ev.name || "—";
+    ev.date = safeText($("eventDate").value) || ev.date || "—";
+    ev.venue = safeText($("venue").value);
+    ev.contact = safeText($("contact").value);
+    ev.totalInvites = Math.max(0, Number($("totalInvites").value || ev.totalInvites || 0));
+  }
 
+  function renderKPIs(metrics){
     const grid = $("kpiGrid");
     grid.innerHTML = "";
-    for(const k of kpiDefs){
+
+    const items = (LANG==="ar") ? [
+      {t:"إجمالي الدعوات", v:formatNumber(metrics.total), s:"Total codes"},
+      {t:"تم الدخول", v:formatNumber(metrics.checked), s:`نسبة: ${metrics.attendancePct}%`},
+      {t:"غير مستخدم", v:formatNumber(metrics.unused), s:`نسبة: ${metrics.unusedPct}%`},
+      {t:"مرفوض/تنبيهات", v:formatNumber(metrics.rejected), s:`يدوي: ${formatNumber(metrics.manual)}`},
+    ] : [
+      {t:"Total Invites", v:formatNumber(metrics.total), s:"Total codes"},
+      {t:"Checked-in", v:formatNumber(metrics.checked), s:`Rate: ${metrics.attendancePct}%`},
+      {t:"Unused", v:formatNumber(metrics.unused), s:`Rate: ${metrics.unusedPct}%`},
+      {t:"Rejected/Alerts", v:formatNumber(metrics.rejected), s:`Manual: ${formatNumber(metrics.manual)}`},
+    ];
+
+    for(const it of items){
       const el = document.createElement("div");
       el.className = "kpi";
       el.innerHTML = `
-        <div class="t">${escapeHtml(k.t)}</div>
-        <div class="v">${escapeHtml(k.v)}</div>
-        <div class="s">${escapeHtml(k.s)}</div>
+        <div class="t">${escapeHtml(it.t)}</div>
+        <div class="v">${escapeHtml(it.v)}</div>
+        <div class="s">${escapeHtml(it.s)}</div>
       `;
       grid.appendChild(el);
     }
 
-    const q = Number(DATA.insights?.quality ?? 0);
-    $("qualityPill").textContent = (LANG==="ar") ? `جودة التشغيل: ${q}/100` : `Ops Quality: ${q}/100`;
-    $("statusPill").textContent = (LANG==="ar") ? "الحالة: مكتمل" : "Status: Completed";
-
-    $("donutMeta").textContent = (LANG==="ar")
-      ? `حضور: ${formatNumber(checked)} · غير مستخدم: ${formatNumber(unused)}`
-      : `Checked: ${formatNumber(checked)} · Unused: ${formatNumber(unused)}`;
-
-    return { total, checked, rejected, manual, unused, attendancePct };
+    $("qualityPill").textContent = (LANG==="ar")
+      ? `جودة التشغيل: ${metrics.quality}/100`
+      : `Ops Quality: ${metrics.quality}/100`;
   }
 
-  function drawDonut(m){
-    const canvas = $("donut");
+  function renderTable(ev){
+    const rows = ev.rows || [];
+    const q = safeText($("search").value).toLowerCase();
+    const sf = $("statusFilter").value;
+
+    const filtered = rows.filter(r => {
+      const code = String(r.code||"").toLowerCase();
+      const owner = String(r.owner||"").toLowerCase();
+      const status = String(r.status||"").toLowerCase();
+
+      const matchQ = !q || code.includes(q) || owner.includes(q);
+      let matchS = true;
+      if(sf==="checked") matchS = (status==="checked");
+      else if(sf==="unused") matchS = (status==="unused");
+      else if(sf==="manual") matchS = (status==="manual");
+      else if(sf==="rejected") matchS = (status.startsWith("rejected") || status==="rejected");
+      return matchQ && matchS;
+    });
+
+    const tb = $("tbody");
+    tb.innerHTML = "";
+    for(const r of filtered){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="mono">${escapeHtml(r.code||"—")}</td>
+        <td>${escapeHtml(r.owner||"—")}</td>
+        <td>${statusTag(r.status, LANG)}</td>
+        <td class="mono">${escapeHtml(r.time||"—")}</td>
+        <td>${escapeHtml(r.gate||"—")}</td>
+      `;
+      tb.appendChild(tr);
+    }
+
+    $("countLine").textContent = (LANG==="ar")
+      ? `عدد السجلات المعروضة: ${formatNumber(filtered.length)}`
+      : `Shown rows: ${formatNumber(filtered.length)}`;
+
+    $("noteLine").textContent = `KRS INVITE · ${nowStamp()}`;
+  }
+
+  function drawDonut(canvasId, metaId, metrics){
+    const canvas = $(canvasId);
     const ctx = setupCanvas(canvas);
     const w = canvas.getBoundingClientRect().width;
     const h = canvas.getBoundingClientRect().height;
     ctx.clearRect(0,0,w,h);
 
     const cx = w/2, cy = h/2;
-    const r = Math.min(w,h)*0.34;
-    const thick = Math.max(16, r*0.30);
+    const r = Math.min(w,h)*0.33;
+    const thick = Math.max(14, r*0.30);
 
-    const ratio = m.total ? m.checked/m.total : 0;
+    const ratio = metrics.total ? metrics.checked/metrics.total : 0;
 
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI*2);
@@ -636,7 +1109,7 @@
 
     const grad = ctx.createLinearGradient(cx-r, cy-r, cx+r, cy+r);
     grad.addColorStop(0, "rgba(247,211,122,.95)");
-    grad.addColorStop(1, "rgba(207,162,74,.60)");
+    grad.addColorStop(1, "rgba(207,162,74,.55)");
 
     const start = -Math.PI/2;
     const end = start + (Math.PI*2*ratio);
@@ -647,24 +1120,30 @@
     ctx.lineWidth = thick;
     ctx.lineCap = "round";
     ctx.shadowColor = "rgba(247,211,122,.20)";
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = 16;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
     ctx.fillStyle = "rgba(233,238,247,.95)";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = "1000 34px " + getFont();
-    ctx.fillText(`${m.attendancePct}%`, cx, cy - 10);
+    ctx.font = "1000 34px " + getComputedStyle(document.documentElement).getPropertyValue("--font").trim();
+    ctx.fillText(`${metrics.attendancePct}%`, cx, cy - 8);
 
     ctx.fillStyle = "rgba(168,179,198,.95)";
-    ctx.font = "1000 13px " + getFont();
-    const sub = (LANG==="ar") ? `تم الدخول ${formatNumber(m.checked)} من ${formatNumber(m.total)}` : `${formatNumber(m.checked)} of ${formatNumber(m.total)} checked`;
+    ctx.font = "1000 12.5px " + getComputedStyle(document.documentElement).getPropertyValue("--font").trim();
+    const sub = (LANG==="ar") ? `تم الدخول ${formatNumber(metrics.checked)} من ${formatNumber(metrics.total)}` : `${formatNumber(metrics.checked)} of ${formatNumber(metrics.total)} checked`;
     ctx.fillText(sub, cx, cy + 22);
+
+    if(metaId){
+      $(metaId).textContent = (LANG==="ar")
+        ? `حضور: ${formatNumber(metrics.checked)} · غير مستخدم: ${formatNumber(metrics.unused)}`
+        : `Checked: ${formatNumber(metrics.checked)} · Unused: ${formatNumber(metrics.unused)}`;
+    }
   }
 
-  function drawBars(){
-    const canvas = $("bars");
+  function drawBars(canvasId, metaId, timeline){
+    const canvas = $(canvasId);
     const ctx = setupCanvas(canvas);
     const w = canvas.getBoundingClientRect().width;
     const h = canvas.getBoundingClientRect().height;
@@ -674,7 +1153,7 @@
     const chartW = w - pad*2;
     const chartH = h - pad*2 - 18;
 
-    const tl = Array.isArray(DATA.timeline) ? DATA.timeline : [];
+    const tl = Array.isArray(timeline) ? timeline : [];
     const maxV = Math.max(1, ...tl.map(x=>Number(x.count)||0));
     const barCount = Math.max(1, tl.length);
     const gap = 8;
@@ -702,14 +1181,14 @@
       ctx.fill();
 
       ctx.fillStyle = "rgba(233,238,247,.9)";
-      ctx.font = "1000 11px " + getFont();
+      ctx.font = "1000 11px " + getComputedStyle(document.documentElement).getPropertyValue("--font").trim();
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
       ctx.fillText(String(v), x + barW/2, y - 6);
 
       if(i % 2 === 0){
         ctx.fillStyle = "rgba(168,179,198,.9)";
-        ctx.font = "1000 11px " + getFont();
+        ctx.font = "1000 11px " + getComputedStyle(document.documentElement).getPropertyValue("--font").trim();
         ctx.textBaseline = "top";
         ctx.fillText(String(tl[i].label||""), x + barW/2, pad + chartH + 6);
       }
@@ -720,121 +1199,481 @@
     const avgPerWindow = Math.round(sum/windows);
     const estPerHour = Math.round(avgPerWindow*4);
 
-    $("barMeta").textContent = (LANG==="ar")
-      ? `متوسط/نافذة: ${formatNumber(avgPerWindow)} · تقديري/ساعة: ${formatNumber(estPerHour)}`
-      : `Avg/window: ${formatNumber(avgPerWindow)} · Est/hour: ${formatNumber(estPerHour)}`;
+    if(metaId){
+      $(metaId).textContent = (LANG==="ar")
+        ? `متوسط/نافذة: ${formatNumber(avgPerWindow)} · تقديري/ساعة: ${formatNumber(estPerHour)}`
+        : `Avg/window: ${formatNumber(avgPerWindow)} · Est/hour: ${formatNumber(estPerHour)}`;
+    }
   }
 
-  function renderTable(){
-    const rows = Array.isArray(DATA.rowsSample) ? DATA.rowsSample : [];
-    $("detailsCount").textContent = (LANG==="ar") ? `عدد السجلات: ${rows.length}` : `Rows: ${rows.length}`;
-    const tb = $("tbody");
+  function refreshDashboard(){
+    if(!ACTIVE_EVENT_ID || !STATE.events[ACTIVE_EVENT_ID]) return;
+    const ev = getActiveEvent();
+
+    // timeline
+    if(!Array.isArray(ev.timeline) || ev.timeline.length===0){
+      ev.timeline = computeTimelineFromRows(ev.rows||[]);
+    }
+
+    setHeaderPills(ev);
+    loadEventToForm(ev);
+
+    const m = computeMetrics(ev);
+    renderKPIs(m);
+    drawDonut("donut","donutMeta",m);
+    drawBars("bars","barMeta",ev.timeline);
+    renderTable(ev);
+
+    saveState();
+  }
+
+  // ========= REPORT BUILD (for print) =========
+  function buildReport(){
+    const ev = getActiveEvent();
+    const m = computeMetrics(ev);
+
+    // peak window
+    let peak = {label:"—", count:0};
+    for(const x of (ev.timeline||[])){
+      const c = Number(x.count)||0;
+      if(c > peak.count) peak = {label:x.label, count:c};
+    }
+
+    // header
+    $("rEvent").textContent = ev.name || "—";
+    $("rDate").textContent = ev.date || "—";
+    $("rGen").textContent = (LANG==="ar") ? `تم الإنشاء: ${nowStamp()}` : `Generated: ${nowStamp()}`;
+    $("rVenue").textContent = ev.venue ? (LANG==="ar" ? `الموقع: ${ev.venue}` : `Venue: ${ev.venue}`) : (LANG==="ar" ? "الموقع: —" : "Venue: —");
+    $("rContact").textContent = ev.contact ? ev.contact : "—";
+    const repId = `KRS-INVITE-${(ev.name||"EVENT").replace(/\s+/g,"-")}-${new Date().toISOString().slice(0,10)}`;
+    $("rReportId").textContent = `REPORT ID: ${repId}`;
+
+    $("rQuality").textContent = (LANG==="ar") ? `جودة التشغيل: ${m.quality}/100` : `Ops Quality: ${m.quality}/100`;
+    $("rDonutMeta").textContent = (LANG==="ar")
+      ? `حضور: ${formatNumber(m.checked)} · غير مستخدم: ${formatNumber(m.unused)}`
+      : `Checked: ${formatNumber(m.checked)} · Unused: ${formatNumber(m.unused)}`;
+
+    // KPIs in report
+    const rg = $("rKpiGrid");
+    rg.innerHTML = "";
+    const items = (LANG==="ar") ? [
+      {t:"إجمالي الدعوات", v:formatNumber(m.total), s:"Total codes"},
+      {t:"تم الدخول", v:formatNumber(m.checked), s:`نسبة الحضور: ${m.attendancePct}%`},
+      {t:"غير مستخدم", v:formatNumber(m.unused), s:`نسبة غير المستخدم: ${m.unusedPct}%`},
+      {t:"مرفوض/تنبيهات", v:formatNumber(m.rejected), s:`استثناءات يدوية: ${formatNumber(m.manual)}`},
+    ] : [
+      {t:"Total Invites", v:formatNumber(m.total), s:"Total codes"},
+      {t:"Checked-in", v:formatNumber(m.checked), s:`Attendance: ${m.attendancePct}%`},
+      {t:"Unused", v:formatNumber(m.unused), s:`Unused: ${m.unusedPct}%`},
+      {t:"Rejected/Alerts", v:formatNumber(m.rejected), s:`Manual overrides: ${formatNumber(m.manual)}`},
+    ];
+    for(const it of items){
+      const el = document.createElement("div");
+      el.className = "kpi";
+      el.innerHTML = `
+        <div class="t">${escapeHtml(it.t)}</div>
+        <div class="v">${escapeHtml(it.v)}</div>
+        <div class="s">${escapeHtml(it.s)}</div>
+      `;
+      rg.appendChild(el);
+    }
+
+    // charts
+    drawDonut("rDonut", null, m);
+    drawBars("rBars", "rBarMeta", ev.timeline || []);
+
+    $("rCountLine").textContent = (LANG==="ar")
+      ? `إجمالي السجلات: ${formatNumber((ev.rows||[]).length)}`
+      : `Total rows: ${formatNumber((ev.rows||[]).length)}`;
+
+    // details (last 150)
+    const rows = (ev.rows||[]).slice(0,150);
+    $("rDetailsCount").textContent = (LANG==="ar") ? `عدد السجلات: ${rows.length}` : `Rows: ${rows.length}`;
+    const tb = $("rTbody");
     tb.innerHTML = "";
     for(const r of rows){
-      const owner = (LANG==="ar") ? (r.owner_ar||"—") : (r.owner_en||"—");
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="mono">${escapeHtml(r.code||"—")}</td>
-        <td>${escapeHtml(owner)}</td>
-        <td>${statusTag(r.status)}</td>
+        <td>${escapeHtml(r.owner||"—")}</td>
+        <td>${statusTag(r.status, LANG)}</td>
         <td class="mono">${escapeHtml(r.time||"—")}</td>
         <td>${escapeHtml(r.gate||"—")}</td>
       `;
       tb.appendChild(tr);
     }
+
+    // right insights
+    $("rPeakText").innerHTML = (LANG==="ar")
+      ? `أعلى ذروة كانت عند <b>${escapeHtml(peak.label||"—")}</b> بعدد <b>${formatNumber(peak.count||0)}</b> دخول.`
+      : `Peak window: <b>${escapeHtml(peak.label||"—")}</b> with <b>${formatNumber(peak.count||0)}</b> entries.`;
+
+    const ops = (LANG==="ar")
+      ? `• التقرير تم توليده للحدث المختار من لوحة التحكم.<br>• جاهز للطباعة/حفظ PDF.<br>• يوصى بحفظ نسخة PDF بعد انتهاء المناسبة مباشرة.`
+      : `• Report generated for selected event.<br>• Print/PDF ready layout.<br>• Recommended: save PDF right after the event.`;
+    $("rOpsText").innerHTML = ops;
+
+    const alerts = (LANG==="ar")
+      ? `• محاولات مرفوضة: <b>${formatNumber(m.rejected)}</b><br>• استثناءات يدوية: <b>${formatNumber(m.manual)}</b>`
+      : `• Rejected attempts: <b>${formatNumber(m.rejected)}</b><br>• Manual overrides: <b>${formatNumber(m.manual)}</b>`;
+    $("rAlertsText").innerHTML = alerts;
+
+    $("rFooterStamp").textContent = nowStamp();
   }
 
-  function renderInsights(){
-    const peak = DATA.insights?.peak || {label:"—", count:0};
-    $("peakText").innerHTML = (LANG==="ar")
-      ? `أعلى ذروة كانت عند <strong>${escapeHtml(peak.label||"—")}</strong> بعدد <strong>${formatNumber(peak.count||0)}</strong> دخول.`
-      : `Peak window: <strong>${escapeHtml(peak.label||"—")}</strong> with <strong>${formatNumber(peak.count||0)}</strong> entries.`;
-
-    const ops = $("opsList");
-    ops.innerHTML = "";
-    const opsItems = (LANG==="ar")
-      ? ["تم توليد التقرير للحدث المختار من لوحة التحكم.", "التقرير جاهز للطباعة/حفظ PDF.", "يوصى بحفظ نسخة PDF بعد انتهاء المناسبة مباشرة."]
-      : ["Report generated for the selected event from dashboard.", "Print/PDF ready layout.", "Recommended: save as PDF right after the event."];
-    for(const it of opsItems){
-      const li = document.createElement("li");
-      li.innerHTML = it;
-      ops.appendChild(li);
+  // ========= CSV Import / Export =========
+  function parseCSV(text){
+    const out = [[]];
+    let cur="", inQ=false;
+    for(let i=0;i<text.length;i++){
+      const ch=text[i], next=text[i+1];
+      if(ch === '"'){
+        if(inQ && next === '"'){ cur+='"'; i++; }
+        else inQ = !inQ;
+      } else if(ch === "," && !inQ){
+        out[out.length-1].push(cur); cur="";
+      } else if((ch === "\n" || ch === "\r") && !inQ){
+        if(ch === "\r" && next === "\n") i++;
+        out[out.length-1].push(cur); cur="";
+        out.push([]);
+      } else {
+        cur += ch;
+      }
     }
+    out[out.length-1].push(cur);
 
-    const alerts = $("alertsList");
-    alerts.innerHTML = "";
-    const T = DATA.totals || {};
-    const rejected = Number(T.rejected||0);
-    const manual = Number(T.manualOverrides||0);
-
-    const alertsItems = (LANG==="ar")
-      ? [`محاولات مرفوضة: <strong>${formatNumber(rejected)}</strong>`, `استثناءات يدوية: <strong>${formatNumber(manual)}</strong>`]
-      : [`Rejected attempts: <strong>${formatNumber(rejected)}</strong>`, `Manual overrides: <strong>${formatNumber(manual)}</strong>`];
-    for(const it of alertsItems){
-      const li = document.createElement("li");
-      li.innerHTML = it;
-      alerts.appendChild(li);
-    }
-  }
-
-  function load(){
-    try{
-      const raw = localStorage.getItem(REPORT_STORE);
-      if(!raw) return null;
-      const obj = JSON.parse(raw);
-      if(!obj || typeof obj !== "object") return null;
+    const clean = out.filter(r => r.some(c => String(c||"").trim() !== ""));
+    if(clean.length===0) return {headers:[], rows:[]};
+    const headers = clean[0].map(h=>String(h||"").trim());
+    const body = clean.slice(1).map(r=>{
+      const obj={};
+      headers.forEach((h,idx)=> obj[h]= (r[idx] ?? "").trim());
       return obj;
-    }catch(e){ return null; }
-  }
-
-  function renderAll(){
-    applyLang();
-    renderHeader();
-    const metrics = renderKPIs();
-    requestAnimationFrame(()=>{
-      drawDonut(metrics);
-      drawBars();
     });
-    renderTable();
-    renderInsights();
+    return {headers, rows: body};
   }
 
-  function boot(){
-    DATA = load();
-    if(!DATA){
-      document.body.innerHTML = `
-        <div style="min-height:100vh;display:grid;place-items:center;padding:24px;color:#111;">
-          <div style="width:min(800px,96vw);background:#fff;border:1px solid #ddd;border-radius:18px;padding:18px;font-family:system-ui;">
-            <h2 style="margin:0 0 8px;">No report data found</h2>
-            <p style="margin:0;color:#444;line-height:1.6;">
-              افتح <b>krs-dashboard.html</b> واختر الحدث ثم اضغط <b>تقرير الحدث</b>.<br>
-              Open <b>krs-dashboard.html</b>, select an event, then click <b>Event Report</b>.
-            </p>
-          </div>
-        </div>
-      `;
+  function importCSV(csvText){
+    const parsed = parseCSV(csvText);
+    if(parsed.rows.length===0){
+      toast(`⚠️ <b>${LANG==="ar" ? "CSV فارغ" : "Empty CSV"}</b>`);
       return;
     }
 
-    LANG = (DATA.languageDefault === "en") ? "en" : "ar";
-    $("langToggle").addEventListener("click", ()=>{
-      LANG = (LANG==="ar") ? "en" : "ar";
-      DATA.languageDefault = LANG;
-      localStorage.setItem(REPORT_STORE, JSON.stringify(DATA));
-      renderAll();
+    const get = (obj, keys) => {
+      for(const k of keys){
+        const found = Object.keys(obj).find(h => h.toLowerCase() === k.toLowerCase());
+        if(found) return obj[found];
+      }
+      return "";
+    };
+
+    const currentEv = getActiveEvent();
+    let addedCount = 0;
+
+    for(const o of parsed.rows){
+      const code = safeText(get(o, ["Code","code","InviteCode","invite_code"]));
+      const owner = safeText(get(o, ["Owner","owner","Name","name","Guest","guest"]));
+      const status = normalizeStatus(get(o, ["Status","status","Used","used","Checkin","checkin"]));
+      const time = safeText(get(o, ["Time","time","CheckinTime","checkin_time"]));
+      const gate = safeText(get(o, ["Gate","gate","Staff","staff","Device","device"]));
+      const eventName = safeText(get(o, ["EventName","eventname","Event","event"])) || currentEv.name;
+
+      if(!code && !owner) continue;
+
+      // find/create event by name
+      const existing = Object.values(STATE.events).find(e => (e.name||"").trim().toLowerCase() === eventName.trim().toLowerCase());
+      let ev = existing;
+      if(!ev){
+        const id = uid();
+        ev = { id, name:eventName || `Event ${Object.keys(STATE.events).length+1}`, date:"—", venue:"", contact:"", totalInvites:0, rows:[], timeline:[] };
+        STATE.events[id] = ev;
+      }
+      ev.rows.push({ code, owner, status, time, gate });
+      addedCount++;
+    }
+
+    // normalize & compute timeline
+    for(const id of Object.keys(STATE.events)){
+      const ev = STATE.events[id];
+      ev.rows = normalizeRowsUniqueByCode(ev.rows || []);
+      if(Number(ev.totalInvites||0) < ev.rows.length) ev.totalInvites = ev.rows.length;
+      ev.timeline = computeTimelineFromRows(ev.rows);
+    }
+
+    toast(`✅ <b>${LANG==="ar" ? "تم الاستيراد" : "Imported"}</b> · ${formatNumber(addedCount)}`);
+    buildEventList();
+    saveState();
+    refreshDashboard();
+  }
+
+  function exportCSVForActiveEvent(){
+    const ev = getActiveEvent();
+    const header = ["Code","Owner","Status","Time","Gate","EventName"];
+    const lines = [header.join(",")];
+    for(const r of (ev.rows||[])){
+      lines.push([
+        csvCell(r.code),
+        csvCell(r.owner),
+        csvCell(r.status),
+        csvCell(r.time),
+        csvCell(r.gate),
+        csvCell(ev.name)
+      ].join(","));
+    }
+    const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `KRS_INVITE_${(ev.name||"event").replace(/\s+/g,"_")}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+    toast(`⬇️ <b>${LANG==="ar" ? "تم التصدير" : "Exported"}</b>`);
+  }
+  function csvCell(v){
+    const s = String(v ?? "").replace(/"/g,'""');
+    return `"${s}"`;
+  }
+
+  // ========= Event CRUD =========
+  function createNewEvent(){
+    const name = prompt(LANG==="ar" ? "اكتب اسم الحدث الجديد:" : "Enter new event name:");
+    if(!name || !String(name).trim()){
+      toast(`⚠️ <b>${LANG==="ar" ? "اسم الحدث مطلوب" : "Event name required"}</b>`);
+      return;
+    }
+    const id = uid();
+    STATE.events[id] = { id, name:String(name).trim(), date:"—", venue:"", contact:"", totalInvites:0, rows:[], timeline:[] };
+    ACTIVE_EVENT_ID = id;
+    STATE.activeEventId = id;
+    buildEventList();
+    saveState();
+    refreshDashboard();
+    toast(`➕ <b>${LANG==="ar" ? "تم إنشاء الحدث" : "Event created"}</b>`);
+  }
+
+  function deleteActiveEvent(){
+    const ev = getActiveEvent();
+    const ok = confirm(LANG==="ar"
+      ? `تأكيد حذف الحدث: "${ev.name}" ؟ (سيتم حذف بياناته بالكامل)`
+      : `Delete event "${ev.name}"? This will remove all its data.`);
+    if(!ok) return;
+
+    delete STATE.events[ACTIVE_EVENT_ID];
+    const ids = Object.keys(STATE.events);
+    if(ids.length===0){
+      STATE = defaultState();
+    }
+    ACTIVE_EVENT_ID = Object.keys(STATE.events)[0];
+    STATE.activeEventId = ACTIVE_EVENT_ID;
+
+    buildEventList();
+    saveState();
+    refreshDashboard();
+    toast(`🗑️ <b>${LANG==="ar" ? "تم حذف الحدث" : "Event deleted"}</b>`);
+  }
+
+  // ========= Print Report =========
+  function printFinalReport(){
+    const ev = getActiveEvent();
+
+    // save form + normalize before report
+    saveFormToEvent(ev);
+    ev.rows = normalizeRowsUniqueByCode(ev.rows||[]);
+    if(Number(ev.totalInvites||0) < ev.rows.length) ev.totalInvites = ev.rows.length;
+    ev.timeline = computeTimelineFromRows(ev.rows||[]);
+
+    buildReport();
+    saveState();
+
+    // give browser a moment to paint canvases
+    setTimeout(()=> window.print(), 120);
+  }
+
+  // ========= Wiring =========
+  function init(){
+    STATE = loadState();
+    LANG = STATE.languageDefault === "en" ? "en" : "ar";
+    ACTIVE_EVENT_ID = STATE.activeEventId;
+
+    applyLang();
+    buildEventList();
+
+    // initial compute timeline for all
+    for(const id of Object.keys(STATE.events)){
+      const ev = STATE.events[id];
+      ev.rows = normalizeRowsUniqueByCode(ev.rows||[]);
+      if(Number(ev.totalInvites||0) < ev.rows.length) ev.totalInvites = ev.rows.length;
+      if(!Array.isArray(ev.timeline) || ev.timeline.length===0) ev.timeline = computeTimelineFromRows(ev.rows);
+    }
+
+    saveState();
+    refreshDashboard();
+
+    $("eventSelect").addEventListener("change", ()=>{
+      ACTIVE_EVENT_ID = $("eventSelect").value;
+      STATE.activeEventId = ACTIVE_EVENT_ID;
+      saveState();
+      refreshDashboard();
     });
-    $("printBtn").addEventListener("click", ()=> window.print());
 
-    renderAll();
+    $("langBtn").addEventListener("click", ()=>{
+      LANG = (LANG==="ar") ? "en" : "ar";
+      STATE.languageDefault = LANG;
+      applyLang();
+      buildEventList();
+      saveState();
+      refreshDashboard();
+      toast(`🌐 <b>${LANG==="ar" ? "تم تغيير اللغة" : "Language switched"}</b>`);
+    });
 
-    let t=null;
+    $("saveBtn").addEventListener("click", ()=>{
+      const ev = getActiveEvent();
+      saveFormToEvent(ev);
+      buildEventList();
+      saveState();
+      refreshDashboard();
+      toast(`✅ <b>${LANG==="ar" ? "تم الحفظ" : "Saved"}</b>`);
+    });
+
+    $("newEventBtn").addEventListener("click", createNewEvent);
+    $("deleteEventBtn").addEventListener("click", deleteActiveEvent);
+
+    $("resetBtn").addEventListener("click", ()=>{
+      const ok = confirm(LANG==="ar"
+        ? "سيتم حذف جميع الأحداث والبيانات. هل أنت متأكد؟"
+        : "This will erase ALL events and data. Continue?");
+      if(!ok) return;
+      localStorage.removeItem(STORE_KEY);
+      STATE = defaultState();
+      LANG = STATE.languageDefault;
+      ACTIVE_EVENT_ID = STATE.activeEventId;
+      applyLang();
+      buildEventList();
+      saveState();
+      refreshDashboard();
+      toast(`🧹 <b>${LANG==="ar" ? "تمت إعادة الضبط" : "Reset done"}</b>`);
+    });
+
+    $("printReportBtn").addEventListener("click", printFinalReport);
+
+    $("search").addEventListener("input", ()=> renderTable(getActiveEvent()));
+    $("statusFilter").addEventListener("change", ()=> renderTable(getActiveEvent()));
+
+    $("normalizeBtn").addEventListener("click", ()=>{
+      const ev = getActiveEvent();
+      ev.rows = normalizeRowsUniqueByCode(ev.rows||[]);
+      if(Number(ev.totalInvites||0) < ev.rows.length) ev.totalInvites = ev.rows.length;
+      ev.timeline = computeTimelineFromRows(ev.rows||[]);
+      saveState();
+      refreshDashboard();
+      toast(`🧼 <b>${LANG==="ar" ? "تم تنظيف البيانات" : "Normalized"}</b>`);
+    });
+
+    $("autoTimeBtn").addEventListener("click", ()=>{
+      const ev = getActiveEvent();
+      ev.timeline = computeTimelineFromRows(ev.rows||[]);
+      saveState();
+      refreshDashboard();
+      toast(`⏱️ <b>${LANG==="ar" ? "تم توليد Timeline" : "Timeline generated"}</b>`);
+    });
+
+    $("addBtn").addEventListener("click", ()=>{
+      const ev = getActiveEvent();
+      const code = safeText($("addCode").value);
+      const owner = safeText($("addOwner").value);
+      const status = normalizeStatus($("addStatus").value);
+      let time = safeText($("addTime").value);
+      const gate = safeText($("addGate").value);
+
+      if(!code){
+        toast(`⚠️ <b>${LANG==="ar" ? "الكود مطلوب" : "Code is required"}</b>`);
+        return;
+      }
+      if(!time){
+        const d=new Date();
+        const min=String(d.getMinutes()).padStart(2,"0");
+        let hh=d.getHours();
+        const ap=hh>=12 ? "PM":"AM";
+        hh=hh%12; if(hh===0) hh=12;
+        time = `${hh}:${min} ${ap}`;
+      }
+
+      ev.rows.unshift({code, owner, status, time, gate});
+      ev.rows = normalizeRowsUniqueByCode(ev.rows||[]);
+      if(Number(ev.totalInvites||0) < ev.rows.length) ev.totalInvites = ev.rows.length;
+      ev.timeline = computeTimelineFromRows(ev.rows||[]);
+      saveState();
+      refreshDashboard();
+
+      $("addCode").value=""; $("addOwner").value=""; $("addTime").value=""; $("addGate").value="";
+      toast(`➕ <b>${LANG==="ar" ? "تمت الإضافة" : "Added"}</b>`);
+    });
+
+    $("sampleBtn").addEventListener("click", ()=>{
+      STATE = defaultState();
+      // add second event sample
+      const id2 = uid();
+      STATE.events[id2] = {
+        id:id2,
+        name:"زفاف شمه",
+        date:"20-01-2026 · 6:00 PM – 11:00 PM",
+        venue:"Dubai — Venue 2",
+        contact:"krs2.store@gmail.com",
+        totalInvites: 350,
+        rows:[
+          {code:"MS_001", owner:"Ahmed", status:"checked", time:"6:10 PM", gate:"Gate 1 / Staff A"},
+          {code:"MS_002", owner:"Sara", status:"checked", time:"6:12 PM", gate:"Gate 1 / Staff A"},
+          {code:"MS_003", owner:"Huda", status:"unused", time:"", gate:""},
+          {code:"MS_004", owner:"Khalid", status:"rejected_invalid", time:"6:20 PM", gate:"Gate 1 / Staff B"},
+        ],
+        timeline:[]
+      };
+      for(const id of Object.keys(STATE.events)){
+        const ev = STATE.events[id];
+        ev.rows = normalizeRowsUniqueByCode(ev.rows||[]);
+        ev.timeline = computeTimelineFromRows(ev.rows||[]);
+        if(Number(ev.totalInvites||0) < ev.rows.length) ev.totalInvites = ev.rows.length;
+      }
+      ACTIVE_EVENT_ID = STATE.activeEventId;
+      LANG = STATE.languageDefault;
+      applyLang();
+      buildEventList();
+      saveState();
+      refreshDashboard();
+      toast(`✨ <b>${LANG==="ar" ? "تم تحميل بيانات تجريبية" : "Sample loaded"}</b>`);
+    });
+
+    $("exportBtn").addEventListener("click", exportCSVForActiveEvent);
+
+    $("importBtn").addEventListener("click", async ()=>{
+      const f = $("csvFile").files?.[0];
+      if(!f){
+        toast(`⚠️ <b>${LANG==="ar" ? "اختر ملف CSV" : "Select a CSV file"}</b>`);
+        return;
+      }
+      const text = await f.text();
+      importCSV(text);
+    });
+
+    // fast update pills while typing
+    ["eventName","eventDate"].forEach(id=>{
+      $(id).addEventListener("input", ()=>{
+        $("evPill").textContent = safeText($("eventName").value) || "—";
+        $("datePill").textContent = safeText($("eventDate").value) || "—";
+      });
+    });
+
+    // redraw on resize
+    let rt=null;
     window.addEventListener("resize", ()=>{
-      clearTimeout(t);
-      t=setTimeout(()=>renderAll(), 180);
+      clearTimeout(rt);
+      rt=setTimeout(()=> refreshDashboard(), 180);
     });
   }
 
-  boot();
+  init();
 })();
 </script>
 </body>
