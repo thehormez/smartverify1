@@ -125,11 +125,15 @@
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
   // ✅ ضع بيانات Web App من Firebase Project Settings
-  const firebaseConfig = {
-    apiKey: "PASTE",
-    authDomain: "PASTE",
-    projectId: "hormez-inv",
-  };
+  // Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+  authDomain: "hormez-inv.firebaseapp.com",
+  projectId: "hormez-inv",
+  storageBucket: "hormez-inv.firebasestorage.app",
+  messagingSenderId: "747519941805",
+  appId: "1:747519941805:web:468fada2492700e9da3a24"
+};
 
   // ✅ ضع رابط Function الإرسال عندك (من Firebase Functions)
   const SEND_FN_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendWhatsAppTemplate";
