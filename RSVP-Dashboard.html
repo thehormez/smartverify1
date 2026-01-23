@@ -1,442 +1,715 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez RSVP Dashboard (B)</title>
+  <title>Hormez INV — RSVP Dashboard</title>
 
+  <!-- خط عربي -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet"/>
+
+  <!-- XLSX لقراءة Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
-    :root{--bg:#0b0b0c;--panel:#14151a;--stroke:#2a2b32;--gold:#d4af37;--txt:#e7e7e7;--muted:#a7a7a7;--ok:#25d366;--danger:#ef4444;}
+    :root{
+      --bg:#0b0f1a; --card:#111827; --card2:#0f172a; --stroke:#243041;
+      --txt:#e5e7eb; --muted:#94a3b8; --gold:#d6b15e; --ok:#22c55e; --bad:#ef4444; --blue:#60a5fa;
+    }
     *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--txt);font-family:'Noto Sans Arabic',system-ui}
-    .wrap{max-width:1100px;margin:0 auto;padding:16px}
-    .card{background:var(--panel);border:1px solid var(--stroke);border-radius:16px;padding:14px;margin-bottom:12px}
+    body{margin:0;background:linear-gradient(180deg,#070a12,var(--bg));color:var(--txt);font-family:"Noto Sans Arabic",system-ui}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;background:rgba(7,10,18,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--stroke);padding:12px 18px;z-index:20}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900}
+    .dot{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffe8a3,var(--gold))}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .btn,input,select{border:1px solid var(--stroke);background:#111217;color:#fff;padding:12px 14px;border-radius:12px;font-weight:800}
-    .btn{cursor:pointer}
-    .btn.ok{border-color:#1b8c4f}
-    .btn.danger{border-color:#7a1f1f}
-    .hint{color:var(--muted);font-size:13px;line-height:1.7}
-    table{width:100%;border-collapse:separate;border-spacing:0;border-radius:16px;overflow:hidden}
-    th,td{padding:12px;border-bottom:1px solid var(--stroke);text-align:right}
-    th{background:#1a1b20}
-    td{background:#0f1013}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:12px}
-    .pill.ok{border-color:rgba(37,211,102,.6)}
-    .pill.bad{border-color:rgba(239,68,68,.6)}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    @media(max-width:850px){.grid2{grid-template-columns:1fr}}
+    .card{background:rgba(255,255,255,.04);border:1px solid var(--stroke);border-radius:16px;padding:14px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+    input,select,button,textarea{
+      width:100%;border:1px solid var(--stroke);background:rgba(255,255,255,.03);
+      color:var(--txt);padding:12px 12px;border-radius:14px;font:inherit;outline:none
+    }
+    textarea{min-height:90px;resize:vertical;line-height:1.8}
+    button{cursor:pointer;font-weight:900}
+    .btn{background:#0b1225}
+    .btnGold{background:linear-gradient(180deg,#e9cf8a,var(--gold));color:#111;border:none}
+    .btnOk{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5)}
+    .btnBad{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.5)}
+    .hint{color:var(--muted);font-size:13px}
+    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    @media(max-width:900px){.kpi{grid-template-columns:1fr 1fr}}
+    .kpi .box{background:rgba(255,255,255,.04);border:1px solid var(--stroke);border-radius:16px;padding:12px}
+    .kpi .t{color:var(--muted);font-size:12px;font-weight:700}
+    .kpi .n{font-size:22px;font-weight:900;margin-top:6px}
+    table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:16px;margin-top:10px}
+    thead th{background:rgba(255,255,255,.06);padding:12px;border-bottom:1px solid var(--stroke);text-align:right;font-weight:900;font-size:13px}
+    tbody td{padding:12px;border-bottom:1px solid var(--stroke);background:rgba(0,0,0,.15);font-size:14px}
+    tbody tr:hover td{background:rgba(255,255,255,.05)}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--stroke);font-size:12px}
+    .tag.ok{border-color:rgba(34,197,94,.6)}
+    .tag.bad{border-color:rgba(239,68,68,.6)}
+    .tag.blue{border-color:rgba(96,165,250,.6)}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .hidden{display:none!important}
   </style>
 </head>
+
 <body>
-<div class="wrap">
-
-  <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <div>
-        <div style="font-weight:900;font-size:20px">Hormez — RSVP Dashboard (B)</div>
-        <div class="hint">رفع ضيوف من Excel/CSV → حفظ في Firestore → إرسال Template عبر Cloud Function لديك → متابعة delivered/read/failed</div>
-      </div>
-      <div class="row">
-        <button class="btn" id="btnLogin">تسجيل دخول</button>
-        <button class="btn danger" id="btnLogout" style="display:none">خروج</button>
-      </div>
-    </div>
-    <div class="hint" id="authState">غير مسجّل</div>
-  </div>
-
-  <div class="grid2">
-    <div class="card">
-      <div style="font-weight:900;margin-bottom:8px">1) إعداد الإرسال</div>
-      <div class="row">
-        <input id="eventId" placeholder="eventId مثل: test_event" style="flex:1" />
-        <input id="eventName" placeholder="اسم الحدث (اختياري)" style="flex:1" />
-      </div>
-      <div class="row" style="margin-top:10px">
-        <input id="templateName" placeholder="templateName" value="krs_rsvp" style="flex:1" />
-        <select id="lang" style="flex:1">
-          <option value="ar">ar</option>
-          <option value="en_US">en_US</option>
-        </select>
-      </div>
-      <div class="hint" style="margin-top:8px">
-        المتغيرات vars سترسل بالشكل: <b>[name, eventName, eventDate]</b><br/>
-        عدّلها بسهولة داخل الكود حسب تمبليتك.
-      </div>
-      <div class="row" style="margin-top:10px">
-        <input id="eventDate" placeholder="تاريخ الحدث مثل 15-01-2026" style="flex:1" />
-        <button class="btn ok" id="btnEnsureEvent">إنشاء/تحديث الحدث</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="font-weight:900;margin-bottom:8px">2) رفع ضيوف من Excel/CSV</div>
-      <div class="row">
-        <input id="file" type="file" accept=".xlsx,.xls,.csv" style="flex:1"/>
-        <button class="btn ok" id="btnUploadGuests">رفع إلى Firestore</button>
-      </div>
-      <div class="hint" style="margin-top:8px">
-        أعمدة الملف المقبولة (عربي/إنجليزي):<br/>
-        <b>name / الاسم</b> ، <b>phone / الهاتف</b> ، <b>invites / عدد الدعوات</b> (اختياري)
-      </div>
-      <div class="hint" id="uploadResult" style="margin-top:8px"></div>
+  <div class="top">
+    <div class="brand"><span class="dot"></span><span>Hormez INV — RSVP Dashboard</span></div>
+    <div class="row" style="min-width:320px;justify-content:flex-end">
+      <button id="btnLogout" class="btn btnBad hidden" onclick="logout()">خروج</button>
     </div>
   </div>
 
-  <div class="card">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <div style="font-weight:900">3) قائمة الضيوف</div>
-      <div class="row">
-        <button class="btn" id="btnReload">تحديث</button>
-        <button class="btn" id="btnSelectAll">تحديد الكل</button>
-        <button class="btn" id="btnClearSel">إلغاء التحديد</button>
-        <button class="btn ok" id="btnSendSelected">إرسال للمحدد</button>
-        <button class="btn ok" id="btnSendAll">إرسال للجميع</button>
-      </div>
-    </div>
-    <div class="hint" id="stats" style="margin-top:8px"></div>
+  <div class="wrap">
 
-    <table style="margin-top:10px">
-      <thead>
-        <tr>
-          <th style="text-align:center">✓</th>
-          <th>الاسم</th>
-          <th>الهاتف</th>
-          <th>RSVP</th>
-          <th>آخر Status</th>
-          <th>إجراء</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
+    <!-- LOGIN -->
+    <div id="loginCard" class="card" style="max-width:520px;margin:18px auto">
+      <h2 style="margin:0 0 8px">🔐 دخول الأدمن</h2>
+      <div class="hint">سجّل الدخول بنفس المستخدم الموجود في Firebase Auth.</div>
+      <div style="height:10px"></div>
+
+      <div class="grid">
+        <div>
+          <div class="hint">Email</div>
+          <input id="adminEmail" placeholder="thehormez@gmail.com" />
+        </div>
+        <div>
+          <div class="hint">Password</div>
+          <input id="adminPassword" type="password" placeholder="••••••••" />
+        </div>
+      </div>
+
+      <div style="height:10px"></div>
+      <button class="btnGold" onclick="loginAdmin()">تسجيل الدخول</button>
+      <div id="loginMsg" class="hint" style="margin-top:10px"></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dash" class="hidden">
+
+      <!-- Settings -->
+      <div class="grid">
+        <div class="card">
+          <h3 style="margin:0 0 8px">⚙️ إعدادات الإرسال</h3>
+
+          <div class="grid">
+            <div>
+              <div class="hint">Event ID</div>
+              <input id="eventId" value="test_event" placeholder="مثال: zafaf_khaled_2026" />
+            </div>
+            <div>
+              <div class="hint">Template</div>
+              <input id="templateName" value="krs_rsvp" />
+            </div>
+          </div>
+
+          <div class="grid" style="margin-top:10px">
+            <div>
+              <div class="hint">Language</div>
+              <select id="lang">
+                <option value="ar" selected>ar</option>
+                <option value="en">en</option>
+              </select>
+            </div>
+            <div>
+              <div class="hint">Cloud Function URL</div>
+              <input id="fnUrl" class="mono" value="https://us-central1-hormez-inv.cloudfunctions.net/sendWhatsAppTemplate" />
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+          <div class="hint">
+            المتغيرات (vars) للتمبليت تُرسل بهذا الترتيب. مثال: <span class="mono">["فارس","زفاف خالد","15-01-2026"]</span>
+          </div>
+          <textarea id="varsJson" class="mono">["فارس","زفاف خالد","15-01-2026"]</textarea>
+
+          <div style="height:10px"></div>
+          <div class="row">
+            <button class="btn btnOk" onclick="refreshAll()">تحديث البيانات</button>
+            <button class="btn" onclick="ensureIndexesHint()">ملاحظة الفهارس</button>
+          </div>
+          <div id="sysMsg" class="hint" style="margin-top:10px"></div>
+        </div>
+
+        <!-- Upload guests -->
+        <div class="card">
+          <h3 style="margin:0 0 8px">📥 رفع الضيوف (Excel/CSV) إلى Firestore</h3>
+          <div class="hint">الأعمدة المقبولة: name/الاسم + phone/الهاتف (وإختياري: invites/عدد)</div>
+
+          <div style="height:10px"></div>
+          <input id="fileGuests" type="file" accept=".csv,.xlsx,.xls" />
+
+          <div style="height:10px"></div>
+          <div class="row">
+            <button class="btnGold" onclick="importGuests()">رفع الضيوف</button>
+            <button class="btn btnBad" onclick="clearEventGuests()">حذف ضيوف الحدث</button>
+          </div>
+
+          <div id="importMsg" class="hint" style="margin-top:10px"></div>
+
+          <hr style="border:none;border-top:1px solid var(--stroke);margin:14px 0" />
+
+          <h3 style="margin:0 0 8px">📤 إرسال سريع (فردي)</h3>
+          <div class="grid">
+            <div>
+              <div class="hint">الاسم</div>
+              <input id="oneName" value="فارس" />
+            </div>
+            <div>
+              <div class="hint">الرقم (بدون +)</div>
+              <input id="onePhone" value="971566112323" class="mono" />
+            </div>
+          </div>
+          <div style="height:10px"></div>
+          <button class="btnGold" onclick="sendOne()">إرسال Template الآن</button>
+          <div id="sendOneMsg" class="hint" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <!-- KPI -->
+      <div style="height:12px"></div>
+      <div class="kpi">
+        <div class="box"><div class="t">عدد الضيوف</div><div class="n" id="kpiGuests">0</div></div>
+        <div class="box"><div class="t">Pending RSVP</div><div class="n" id="kpiPending">0</div></div>
+        <div class="box"><div class="t">Confirmed</div><div class="n" id="kpiYes">0</div></div>
+        <div class="box"><div class="t">Declined</div><div class="n" id="kpiNo">0</div></div>
+      </div>
+
+      <!-- Guests table -->
+      <div style="height:12px"></div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <h3 style="margin:0">👥 ضيوف الحدث</h3>
+          <div class="row" style="min-width:360px;justify-content:flex-end">
+            <button class="btn" onclick="toggleSelectAll()">تحديد الكل/إلغاء</button>
+            <button class="btn btnOk" onclick="sendSelected()">إرسال للمحدد</button>
+            <button class="btnGold" onclick="sendAll()">إرسال للجميع</button>
+          </div>
+        </div>
+        <div class="hint" id="guestsHint" style="margin-top:8px"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:center;width:50px">✓</th>
+              <th>الاسم</th>
+              <th>الهاتف</th>
+              <th>عدد</th>
+              <th>RSVP</th>
+              <th>آخر إرسال</th>
+              <th>آخر حالة</th>
+            </tr>
+          </thead>
+          <tbody id="guestsBody"></tbody>
+        </table>
+      </div>
+
+      <!-- WA messages -->
+      <div style="height:12px"></div>
+      <div class="card">
+        <h3 style="margin:0 0 8px">📨 آخر رسائل WhatsApp (wa_messages)</h3>
+        <div class="hint">هذه البيانات تأتي من Firestore (Collection: wa_messages) حسب eventId.</div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>الوقت</th>
+              <th>to</th>
+              <th>status</th>
+              <th>wamid</th>
+              <th>error</th>
+            </tr>
+          </thead>
+          <tbody id="msgsBody"></tbody>
+        </table>
+      </div>
+
+    </div>
   </div>
 
-</div>
+  <!-- Firebase (v10 modular) + App Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import {
+      getFirestore, doc, setDoc, getDoc, deleteDoc,
+      collection, query, where, orderBy, limit, getDocs, writeBatch,
+      onSnapshot, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<!-- Firebase v10 (module) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-  import {
-    getFirestore, doc, setDoc, getDoc, collection, getDocs, writeBatch, serverTimestamp, query, orderBy
-  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-  // ✅ ضع بيانات Web App من Firebase Project Settings
-  // Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-  authDomain: "hormez-inv.firebaseapp.com",
-  projectId: "hormez-inv",
-  storageBucket: "hormez-inv.firebasestorage.app",
-  messagingSenderId: "747519941805",
-  appId: "1:747519941805:web:468fada2492700e9da3a24"
-};
-
-  // ✅ ضع رابط Function الإرسال عندك (من Firebase Functions)
-  const SEND_FN_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendWhatsAppTemplate";
-
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
-  const auth = getAuth(app);
-
-  const $ = (id)=>document.getElementById(id);
-
-  let guestsCache = [];
-  let selected = new Set();
-
-  function requireAuth(){
-    if(!auth.currentUser){
-      alert("سجّل دخول أولاً (Firebase Auth).");
-      throw new Error("Not authed");
-    }
-  }
-
-  // ---------- Auth UI ----------
-  onAuthStateChanged(auth, (u)=>{
-    $("btnLogin").style.display = u ? "none" : "inline-block";
-    $("btnLogout").style.display = u ? "inline-block" : "none";
-    $("authState").textContent = u ? `مسجّل: ${u.email}` : "غير مسجّل";
-  });
-
-  $("btnLogin").onclick = async ()=>{
-    const email = prompt("Email (Admin):");
-    if(!email) return;
-    const pass = prompt("Password:");
-    if(!pass) return;
-    try{
-      await signInWithEmailAndPassword(auth, email, pass);
-    }catch(e){
-      console.error(e);
-      alert("فشل تسجيل الدخول. تأكد من Email/Password في Firebase Auth.");
-    }
-  };
-
-  $("btnLogout").onclick = async ()=>{ await signOut(auth); };
-
-  // ---------- Helpers ----------
-  function getEventId(){
-    const eventId = $("eventId").value.trim();
-    if(!eventId){ alert("اكتب eventId"); throw new Error("no eventId"); }
-    return eventId;
-  }
-
-  function normalizePhone(p){
-    return String(p||"").replace(/[^\d]/g,""); // أرقام فقط
-  }
-
-  // ---------- Ensure Event ----------
-  $("btnEnsureEvent").onclick = async ()=>{
-    requireAuth();
-    const eventId = getEventId();
-    const name = $("eventName").value.trim() || eventId;
-    const date = $("eventDate").value.trim() || "";
-    await setDoc(doc(db, "events", eventId), {
-      name, date,
-      updatedAt: serverTimestamp(),
-      createdAt: (await getDoc(doc(db,"events",eventId))).exists() ? undefined : serverTimestamp(),
-    }, { merge:true });
-    alert("تم حفظ الحدث ✅");
-  };
-
-  // ---------- Read Excel/CSV ----------
-  async function readFile(file){
-    const ext = file.name.split(".").pop().toLowerCase();
-    if(ext === "csv"){
-      const text = await file.text();
-      // CSV بسيط: يفترض أول سطر headers
-      const lines = text.split(/\r?\n/).filter(Boolean);
-      const headers = lines[0].split(",").map(s=>s.trim());
-      return lines.slice(1).map(line=>{
-        const cols = line.split(",");
-        const obj = {};
-        headers.forEach((h,i)=>obj[h]=cols[i]);
-        return obj;
-      });
-    }
-    // xlsx/xls
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type:"array" });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(ws);
-  }
-
-  function mapColumns(rows){
-    if(!rows.length) return [];
-    const keys = Object.keys(rows[0]||{});
-    const norm = (s)=>String(s||"").toLowerCase().trim();
-
-    const pick = (arr)=> keys.find(k=> arr.map(norm).includes(norm(k))) || null;
-
-    const kName = pick(["name","full name","guest","الاسم","اسم","اسم الضيف"]);
-    const kPhone = pick(["phone","mobile","tel","number","الهاتف","الجوال","رقم","رقم الهاتف","رقم الجوال"]);
-    const kInv = pick(["invites","tickets","qty","count","عدد الدعوات","العدد","عدد"]);
-
-    if(!kName || !kPhone){
-      throw new Error("Missing columns: name/phone");
-    }
-
-    return rows.map(r=>({
-      name: String(r[kName]||"").trim(),
-      phone: normalizePhone(r[kPhone]),
-      invites: kInv ? (parseInt(r[kInv])||1) : 1,
-    })).filter(x=>x.name && x.phone);
-  }
-
-  // ---------- Upload Guests to Firestore ----------
-  $("btnUploadGuests").onclick = async ()=>{
-    requireAuth();
-    const eventId = getEventId();
-    const file = $("file").files[0];
-    if(!file){ alert("اختر ملف Excel/CSV"); return; }
-
-    $("uploadResult").textContent = "جاري القراءة...";
-    try{
-      const rows = await readFile(file);
-      const mapped = mapColumns(rows);
-
-      const batch = writeBatch(db);
-      mapped.forEach(g=>{
-        const ref = doc(db, "events", eventId, "guests", g.phone);
-        batch.set(ref, {
-          name: g.name,
-          phone: g.phone,
-          invites: g.invites,
-          rsvp: "pending",
-          updatedAt: serverTimestamp(),
-          createdAt: serverTimestamp(),
-        }, { merge:true });
-      });
-      await batch.commit();
-
-      $("uploadResult").textContent = `✅ تم رفع/تحديث ${mapped.length} ضيف`;
-      await loadGuests();
-    }catch(e){
-      console.error(e);
-      $("uploadResult").textContent = "❌ فشل: تأكد من الأعمدة name/phone";
-      alert("فشل رفع الضيوف. تأكد من الأعمدة: name/الاسم و phone/الهاتف");
-    }
-  };
-
-  // ---------- Load Guests ----------
-  async function loadGuests(){
-    requireAuth();
-    const eventId = getEventId();
-    const col = collection(db, "events", eventId, "guests");
-    const snap = await getDocs(col);
-    guestsCache = snap.docs.map(d=>({ id:d.id, ...d.data() }))
-      .sort((a,b)=> (a.name||"").localeCompare(b.name||""));
-
-    // نظّف تحديدات غير موجودة
-    const ids = new Set(guestsCache.map(g=>g.phone));
-    [...selected].forEach(p=>{ if(!ids.has(p)) selected.delete(p); });
-
-    render();
-  }
-
-  $("btnReload").onclick = loadGuests;
-
-  // ---------- Send helpers ----------
-  async function callSendFunction(payload){
-    // هذا يستدعي Function onRequest عندك
-    const res = await fetch(SEND_FN_URL, {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        // لو عندك CORS/auth لاحقاً نضيف Authorization
-      },
-      body: JSON.stringify(payload),
-    });
-    const json = await res.json();
-    if(!json.ok) throw new Error(json.error || "send failed");
-    return json; // {ok:true, wamid:...}
-  }
-
-  async function sendToGuest(g){
-    const eventId = getEventId();
-    const templateName = $("templateName").value.trim() || "krs_rsvp";
-    const lang = $("lang").value;
-    const eventName = $("eventName").value.trim() || eventId;
-    const eventDate = $("eventDate").value.trim() || "";
-
-    const vars = [g.name, eventName, eventDate]; // عدّلها حسب تمبليتك
-    const payload = {
-      eventId,
-      to: g.phone,
-      name: g.name,
-      templateName,
-      lang,
-      vars
+    // ✅ Firebase Config (hormez-inv)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.firebasestorage.app",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
     };
 
-    const out = await callSendFunction(payload);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // نحدّث guest بآخر wamid (في Firestore)
-    await setDoc(doc(db, "events", eventId, "guests", g.phone), {
-      lastWamid: out.wamid,
-      lastStatus: "sent",
-      updatedAt: serverTimestamp(),
-    }, { merge:true });
+    // --------- UI helpers ----------
+    const $ = (id) => document.getElementById(id);
+    const show = (id, yes) => $(id).classList.toggle("hidden", !yes);
 
-    return out.wamid;
-  }
+    // --------- State ----------
+    let guests = []; // {phone,name,invites,rsvp,lastSendAt,lastStatus}
+    let selected = new Set();
+    let unsubGuests = null;
+    let unsubMsgs = null;
 
-  async function sendList(list){
-    requireAuth();
-    if(!list.length){ alert("لا يوجد ضيوف"); return; }
+    function normalizePhone(p){
+      // يقبل: +971..., 971..., 05..., 50...
+      p = String(p || "").trim();
+      p = p.replace(/\s+/g,"").replace(/^\+/,"");
+      // إذا بدأ بـ 0 نحذف 0 و نفترض UAE (971)
+      if(/^0\d+/.test(p)) p = "971" + p.slice(1);
+      return p;
+    }
 
-    // إرسال تدريجي لتجنب أي rate limit
-    let ok=0, fail=0;
-    for(const g of list){
+    function parseVars(){
       try{
-        await sendToGuest(g);
-        ok++;
+        const v = JSON.parse($("varsJson").value || "[]");
+        if(!Array.isArray(v)) throw new Error("vars must be array");
+        return v;
+      }catch(e){
+        throw new Error("varsJson غير صالح. لازم Array JSON مثل [\"فارس\",\"زفاف خالد\",\"15-01-2026\"]");
+      }
+    }
+
+    function fmtTime(ts){
+      if(!ts) return "";
+      const d = ts?.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleString("ar-AE");
+    }
+
+    function statusTag(s){
+      const st = (s||"").toLowerCase();
+      if(st==="delivered" || st==="read" || st==="sent") return `<span class="tag ok">${st}</span>`;
+      if(st==="failed") return `<span class="tag bad">failed</span>`;
+      return `<span class="tag blue">${st || "—"}</span>`;
+    }
+
+    function renderGuests(){
+      $("kpiGuests").textContent = guests.length;
+
+      let pending=0, yes=0, no=0;
+      guests.forEach(g=>{
+        if(g.rsvp==="yes") yes++;
+        else if(g.rsvp==="no") no++;
+        else pending++;
+      });
+      $("kpiPending").textContent = pending;
+      $("kpiYes").textContent = yes;
+      $("kpiNo").textContent = no;
+
+      $("guestsHint").textContent = `الموجود حالياً: ${guests.length} | المحدد: ${selected.size}`;
+
+      const body = $("guestsBody");
+      body.innerHTML = "";
+
+      guests.forEach(g=>{
+        const checked = selected.has(g.phone);
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td style="text-align:center">
+            <input type="checkbox" ${checked ? "checked":""} />
+          </td>
+          <td>${g.name || ""}</td>
+          <td class="mono">${g.phone}</td>
+          <td>${g.invites || 1}</td>
+          <td>${g.rsvp ? statusTag(g.rsvp) : `<span class="tag blue">pending</span>`}</td>
+          <td>${g.lastSendAt ? fmtTime(g.lastSendAt) : "—"}</td>
+          <td>${g.lastStatus ? statusTag(g.lastStatus) : "—"}</td>
+        `;
+
+        tr.querySelector("input").addEventListener("change",(e)=>{
+          if(e.target.checked) selected.add(g.phone);
+          else selected.delete(g.phone);
+          renderGuests();
+        });
+
+        body.appendChild(tr);
+      });
+    }
+
+    function renderMsgs(rows){
+      const body = $("msgsBody");
+      body.innerHTML = "";
+      rows.forEach(m=>{
+        const err = m?.statusRaw?.errors?.[0]?.error_data?.details || m?.statusRaw?.errors?.[0]?.message || "";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${m.statusAt ? (typeof m.statusAt === "string" ? m.statusAt : fmtTime(m.statusAt)) : fmtTime(m.updatedAt || m.createdAt)}</td>
+          <td class="mono">${m.to || ""}</td>
+          <td>${statusTag(m.status)}</td>
+          <td class="mono" style="max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.wamid || ""}</td>
+          <td>${err ? `<span class="tag bad">${err}</span>` : "—"}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    // --------- Auth ----------
+    window.loginAdmin = async function(){
+      $("loginMsg").textContent = "";
+      const email = $("adminEmail").value.trim();
+      const pass  = $("adminPassword").value.trim();
+      try{
+        await signInWithEmailAndPassword(auth, email, pass);
+      }catch(err){
+        console.error(err);
+        $("loginMsg").textContent = "❌ فشل تسجيل الدخول: " + (err.code || err.message);
+      }
+    };
+
+    window.logout = async function(){
+      await signOut(auth);
+    };
+
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        show("loginCard", false);
+        show("dash", true);
+        show("btnLogout", true);
+        $("sysMsg").textContent = "✅ مسجل دخول: " + (user.email || user.uid);
+        refreshAll();
+      }else{
+        // cleanup listeners
+        if(unsubGuests) unsubGuests();
+        if(unsubMsgs) unsubMsgs();
+        unsubGuests = null; unsubMsgs = null;
+
+        guests = [];
+        selected.clear();
+        renderGuests();
+        renderMsgs([]);
+
+        show("loginCard", true);
+        show("dash", false);
+        show("btnLogout", false);
+      }
+    });
+
+    // --------- Firestore paths ----------
+    function guestsCol(){
+      const eventId = $("eventId").value.trim();
+      return collection(db, "events", eventId, "guests");
+    }
+
+    // --------- Load data ----------
+    window.refreshAll = async function(){
+      const eventId = $("eventId").value.trim();
+      if(!eventId){ alert("اكتب eventId"); return; }
+
+      // Guests live
+      if(unsubGuests) unsubGuests();
+      unsubGuests = onSnapshot(query(guestsCol(), orderBy("createdAt","desc"), limit(500)), (snap)=>{
+        guests = snap.docs.map(d=>{
+          const x = d.data();
+          return {
+            phone: d.id,
+            name: x.name || "",
+            invites: x.invites || 1,
+            rsvp: x.rsvp || "pending",
+            lastSendAt: x.lastSendAt || null,
+            lastStatus: x.lastStatus || null
+          };
+        });
+        // تنظيف selection لو حذف ضيف
+        const setNow = new Set(guests.map(g=>g.phone));
+        [...selected].forEach(p=>{ if(!setNow.has(p)) selected.delete(p); });
+        renderGuests();
+      });
+
+      // Messages live
+      if(unsubMsgs) unsubMsgs();
+      // ملاحظة: الأفضل تعمل فهرس للـ eventId + updatedAt
+      unsubMsgs = onSnapshot(
+        query(collection(db,"wa_messages"), where("eventId","==",eventId), orderBy("updatedAt","desc"), limit(100)),
+        (snap)=>{
+          const rows = snap.docs.map(d=>d.data());
+          renderMsgs(rows);
+        },
+        (err)=>{
+          console.error(err);
+          $("sysMsg").textContent = "⚠️ مشكلة Query للرسائل (غالبًا يحتاج Index): " + err.message;
+        }
+      );
+
+      $("sysMsg").textContent = `✅ تم تفعيل المتابعة المباشرة للحدث: ${eventId}`;
+    };
+
+    window.ensureIndexesHint = function(){
+      alert(
+        "لو wa_messages ما تظهر أو ظهرت رسالة Index:\n" +
+        "أنشئ Composite Index في Firestore لـ wa_messages:\n" +
+        "eventId (ASC) + updatedAt (DESC)\n\n" +
+        "وأيضاً guests داخل events/{eventId}/guests:\n" +
+        "createdAt (DESC) عادة لا يحتاج كومبوزت لأنها داخل subcollection."
+      );
+    };
+
+    // --------- Import guests from file ----------
+    function readCSV(text){
+      // بسيط: يفصل بالكومّا/سيمي كولن
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      if(!lines.length) return [];
+      const headers = lines[0].split(/,|;/).map(h=>h.trim());
+      const rows = [];
+      for(let i=1;i<lines.length;i++){
+        const cols = lines[i].split(/,|;/);
+        const obj = {};
+        headers.forEach((h,idx)=> obj[h]= (cols[idx]||"").trim());
+        rows.push(obj);
+      }
+      return rows;
+    }
+
+    function findKey(keys, wanted){
+      const norm = (s)=> String(s||"").toLowerCase().trim();
+      const map = {
+        name: ["name","full name","guest","guest name","الاسم","اسم","اسم الضيف"],
+        phone:["phone","mobile","tel","number","الجوال","الهاتف","رقم","رقم الهاتف","رقم الجوال"],
+        invites:["invites","tickets","count","qty","total","عدد","عدد الدعوات","العدد"]
+      };
+      const list = map[wanted].map(norm);
+      return keys.find(k=> list.includes(norm(k))) || null;
+    }
+
+    window.importGuests = async function(){
+      $("importMsg").textContent = "";
+      const eventId = $("eventId").value.trim();
+      if(!eventId){ alert("اكتب eventId"); return; }
+
+      const f = $("fileGuests").files?.[0];
+      if(!f){ alert("اختر ملف CSV أو Excel"); return; }
+
+      let arr = [];
+      const ext = f.name.split(".").pop().toLowerCase();
+
+      if(ext==="csv"){
+        const text = await f.text();
+        arr = readCSV(text);
+      }else if(ext==="xlsx" || ext==="xls"){
+        const data = new Uint8Array(await f.arrayBuffer());
+        const wb = XLSX.read(data, { type:"array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        arr = XLSX.utils.sheet_to_json(ws);
+      }else{
+        alert("امتداد غير مدعوم");
+        return;
+      }
+
+      if(!arr.length){
+        alert("الملف فارغ");
+        return;
+      }
+
+      const keys = Object.keys(arr[0] || {});
+      const kName = findKey(keys,"name");
+      const kPhone= findKey(keys,"phone");
+      const kInv  = findKey(keys,"invites");
+
+      if(!kName || !kPhone){
+        alert("لازم الأعمدة: name/الاسم و phone/الهاتف");
+        return;
+      }
+
+      // Batch write (500 limit لكل دفعة)
+      let added=0, skipped=0;
+      const colRef = guestsCol();
+
+      let batch = writeBatch(db);
+      let inBatch = 0;
+
+      for(const row of arr){
+        const name = String(row[kName]||"").trim();
+        const phoneRaw = String(row[kPhone]||"").trim();
+        const phone = normalizePhone(phoneRaw);
+        const invites = Math.max(1, parseInt(row[kInv] || "1") || 1);
+
+        if(!name || !phone){
+          skipped++;
+          continue;
+        }
+
+        const dref = doc(colRef, phone);
+        batch.set(dref, {
+          name,
+          phone,
+          invites,
+          rsvp: "pending",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge:true });
+
+        added++;
+        inBatch++;
+
+        if(inBatch >= 450){
+          await batch.commit();
+          batch = writeBatch(db);
+          inBatch = 0;
+        }
+      }
+
+      if(inBatch>0) await batch.commit();
+
+      $("importMsg").textContent = `✅ تم رفع ${added} | تم تجاهل ${skipped}`;
+    };
+
+    window.clearEventGuests = async function(){
+      const eventId = $("eventId").value.trim();
+      if(!eventId){ alert("اكتب eventId"); return; }
+      if(!confirm("حذف كل ضيوف هذا الحدث؟")) return;
+
+      const snap = await getDocs(query(guestsCol(), limit(1000)));
+      let batch = writeBatch(db);
+      let c=0, committed=0;
+
+      for(const d of snap.docs){
+        batch.delete(d.ref);
+        c++;
+        if(c>=450){
+          await batch.commit();
+          committed += c;
+          batch = writeBatch(db);
+          c=0;
+        }
+      }
+      if(c>0){
+        await batch.commit();
+        committed += c;
+      }
+      alert("✅ تم حذف: " + committed);
+    };
+
+    // --------- Send via Cloud Function ----------
+    async function callSendTemplate(payload){
+      const url = $("fnUrl").value.trim();
+      const res = await fetch(url, {
+        method:"POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify(payload),
+      });
+      const j = await res.json().catch(()=> ({}));
+      if(!res.ok || j?.ok===false) {
+        const msg = j?.error?.message || j?.error || ("HTTP " + res.status);
+        throw new Error(msg);
+      }
+      return j;
+    }
+
+    window.sendOne = async function(){
+      $("sendOneMsg").textContent = "";
+      try{
+        const eventId = $("eventId").value.trim();
+        const to = normalizePhone($("onePhone").value);
+        const name = $("oneName").value.trim() || "ضيف";
+        const templateName = $("templateName").value.trim();
+        const lang = $("lang").value;
+        const vars = parseVars();
+
+        // مهم: بعض القوالب تحتاج vars محددة. لو تبي الاسم يتغير، خليه أول عنصر
+        if(vars.length) vars[0] = name;
+
+        const j = await callSendTemplate({ eventId, to, name, templateName, lang, vars });
+        $("sendOneMsg").textContent = "✅ تم الإرسال: " + (j.wamid || "");
       }catch(e){
         console.error(e);
-        fail++;
+        $("sendOneMsg").textContent = "❌ فشل: " + e.message;
       }
-      // تأخير بسيط
-      await new Promise(r=>setTimeout(r, 500));
-    }
-    alert(`تم الإرسال ✅ نجاح: ${ok} — فشل: ${fail}`);
-    await loadGuests();
-  }
+    };
 
-  $("btnSendAll").onclick = async ()=>{ await sendList(guestsCache); };
+    window.toggleSelectAll = function(){
+      if(selected.size === guests.length) selected.clear();
+      else guests.forEach(g=> selected.add(g.phone));
+      renderGuests();
+    };
 
-  $("btnSendSelected").onclick = async ()=>{
-    const list = guestsCache.filter(g=>selected.has(g.phone));
-    await sendList(list);
-  };
+    window.sendSelected = async function(){
+      if(selected.size===0){ alert("حدد ضيوف أولاً"); return; }
+      if(!confirm(`إرسال للمحدد (${selected.size})؟`)) return;
 
-  $("btnSelectAll").onclick = ()=>{ guestsCache.forEach(g=>selected.add(g.phone)); render(); };
-  $("btnClearSel").onclick = ()=>{ selected.clear(); render(); };
+      const eventId = $("eventId").value.trim();
+      const templateName = $("templateName").value.trim();
+      const lang = $("lang").value;
+      const baseVars = parseVars();
 
-  // ---------- Render ----------
-  function statusPill(s){
-    if(!s) return `<span class="pill">—</span>`;
-    const low = String(s).toLowerCase();
-    if(["delivered","read","sent"].includes(low)) return `<span class="pill ok">${low}</span>`;
-    if(["failed"].includes(low)) return `<span class="pill bad">${low}</span>`;
-    return `<span class="pill">${low}</span>`;
-  }
+      let ok=0, bad=0;
+      $("sysMsg").textContent = "⏳ إرسال للمحدد...";
 
-  function render(){
-    $("stats").textContent = `عدد الضيوف: ${guestsCache.length} — المحدد: ${selected.size}`;
-    const tbody = $("tbody");
-    tbody.innerHTML = "";
+      for(const phone of selected){
+        const g = guests.find(x=>x.phone===phone);
+        if(!g) continue;
 
-    guestsCache.forEach(g=>{
-      const tr = document.createElement("tr");
+        const vars = [...baseVars];
+        if(vars.length) vars[0] = g.name || vars[0];
 
-      const tdSel = document.createElement("td");
-      tdSel.style.textAlign="center";
-      const cb = document.createElement("input");
-      cb.type="checkbox";
-      cb.checked = selected.has(g.phone);
-      cb.onchange = (e)=>{ e.target.checked ? selected.add(g.phone) : selected.delete(g.phone); };
-      tdSel.appendChild(cb);
-
-      const tdName = document.createElement("td");
-      tdName.textContent = g.name || "";
-
-      const tdPhone = document.createElement("td");
-      tdPhone.textContent = g.phone || "";
-
-      const tdRsvp = document.createElement("td");
-      tdRsvp.innerHTML = `<span class="pill">${g.rsvp || "pending"}</span>`;
-
-      const tdSt = document.createElement("td");
-      tdSt.innerHTML = statusPill(g.lastStatus);
-
-      const tdAct = document.createElement("td");
-      const b = document.createElement("button");
-      b.className = "btn ok";
-      b.textContent = "إرسال";
-      b.onclick = async ()=>{
         try{
-          await sendList([g]);
+          await callSendTemplate({
+            eventId,
+            to: g.phone,
+            name: g.name,
+            templateName,
+            lang,
+            vars
+          });
+          ok++;
         }catch(e){
           console.error(e);
-          alert("فشل الإرسال");
+          bad++;
         }
-      };
-      tdAct.appendChild(b);
+        // تخفيف ضغط
+        await new Promise(r=>setTimeout(r, 350));
+      }
 
-      tr.appendChild(tdSel);
-      tr.appendChild(tdName);
-      tr.appendChild(tdPhone);
-      tr.appendChild(tdRsvp);
-      tr.appendChild(tdSt);
-      tr.appendChild(tdAct);
-      tbody.appendChild(tr);
-    });
-  }
+      $("sysMsg").textContent = `✅ تم: ${ok} | ❌ فشل: ${bad}`;
+    };
 
-  // ---------- Boot ----------
-  // بعد تسجيل الدخول، اكتب eventId واضغط "تحديث"
-</script>
+    window.sendAll = async function(){
+      if(!guests.length){ alert("لا يوجد ضيوف"); return; }
+      if(!confirm(`إرسال للجميع (${guests.length})؟`)) return;
+
+      const eventId = $("eventId").value.trim();
+      const templateName = $("templateName").value.trim();
+      const lang = $("lang").value;
+      const baseVars = parseVars();
+
+      let ok=0, bad=0;
+      $("sysMsg").textContent = "⏳ إرسال للجميع...";
+
+      for(const g of guests){
+        const vars = [...baseVars];
+        if(vars.length) vars[0] = g.name || vars[0];
+
+        try{
+          await callSendTemplate({
+            eventId,
+            to: g.phone,
+            name: g.name,
+            templateName,
+            lang,
+            vars
+          });
+          ok++;
+        }catch(e){
+          console.error(e);
+          bad++;
+        }
+        await new Promise(r=>setTimeout(r, 350));
+      }
+
+      $("sysMsg").textContent = `✅ تم: ${ok} | ❌ فشل: ${bad}`;
+    };
+  </script>
 </body>
 </html>
