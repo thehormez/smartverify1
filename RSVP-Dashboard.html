@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hormez RSVP Dashboard (B)</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    :root{--bg:#0b0b0c;--panel:#14151a;--stroke:#2a2b32;--gold:#d4af37;--txt:#e7e7e7;--muted:#a7a7a7;--ok:#25d366;--danger:#ef4444;}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--txt);font-family:'Noto Sans Arabic',system-ui}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .card{background:var(--panel);border:1px solid var(--stroke);border-radius:16px;padding:14px;margin-bottom:12px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .btn,input,select{border:1px solid var(--stroke);background:#111217;color:#fff;padding:12px 14px;border-radius:12px;font-weight:800}
+    .btn{cursor:pointer}
+    .btn.ok{border-color:#1b8c4f}
+    .btn.danger{border-color:#7a1f1f}
+    .hint{color:var(--muted);font-size:13px;line-height:1.7}
+    table{width:100%;border-collapse:separate;border-spacing:0;border-radius:16px;overflow:hidden}
+    th,td{padding:12px;border-bottom:1px solid var(--stroke);text-align:right}
+    th{background:#1a1b20}
+    td{background:#0f1013}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:12px}
+    .pill.ok{border-color:rgba(37,211,102,.6)}
+    .pill.bad{border-color:rgba(239,68,68,.6)}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:850px){.grid2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <div style="font-weight:900;font-size:20px">Hormez — RSVP Dashboard (B)</div>
+        <div class="hint">رفع ضيوف من Excel/CSV → حفظ في Firestore → إرسال Template عبر Cloud Function لديك → متابعة delivered/read/failed</div>
+      </div>
+      <div class="row">
+        <button class="btn" id="btnLogin">تسجيل دخول</button>
+        <button class="btn danger" id="btnLogout" style="display:none">خروج</button>
+      </div>
+    </div>
+    <div class="hint" id="authState">غير مسجّل</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div style="font-weight:900;margin-bottom:8px">1) إعداد الإرسال</div>
+      <div class="row">
+        <input id="eventId" placeholder="eventId مثل: test_event" style="flex:1" />
+        <input id="eventName" placeholder="اسم الحدث (اختياري)" style="flex:1" />
+      </div>
+      <div class="row" style="margin-top:10px">
+        <input id="templateName" placeholder="templateName" value="krs_rsvp" style="flex:1" />
+        <select id="lang" style="flex:1">
+          <option value="ar">ar</option>
+          <option value="en_US">en_US</option>
+        </select>
+      </div>
+      <div class="hint" style="margin-top:8px">
+        المتغيرات vars سترسل بالشكل: <b>[name, eventName, eventDate]</b><br/>
+        عدّلها بسهولة داخل الكود حسب تمبليتك.
+      </div>
+      <div class="row" style="margin-top:10px">
+        <input id="eventDate" placeholder="تاريخ الحدث مثل 15-01-2026" style="flex:1" />
+        <button class="btn ok" id="btnEnsureEvent">إنشاء/تحديث الحدث</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:900;margin-bottom:8px">2) رفع ضيوف من Excel/CSV</div>
+      <div class="row">
+        <input id="file" type="file" accept=".xlsx,.xls,.csv" style="flex:1"/>
+        <button class="btn ok" id="btnUploadGuests">رفع إلى Firestore</button>
+      </div>
+      <div class="hint" style="margin-top:8px">
+        أعمدة الملف المقبولة (عربي/إنجليزي):<br/>
+        <b>name / الاسم</b> ، <b>phone / الهاتف</b> ، <b>invites / عدد الدعوات</b> (اختياري)
+      </div>
+      <div class="hint" id="uploadResult" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div style="font-weight:900">3) قائمة الضيوف</div>
+      <div class="row">
+        <button class="btn" id="btnReload">تحديث</button>
+        <button class="btn" id="btnSelectAll">تحديد الكل</button>
+        <button class="btn" id="btnClearSel">إلغاء التحديد</button>
+        <button class="btn ok" id="btnSendSelected">إرسال للمحدد</button>
+        <button class="btn ok" id="btnSendAll">إرسال للجميع</button>
+      </div>
+    </div>
+    <div class="hint" id="stats" style="margin-top:8px"></div>
+
+    <table style="margin-top:10px">
+      <thead>
+        <tr>
+          <th style="text-align:center">✓</th>
+          <th>الاسم</th>
+          <th>الهاتف</th>
+          <th>RSVP</th>
+          <th>آخر Status</th>
+          <th>إجراء</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Firebase v10 (module) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, collection, getDocs, writeBatch, serverTimestamp, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  // ✅ ضع بيانات Web App من Firebase Project Settings
+  const firebaseConfig = {
+    apiKey: "PASTE",
+    authDomain: "PASTE",
+    projectId: "hormez-inv",
+  };
+
+  // ✅ ضع رابط Function الإرسال عندك (من Firebase Functions)
+  const SEND_FN_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendWhatsAppTemplate";
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const auth = getAuth(app);
+
+  const $ = (id)=>document.getElementById(id);
+
+  let guestsCache = [];
+  let selected = new Set();
+
+  function requireAuth(){
+    if(!auth.currentUser){
+      alert("سجّل دخول أولاً (Firebase Auth).");
+      throw new Error("Not authed");
+    }
+  }
+
+  // ---------- Auth UI ----------
+  onAuthStateChanged(auth, (u)=>{
+    $("btnLogin").style.display = u ? "none" : "inline-block";
+    $("btnLogout").style.display = u ? "inline-block" : "none";
+    $("authState").textContent = u ? `مسجّل: ${u.email}` : "غير مسجّل";
+  });
+
+  $("btnLogin").onclick = async ()=>{
+    const email = prompt("Email (Admin):");
+    if(!email) return;
+    const pass = prompt("Password:");
+    if(!pass) return;
+    try{
+      await signInWithEmailAndPassword(auth, email, pass);
+    }catch(e){
+      console.error(e);
+      alert("فشل تسجيل الدخول. تأكد من Email/Password في Firebase Auth.");
+    }
+  };
+
+  $("btnLogout").onclick = async ()=>{ await signOut(auth); };
+
+  // ---------- Helpers ----------
+  function getEventId(){
+    const eventId = $("eventId").value.trim();
+    if(!eventId){ alert("اكتب eventId"); throw new Error("no eventId"); }
+    return eventId;
+  }
+
+  function normalizePhone(p){
+    return String(p||"").replace(/[^\d]/g,""); // أرقام فقط
+  }
+
+  // ---------- Ensure Event ----------
+  $("btnEnsureEvent").onclick = async ()=>{
+    requireAuth();
+    const eventId = getEventId();
+    const name = $("eventName").value.trim() || eventId;
+    const date = $("eventDate").value.trim() || "";
+    await setDoc(doc(db, "events", eventId), {
+      name, date,
+      updatedAt: serverTimestamp(),
+      createdAt: (await getDoc(doc(db,"events",eventId))).exists() ? undefined : serverTimestamp(),
+    }, { merge:true });
+    alert("تم حفظ الحدث ✅");
+  };
+
+  // ---------- Read Excel/CSV ----------
+  async function readFile(file){
+    const ext = file.name.split(".").pop().toLowerCase();
+    if(ext === "csv"){
+      const text = await file.text();
+      // CSV بسيط: يفترض أول سطر headers
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      const headers = lines[0].split(",").map(s=>s.trim());
+      return lines.slice(1).map(line=>{
+        const cols = line.split(",");
+        const obj = {};
+        headers.forEach((h,i)=>obj[h]=cols[i]);
+        return obj;
+      });
+    }
+    // xlsx/xls
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:"array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(ws);
+  }
+
+  function mapColumns(rows){
+    if(!rows.length) return [];
+    const keys = Object.keys(rows[0]||{});
+    const norm = (s)=>String(s||"").toLowerCase().trim();
+
+    const pick = (arr)=> keys.find(k=> arr.map(norm).includes(norm(k))) || null;
+
+    const kName = pick(["name","full name","guest","الاسم","اسم","اسم الضيف"]);
+    const kPhone = pick(["phone","mobile","tel","number","الهاتف","الجوال","رقم","رقم الهاتف","رقم الجوال"]);
+    const kInv = pick(["invites","tickets","qty","count","عدد الدعوات","العدد","عدد"]);
+
+    if(!kName || !kPhone){
+      throw new Error("Missing columns: name/phone");
+    }
+
+    return rows.map(r=>({
+      name: String(r[kName]||"").trim(),
+      phone: normalizePhone(r[kPhone]),
+      invites: kInv ? (parseInt(r[kInv])||1) : 1,
+    })).filter(x=>x.name && x.phone);
+  }
+
+  // ---------- Upload Guests to Firestore ----------
+  $("btnUploadGuests").onclick = async ()=>{
+    requireAuth();
+    const eventId = getEventId();
+    const file = $("file").files[0];
+    if(!file){ alert("اختر ملف Excel/CSV"); return; }
+
+    $("uploadResult").textContent = "جاري القراءة...";
+    try{
+      const rows = await readFile(file);
+      const mapped = mapColumns(rows);
+
+      const batch = writeBatch(db);
+      mapped.forEach(g=>{
+        const ref = doc(db, "events", eventId, "guests", g.phone);
+        batch.set(ref, {
+          name: g.name,
+          phone: g.phone,
+          invites: g.invites,
+          rsvp: "pending",
+          updatedAt: serverTimestamp(),
+          createdAt: serverTimestamp(),
+        }, { merge:true });
+      });
+      await batch.commit();
+
+      $("uploadResult").textContent = `✅ تم رفع/تحديث ${mapped.length} ضيف`;
+      await loadGuests();
+    }catch(e){
+      console.error(e);
+      $("uploadResult").textContent = "❌ فشل: تأكد من الأعمدة name/phone";
+      alert("فشل رفع الضيوف. تأكد من الأعمدة: name/الاسم و phone/الهاتف");
+    }
+  };
+
+  // ---------- Load Guests ----------
+  async function loadGuests(){
+    requireAuth();
+    const eventId = getEventId();
+    const col = collection(db, "events", eventId, "guests");
+    const snap = await getDocs(col);
+    guestsCache = snap.docs.map(d=>({ id:d.id, ...d.data() }))
+      .sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+
+    // نظّف تحديدات غير موجودة
+    const ids = new Set(guestsCache.map(g=>g.phone));
+    [...selected].forEach(p=>{ if(!ids.has(p)) selected.delete(p); });
+
+    render();
+  }
+
+  $("btnReload").onclick = loadGuests;
+
+  // ---------- Send helpers ----------
+  async function callSendFunction(payload){
+    // هذا يستدعي Function onRequest عندك
+    const res = await fetch(SEND_FN_URL, {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        // لو عندك CORS/auth لاحقاً نضيف Authorization
+      },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || "send failed");
+    return json; // {ok:true, wamid:...}
+  }
+
+  async function sendToGuest(g){
+    const eventId = getEventId();
+    const templateName = $("templateName").value.trim() || "krs_rsvp";
+    const lang = $("lang").value;
+    const eventName = $("eventName").value.trim() || eventId;
+    const eventDate = $("eventDate").value.trim() || "";
+
+    const vars = [g.name, eventName, eventDate]; // عدّلها حسب تمبليتك
+    const payload = {
+      eventId,
+      to: g.phone,
+      name: g.name,
+      templateName,
+      lang,
+      vars
+    };
+
+    const out = await callSendFunction(payload);
+
+    // نحدّث guest بآخر wamid (في Firestore)
+    await setDoc(doc(db, "events", eventId, "guests", g.phone), {
+      lastWamid: out.wamid,
+      lastStatus: "sent",
+      updatedAt: serverTimestamp(),
+    }, { merge:true });
+
+    return out.wamid;
+  }
+
+  async function sendList(list){
+    requireAuth();
+    if(!list.length){ alert("لا يوجد ضيوف"); return; }
+
+    // إرسال تدريجي لتجنب أي rate limit
+    let ok=0, fail=0;
+    for(const g of list){
+      try{
+        await sendToGuest(g);
+        ok++;
+      }catch(e){
+        console.error(e);
+        fail++;
+      }
+      // تأخير بسيط
+      await new Promise(r=>setTimeout(r, 500));
+    }
+    alert(`تم الإرسال ✅ نجاح: ${ok} — فشل: ${fail}`);
+    await loadGuests();
+  }
+
+  $("btnSendAll").onclick = async ()=>{ await sendList(guestsCache); };
+
+  $("btnSendSelected").onclick = async ()=>{
+    const list = guestsCache.filter(g=>selected.has(g.phone));
+    await sendList(list);
+  };
+
+  $("btnSelectAll").onclick = ()=>{ guestsCache.forEach(g=>selected.add(g.phone)); render(); };
+  $("btnClearSel").onclick = ()=>{ selected.clear(); render(); };
+
+  // ---------- Render ----------
+  function statusPill(s){
+    if(!s) return `<span class="pill">—</span>`;
+    const low = String(s).toLowerCase();
+    if(["delivered","read","sent"].includes(low)) return `<span class="pill ok">${low}</span>`;
+    if(["failed"].includes(low)) return `<span class="pill bad">${low}</span>`;
+    return `<span class="pill">${low}</span>`;
+  }
+
+  function render(){
+    $("stats").textContent = `عدد الضيوف: ${guestsCache.length} — المحدد: ${selected.size}`;
+    const tbody = $("tbody");
+    tbody.innerHTML = "";
+
+    guestsCache.forEach(g=>{
+      const tr = document.createElement("tr");
+
+      const tdSel = document.createElement("td");
+      tdSel.style.textAlign="center";
+      const cb = document.createElement("input");
+      cb.type="checkbox";
+      cb.checked = selected.has(g.phone);
+      cb.onchange = (e)=>{ e.target.checked ? selected.add(g.phone) : selected.delete(g.phone); };
+      tdSel.appendChild(cb);
+
+      const tdName = document.createElement("td");
+      tdName.textContent = g.name || "";
+
+      const tdPhone = document.createElement("td");
+      tdPhone.textContent = g.phone || "";
+
+      const tdRsvp = document.createElement("td");
+      tdRsvp.innerHTML = `<span class="pill">${g.rsvp || "pending"}</span>`;
+
+      const tdSt = document.createElement("td");
+      tdSt.innerHTML = statusPill(g.lastStatus);
+
+      const tdAct = document.createElement("td");
+      const b = document.createElement("button");
+      b.className = "btn ok";
+      b.textContent = "إرسال";
+      b.onclick = async ()=>{
+        try{
+          await sendList([g]);
+        }catch(e){
+          console.error(e);
+          alert("فشل الإرسال");
+        }
+      };
+      tdAct.appendChild(b);
+
+      tr.appendChild(tdSel);
+      tr.appendChild(tdName);
+      tr.appendChild(tdPhone);
+      tr.appendChild(tdRsvp);
+      tr.appendChild(tdSt);
+      tr.appendChild(tdAct);
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ---------- Boot ----------
+  // بعد تسجيل الدخول، اكتب eventId واضغط "تحديث"
+</script>
+</body>
+</html>
