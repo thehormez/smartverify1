@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>مركز الإرسال — KRS INVITE (Cloud + Cards)</title>
+  <title>مركز الإرسال — KRS INVITE (Cloud Template + Cards Upload)</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -171,8 +171,11 @@
       <div class="card gold">
         <h3 style="margin:0 0 8px">مرحبًا 👋</h3>
         <div class="hint">
-          ✅ هذا الإصدار يرسل <b>ترحيب + صور كروت الدعوة</b> عبر Cloud API (بدون فتح واتساب).
-          <br/>1) استورد الضيوف + صور الباركود  2) ارفع الباركود للسيرفر  3) ارسل.
+          ✅ هذا الإصدار:
+          <br/>1) يرفع صور الباركود للسيرفر (uploadBarcodeCard)
+          <br/>2) يرسل رسالة WhatsApp Template عبر (sendWhatsAppTemplate)
+          <br/><br/>
+          ⚠️ إرسال الصور للضيف داخل واتساب يحتاج Cloud Function إضافية (غير موجودة حاليًا).
         </div>
       </div>
     </section>
@@ -193,16 +196,26 @@
 
       <div class="card" style="margin-top:12px">
         <h3 style="margin:0 0 10px">⚙️ إعدادات Cloud API</h3>
-        <div class="hint">
-          عدّل الروابط هنا إن تغيّرت عندك.
-        </div>
+        <div class="hint">عدّل الروابط هنا إن تغيّرت عندك.</div>
         <div class="row" style="margin-top:10px; flex-wrap:wrap">
           <input id="cfgUploadUrl" class="btn" style="flex:1" placeholder="Upload URL" />
           <input id="cfgSendUrl" class="btn" style="flex:1" placeholder="Send URL" />
           <button class="btn ok" onclick="saveCloudCfg()">💾 حفظ</button>
         </div>
-        <div class="hint" style="margin-top:10px; color:#ffe8a3">
-          ملاحظة: الإرسال يرسل <b>نص الترحيب</b> من الصفحة + <b>صور الأكواد</b> المخصصة لكل ضيف.
+
+        <div class="card gold" style="margin-top:12px">
+          <h3 style="margin:0 0 8px">📌 إعدادات رسالة الـ Template</h3>
+          <div class="row" style="flex-wrap:wrap">
+            <input id="tplName" class="btn" style="flex:1" placeholder="Template Name" />
+            <input id="tplLang" class="btn" style="width:140px" placeholder="Lang (ar/en)" />
+          </div>
+          <div class="row" style="margin-top:10px; flex-wrap:wrap">
+            <input id="eventTitle" class="btn" style="flex:1" placeholder="Event Title" />
+            <input id="eventDate" class="btn" style="width:220px" placeholder="Event Date (مثال: 15-01-2026)" />
+          </div>
+          <div class="hint" style="margin-top:10px; color:#ffe8a3">
+            سيتم إرسال vars بهذا الترتيب: <b>[اسم الضيف, اسم المناسبة, تاريخ المناسبة]</b>
+          </div>
         </div>
       </div>
     </section>
@@ -252,8 +265,8 @@
           <h3 style="margin:0 0 8px">📋 قائمة المدعوين</h3>
 
           <div class="row" style="gap:10px; flex-wrap:wrap">
-            <button class="btn ok" onclick="sendAllCloud()">📢 إرسال جماعي (ترحيب + كروت)</button>
-            <button class="btn ok" onclick="sendSelectedCloud()">🎯 إرسال المحدد (ترحيب + كروت)</button>
+            <button class="btn ok" onclick="sendAllCloud()">📢 إرسال جماعي (Cloud Template)</button>
+            <button class="btn ok" onclick="sendSelectedCloud()">🎯 إرسال المحدد (Cloud Template)</button>
             <button class="btn" onclick="sendAllWhatsApp()">📢 إرسال جماعي (فتح واتساب فقط)</button>
 
             <button class="btn" onclick="selectAllGuests()">☑️ تحديد الكل</button>
@@ -280,14 +293,14 @@
         </table>
 
         <div class="card gold" style="margin-top:12px">
-          <h3 style="margin:0 0 6px">🖊️ نص رسالة الترحيب</h3>
+          <h3 style="margin:0 0 6px">🖊️ نص رسالة الترحيب (للزر القديم فقط)</h3>
           <p class="hint">المتغيرات: <code>#{{GUEST_NAME}}#</code>، <code>#{{TOTAL_COUNT}}#</code></p>
           <textarea id="messageTemplate" class="btn" rows="5" style="width:100%; resize:vertical; line-height:1.9">مرحباً #{{GUEST_NAME}}#،
 نتشرف بدعوتكم لحضور فعاليتنا (إجمالي الدعوات: #{{TOTAL_COUNT}}#).
 الرجاء إحضار/إظهار أحد أكواد الباركود المرفقة للدخول.</textarea>
 
           <div class="hint" style="margin-top:10px; color:#ffe8a3">
-            ✅ Cloud API: سيتم إرسال <b>هذا النص</b> + <b>صور الأكواد المخصصة للضيف</b>.
+            ✅ Cloud API: لا يستخدم هذا النص — يستخدم WhatsApp Template (الاسم + المناسبة + التاريخ).
           </div>
         </div>
       </div>
@@ -302,12 +315,12 @@
     const DEFAULT_PASS  = "12345";
     const DEFAULT_CARD_STOCK = 300;
 
-    // مهم: eventId (للفنكشن) — خلّه نفس اسم الحدث أو رمز ثابت عندك
-    const CLOUD_EVENT_ID = "test_event"; // عدّل لو تريد: مثلا "zafaf_khaled_2026"
+    // eventId (للفنكشن) — ثابت عندك
+    const CLOUD_EVENT_ID = "test_event";
     // =======================
 
     // =======================
-    // Cloud Functions Endpoints (احفظها من تبويب بيانات الحدث)
+    // Cloud Functions Endpoints
     // =======================
     const LS_CLOUD_CFG = "hormez_cloud_cfg_v1";
     const DEFAULT_UPLOAD_URL = "https://us-central1-hormez-inv.cloudfunctions.net/uploadBarcodeCard";
@@ -341,11 +354,13 @@
     const LS_EVENT_NAME='hormez_event_name';
     const LS_CLOUD_UPLOAD_MARK='hormez_cloud_upload_mark';
 
+    const LS_TPL_CFG='hormez_tpl_cfg_v1';
+
     const getJSON=(k,fb)=>{ try{ return JSON.parse(localStorage.getItem(k)||JSON.stringify(fb)) }catch{return fb} };
     const setJSON=(k,v)=>{ try{ localStorage.setItem(k, JSON.stringify(v)) }catch{} };
 
     let guests = getJSON(LS_GUESTS, []);
-    let barcodeImages = {};               // code -> dataURL
+    let barcodeImages = {};
     let availableQrIds = getJSON(LS_QR, []);
     let internalGuestIdCounter = guests.reduce((m,g)=>Math.max(m,g.internalId||0), 0);
     const fixedStock = DEFAULT_CARD_STOCK;
@@ -368,10 +383,7 @@
 
     // ✅ حذف
     function deleteSelectedGuests(){
-      if(selectedGuestIds.size === 0){
-        alert('لم يتم تحديد أي ضيف.');
-        return;
-      }
+      if(selectedGuestIds.size === 0){ alert('لم يتم تحديد أي ضيف.'); return; }
       if(!confirm(`حذف ${selectedGuestIds.size} ضيف؟`)) return;
 
       guests = guests.filter(g => !selectedGuestIds.has(g.internalId));
@@ -384,10 +396,7 @@
       refreshQrUI();
     }
     function deleteAllGuests(){
-      if(!guests.length){
-        alert('لا يوجد ضيوف للحذف.');
-        return;
-      }
+      if(!guests.length){ alert('لا يوجد ضيوف للحذف.'); return; }
       if(!confirm(`سيتم حذف كل الضيوف (${guests.length}). هل أنت متأكد؟`)) return;
 
       guests = [];
@@ -504,18 +513,20 @@
       if(msgEl) localStorage.setItem(LS_MSG, msgEl.value||'');
       const ev=document.getElementById('eventName')?.value||'';
       if(ev) localStorage.setItem(LS_EVENT_NAME, ev);
+      saveTplCfg();
     }
 
     // Export/Import JSON
     function exportJSON(){
       const payload = {
-        version:4,
+        version:5,
         eventName: document.getElementById('eventName').value || DEFAULT_EVENT,
         guests, availableQrIds, internalGuestIdCounter,
         fixedStock,
         messageTemplate: document.getElementById('messageTemplate')?.value || '',
         cloudCfg: getCloudCfg(),
-        cloudUploadMark: localStorage.getItem(LS_CLOUD_UPLOAD_MARK) || ""
+        cloudUploadMark: localStorage.getItem(LS_CLOUD_UPLOAD_MARK) || "",
+        tplCfg: getTplCfg()
       };
       const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
       saveAs(blob, `sender_${payload.eventName||'event'}_${Date.now()}.json`);
@@ -535,11 +546,13 @@
 
           if (data.cloudCfg) localStorage.setItem(LS_CLOUD_CFG, JSON.stringify(data.cloudCfg));
           if (data.cloudUploadMark) localStorage.setItem(LS_CLOUD_UPLOAD_MARK, data.cloudUploadMark);
+          if (data.tplCfg) localStorage.setItem(LS_TPL_CFG, JSON.stringify(data.tplCfg));
 
           selectedGuestIds.clear();
 
           renderGuestTable(); updateKPIs(); refreshQrUI(); persistAll();
           refreshCloudUploadBadge();
+          loadTplUI();
 
           alert('تم الاستيراد بنجاح ✅\n(تذكير: يجب إعادة استيراد صور الباركود الفعلية على هذا الجهاز)');
         }catch{
@@ -610,7 +623,7 @@
         const total = Math.max(1, parseInt(row[kTotal] ?? 1) || 1);
 
         if(!name || !phone) return;
-        if(guests.some(x=>x.phone===phone)) return;
+        if(guests.some(x=>normPhone(x.phone)===normPhone(phone))) return;
 
         internalGuestIdCounter++;
         newOnes.push({
@@ -647,7 +660,7 @@
           const name=(c.name && c.name[0])||'بدون اسم';
           const phone=(c.tel && c.tel[0])||'';
           if(!phone) return;
-          if(guests.some(x=>x.phone===phone)) return;
+          if(guests.some(x=>normPhone(x.phone)===normPhone(phone))) return;
           internalGuestIdCounter++;
           guests.push({
             internalId:internalGuestIdCounter,
@@ -696,7 +709,7 @@
       document.getElementById('guestCount').textContent=guests.length;
     }
 
-    // Load barcodes (local dataURLs)
+    // Load barcodes
     function loadBarcodes(){
       const files=document.getElementById('barcodeUpload').files;
       if(!files.length){ alert('اختر ملفات'); return }
@@ -718,7 +731,7 @@
               if(!isNaN(A)&&!isNaN(B)) return A-B;
               return a.localeCompare(b)
             });
-            // عند استيراد جديد، اعتبر الرفع القديم غير صالح
+
             localStorage.removeItem(LS_CLOUD_UPLOAD_MARK);
             refreshCloudUploadBadge();
 
@@ -783,43 +796,11 @@
       persistAll(); renderGuestTable();
     }
 
-    async function downloadBarcodeImage(guest){
-      const ids=(guest.assignedQrIds||[]).map(x=>String(x).trim()).filter(Boolean);
-      if(!ids.length){ alert('لا توجد كروت لهذا الضيف'); return }
-      const present=ids.filter(id=>barcodeImages[id]);
-      if(!present.length){ alert('لا توجد صور متاحة لهذا الضيف — أعد استيراد صور الباركود على هذا الجهاز.'); return }
-      if(ids.length===1){
-        const id=present[0];
-        const a=document.createElement('a');
-        a.href=barcodeImages[id];
-        a.download=`${guest.name}_${id}.png`;
-        document.body.appendChild(a); a.click(); a.remove();
-        return;
-      }
-      const zip=new JSZip(); let added=0;
-      for(const id of present){
-        const b64=barcodeImages[id].split(',')[1];
-        zip.file(`${id}.png`, b64, {base64:true});
-        added++;
-      }
-      if(!added){ alert('لم يتم العثور على صور'); return }
-      const blob=await zip.generateAsync({type:'blob'});
-      saveAs(blob, `${guest.name}_${present.length}_Cards.zip`);
-      if(present.length<ids.length){
-        alert(`تم تنزيل ${present.length} من أصل ${ids.length}. بعض الصور غير مستوردة على هذا الجهاز.`)
-      }
-    }
-
-    function deleteGuest(id){
-      if(!confirm('حذف الضيف؟')) return;
-      guests = guests.filter(g=>g.internalId!==id);
-      selectedGuestIds.delete(id);
-      persistAll(); autoDistribute(); renderGuestTable(); updateKPIs(); refreshQrUI();
-    }
-
     // =========================================================
     // OLD: Open WhatsApp (fallback)
     // =========================================================
+    function normPhone(p){ return String(p||'').replace(/[^\d]/g,''); }
+
     function sendWhatsAppMessage(guest){
       if(!guest.assignedQrIds.length){ alert('لا كروت للضيف'); return }
       const msgEl=document.getElementById('messageTemplate');
@@ -842,18 +823,39 @@
     }
 
     // =========================================================
-    // Cloud Helpers
+    // Template Config UI
     // =========================================================
-    function normPhone(p){ return String(p||'').replace(/[^\d]/g,''); }
-
-    function getWelcomeText(guest){
-      const tpl = document.getElementById("messageTemplate")?.value || "";
-      return tpl
-        .replace(/#\{\{GUEST_NAME\}\}#/g, guest.name || "")
-        .replace(/#\{\{TOTAL_COUNT\}\}#/g, String(guest.totalNeeded || 1))
-        .trim();
+    function getTplCfg(){
+      try{
+        const o = JSON.parse(localStorage.getItem(LS_TPL_CFG) || "null");
+        return {
+          templateName: (o?.templateName || "krs_rsvp").trim(),
+          lang: (o?.lang || "ar").trim(),
+          eventTitle: (o?.eventTitle || "زفاف شمه").trim(),
+          eventDate: (o?.eventDate || "15-01-2026").trim(),
+        };
+      }catch{
+        return { templateName:"krs_rsvp", lang:"ar", eventTitle:"زفاف شمه", eventDate:"15-01-2026" };
+      }
+    }
+    function saveTplCfg(){
+      const templateName = (document.getElementById("tplName")?.value || "").trim() || "krs_rsvp";
+      const lang = (document.getElementById("tplLang")?.value || "").trim() || "ar";
+      const eventTitle = (document.getElementById("eventTitle")?.value || "").trim() || "زفاف شمه";
+      const eventDate = (document.getElementById("eventDate")?.value || "").trim() || "15-01-2026";
+      localStorage.setItem(LS_TPL_CFG, JSON.stringify({ templateName, lang, eventTitle, eventDate }));
+    }
+    function loadTplUI(){
+      const c = getTplCfg();
+      document.getElementById("tplName").value = c.templateName;
+      document.getElementById("tplLang").value = c.lang;
+      document.getElementById("eventTitle").value = c.eventTitle;
+      document.getElementById("eventDate").value = c.eventDate;
     }
 
+    // =========================================================
+    // Cloud Upload Badge
+    // =========================================================
     function refreshCloudUploadBadge(){
       const mark = localStorage.getItem(LS_CLOUD_UPLOAD_MARK);
       const st = document.getElementById("cloudUploadStatus");
@@ -867,11 +869,11 @@
       }
     }
 
-    // (1) رفع كل صور الباركود للسيرفر
+    // =========================================================
+    // (1) رفع صور الباركود للسيرفر
+    // =========================================================
     async function uploadAllCardsToCloud(){
       const cfg = getCloudCfg();
-      const eventNameLocal = (localStorage.getItem(LS_EVENT_NAME) || DEFAULT_EVENT || "event").trim();
-
       if(!availableQrIds.length){
         alert("لا توجد أكواد. استورد صور الباركود أولاً.");
         return;
@@ -881,7 +883,7 @@
         return;
       }
 
-      if(!confirm(`سيتم رفع ${availableQrIds.length} صورة للسيرفر.\nالحدث (local): ${eventNameLocal}\nCloud eventId: ${CLOUD_EVENT_ID}\nمتابعة؟`)) return;
+      if(!confirm(`سيتم رفع ${availableQrIds.length} صورة للسيرفر.\nCloud eventId: ${CLOUD_EVENT_ID}\nمتابعة؟`)) return;
 
       let ok=0, fail=0;
 
@@ -893,12 +895,7 @@
           const r = await fetch(cfg.uploadUrl, {
             method:"POST",
             headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify({
-              // eventId الذي تعتمد عليه الفنكشن — هنا نستخدم CLOUD_EVENT_ID الثابت
-              eventId: CLOUD_EVENT_ID,
-              code,
-              dataUrl
-            })
+            body: JSON.stringify({ eventId: CLOUD_EVENT_ID, code, dataUrl })
           });
 
           const j = await r.json().catch(()=> ({}));
@@ -917,26 +914,29 @@
         localStorage.setItem(LS_CLOUD_UPLOAD_MARK, mark + ` (ok:${ok} fail:${fail})`);
       }
       refreshCloudUploadBadge();
-      alert(`رفع المخزون انتهى ✅\nنجح: ${ok}\nفشل: ${fail}\n\nالآن تقدر ترسل (ترحيب + كروت) عبر Cloud.`);
+      alert(`رفع المخزون انتهى ✅\nنجح: ${ok}\nفشل: ${fail}`);
     }
 
-    // (2) إرسال الترحيب + صور الأكواد
-    async function sendWelcomeAndCardsCloud(guest){
+    // =========================================================
+    // (2) إرسال WhatsApp Template (المتاح عندك الآن ✅)
+    // =========================================================
+    async function sendTemplateCloud(guest){
       const cfg = getCloudCfg();
+      const tpl = getTplCfg();
 
-      if(!guest.assignedQrIds || !guest.assignedQrIds.length){
-        throw new Error("لا توجد أكواد مخصصة لهذا الضيف");
-      }
+      const to = normPhone(guest.phone);
+      if(!to) throw new Error("رقم هاتف غير صالح");
 
-      const welcomeText = getWelcomeText(guest);
-      if(!welcomeText) throw new Error("نص الترحيب فارغ");
+      if(!tpl.templateName) throw new Error("templateName فارغ");
+      if(!tpl.lang) throw new Error("lang فارغ");
 
+      // vars = [guestName, eventTitle, eventDate]
       const payload = {
         eventId: CLOUD_EVENT_ID,
-        to: normPhone(guest.phone),
-        name: guest.name,
-        welcomeText,
-        codes: guest.assignedQrIds
+        to,
+        templateName: tpl.templateName,
+        lang: tpl.lang,
+        vars: [guest.name || "", tpl.eventTitle || "", tpl.eventDate || ""]
       };
 
       const r = await fetch(cfg.sendUrl, {
@@ -946,35 +946,26 @@
       });
 
       const j = await r.json().catch(()=> ({}));
-      if(!r.ok || !j.ok) throw new Error(j.error || ("HTTP "+r.status));
+      if(!r.ok || j.ok === false) throw new Error(j.error || ("HTTP "+r.status));
       return j;
     }
 
-    // إرسال جماعي
     async function sendAllCloud(){
       if(!guests.length){ alert("لا يوجد ضيوف"); return; }
-
-      const mark = localStorage.getItem(LS_CLOUD_UPLOAD_MARK);
-      if(!mark){
-        if(!confirm("تنبيه: لم يتم رفع صور الباركود للسيرفر بعد.\nقد يفشل الإرسال.\nمتابعة؟")) return;
-      } else {
-        if(!confirm("سيتم إرسال (ترحيب + كروت) للجميع عبر Cloud API.\nمتابعة؟")) return;
-      }
+      if(!confirm("سيتم إرسال WhatsApp Template للجميع عبر Cloud.\nمتابعة؟")) return;
 
       let ok=0, fail=0;
 
-      for (let i=0; i<guests.length; i++){
-        const g = guests[i];
-
+      for (const g of guests){
         try{
           g.status = "sending";
           g.err = "";
           renderGuestTable();
 
-          const out = await sendWelcomeAndCardsCloud(g);
+          const out = await sendTemplateCloud(g);
 
           g.status = "sent";
-          g.wamid  = out.textWamid || "";
+          g.wamid  = out.wamid || out.messageId || "";
           g.err = "";
           ok++;
         }catch(e){
@@ -991,17 +982,10 @@
       alert(`تم الإرسال ✅\nنجح: ${ok}\nفشل: ${fail}`);
     }
 
-    // إرسال المحدد
     async function sendSelectedCloud(){
       const list = guests.filter(g => selectedGuestIds.has(g.internalId));
       if(!list.length){ alert("لم يتم تحديد أي ضيف"); return; }
-
-      const mark = localStorage.getItem(LS_CLOUD_UPLOAD_MARK);
-      if(!mark){
-        if(!confirm("تنبيه: لم يتم رفع صور الباركود للسيرفر بعد.\nقد يفشل الإرسال.\nمتابعة؟")) return;
-      } else {
-        if(!confirm(`سيتم إرسال (ترحيب + كروت) لـ ${list.length} ضيف محدد.\nمتابعة؟`)) return;
-      }
+      if(!confirm(`سيتم إرسال WhatsApp Template لـ ${list.length} ضيف محدد.\nمتابعة؟`)) return;
 
       let ok=0, fail=0;
 
@@ -1011,10 +995,10 @@
           g.err = "";
           renderGuestTable();
 
-          const out = await sendWelcomeAndCardsCloud(g);
+          const out = await sendTemplateCloud(g);
 
           g.status = "sent";
-          g.wamid  = out.textWamid || "";
+          g.wamid  = out.wamid || out.messageId || "";
           g.err = "";
           ok++;
         }catch(e){
@@ -1088,12 +1072,10 @@
 
         const tdStatus=document.createElement('td');
         tdStatus.setAttribute('data-label','الحالة');
-
         if(guest.status === "sending") tdStatus.textContent = "جاري الإرسال...";
         else if(guest.status === "failed") tdStatus.innerHTML = `فشل <span class="small" title="${(guest.err||'').replace(/"/g,'&quot;')}">ⓘ</span>`;
         else if(guest.status === "sent") tdStatus.innerHTML = `مُرسلة <span class="small" title="${guest.wamid||''}">wamid</span>`;
         else tdStatus.textContent = "جديدة";
-
         tr.appendChild(tdStatus);
 
         const tdAct=document.createElement('td');
@@ -1106,24 +1088,19 @@
         b1.textContent='تعيين/تغيير';
         b1.onclick=()=>assignBarcode(guest.internalId);
 
-        const b2=document.createElement('button');
-        b2.className='btn block';
-        b2.textContent= guest.totalNeeded===1? '💾 PNG' : '💾 ZIP';
-        b2.onclick=()=>downloadBarcodeImage(guest);
-
         const bCloud=document.createElement('button');
         bCloud.className='btn ok block';
-        bCloud.textContent='🚀 إرسال (ترحيب + كروت)';
+        bCloud.textContent='🚀 إرسال (Cloud Template)';
         bCloud.onclick=async ()=>{
           try{
             guest.status="sending";
             guest.err="";
             renderGuestTable();
 
-            const out = await sendWelcomeAndCardsCloud(guest);
+            const out = await sendTemplateCloud(guest);
 
             guest.status="sent";
-            guest.wamid = out.textWamid || "";
+            guest.wamid = out.wamid || out.messageId || "";
             guest.err="";
           }catch(e){
             guest.status="failed";
@@ -1144,7 +1121,7 @@
         b4.textContent='🗑️ حذف';
         b4.onclick=()=>deleteGuest(guest.internalId);
 
-        [b1,b2,bCloud,b3,b4].forEach(b=>{ b.style.marginTop='8px'; tdAct.appendChild(b) });
+        [b1,bCloud,b3,b4].forEach(b=>{ b.style.marginTop='8px'; tdAct.appendChild(b) });
         tr.appendChild(tdAct);
 
         body.appendChild(tr);
@@ -1153,9 +1130,15 @@
       updateKPIs(); refreshQrUI(); persistAll();
     }
 
+    function deleteGuest(id){
+      if(!confirm('حذف الضيف؟')) return;
+      guests = guests.filter(g=>g.internalId!==id);
+      selectedGuestIds.delete(id);
+      persistAll(); autoDistribute(); renderGuestTable(); updateKPIs(); refreshQrUI();
+    }
+
     // Boot
     (function boot(){
-      // Fill Cloud URLs UI
       const cfg = getCloudCfg();
       document.getElementById("cfgUploadUrl").value = cfg.uploadUrl;
       document.getElementById("cfgSendUrl").value = cfg.sendUrl;
@@ -1164,7 +1147,6 @@
         const s=JSON.parse(localStorage.getItem(LS_AUTH)||'null');
         if(!s?.event){ showAuth(); }
         else { document.getElementById('currentEvent').textContent = s.event; }
-
         document.getElementById('eventName').value = localStorage.getItem(LS_EVENT_NAME) || DEFAULT_EVENT;
 
         const savedMsg = localStorage.getItem(LS_MSG);
@@ -1175,6 +1157,7 @@
         showAuth();
       }
 
+      loadTplUI();
       refreshCloudUploadBadge();
       renderGuestTable(); updateKPIs(); refreshQrUI();
     })();
