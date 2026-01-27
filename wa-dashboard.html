@@ -142,29 +142,61 @@
     }
 
     async function loadMessages() {
-      tbody.innerHTML = `<tr><td colspan="6" class="muted">جار التحميل…</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="6" class="muted">جار التحميل…</td></tr>`;
 
-      const eventId = $("eventId").value.trim();
-      const status = $("statusFilter").value.trim();
-      const qText = $("q").value.trim().toLowerCase();
+  const eventId = $("eventId").value.trim();
+  const status = $("statusFilter").value.trim().toLowerCase();
+  const qText = $("q").value.trim().toLowerCase();
 
-      // ✅ نقرأ من wa_messages
-      // الأفضل يكون عندك الحقول:
-      // eventId, to, guestName, code, templateName, lastStatus, lastStatusAt
-      const col = collection(db, "wa_messages");
+  const col = collection(db, "wa_messages");
 
-      // Query أساسي: eventId + ترتيب حسب lastStatusAt
-      // ملاحظة: قد يطلب منك Firestore عمل INDEX (بيعطيك رابط Create Index)
-      let qq = query(
-        col,
-        ...(eventId ? [where("eventId", "==", eventId)] : []),
-        orderBy("lastStatusAt", "desc"),
-        limit(200)
-      );
+  // ✅ بدون orderBy ولا index
+  let qq = eventId
+    ? query(col, where("eventId", "==", eventId), limit(300))
+    : query(col, limit(300));
 
-      const snap = await getDocs(qq);
-      const items = [];
-      snap.forEach((s) => items.push({ id: s.id, ...s.data() }));
+  const snap = await getDocs(qq);
+
+  const items = [];
+  snap.forEach((s) => items.push({ id: s.id, ...s.data() }));
+
+  // استخرج lastStatus / lastStatusAt من lastStatusRaw إذا موجود
+  const normalized = items.map(x => {
+    const raw = x.lastStatusRaw || {};
+    const rawStatus = (raw.status || raw.statuses?.[0]?.status || "").toLowerCase();
+    const rawTime = raw.timestamp ? new Date(Number(raw.timestamp) * 1000) : null;
+
+    return {
+      ...x,
+      to: x.to || raw.recipient_id || x.recipient_id || "",
+      lastStatus: (x.lastStatus || rawStatus || x.status || "").toLowerCase(),
+      lastStatusAt: x.lastStatusAt || x.createdAt || (rawTime ? rawTime : null),
+      templateName: x.templateName || x.type || "",
+    };
+  });
+
+  let filtered = normalized;
+
+  if (status) filtered = filtered.filter(x => (x.lastStatus || "") === status);
+
+  if (qText) {
+    filtered = filtered.filter(x => {
+      const a = `${x.guestName||""}`.toLowerCase();
+      const b = `${x.to||""}`.toLowerCase();
+      const c = `${x.code||""}`.toLowerCase();
+      const d = `${x.eventId||""}`.toLowerCase();
+      return a.includes(qText) || b.includes(qText) || c.includes(qText) || d.includes(qText);
+    });
+  }
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="muted">لا توجد نتائج (جرّب بدون eventId).</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(row).join("");
+}
+
 
       // فلترة بالواجهة (بحث)
       let filtered = items;
