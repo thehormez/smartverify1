@@ -3,156 +3,425 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>KRS — WA Dashboard (Debug)</title>
+  <title>KRS — WA Dashboard</title>
   <style>
-    body{margin:0;font-family:system-ui;background:#0b1020;color:#e9edf5}
-    .wrap{max-width:1100px;margin:0 auto;padding:20px}
-    .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px;margin-top:12px}
-    button{cursor:pointer;background:rgba(214,177,94,.18);border:1px solid rgba(214,177,94,.35);color:#e9edf5;padding:10px 12px;border-radius:12px}
-    input{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e9edf5;padding:10px 12px;border-radius:12px;outline:none}
+    :root{
+      --bg:#0b1020; --card:rgba(255,255,255,.06); --stroke:rgba(255,255,255,.12);
+      --ink:#e9edf5; --muted:#a7b0c3; --gold:#d6b15e; --gold2:#b48a18;
+      --ok:#34d399; --bad:#fb7185; --warn:#fbbf24; --info:#60a5fa;
+      --shadow:0 18px 60px rgba(0,0,0,.45);
+      --r:16px;
+    }
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:radial-gradient(1200px 700px at 30% -10%, rgba(214,177,94,.18), transparent 60%), var(--bg); color:var(--ink)}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--r);padding:14px;margin-top:12px;box-shadow:var(--shadow)}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    pre{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.35);padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.10)}
+    .sp{flex:1}
+    button{
+      cursor:pointer; border-radius:12px; padding:10px 12px; color:var(--ink);
+      border:1px solid rgba(214,177,94,.35); background:rgba(214,177,94,.14);
+      transition:.15s transform ease,.15s opacity ease;
+    }
+    button:hover{transform:translateY(-1px)}
+    button:disabled{opacity:.45; cursor:not-allowed; transform:none}
+    .btn-ghost{border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06)}
+    .btn-danger{border:1px solid rgba(251,113,133,.45); background:rgba(251,113,133,.12)}
+    .btn-success{border:1px solid rgba(52,211,153,.45); background:rgba(52,211,153,.12)}
+    input,select{
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+      color:var(--ink);padding:10px 12px;border-radius:12px;outline:none;min-width:180px
+    }
+    .muted{color:var(--muted)}
+    .title{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .title h2{margin:0;font-size:16px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.20)}
+    .badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);font-size:12px}
+    .b-ok{border-color:rgba(52,211,153,.35); background:rgba(52,211,153,.10); color:var(--ok)}
+    .b-bad{border-color:rgba(251,113,133,.35); background:rgba(251,113,133,.10); color:var(--bad)}
+    .b-warn{border-color:rgba(251,191,36,.35); background:rgba(251,191,36,.10); color:var(--warn)}
+    .b-info{border-color:rgba(96,165,250,.35); background:rgba(96,165,250,.10); color:var(--info)}
     table{width:100%;border-collapse:collapse;margin-top:10px}
-    th,td{border-bottom:1px solid rgba(255,255,255,.10);padding:10px;text-align:right}
-    .muted{color:#a7b0c3}
-    .ok{color:#34d399}
-    .bad{color:#fb7185}
+    th,td{border-bottom:1px solid rgba(255,255,255,.10);padding:10px;text-align:right;vertical-align:middle}
+    thead th{position:sticky;top:0;background:rgba(11,16,32,.92);backdrop-filter: blur(8px);z-index:1}
+    .ltr{direction:ltr;text-align:left}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .small{font-size:12px}
+    .grid2{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:900px){ .grid2{grid-template-columns:1fr 1fr} }
+    .note{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.35);padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.10);max-height:260px;overflow:auto}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    .leftTools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .rightTools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="row">
-        <button id="btnLogin">تسجيل الدخول (Google)</button>
-        <button id="btnLogout" style="display:none">تسجيل الخروج</button>
-        <button id="btnTest">اختبار قراءة wa_messages</button>
-        <input id="eventId" placeholder="eventId (اختياري) مثال: zafaf_khaled" style="flex:1;min-width:240px" />
+<div class="wrap">
+
+  <!-- Auth / Controls -->
+  <div class="card">
+    <div class="row">
+      <div class="pill">
+        <span class="mono">KRS INVITE</span>
+        <span class="muted">WA Dashboard</span>
       </div>
-      <div class="muted" id="who">غير مسجّل دخول</div>
+      <div class="sp"></div>
+      <button id="btnLogin">تسجيل الدخول (Google)</button>
+      <button id="btnLogout" class="btn-ghost" style="display:none">تسجيل الخروج</button>
     </div>
 
-    <div class="card">
-      <div style="font-weight:800;margin-bottom:8px">نتيجة الاختبار</div>
-      <div id="statusLine" class="muted">—</div>
-      <pre id="debug">—</pre>
+    <div class="row" style="margin-top:10px">
+      <input id="eventId" placeholder="eventId (اختياري) مثال: zafaf_khaled" style="flex:1;min-width:240px" />
+      <input id="q" placeholder="بحث: اسم / رقم / كود" style="flex:1;min-width:220px" />
+      <select id="statusFilter">
+        <option value="">كل الحالات</option>
+        <option value="read">read</option>
+        <option value="delivered">delivered</option>
+        <option value="sent">sent</option>
+        <option value="failed">failed</option>
+      </select>
+      <select id="limitN">
+        <option value="50">آخر 50</option>
+        <option value="100" selected>آخر 100</option>
+        <option value="200">آخر 200</option>
+      </select>
+
+      <button id="btnLoad" class="btn-success">تحديث / تحميل</button>
+      <button id="btnTest" class="btn-ghost">اختبار</button>
     </div>
 
-    <div class="card">
-      <div style="font-weight:800;margin-bottom:8px">آخر 50 سجل</div>
-      <div style="overflow:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>guestName</th>
-              <th>to/recipient</th>
-              <th>code</th>
-              <th>eventId</th>
-              <th>status</th>
-              <th>docId</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
+    <div class="muted" id="who" style="margin-top:10px">غير مسجّل دخول</div>
+    <div class="row" style="margin-top:8px">
+      <span class="badge b-info" id="ownerBadge">Owner: غير مفعّل</span>
+      <span class="badge" id="countBadge">—</span>
+      <span class="badge" id="selBadge">المحدد: 0</span>
     </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
-      from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { getFirestore, collection, getDocs, query, where, limit }
-      from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  <!-- Actions + Debug -->
+  <div class="grid2">
+    <div class="card">
+      <div class="title">
+        <h2>إجراءات</h2>
+        <span class="muted small">الحذف من wa_messages فقط</span>
+      </div>
 
-    // ✅ ضع config الصحيح لمشروع hormez-inv
-    const firebaseConfig = {
-  apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-  authDomain: "hormez-inv.firebaseapp.com",
-  projectId: "hormez-inv",
-  storageBucket: "hormez-inv.firebasestorage.app",
-  messagingSenderId: "747519941805",
-  appId: "1:747519941805:web:468fada2492700e9da3a24"
-};
+      <div class="toolbar" style="margin-top:10px">
+        <div class="leftTools">
+          <button id="btnSelectAll" class="btn-ghost">تحديد الكل</button>
+          <button id="btnClearSel" class="btn-ghost">إلغاء التحديد</button>
+        </div>
+        <div class="rightTools">
+          <button id="btnDeleteSelected" class="btn-danger" disabled>حذف المحدد</button>
+        </div>
+      </div>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+      <div class="muted small" style="margin-top:10px;line-height:1.6">
+        ✅ نصيحة: إذا تريد “صفحة متابعة” بدون حذف، عطّل زر الحذف من هنا وخلاص.<br>
+        ⚠️ الحذف يحتاج Rules تسمح لOwner UID.
+      </div>
+    </div>
 
-    const $ = (id)=>document.getElementById(id);
-    const tbody = $("tbody");
+    <div class="card">
+      <div class="title">
+        <h2>نتيجة الاختبار / Debug</h2>
+        <span id="statusLine" class="muted">—</span>
+      </div>
+      <div class="note" id="debug">—</div>
+    </div>
+  </div>
 
-    function showDebug(obj){
-      $("debug").textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+  <!-- Table -->
+  <div class="card">
+    <div class="title">
+      <h2>سجل الإرسال (wa_messages)</h2>
+      <span class="muted small">يعرض رسائل Template وصور Cards</span>
+    </div>
+
+    <div style="overflow:auto;margin-top:10px">
+      <table>
+        <thead>
+        <tr>
+          <th style="width:44px"><input type="checkbox" id="chkAll"></th>
+          <th>اسم الضيف</th>
+          <th class="ltr">رقم الهاتف</th>
+          <th class="ltr">رقم الكرت (code)</th>
+          <th>اسم الحدث</th>
+          <th>النوع</th>
+          <th>الحالة</th>
+          <th>الوقت</th>
+          <th class="ltr">wamid/docId</th>
+        </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import {
+    getFirestore, collection, getDocs, query, where, limit,
+    doc, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  // ✅ config مشروع hormez-inv
+  const firebaseConfig = {
+    apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+    authDomain: "hormez-inv.firebaseapp.com",
+    projectId: "hormez-inv",
+    storageBucket: "hormez-inv.firebasestorage.app",
+    messagingSenderId: "747519941805",
+    appId: "1:747519941805:web:468fada2492700e9da3a24"
+  };
+
+  // ✅ ضع UID حقك هنا (Owner فقط)
+  const OWNER_UIDS = new Set([
+    "GhauBm6KHHgEMyZLwJvU3DflRhx1" // <-- UID حقك (عدّله إذا لزم)
+  ]);
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const $ = (id)=>document.getElementById(id);
+  const tbody = $("tbody");
+
+  let currentUser = null;
+  let rowsCache = [];       // docs loaded
+  let selected = new Set(); // selected docIds
+
+  function badgeStatus(s){
+    const v = String(s||"-").toLowerCase();
+    if(v==="read") return `<span class="badge b-ok">read</span>`;
+    if(v==="delivered") return `<span class="badge b-info">delivered</span>`;
+    if(v==="sent") return `<span class="badge b-warn">sent</span>`;
+    if(v==="failed") return `<span class="badge b-bad">failed</span>`;
+    return `<span class="badge">-</span>`;
+  }
+
+  function formatTS(ts){
+    try{
+      const d = ts?.toDate ? ts.toDate() : (ts?.seconds ? new Date(ts.seconds*1000) : null);
+      if(!d) return "-";
+      return d.toLocaleString("ar-AE", { hour12:true });
+    }catch{ return "-"; }
+  }
+
+  function showDebug(obj){
+    $("debug").textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+  }
+
+  function setOwnerUI(){
+    const isOwner = currentUser && OWNER_UIDS.has(currentUser.uid);
+    $("ownerBadge").className = "badge " + (isOwner ? "b-ok" : "b-bad");
+    $("ownerBadge").textContent = "Owner: " + (isOwner ? "مفعّل" : "غير مفعّل");
+    $("btnDeleteSelected").disabled = !(isOwner && selected.size>0);
+  }
+
+  function updateSelUI(){
+    $("selBadge").textContent = `المحدد: ${selected.size}`;
+    setOwnerUI();
+  }
+
+  function applyFilters(all){
+    const ev = $("eventId").value.trim();
+    const qtxt = $("q").value.trim().toLowerCase();
+    const stf = $("statusFilter").value.trim().toLowerCase();
+
+    return all.filter(x=>{
+      if(ev && String(x.eventId||"") !== ev) return false;
+      const status = String(x.lastStatus||x.status||x?.lastStatusRaw?.status||"").toLowerCase();
+      if(stf && status !== stf) return false;
+
+      if(qtxt){
+        const hay = [
+          x.guestName, x.guestId, x.eventId, x.code,
+          x.to, x.recipient_id, x?.lastStatusRaw?.recipient_id
+        ].map(v=>String(v||"").toLowerCase()).join(" ");
+        if(!hay.includes(qtxt)) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderTable(){
+    const filtered = applyFilters(rowsCache);
+
+    tbody.innerHTML = "";
+    selected.clear();
+    $("chkAll").checked = false;
+    updateSelUI();
+
+    $("countBadge").textContent = `المعروض: ${filtered.length} / المحمّل: ${rowsCache.length}`;
+
+    for(const d of filtered){
+      const status = d.lastStatus || d.status || d?.lastStatusRaw?.status || "-";
+      const to = d.to || d.recipient_id || d?.lastStatusRaw?.recipient_id || "-";
+      const kind = d.kind || d.type || d.messageType || (d.templateName ? "template" : (d.code ? "image" : "-"));
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input type="checkbox" data-id="${d.docId}"></td>
+        <td>${d.guestName || "-"}</td>
+        <td class="ltr mono">${to}</td>
+        <td class="ltr mono">${d.code || "-"}</td>
+        <td class="mono">${d.eventId || "-"}</td>
+        <td class="mono">${kind || "-"}</td>
+        <td>${badgeStatus(status)}</td>
+        <td class="small">${formatTS(d.updatedAt || d.createdAt)}</td>
+        <td class="ltr mono small">${d.docId}</td>
+      `;
+      tbody.appendChild(tr);
     }
 
-    $("btnLogin").onclick = async ()=>{
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    };
-    $("btnLogout").onclick = async ()=>{
-      await signOut(auth);
-    };
-
-    onAuthStateChanged(auth, (user)=>{
-      if(user){
-        $("who").innerHTML = `<span class="ok">مسجّل دخول:</span> ${user.email} — UID: ${user.uid}`;
-        $("btnLogin").style.display="none";
-        $("btnLogout").style.display="inline-block";
-      }else{
-        $("who").innerHTML = `غير مسجّل دخول`;
-        $("btnLogin").style.display="inline-block";
-        $("btnLogout").style.display="none";
-      }
+    // checkbox handlers
+    tbody.querySelectorAll('input[type="checkbox"][data-id]').forEach(chk=>{
+      chk.addEventListener("change", ()=>{
+        const id = chk.getAttribute("data-id");
+        if(chk.checked) selected.add(id);
+        else selected.delete(id);
+        updateSelUI();
+      });
     });
+  }
 
-    $("btnTest").onclick = async ()=>{
-      try{
-        $("statusLine").innerHTML = "جار القراءة...";
-        showDebug("...");
+  async function loadMessages(){
+    if(!currentUser){
+      $("statusLine").innerHTML = `<span class="badge b-bad">سجّل دخول أولاً</span>`;
+      showDebug("❌ لازم تسجل دخول أولاً.");
+      return;
+    }
 
-        const ev = $("eventId").value.trim();
+    try{
+      $("statusLine").innerHTML = `<span class="badge b-warn">جار التحميل...</span>`;
+      showDebug("...");
 
-        const col = collection(db, "wa_messages");
+      const ev = $("eventId").value.trim();
+      const lim = parseInt($("limitN").value,10) || 100;
 
-        // ✅ اختبار بسيط جداً (بدون orderBy ولا indexes)
-        const qq = ev ? query(col, where("eventId","==",ev), limit(50)) : query(col, limit(50));
+      const col = collection(db, "wa_messages");
+      // بدون orderBy لتجنب indexes
+      const qq = ev ? query(col, where("eventId","==",ev), limit(lim)) : query(col, limit(lim));
 
-        const snap = await getDocs(qq);
+      const snap = await getDocs(qq);
 
-        $("statusLine").innerHTML = `<span class="ok">نجح</span> — docs: ${snap.size}`;
-        const arr = [];
-        tbody.innerHTML = "";
+      rowsCache = [];
+      snap.forEach(docu=>{
+        const data = docu.data() || {};
+        rowsCache.push({ docId: docu.id, ...data });
+      });
 
-        snap.forEach(doc=>{
-          const d = doc.data() || {};
-          arr.push({ docId: doc.id, ...d });
+      $("statusLine").innerHTML = `<span class="badge b-ok">تم</span> <span class="muted">docs: ${snap.size}</span>`;
+      showDebug(rowsCache[0] ? { sampleFirstDoc: rowsCache[0] } : "لا توجد بيانات.");
 
-          const status = d.lastStatus || d.status || d?.lastStatusRaw?.status || "-";
-          const to = d.to || d.recipient_id || d?.lastStatusRaw?.recipient_id || "-";
+      renderTable();
 
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${d.guestName || "-"}</td>
-            <td dir="ltr" style="text-align:left">${to}</td>
-            <td dir="ltr" style="text-align:left">${d.code || "-"}</td>
-            <td>${d.eventId || "-"}</td>
-            <td>${status}</td>
-            <td dir="ltr" style="text-align:left">${doc.id}</td>
-          `;
-          tbody.appendChild(tr);
-        });
+    }catch(e){
+      $("statusLine").innerHTML = `<span class="badge b-bad">فشل</span>`;
+      showDebug({
+        name: e?.name,
+        message: e?.message,
+        code: e?.code,
+        stack: (e?.stack || "").split("\n").slice(0,6).join("\n")
+      });
+    }
+  }
 
-        showDebug(arr[0] ? { sampleFirstDoc: arr[0] } : "لا توجد وثائق للعرض");
+  async function deleteSelected(){
+    const isOwner = currentUser && OWNER_UIDS.has(currentUser.uid);
+    if(!isOwner){
+      alert("غير مسموح بالحذف. Owner فقط.");
+      return;
+    }
+    if(selected.size===0){
+      alert("اختر سجلات للحذف أولاً.");
+      return;
+    }
+    const ok = confirm(`تأكيد حذف ${selected.size} سجل من wa_messages؟\nلا يمكن التراجع.`);
+    if(!ok) return;
 
-      }catch(e){
-        $("statusLine").innerHTML = `<span class="bad">فشل</span>`;
-        showDebug({
-          name: e?.name,
-          message: e?.message,
-          code: e?.code,
-          stack: (e?.stack || "").split("\n").slice(0,3).join("\n")
-        });
+    try{
+      $("statusLine").innerHTML = `<span class="badge b-warn">جار حذف المحدد...</span>`;
+      const ids = Array.from(selected);
+
+      // حذف واحد واحد (واضح وسهل تتبع)
+      for(const id of ids){
+        await deleteDoc(doc(db, "wa_messages", id));
       }
-    };
-  </script>
+
+      // اعادة تحميل
+      await loadMessages();
+      $("statusLine").innerHTML = `<span class="badge b-ok">تم الحذف</span>`;
+
+    }catch(e){
+      $("statusLine").innerHTML = `<span class="badge b-bad">فشل الحذف</span>`;
+      showDebug({
+        message: e?.message,
+        code: e?.code
+      });
+      alert("فشل الحذف: " + (e?.message || e));
+    }
+  }
+
+  // Auth
+  $("btnLogin").onclick = async ()=> signInWithPopup(auth, new GoogleAuthProvider());
+  $("btnLogout").onclick = async ()=> signOut(auth);
+
+  onAuthStateChanged(auth, (user)=>{
+    currentUser = user || null;
+    if(user){
+      $("who").innerHTML = `<span class="badge b-ok">مسجّل دخول</span> ${user.email} — <span class="mono">UID: ${user.uid}</span>`;
+      $("btnLogin").style.display="none";
+      $("btnLogout").style.display="inline-block";
+    }else{
+      $("who").innerHTML = `غير مسجّل دخول`;
+      $("btnLogin").style.display="inline-block";
+      $("btnLogout").style.display="none";
+    }
+    setOwnerUI();
+  });
+
+  // Buttons
+  $("btnLoad").onclick = loadMessages;
+  $("btnTest").onclick = loadMessages;
+
+  $("btnSelectAll").onclick = ()=>{
+    tbody.querySelectorAll('input[type="checkbox"][data-id]').forEach(chk=>{
+      chk.checked = true;
+      selected.add(chk.getAttribute("data-id"));
+    });
+    updateSelUI();
+  };
+
+  $("btnClearSel").onclick = ()=>{
+    tbody.querySelectorAll('input[type="checkbox"][data-id]').forEach(chk=> chk.checked = false);
+    selected.clear();
+    updateSelUI();
+  };
+
+  $("btnDeleteSelected").onclick = deleteSelected;
+
+  $("chkAll").addEventListener("change", ()=>{
+    const v = $("chkAll").checked;
+    tbody.querySelectorAll('input[type="checkbox"][data-id]').forEach(chk=>{
+      chk.checked = v;
+      const id = chk.getAttribute("data-id");
+      if(v) selected.add(id); else selected.delete(id);
+    });
+    updateSelUI();
+  });
+
+  // Live filter updates
+  $("q").addEventListener("input", ()=> renderTable());
+  $("statusFilter").addEventListener("change", ()=> renderTable());
+  $("eventId").addEventListener("change", ()=> renderTable());
+
+</script>
 </body>
 </html>
+
