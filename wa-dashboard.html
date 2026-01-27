@@ -269,7 +269,7 @@
         <td><input type="checkbox" data-id="${d.docId}"></td>
         <td>${d.guestName || "-"}</td>
         <td class="ltr mono">${to}</td>
-        <td class="ltr mono">${d.code || "-"}</td>
+        <td class="ltr mono">${(d.code || (Array.isArray(d.codes) ? d.codes.join(", ") : "-"))}</td>
         <td class="mono">${d.eventId || "-"}</td>
         <td class="mono">${kind || "-"}</td>
         <td>${badgeStatus(status)}</td>
