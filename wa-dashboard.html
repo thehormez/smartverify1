@@ -3,77 +3,52 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>KRS — WA Dashboard (Owner)</title>
-
+  <title>KRS — WA Dashboard (Debug)</title>
   <style>
-    :root{--bg:#0b1020;--card:rgba(255,255,255,.06);--stroke:rgba(255,255,255,.12);--ink:#e9edf5;--muted:#a7b0c3;--gold:#d6b15e;}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#070a14,#0b1020);color:var(--ink)}
-    .wrap{max-width:1100px;margin:0 auto;padding:24px}
-    .top{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    .brand{display:flex;gap:10px;align-items:center}
-    .badge{width:10px;height:10px;border-radius:999px;background:var(--gold);box-shadow:0 0 22px rgba(214,177,94,.55)}
-    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:14px}
+    body{margin:0;font-family:system-ui;background:#0b1020;color:#e9edf5}
+    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+    .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px;margin-top:12px}
+    button{cursor:pointer;background:rgba(214,177,94,.18);border:1px solid rgba(214,177,94,.35);color:#e9edf5;padding:10px 12px;border-radius:12px}
+    input{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e9edf5;padding:10px 12px;border-radius:12px;outline:none}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    input,select{background:rgba(255,255,255,.06);border:1px solid var(--stroke);color:var(--ink);padding:10px 12px;border-radius:12px;outline:none}
-    button{cursor:pointer;background:rgba(214,177,94,.16);border:1px solid rgba(214,177,94,.35);color:var(--ink);padding:10px 12px;border-radius:12px}
-    button:hover{background:rgba(214,177,94,.22)}
-    table{width:100%;border-collapse:separate;border-spacing:0 10px}
-    th{color:var(--muted);font-weight:600;text-align:right;padding:6px 10px}
-    td{padding:12px 10px}
-    tr.data{background:rgba(255,255,255,.05);border:1px solid var(--stroke)}
-    tr.data td:first-child{border-top-right-radius:14px;border-bottom-right-radius:14px}
-    tr.data td:last-child{border-top-left-radius:14px;border-bottom-left-radius:14px}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.04);font-size:13px}
-    .dot{width:9px;height:9px;border-radius:999px}
-    .muted{color:var(--muted)}
-    .small{font-size:12px}
-    .right{text-align:left;direction:ltr}
-    .hidden{display:none}
-    .footer{margin-top:14px;color:var(--muted);font-size:12px}
+    pre{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.35);padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.10)}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{border-bottom:1px solid rgba(255,255,255,.10);padding:10px;text-align:right}
+    .muted{color:#a7b0c3}
+    .ok{color:#34d399}
+    .bad{color:#fb7185}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="top">
-      <div class="brand">
-        <span class="badge"></span>
-        <div>
-          <div style="font-weight:800">KRS INVITE — WA Messages</div>
-          <div class="muted small">Owner dashboard (Firestore)</div>
-        </div>
-      </div>
+    <div class="card">
       <div class="row">
         <button id="btnLogin">تسجيل الدخول (Google)</button>
-        <button id="btnLogout" class="hidden">تسجيل الخروج</button>
+        <button id="btnLogout" style="display:none">تسجيل الخروج</button>
+        <button id="btnTest">اختبار قراءة wa_messages</button>
+        <input id="eventId" placeholder="eventId (اختياري) مثال: zafaf_khaled" style="flex:1;min-width:240px" />
       </div>
+      <div class="muted" id="who">غير مسجّل دخول</div>
     </div>
 
-    <div class="card" style="margin-top:14px">
-      <div class="row">
-        <input id="eventId" placeholder="eventId مثال: zafaf_khaled" style="min-width:220px" />
-        <select id="statusFilter">
-          <option value="">كل الحالات</option>
-          <option value="sent">sent</option>
-          <option value="delivered">delivered</option>
-          <option value="read">read</option>
-          <option value="failed">failed</option>
-        </select>
-        <input id="q" placeholder="بحث: اسم / رقم / كود" style="flex:1;min-width:240px" />
-        <button id="btnLoad">تحميل</button>
-      </div>
+    <div class="card">
+      <div style="font-weight:800;margin-bottom:8px">نتيجة الاختبار</div>
+      <div id="statusLine" class="muted">—</div>
+      <pre id="debug">—</pre>
+    </div>
 
-      <div class="footer" id="who"></div>
-
-      <div style="overflow:auto;margin-top:10px">
+    <div class="card">
+      <div style="font-weight:800;margin-bottom:8px">آخر 50 سجل</div>
+      <div style="overflow:auto">
         <table>
           <thead>
             <tr>
-              <th>الضيف</th>
-              <th>الرقم</th>
-              <th>الكود</th>
-              <th>الرسالة</th>
-              <th>الحالة</th>
-              <th>آخر تحديث</th>
+              <th>guestName</th>
+              <th>to/recipient</th>
+              <th>code</th>
+              <th>eventId</th>
+              <th>status</th>
+              <th>docId</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -83,169 +58,98 @@
   </div>
 
   <script type="module">
-    // ✅ Firebase Web SDK (module)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import {
-      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import {
-      getFirestore, collection, query, where, orderBy, limit, getDocs
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { getFirestore, collection, getDocs, query, where, limit }
+      from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    // ====== 1) ضع Firebase config حق مشروعك ======
+    // ✅ ضع config الصحيح لمشروع hormez-inv
     const firebaseConfig = {
       apiKey: "PUT_API_KEY",
-      authDomain: "PUT_AUTH_DOMAIN",
-      projectId: "PUT_PROJECT_ID",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const $ = (id) => document.getElementById(id);
+    const $ = (id)=>document.getElementById(id);
     const tbody = $("tbody");
 
-    function statusPill(s) {
-      const st = (s || "").toLowerCase();
-      const colors = {
-        sent: "#60a5fa",
-        delivered: "#34d399",
-        read: "#fbbf24",
-        failed: "#fb7185"
-      };
-      const c = colors[st] || "#a7b0c3";
-      return `<span class="pill"><span class="dot" style="background:${c}"></span>${st || "unknown"}</span>`;
+    function showDebug(obj){
+      $("debug").textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
     }
 
-    function fmtTime(ts) {
-      // Firestore Timestamp → Date
-      try {
-        const d = ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
-        if (!d) return "-";
-        return d.toLocaleString("ar-AE");
-      } catch { return "-"; }
-    }
-
-    function row(doc) {
-      const d = doc;
-      return `
-        <tr class="data">
-          <td>${d.guestName || "-"}</td>
-          <td class="right">${d.to || "-"}</td>
-          <td class="right">${d.code || "-"}</td>
-          <td class="muted small">${d.templateName || d.type || "-"}</td>
-          <td>${statusPill(d.lastStatus || d.status)}</td>
-          <td class="small muted">${fmtTime(d.lastStatusAt || d.createdAt)}</td>
-        </tr>
-      `;
-    }
-
-    async function loadMessages() {
-  tbody.innerHTML = `<tr><td colspan="6" class="muted">جار التحميل…</td></tr>`;
-
-  const eventId = $("eventId").value.trim();
-  const status = $("statusFilter").value.trim().toLowerCase();
-  const qText = $("q").value.trim().toLowerCase();
-
-  const col = collection(db, "wa_messages");
-
-  // ✅ بدون orderBy ولا index
-  let qq = eventId
-    ? query(col, where("eventId", "==", eventId), limit(300))
-    : query(col, limit(300));
-
-  const snap = await getDocs(qq);
-
-  const items = [];
-  snap.forEach((s) => items.push({ id: s.id, ...s.data() }));
-
-  // استخرج lastStatus / lastStatusAt من lastStatusRaw إذا موجود
-  const normalized = items.map(x => {
-    const raw = x.lastStatusRaw || {};
-    const rawStatus = (raw.status || raw.statuses?.[0]?.status || "").toLowerCase();
-    const rawTime = raw.timestamp ? new Date(Number(raw.timestamp) * 1000) : null;
-
-    return {
-      ...x,
-      to: x.to || raw.recipient_id || x.recipient_id || "",
-      lastStatus: (x.lastStatus || rawStatus || x.status || "").toLowerCase(),
-      lastStatusAt: x.lastStatusAt || x.createdAt || (rawTime ? rawTime : null),
-      templateName: x.templateName || x.type || "",
+    $("btnLogin").onclick = async ()=>{
+      await signInWithPopup(auth, new GoogleAuthProvider());
     };
-  });
-
-  let filtered = normalized;
-
-  if (status) filtered = filtered.filter(x => (x.lastStatus || "") === status);
-
-  if (qText) {
-    filtered = filtered.filter(x => {
-      const a = `${x.guestName||""}`.toLowerCase();
-      const b = `${x.to||""}`.toLowerCase();
-      const c = `${x.code||""}`.toLowerCase();
-      const d = `${x.eventId||""}`.toLowerCase();
-      return a.includes(qText) || b.includes(qText) || c.includes(qText) || d.includes(qText);
-    });
-  }
-
-  if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="muted">لا توجد نتائج (جرّب بدون eventId).</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(row).join("");
-}
-
-
-      // فلترة بالواجهة (بحث)
-      let filtered = items;
-
-      if (status) {
-        filtered = filtered.filter(x => String(x.lastStatus || x.status || "").toLowerCase() === status);
-      }
-
-      if (qText) {
-        filtered = filtered.filter(x => {
-          const a = `${x.guestName||""}`.toLowerCase();
-          const b = `${x.to||""}`.toLowerCase();
-          const c = `${x.code||""}`.toLowerCase();
-          return a.includes(qText) || b.includes(qText) || c.includes(qText);
-        });
-      }
-
-      if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="muted">لا توجد نتائج.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = filtered.map(row).join("");
-    }
-
-    // Auth UI
-    $("btnLogin").onclick = async () => {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    };
-
-    $("btnLogout").onclick = async () => {
+    $("btnLogout").onclick = async ()=>{
       await signOut(auth);
     };
 
-    $("btnLoad").onclick = loadMessages;
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        $("btnLogin").classList.add("hidden");
-        $("btnLogout").classList.remove("hidden");
-        $("who").textContent = `مسجّل دخول: ${user.email} — UID: ${user.uid}`;
-      } else {
-        $("btnLogin").classList.remove("hidden");
-        $("btnLogout").classList.add("hidden");
-        $("who").textContent = "غير مسجّل دخول.";
-        tbody.innerHTML = `<tr><td colspan="6" class="muted">سجّل دخول أولاً ثم اضغط تحميل.</td></tr>`;
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        $("who").innerHTML = `<span class="ok">مسجّل دخول:</span> ${user.email} — UID: ${user.uid}`;
+        $("btnLogin").style.display="none";
+        $("btnLogout").style.display="inline-block";
+      }else{
+        $("who").innerHTML = `غير مسجّل دخول`;
+        $("btnLogin").style.display="inline-block";
+        $("btnLogout").style.display="none";
       }
     });
+
+    $("btnTest").onclick = async ()=>{
+      try{
+        $("statusLine").innerHTML = "جار القراءة...";
+        showDebug("...");
+
+        const ev = $("eventId").value.trim();
+
+        const col = collection(db, "wa_messages");
+
+        // ✅ اختبار بسيط جداً (بدون orderBy ولا indexes)
+        const qq = ev ? query(col, where("eventId","==",ev), limit(50)) : query(col, limit(50));
+
+        const snap = await getDocs(qq);
+
+        $("statusLine").innerHTML = `<span class="ok">نجح</span> — docs: ${snap.size}`;
+        const arr = [];
+        tbody.innerHTML = "";
+
+        snap.forEach(doc=>{
+          const d = doc.data() || {};
+          arr.push({ docId: doc.id, ...d });
+
+          const status = d.lastStatus || d.status || d?.lastStatusRaw?.status || "-";
+          const to = d.to || d.recipient_id || d?.lastStatusRaw?.recipient_id || "-";
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${d.guestName || "-"}</td>
+            <td dir="ltr" style="text-align:left">${to}</td>
+            <td dir="ltr" style="text-align:left">${d.code || "-"}</td>
+            <td>${d.eventId || "-"}</td>
+            <td>${status}</td>
+            <td dir="ltr" style="text-align:left">${doc.id}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        showDebug(arr[0] ? { sampleFirstDoc: arr[0] } : "لا توجد وثائق للعرض");
+
+      }catch(e){
+        $("statusLine").innerHTML = `<span class="bad">فشل</span>`;
+        showDebug({
+          name: e?.name,
+          message: e?.message,
+          code: e?.code,
+          stack: (e?.stack || "").split("\n").slice(0,3).join("\n")
+        });
+      }
+    };
   </script>
 </body>
 </html>
