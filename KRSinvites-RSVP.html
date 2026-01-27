@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>KRS INVITE — Invites Dashboard (RSVP + Check-in)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0:#05070e;
+      --bg1:#0b1020;
+      --card:rgba(255,255,255,.06);
+      --card2:rgba(255,255,255,.04);
+      --stroke:rgba(255,255,255,.12);
+      --ink:#e9edf5;
+      --muted:#9aa6bf;
+      --gold:#d6b15e;
+      --gold2:#b48a18;
+      --ok:#10b981;
+      --no:#ef4444;
+      --warn:#f59e0b;
+      --shadow:0 18px 60px rgba(0,0,0,.55);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Noto Sans Arabic", system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:
+        radial-gradient(900px 420px at 80% -10%, rgba(214,177,94,.22), transparent 60%),
+        radial-gradient(800px 360px at 10% 0%, rgba(180,138,24,.16), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      color:var(--ink);
+    }
+
+    .wrap{max-width:1200px;margin:0 auto;padding:18px 16px 28px}
+    .topbar{
+      display:flex;gap:12px;align-items:center;justify-content:space-between;
+      margin:8px 0 16px;
+    }
+    .brand{
+      display:flex;align-items:center;gap:12px;
+    }
+    .logo{
+      width:44px;height:44px;border-radius:14px;
+      background:linear-gradient(135deg, rgba(214,177,94,.25), rgba(255,255,255,.06));
+      border:1px solid rgba(214,177,94,.35);
+      box-shadow:0 12px 40px rgba(0,0,0,.35);
+      position:relative;
+    }
+    .logo:before{
+      content:"KRS";
+      position:absolute;inset:0;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;letter-spacing:.5px;
+      color:var(--gold);
+    }
+    .title h1{margin:0;font-size:18px;font-weight:900}
+    .title p{margin:2px 0 0;color:var(--muted);font-size:12px}
+
+    .authBox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .pill{
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      padding:8px 10px;border-radius:999px;
+      font-size:12px;color:var(--muted);
+      display:flex;gap:8px;align-items:center;
+    }
+
+    .btn{
+      appearance:none;border:1px solid var(--stroke);
+      background:rgba(255,255,255,.05);
+      color:var(--ink);
+      padding:10px 12px;border-radius:12px;
+      cursor:pointer;
+      box-shadow:0 10px 28px rgba(0,0,0,.25);
+      transition:.15s transform ease,.15s background ease,.15s border ease;
+      font-weight:800;
+      font-size:13px;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.07);border-color:rgba(214,177,94,.35)}
+    .btn.primary{
+      border-color:rgba(214,177,94,.55);
+      background:linear-gradient(135deg, rgba(214,177,94,.18), rgba(255,255,255,.05));
+    }
+    .btn.danger{
+      border-color:rgba(239,68,68,.45);
+      background:rgba(239,68,68,.08);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.4fr .6fr;
+      gap:14px;
+      margin-top:14px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .card{
+      background:linear-gradient(180deg, var(--card), var(--card2));
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .cardHead{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .cardHead .h{
+      display:flex;flex-direction:column;gap:2px;
+    }
+    .cardHead .h b{font-size:14px}
+    .cardHead .h span{color:var(--muted);font-size:12px}
+
+    .controls{padding:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+    .field{display:flex;flex-direction:column;gap:6px;min-width:180px;flex:1}
+    label{font-size:12px;color:var(--muted)}
+    input, select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.22);
+      color:var(--ink);
+      outline:none;
+    }
+    input:focus,select:focus{border-color:rgba(214,177,94,.55);box-shadow:0 0 0 4px rgba(214,177,94,.12)}
+
+    .stats{
+      display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+      padding:14px;
+    }
+    .stat{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      border-radius:16px;
+      padding:12px;
+    }
+    .stat .k{color:var(--muted);font-size:12px}
+    .stat .v{font-size:22px;font-weight:900;margin-top:4px}
+    .stat .mini{margin-top:6px;color:var(--muted);font-size:12px}
+    .stat .v.gold{color:var(--gold)}
+    .stat .v.ok{color:var(--ok)}
+    .stat .v.no{color:var(--no)}
+    .stat .v.warn{color:var(--warn)}
+
+    .tableWrap{padding:0}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{
+      text-align:right;
+      padding:12px 12px;
+      font-size:12px;
+      color:var(--muted);
+      background:rgba(255,255,255,.03);
+      border-bottom:1px solid rgba(255,255,255,.10);
+      position:sticky; top:0;
+      z-index:1;
+    }
+    tbody td{
+      padding:12px 12px;
+      border-bottom:1px solid rgba(255,255,255,.07);
+      vertical-align:middle;
+      font-size:13px;
+    }
+    tbody tr:hover{background:rgba(255,255,255,.03)}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .ltr{direction:ltr;text-align:left}
+    .code{
+      font-weight:900;
+      color:var(--gold);
+      letter-spacing:.2px;
+    }
+
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;
+      border-radius:999px;
+      padding:6px 10px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.04);
+      font-size:12px;font-weight:800;
+      white-space:nowrap;
+    }
+    .dot{width:8px;height:8px;border-radius:99px;background:var(--muted)}
+    .chip.pending{border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.08)}
+    .chip.pending .dot{background:var(--warn)}
+    .chip.confirmed{border-color:rgba(16,185,129,.45);background:rgba(16,185,129,.08)}
+    .chip.confirmed .dot{background:var(--ok)}
+    .chip.declined{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.08)}
+    .chip.declined .dot{background:var(--no)}
+
+    .chip.in{border-color:rgba(16,185,129,.45);background:rgba(16,185,129,.08)}
+    .chip.in .dot{background:var(--ok)}
+    .chip.out{border-color:rgba(148,163,184,.25);background:rgba(148,163,184,.06)}
+    .chip.out .dot{background:rgba(148,163,184,.7)}
+
+    .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start}
+    .miniBtn{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      color:var(--ink);
+      padding:8px 10px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:900;
+      font-size:12px;
+    }
+    .miniBtn:hover{border-color:rgba(214,177,94,.35);background:rgba(255,255,255,.06)}
+    .miniBtn.danger{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.08)}
+    .miniBtn.danger:hover{border-color:rgba(239,68,68,.65)}
+
+    .footerHint{
+      padding:12px 14px;
+      color:var(--muted);
+      font-size:12px;
+      border-top:1px solid rgba(255,255,255,.08);
+      display:flex;gap:8px;flex-wrap:wrap;
+    }
+
+    .loading{
+      padding:18px 14px;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .err{
+      padding:12px 14px;
+      background:rgba(239,68,68,.10);
+      border-top:1px solid rgba(239,68,68,.20);
+      color:#ffd3d3;
+      font-size:12px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="title">
+          <h1>KRS INVITE — لوحة دعوات الحدث</h1>
+          <p>RSVP (قبل الحضور) + Status (الدخول عند الباب) — داخل collection: <b class="mono">invites</b></p>
+        </div>
+      </div>
+
+      <div class="authBox">
+        <div class="pill" id="userPill">غير مسجل</div>
+        <button class="btn primary" id="btnLogin">تسجيل دخول (Google)</button>
+        <button class="btn" id="btnLogout" style="display:none">خروج</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="cardHead">
+          <div class="h">
+            <b>الفلترة والبحث</b>
+            <span>اكتب اسم الحدث، وابحث بالاسم/الرقم/الكود، وفلتر RSVP</span>
+          </div>
+          <div class="actions">
+            <button class="btn" id="btnRefresh">تحديث</button>
+            <button class="btn" id="btnExport">تصدير CSV</button>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="row">
+            <div class="field" style="min-width:240px">
+              <label>اسم الحدث (EventName)</label>
+              <input id="eventName" placeholder="مثال: زفاف خالد أو zafaf_khaled" />
+            </div>
+            <div class="field" style="min-width:240px">
+              <label>بحث (اسم / رقم / كود)</label>
+              <input id="search" placeholder="ابحث بسرعة..." />
+            </div>
+            <div class="field" style="min-width:170px;flex:.6">
+              <label>فلتر RSVP</label>
+              <select id="rsvpFilter">
+                <option value="all">الكل</option>
+                <option value="pending">لم يرد</option>
+                <option value="confirmed">أكد</option>
+                <option value="declined">اعتذر</option>
+              </select>
+            </div>
+            <div class="field" style="min-width:170px;flex:.6">
+              <label>فلتر الدخول</label>
+              <select id="checkinFilter">
+                <option value="all">الكل</option>
+                <option value="no">لم يدخل</option>
+                <option value="yes">دخل</option>
+              </select>
+            </div>
+            <div class="field" style="min-width:190px;flex:.6">
+              <label>عدد السجلات</label>
+              <select id="limit">
+                <option value="200">200</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn primary" id="btnLoad">عرض</button>
+            <button class="btn" id="btnClear">مسح الفلاتر</button>
+          </div>
+        </div>
+
+        <div class="tableWrap">
+          <div class="loading" id="loading" style="display:none">جاري تحميل البيانات...</div>
+
+          <div style="max-height:520px;overflow:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:180px">اسم الضيف</th>
+                  <th style="width:170px">رقم الهاتف</th>
+                  <th style="width:120px">الكود</th>
+                  <th style="width:170px">الحدث</th>
+                  <th style="width:170px">قبل الحضور (RSVP)</th>
+                  <th style="width:140px">الدخول</th>
+                  <th style="width:210px">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="footerHint" id="hint">
+            <span>• RSVP: لم يرد / أكد / اعتذر</span>
+            <span>• Status: لم يدخل / دخل</span>
+            <span>• يتم الحفظ مباشرة داخل <b class="mono">invites</b></span>
+          </div>
+          <div class="err" id="err" style="display:none"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cardHead">
+          <div class="h">
+            <b>ملخص سريع</b>
+            <span>نظرة واضحة على “قبل الحضور / اعتذر” + الدخول</span>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="k">الإجمالي</div>
+            <div class="v gold" id="stTotal">—</div>
+            <div class="mini">عدد الدعوات المعروضة حاليًا</div>
+          </div>
+          <div class="stat">
+            <div class="k">دخل (Status = yes)</div>
+            <div class="v ok" id="stIn">—</div>
+            <div class="mini">عدد الحضور الفعلي</div>
+          </div>
+          <div class="stat">
+            <div class="k">أكد (RSVP = confirmed)</div>
+            <div class="v ok" id="stConf">—</div>
+            <div class="mini">أكد قبل الحضور</div>
+          </div>
+          <div class="stat">
+            <div class="k">اعتذر (RSVP = declined)</div>
+            <div class="v no" id="stDecl">—</div>
+            <div class="mini">اعتذر قبل الحضور</div>
+          </div>
+          <div class="stat">
+            <div class="k">لم يرد (RSVP = pending)</div>
+            <div class="v warn" id="stPend">—</div>
+            <div class="mini">بانتظار الرد</div>
+          </div>
+          <div class="stat">
+            <div class="k">لم يدخل (Status = no)</div>
+            <div class="v" id="stOut">—</div>
+            <div class="mini">لم يتم تسجيل دخولهم بعد</div>
+          </div>
+        </div>
+
+        <div class="footerHint">
+          <span>⚠️ إذا ظهر Permission Denied → لازم Rules تسمح لليوزر Owner</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // =============================
+    // 1) Firebase Config (عدّله إذا يلزم)
+    // =============================
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, query, where, limit as qLimit,
+      doc, updateDoc, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import {
+      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.firebasestorage.app",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // =============================
+    // Helpers
+    // =============================
+    const $ = (id)=>document.getElementById(id);
+    const el = (tag, cls)=>{ const x=document.createElement(tag); if(cls)x.className=cls; return x; };
+
+    function showErr(msg){
+      $("err").style.display = msg ? "block" : "none";
+      $("err").textContent = msg || "";
+    }
+    function setLoading(v){
+      $("loading").style.display = v ? "block" : "none";
+    }
+
+    function normalize(v){ return (v ?? "").toString().trim(); }
+
+    function rsvpLabel(v){
+      if(v==="confirmed") return {t:"أكد", cls:"confirmed"};
+      if(v==="declined")  return {t:"اعتذر", cls:"declined"};
+      return {t:"لم يرد", cls:"pending"};
+    }
+
+    function checkinLabel(v){
+      if(v==="yes") return {t:"✅ دخل", cls:"in"};
+      return {t:"— لم يدخل", cls:"out"};
+    }
+
+    function safeCSV(s){
+      const v = (s ?? "").toString().replaceAll('"','""');
+      return `"${v}"`;
+    }
+
+    // =============================
+    // Auth UI
+    // =============================
+    $("btnLogin").onclick = async ()=>{
+      try{
+        await signInWithPopup(auth, provider);
+      }catch(e){
+        showErr("فشل تسجيل الدخول: " + (e?.message || e));
+      }
+    };
+    $("btnLogout").onclick = async ()=>{
+      try{
+        await signOut(auth);
+      }catch(e){
+        showErr("فشل الخروج: " + (e?.message || e));
+      }
+    };
+
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        $("userPill").textContent = user.email || "Logged";
+        $("btnLogin").style.display = "none";
+        $("btnLogout").style.display = "inline-block";
+      }else{
+        $("userPill").textContent = "غير مسجل";
+        $("btnLogin").style.display = "inline-block";
+        $("btnLogout").style.display = "none";
+      }
+    });
+
+    // =============================
+    // Data load + render
+    // =============================
+    let lastRows = []; // for export
+
+    async function loadInvites(){
+      showErr("");
+      setLoading(true);
+      $("tbody").innerHTML = "";
+      lastRows = [];
+
+      try{
+        const col = collection(db, "invites");
+        const ev = normalize($("eventName").value);
+        const lim = Number($("limit").value || 200);
+
+        const qq = ev
+          ? query(col, where("EventName", "==", ev), qLimit(lim))
+          : query(col, qLimit(lim));
+
+        const snap = await getDocs(qq);
+
+        const rows = [];
+        snap.forEach((docSnap)=>{
+          const d = docSnap.data() || {};
+          rows.push({
+            id: docSnap.id,
+            GuestName: d.GuestName || "",
+            Phone: d.Phone || "",
+            Code: d.Code || docSnap.id,
+            EventName: d.EventName || "",
+            RSVP: d.RSVP || "pending",
+            Status: d.Status || "no"
+          });
+        });
+
+        // Apply client-side filters
+        const s = normalize($("search").value).toLowerCase();
+        const rf = $("rsvpFilter").value;
+        const cf = $("checkinFilter").value;
+
+        let filtered = rows.filter(r=>{
+          const hay = `${r.GuestName} ${r.Phone} ${r.Code}`.toLowerCase();
+          if(s && !hay.includes(s)) return false;
+          if(rf !== "all" && (r.RSVP || "pending") !== rf) return false;
+          if(cf !== "all" && (r.Status || "no") !== cf) return false;
+          return true;
+        });
+
+        // Sort: declined first? (اختياري) — نخلي confirmed ثم pending ثم declined؟
+        const order = {confirmed:1,pending:2,declined:3};
+        filtered.sort((a,b)=> (order[a.RSVP]||9) - (order[b.RSVP]||9));
+
+        renderTable(filtered);
+        renderStats(filtered);
+
+        lastRows = filtered;
+      }catch(e){
+        showErr("خطأ في التحميل: " + (e?.message || e));
+      }finally{
+        setLoading(false);
+      }
+    }
+
+    function renderStats(list){
+      const total = list.length;
+      const inCount = list.filter(x=>x.Status==="yes").length;
+      const outCount = total - inCount;
+      const conf = list.filter(x=>x.RSVP==="confirmed").length;
+      const decl = list.filter(x=>x.RSVP==="declined").length;
+      const pend = list.filter(x=>(x.RSVP||"pending")==="pending").length;
+
+      $("stTotal").textContent = total;
+      $("stIn").textContent = inCount;
+      $("stOut").textContent = outCount;
+      $("stConf").textContent = conf;
+      $("stDecl").textContent = decl;
+      $("stPend").textContent = pend;
+    }
+
+    function renderTable(list){
+      const tbody = $("tbody");
+      tbody.innerHTML = "";
+
+      if(!list.length){
+        const tr = el("tr");
+        const td = el("td");
+        td.colSpan = 7;
+        td.style.color = "var(--muted)";
+        td.textContent = "لا توجد بيانات مطابقة للفلاتر الحالية.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      for(const r of list){
+        const tr = el("tr");
+
+        const rsvp = rsvpLabel(r.RSVP);
+        const chk  = checkinLabel(r.Status);
+
+        // RSVP select
+        const sel = el("select");
+        sel.innerHTML = `
+          <option value="pending" ${r.RSVP==="pending"?"selected":""}>لم يرد</option>
+          <option value="confirmed" ${r.RSVP==="confirmed"?"selected":""}>أكد</option>
+          <option value="declined" ${r.RSVP==="declined"?"selected":""}>اعتذر</option>
+        `;
+        sel.style.minWidth = "140px";
+        sel.dataset.id = r.id;
+
+        // Name input (edit)
+        const nameInput = el("input");
+        nameInput.value = r.GuestName || "";
+        nameInput.placeholder = "اسم الضيف";
+        nameInput.dataset.id = r.id;
+
+        // Phone input (edit)
+        const phoneInput = el("input");
+        phoneInput.value = r.Phone || "";
+        phoneInput.placeholder = "9715xxxxxxx";
+        phoneInput.classList.add("ltr","mono");
+        phoneInput.dataset.id = r.id;
+
+        const tdName = el("td"); tdName.appendChild(nameInput);
+        const tdPhone = el("td"); tdPhone.appendChild(phoneInput);
+
+        const tdCode = el("td");
+        tdCode.className = "mono ltr code";
+        tdCode.textContent = r.Code;
+
+        const tdEvent = el("td");
+        tdEvent.textContent = r.EventName || "—";
+
+        const tdRSVP = el("td");
+        const chip = el("span", `chip ${rsvp.cls}`);
+        chip.innerHTML = `<span class="dot"></span><span>${rsvp.t}</span>`;
+        chip.style.marginInlineEnd = "8px";
+        tdRSVP.appendChild(chip);
+        tdRSVP.appendChild(sel);
+
+        const tdCheck = el("td");
+        const chip2 = el("span", `chip ${chk.cls}`);
+        chip2.innerHTML = `<span class="dot"></span><span>${chk.t}</span>`;
+        tdCheck.appendChild(chip2);
+
+        const tdAct = el("td");
+        tdAct.className = "actions";
+
+        const btnSave = el("button","miniBtn");
+        btnSave.textContent = "حفظ";
+        btnSave.onclick = async ()=>{
+          showErr("");
+          try{
+            const id = r.id;
+            const newName = normalize(nameInput.value);
+            const newPhone = normalize(phoneInput.value).replaceAll(" ","");
+            const newRSVP = sel.value;
+
+            await updateDoc(doc(db,"invites",id), {
+              GuestName: newName || "",
+              Phone: newPhone || "",
+              RSVP: newRSVP,
+              RSVPAt: new Date()
+            });
+
+            // تحديث الشيب فورًا
+            const rr = rsvpLabel(newRSVP);
+            chip.className = `chip ${rr.cls}`;
+            chip.innerHTML = `<span class="dot"></span><span>${rr.t}</span>`;
+
+          }catch(e){
+            showErr("فشل الحفظ: " + (e?.message || e));
+          }
+        };
+
+        const btnDelete = el("button","miniBtn danger");
+        btnDelete.textContent = "حذف";
+        btnDelete.onclick = async ()=>{
+          showErr("");
+          if(!confirm("تأكيد حذف هذا الـ Invite؟")) return;
+          try{
+            await deleteDoc(doc(db,"invites",r.id));
+            tr.remove();
+          }catch(e){
+            showErr("فشل الحذف: " + (e?.message || e));
+          }
+        };
+
+        tdAct.appendChild(btnSave);
+        tdAct.appendChild(btnDelete);
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdPhone);
+        tr.appendChild(tdCode);
+        tr.appendChild(tdEvent);
+        tr.appendChild(tdRSVP);
+        tr.appendChild(tdCheck);
+        tr.appendChild(tdAct);
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    // =============================
+    // Export CSV
+    // =============================
+    function exportCSV(){
+      if(!lastRows.length){
+        alert("لا توجد بيانات للتصدير.");
+        return;
+      }
+      const headers = ["GuestName","Phone","Code","EventName","RSVP","Status"];
+      const lines = [headers.join(",")];
+
+      for(const r of lastRows){
+        lines.push([
+          safeCSV(r.GuestName),
+          safeCSV(r.Phone),
+          safeCSV(r.Code),
+          safeCSV(r.EventName),
+          safeCSV(r.RSVP),
+          safeCSV(r.Status),
+        ].join(","));
+      }
+
+      const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `KRS_INVITES_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // =============================
+    // UI events
+    // =============================
+    $("btnLoad").onclick = loadInvites;
+    $("btnRefresh").onclick = loadInvites;
+    $("btnExport").onclick = exportCSV;
+
+    $("btnClear").onclick = ()=>{
+      $("eventName").value = "";
+      $("search").value = "";
+      $("rsvpFilter").value = "all";
+      $("checkinFilter").value = "all";
+    };
+
+    // تحميل تلقائي أول مرة (اختياري)
+    // loadInvites();
+
+  </script>
+</body>
+</html>
