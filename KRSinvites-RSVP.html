@@ -3,407 +3,219 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-  <title>KRS INVITE — Invites Dashboard (RSVP + Check-in)</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;800;900&display=swap" rel="stylesheet">
-
+  <title>KRS INVITE — RSVP Dashboard</title>
   <style>
     :root{
-      --bg0:#05070e;
-      --bg1:#0b1020;
+      --bg0:#06080f; --bg1:#0a0f1d;
       --card:rgba(255,255,255,.06);
       --card2:rgba(255,255,255,.04);
-      --stroke:rgba(255,255,255,.12);
-      --ink:#e9edf5;
-      --muted:#9aa6bf;
-      --gold:#d6b15e;
-      --gold2:#b48a18;
-      --ok:#10b981;
-      --no:#ef4444;
-      --warn:#f59e0b;
-      --shadow:0 18px 60px rgba(0,0,0,.55);
-      --radius:18px;
+      --stroke:rgba(255,255,255,.10);
+      --stroke2:rgba(255,255,255,.14);
+      --ink:#e9edf5; --muted:#a7b0c3;
+      --gold:#d6b15e; --gold2:#b48a18;
+      --green:#16a34a; --red:#ef4444; --amber:#f59e0b; --blue:#2563eb;
+      --shadow:0 18px 60px rgba(0,0,0,.45);
+      --r:18px;
     }
-
-    *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
-      font-family:"Noto Sans Arabic", system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background:
-        radial-gradient(900px 420px at 80% -10%, rgba(214,177,94,.22), transparent 60%),
-        radial-gradient(800px 360px at 10% 0%, rgba(180,138,24,.16), transparent 55%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;
       color:var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(214,177,94,.18), transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, rgba(37,99,235,.10), transparent 60%),
+        linear-gradient(180deg,var(--bg0),var(--bg1));
     }
-
-    .wrap{max-width:1200px;margin:0 auto;padding:18px 16px 28px}
-    .topbar{
-      display:flex;gap:12px;align-items:center;justify-content:space-between;
-      margin:8px 0 16px;
+    .wrap{max-width:1240px;margin:0 auto;padding:18px}
+    .top{
+      display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+      justify-content:space-between;margin-bottom:12px
     }
-    .brand{
-      display:flex;align-items:center;gap:12px;
-    }
+    .brand{display:flex;gap:12px;align-items:center}
     .logo{
       width:44px;height:44px;border-radius:14px;
-      background:linear-gradient(135deg, rgba(214,177,94,.25), rgba(255,255,255,.06));
+      background:linear-gradient(135deg,#111827,#0b1220);
       border:1px solid rgba(214,177,94,.35);
-      box-shadow:0 12px 40px rgba(0,0,0,.35);
-      position:relative;
+      display:grid;place-items:center;box-shadow:var(--shadow)
     }
-    .logo:before{
-      content:"KRS";
-      position:absolute;inset:0;
-      display:flex;align-items:center;justify-content:center;
-      font-weight:900;letter-spacing:.5px;
-      color:var(--gold);
-    }
-    .title h1{margin:0;font-size:18px;font-weight:900}
-    .title p{margin:2px 0 0;color:var(--muted);font-size:12px}
-
-    .authBox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-    .pill{
-      border:1px solid var(--stroke);
-      background:rgba(255,255,255,.04);
-      padding:8px 10px;border-radius:999px;
-      font-size:12px;color:var(--muted);
-      display:flex;gap:8px;align-items:center;
-    }
-
-    .btn{
-      appearance:none;border:1px solid var(--stroke);
-      background:rgba(255,255,255,.05);
-      color:var(--ink);
-      padding:10px 12px;border-radius:12px;
-      cursor:pointer;
-      box-shadow:0 10px 28px rgba(0,0,0,.25);
-      transition:.15s transform ease,.15s background ease,.15s border ease;
-      font-weight:800;
-      font-size:13px;
-    }
-    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.07);border-color:rgba(214,177,94,.35)}
-    .btn.primary{
-      border-color:rgba(214,177,94,.55);
-      background:linear-gradient(135deg, rgba(214,177,94,.18), rgba(255,255,255,.05));
-    }
-    .btn.danger{
-      border-color:rgba(239,68,68,.45);
-      background:rgba(239,68,68,.08);
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1.4fr .6fr;
-      gap:14px;
-      margin-top:14px;
-    }
-    @media (max-width: 980px){
-      .grid{grid-template-columns:1fr}
-    }
-
+    .logo span{font-weight:900;color:var(--gold)}
+    h1{font-size:16px;margin:0;font-weight:900;letter-spacing:.2px}
+    .sub{font-size:12px;color:var(--muted);margin-top:2px}
+    .grid{display:grid;gap:12px}
+    .grid-2{grid-template-columns:1.1fr .9fr}
+    .grid-3{grid-template-columns:repeat(5,1fr)}
+    @media(max-width:1100px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:repeat(2,1fr)}}
     .card{
-      background:linear-gradient(180deg, var(--card), var(--card2));
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
       border:1px solid var(--stroke);
-      border-radius:var(--radius);
+      border-radius:var(--r);
       box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-    .cardHead{
-      display:flex;justify-content:space-between;align-items:center;
-      padding:14px 14px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-    }
-    .cardHead .h{
-      display:flex;flex-direction:column;gap:2px;
-    }
-    .cardHead .h b{font-size:14px}
-    .cardHead .h span{color:var(--muted);font-size:12px}
-
-    .controls{padding:14px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
-    .field{display:flex;flex-direction:column;gap:6px;min-width:180px;flex:1}
-    label{font-size:12px;color:var(--muted)}
-    input, select{
-      width:100%;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.22);
-      color:var(--ink);
-      outline:none;
-    }
-    input:focus,select:focus{border-color:rgba(214,177,94,.55);box-shadow:0 0 0 4px rgba(214,177,94,.12)}
-
-    .stats{
-      display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
       padding:14px;
+      backdrop-filter: blur(10px);
     }
-    .stat{
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.04);
-      border-radius:16px;
-      padding:12px;
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .pill{
+      padding:8px 10px;border-radius:999px;
+      border:1px solid var(--stroke2);
+      background:rgba(0,0,0,.18);
+      color:var(--muted);font-size:12px
     }
-    .stat .k{color:var(--muted);font-size:12px}
-    .stat .v{font-size:22px;font-weight:900;margin-top:4px}
-    .stat .mini{margin-top:6px;color:var(--muted);font-size:12px}
-    .stat .v.gold{color:var(--gold)}
-    .stat .v.ok{color:var(--ok)}
-    .stat .v.no{color:var(--no)}
-    .stat .v.warn{color:var(--warn)}
-
-    .tableWrap{padding:0}
-    table{width:100%;border-collapse:separate;border-spacing:0}
+    .input,.btn,select{
+      border-radius:14px;border:1px solid var(--stroke2);
+      background:rgba(0,0,0,.25);color:var(--ink);
+      padding:10px 12px;font-size:13px;outline:none
+    }
+    .input{min-width:260px}
+    .btn{cursor:pointer}
+    .btn:hover{background:rgba(0,0,0,.34)}
+    .btn.gold{
+      border-color:rgba(214,177,94,.45);
+      background:linear-gradient(180deg, rgba(214,177,94,.18), rgba(0,0,0,.25));
+    }
+    .kpi{
+      display:flex;flex-direction:column;gap:6px;
+      padding:12px;border-radius:16px;
+      border:1px solid var(--stroke2);
+      background:rgba(0,0,0,.20)
+    }
+    .kpi .n{font-size:26px;font-weight:900;line-height:1}
+    .kpi .t{font-size:12px;color:var(--muted)}
+    .kpi.green .n{color:rgba(34,197,94,.95)}
+    .kpi.red .n{color:rgba(239,68,68,.95)}
+    .kpi.amb .n{color:rgba(245,158,11,.95)}
+    .kpi.blue .n{color:rgba(37,99,235,.95)}
+    .tableWrap{overflow:auto;border-radius:16px;border:1px solid var(--stroke);background:rgba(0,0,0,.18)}
+    table{width:100%;border-collapse:collapse;min-width:960px}
     thead th{
-      text-align:right;
-      padding:12px 12px;
-      font-size:12px;
-      color:var(--muted);
-      background:rgba(255,255,255,.03);
-      border-bottom:1px solid rgba(255,255,255,.10);
-      position:sticky; top:0;
-      z-index:1;
+      text-align:right;font-size:12px;color:var(--muted);
+      padding:12px;border-bottom:1px solid var(--stroke);
+      background:rgba(0,0,0,.20)
     }
     tbody td{
-      padding:12px 12px;
-      border-bottom:1px solid rgba(255,255,255,.07);
-      vertical-align:middle;
-      font-size:13px;
+      padding:12px;border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:13px;vertical-align:middle
     }
     tbody tr:hover{background:rgba(255,255,255,.03)}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
-    .ltr{direction:ltr;text-align:left}
-    .code{
-      font-weight:900;
-      color:var(--gold);
-      letter-spacing:.2px;
+    .tag{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:7px 10px;border-radius:999px;
+      border:1px solid var(--stroke2);font-size:12px
     }
-
-    .chip{
-      display:inline-flex;align-items:center;gap:6px;
-      border-radius:999px;
-      padding:6px 10px;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(255,255,255,.04);
-      font-size:12px;font-weight:800;
-      white-space:nowrap;
+    .dot{width:8px;height:8px;border-radius:99px;background:var(--amber)}
+    .tag.pending .dot{background:var(--amber)}
+    .tag.confirmed .dot{background:var(--green)}
+    .tag.declined .dot{background:var(--red)}
+    .tag.yes .dot{background:var(--green)}
+    .tag.no .dot{background:rgba(148,163,184,.9)}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .mini{
+      padding:8px 10px;border-radius:14px;font-size:12px;
+      border:1px solid var(--stroke2);background:rgba(0,0,0,.25);color:var(--ink);
+      cursor:pointer
     }
-    .dot{width:8px;height:8px;border-radius:99px;background:var(--muted)}
-    .chip.pending{border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.08)}
-    .chip.pending .dot{background:var(--warn)}
-    .chip.confirmed{border-color:rgba(16,185,129,.45);background:rgba(16,185,129,.08)}
-    .chip.confirmed .dot{background:var(--ok)}
-    .chip.declined{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.08)}
-    .chip.declined .dot{background:var(--no)}
-
-    .chip.in{border-color:rgba(16,185,129,.45);background:rgba(16,185,129,.08)}
-    .chip.in .dot{background:var(--ok)}
-    .chip.out{border-color:rgba(148,163,184,.25);background:rgba(148,163,184,.06)}
-    .chip.out .dot{background:rgba(148,163,184,.7)}
-
-    .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start}
-    .miniBtn{
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.04);
-      color:var(--ink);
-      padding:8px 10px;
-      border-radius:12px;
-      cursor:pointer;
-      font-weight:900;
-      font-size:12px;
-    }
-    .miniBtn:hover{border-color:rgba(214,177,94,.35);background:rgba(255,255,255,.06)}
-    .miniBtn.danger{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.08)}
-    .miniBtn.danger:hover{border-color:rgba(239,68,68,.65)}
-
-    .footerHint{
-      padding:12px 14px;
-      color:var(--muted);
-      font-size:12px;
-      border-top:1px solid rgba(255,255,255,.08);
-      display:flex;gap:8px;flex-wrap:wrap;
-    }
-
-    .loading{
-      padding:18px 14px;
-      color:var(--muted);
-      font-size:13px;
-    }
-    .err{
-      padding:12px 14px;
-      background:rgba(239,68,68,.10);
-      border-top:1px solid rgba(239,68,68,.20);
-      color:#ffd3d3;
-      font-size:12px;
+    .mini:hover{background:rgba(0,0,0,.34)}
+    .mini.ok{border-color:rgba(34,197,94,.35)}
+    .mini.no{border-color:rgba(239,68,68,.35)}
+    .mini.ci{border-color:rgba(214,177,94,.35)}
+    .muted{color:var(--muted)}
+    .rightInfo{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .printOnly{display:none}
+    @media print{
+      body{background:#fff;color:#111}
+      .noPrint{display:none !important}
+      .printOnly{display:block}
+      .card{box-shadow:none;border:1px solid #ddd;background:#fff}
+      .tableWrap{border:1px solid #ddd;background:#fff}
+      thead th{background:#f5f5f5;color:#333}
+      tbody td{border-bottom:1px solid #eee}
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="topbar">
+    <div class="top">
       <div class="brand">
-        <div class="logo"></div>
-        <div class="title">
-          <h1>KRS INVITE — لوحة دعوات الحدث</h1>
-          <p>RSVP (قبل الحضور) + Status (الدخول عند الباب) — داخل collection: <b class="mono">invites</b></p>
+        <div class="logo"><span>KRS</span></div>
+        <div>
+          <h1>لوحة RSVP + تقرير نهائي — KRS INVITE</h1>
+          <div class="sub">Confirmed / Declined / Pending + Check-in yes/no (Firestore: invites)</div>
         </div>
       </div>
 
-      <div class="authBox">
-        <div class="pill" id="userPill">غير مسجل</div>
-        <button class="btn primary" id="btnLogin">تسجيل دخول (Google)</button>
-        <button class="btn" id="btnLogout" style="display:none">خروج</button>
+      <div class="row noPrint">
+        <span class="pill" id="pillConn">Database: Firestore</span>
+        <input id="eventName" class="input" value="zafaf_khaled" placeholder="EventName مثل: zafaf_khaled" />
+        <input id="q" class="input" placeholder="بحث بالكود / الاسم / الرقم" />
+        <button id="btnLoad" class="btn gold">تحميل البيانات</button>
+        <button id="btnPrint" class="btn">تقرير للطباعة</button>
       </div>
     </div>
 
-    <div class="grid">
+    <div class="grid grid-2">
       <div class="card">
-        <div class="cardHead">
-          <div class="h">
-            <b>الفلترة والبحث</b>
-            <span>اكتب اسم الحدث، وابحث بالاسم/الرقم/الكود، وفلتر RSVP</span>
-          </div>
-          <div class="actions">
-            <button class="btn" id="btnRefresh">تحديث</button>
-            <button class="btn" id="btnExport">تصدير CSV</button>
-          </div>
+        <div class="rightInfo">
+          <div class="pill">Event: <b id="evLabel">—</b></div>
+          <div class="pill muted">آخر تحديث: <span id="lastAt">—</span></div>
         </div>
 
-        <div class="controls">
-          <div class="row">
-            <div class="field" style="min-width:240px">
-              <label>اسم الحدث (EventName)</label>
-              <input id="eventName" placeholder="مثال: زفاف خالد أو zafaf_khaled" />
-            </div>
-            <div class="field" style="min-width:240px">
-              <label>بحث (اسم / رقم / كود)</label>
-              <input id="search" placeholder="ابحث بسرعة..." />
-            </div>
-            <div class="field" style="min-width:170px;flex:.6">
-              <label>فلتر RSVP</label>
-              <select id="rsvpFilter">
-                <option value="all">الكل</option>
-                <option value="pending">لم يرد</option>
-                <option value="confirmed">أكد</option>
-                <option value="declined">اعتذر</option>
-              </select>
-            </div>
-            <div class="field" style="min-width:170px;flex:.6">
-              <label>فلتر الدخول</label>
-              <select id="checkinFilter">
-                <option value="all">الكل</option>
-                <option value="no">لم يدخل</option>
-                <option value="yes">دخل</option>
-              </select>
-            </div>
-            <div class="field" style="min-width:190px;flex:.6">
-              <label>عدد السجلات</label>
-              <select id="limit">
-                <option value="200">200</option>
-                <option value="500">500</option>
-                <option value="1000">1000</option>
-              </select>
-            </div>
-          </div>
-          <div class="row" style="margin-top:10px">
-            <button class="btn primary" id="btnLoad">عرض</button>
-            <button class="btn" id="btnClear">مسح الفلاتر</button>
-          </div>
-        </div>
-
-        <div class="tableWrap">
-          <div class="loading" id="loading" style="display:none">جاري تحميل البيانات...</div>
-
-          <div style="max-height:520px;overflow:auto">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width:180px">اسم الضيف</th>
-                  <th style="width:170px">رقم الهاتف</th>
-                  <th style="width:120px">الكود</th>
-                  <th style="width:170px">الحدث</th>
-                  <th style="width:170px">قبل الحضور (RSVP)</th>
-                  <th style="width:140px">الدخول</th>
-                  <th style="width:210px">إجراءات</th>
-                </tr>
-              </thead>
-              <tbody id="tbody"></tbody>
-            </table>
-          </div>
-
-          <div class="footerHint" id="hint">
-            <span>• RSVP: لم يرد / أكد / اعتذر</span>
-            <span>• Status: لم يدخل / دخل</span>
-            <span>• يتم الحفظ مباشرة داخل <b class="mono">invites</b></span>
-          </div>
-          <div class="err" id="err" style="display:none"></div>
+        <div class="grid grid-3" style="margin-top:12px">
+          <div class="kpi blue"><div class="n" id="kTotal">0</div><div class="t">Total Invites</div></div>
+          <div class="kpi amb"><div class="n" id="kPending">0</div><div class="t">Pending</div></div>
+          <div class="kpi green"><div class="n" id="kConfirmed">0</div><div class="t">Confirmed</div></div>
+          <div class="kpi red"><div class="n" id="kDeclined">0</div><div class="t">Declined</div></div>
+          <div class="kpi"><div class="n" id="kCheckin">0</div><div class="t">Check-in YES</div></div>
         </div>
       </div>
 
       <div class="card">
-        <div class="cardHead">
-          <div class="h">
-            <b>ملخص سريع</b>
-            <span>نظرة واضحة على “قبل الحضور / اعتذر” + الدخول</span>
-          </div>
-        </div>
-
-        <div class="stats">
-          <div class="stat">
-            <div class="k">الإجمالي</div>
-            <div class="v gold" id="stTotal">—</div>
-            <div class="mini">عدد الدعوات المعروضة حاليًا</div>
-          </div>
-          <div class="stat">
-            <div class="k">دخل (Status = yes)</div>
-            <div class="v ok" id="stIn">—</div>
-            <div class="mini">عدد الحضور الفعلي</div>
-          </div>
-          <div class="stat">
-            <div class="k">أكد (RSVP = confirmed)</div>
-            <div class="v ok" id="stConf">—</div>
-            <div class="mini">أكد قبل الحضور</div>
-          </div>
-          <div class="stat">
-            <div class="k">اعتذر (RSVP = declined)</div>
-            <div class="v no" id="stDecl">—</div>
-            <div class="mini">اعتذر قبل الحضور</div>
-          </div>
-          <div class="stat">
-            <div class="k">لم يرد (RSVP = pending)</div>
-            <div class="v warn" id="stPend">—</div>
-            <div class="mini">بانتظار الرد</div>
-          </div>
-          <div class="stat">
-            <div class="k">لم يدخل (Status = no)</div>
-            <div class="v" id="stOut">—</div>
-            <div class="mini">لم يتم تسجيل دخولهم بعد</div>
-          </div>
-        </div>
-
-        <div class="footerHint">
-          <span>⚠️ إذا ظهر Permission Denied → لازم Rules تسمح لليوزر Owner</span>
+        <div style="font-weight:800;margin-bottom:8px">ملاحظات تشغيل</div>
+        <div class="muted" style="font-size:13px;line-height:1.8">
+          ✅ يعتمد على حقول داخل <b>invites</b>:<br/>
+          <b>Code (doc id)</b>, <b>EventName</b>, <b>GuestName</b>, <b>Phone</b>, <b>RSVP</b>, <b>CheckIn</b><br/><br/>
+          إذا كان Guest/Phone يظهر “—” فهذا يعني الدوكومنت ما فيه البيانات — والكود اللي فوق صار يكتبها تلقائيًا عند الإرسال.
         </div>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div style="font-weight:900">قائمة الضيوف</div>
+        <div class="pill muted">النتائج: <span id="count">0</span></div>
+      </div>
+
+      <div class="tableWrap" style="margin-top:12px">
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Guest</th>
+              <th>Phone</th>
+              <th>EventName</th>
+              <th>RSVP</th>
+              <th>Check-in</th>
+              <th>Actions</th>
+              <th class="noPrint">Times</th>
+            </tr>
+          </thead>
+          <tbody id="tb"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card printOnly" style="margin-top:12px">
+      <div style="font-weight:900;font-size:18px">KRS INVITE — Final Report</div>
+      <div class="muted" style="margin-top:6px">Event: <span id="printEvent">—</span> • Generated: <span id="printAt">—</span></div>
     </div>
   </div>
 
-  <script type="module">
-    // =============================
-    // 1) Firebase Config (عدّله إذا يلزم)
-    // =============================
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import {
-      getFirestore, collection, getDocs, query, where, limit as qLimit,
-      doc, updateDoc, deleteDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-    import {
-      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
 
+  <script>
+    // ✅ ضع Firebase config لمشروعك (hormez-inv)
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
       authDomain: "hormez-inv.firebaseapp.com",
@@ -413,327 +225,141 @@
       appId: "1:747519941805:web:468fada2492700e9da3a24"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    // =============================
-    // Helpers
-    // =============================
-    const $ = (id)=>document.getElementById(id);
-    const el = (tag, cls)=>{ const x=document.createElement(tag); if(cls)x.className=cls; return x; };
+    const $ = (s)=>document.querySelector(s);
+    const tb = $("#tb");
 
-    function showErr(msg){
-      $("err").style.display = msg ? "block" : "none";
-      $("err").textContent = msg || "";
-    }
-    function setLoading(v){
-      $("loading").style.display = v ? "block" : "none";
+    let allRows = [];
+    let unsub = null;
+
+    function nowStr(){
+      const d = new Date();
+      return d.toLocaleString("ar-AE");
     }
 
-    function normalize(v){ return (v ?? "").toString().trim(); }
+    function norm(s){ return String(s||"").toLowerCase().trim(); }
 
-    function rsvpLabel(v){
-      if(v==="confirmed") return {t:"أكد", cls:"confirmed"};
-      if(v==="declined")  return {t:"اعتذر", cls:"declined"};
-      return {t:"لم يرد", cls:"pending"};
+    function tagRSVP(v){
+      const x = norm(v);
+      if(x==="confirmed") return `<span class="tag confirmed"><span class="dot"></span>Confirmed</span>`;
+      if(x==="declined") return `<span class="tag declined"><span class="dot"></span>Declined</span>`;
+      return `<span class="tag pending"><span class="dot"></span>Pending</span>`;
     }
 
-    function checkinLabel(v){
-      if(v==="yes") return {t:"✅ دخل", cls:"in"};
-      return {t:"— لم يدخل", cls:"out"};
+    function tagCheck(v){
+      const x = norm(v);
+      if(x==="yes") return `<span class="tag yes"><span class="dot"></span>YES</span>`;
+      return `<span class="tag no"><span class="dot"></span>NO</span>`;
     }
 
-    function safeCSV(s){
-      const v = (s ?? "").toString().replaceAll('"','""');
-      return `"${v}"`;
-    }
+    function calcKPIs(rows){
+      const total = rows.length;
+      let pending=0, confirmed=0, declined=0, checkin=0;
+      for(const r of rows){
+        const rr = norm(r.RSVP);
+        if(rr==="confirmed") confirmed++;
+        else if(rr==="declined") declined++;
+        else pending++;
 
-    // =============================
-    // Auth UI
-    // =============================
-    $("btnLogin").onclick = async ()=>{
-      try{
-        await signInWithPopup(auth, provider);
-      }catch(e){
-        showErr("فشل تسجيل الدخول: " + (e?.message || e));
+        if(norm(r.CheckIn)==="yes") checkin++;
       }
-    };
-    $("btnLogout").onclick = async ()=>{
-      try{
-        await signOut(auth);
-      }catch(e){
-        showErr("فشل الخروج: " + (e?.message || e));
-      }
-    };
-
-    onAuthStateChanged(auth, (user)=>{
-      if(user){
-        $("userPill").textContent = user.email || "Logged";
-        $("btnLogin").style.display = "none";
-        $("btnLogout").style.display = "inline-block";
-      }else{
-        $("userPill").textContent = "غير مسجل";
-        $("btnLogin").style.display = "inline-block";
-        $("btnLogout").style.display = "none";
-      }
-    });
-
-    // =============================
-    // Data load + render
-    // =============================
-    let lastRows = []; // for export
-
-    async function loadInvites(){
-      showErr("");
-      setLoading(true);
-      $("tbody").innerHTML = "";
-      lastRows = [];
-
-      try{
-        const col = collection(db, "invites");
-        const ev = normalize($("eventName").value);
-        const lim = Number($("limit").value || 200);
-
-        const qq = ev
-          ? query(col, where("EventName", "==", ev), qLimit(lim))
-          : query(col, qLimit(lim));
-
-        const snap = await getDocs(qq);
-
-        const rows = [];
-        snap.forEach((docSnap)=>{
-          const d = docSnap.data() || {};
-          rows.push({
-            id: docSnap.id,
-            GuestName: d.GuestName || "",
-            Phone: d.Phone || "",
-            Code: d.Code || docSnap.id,
-            EventName: d.EventName || "",
-            RSVP: d.RSVP || "pending",
-            Status: d.Status || "no"
-          });
-        });
-
-        // Apply client-side filters
-        const s = normalize($("search").value).toLowerCase();
-        const rf = $("rsvpFilter").value;
-        const cf = $("checkinFilter").value;
-
-        let filtered = rows.filter(r=>{
-          const hay = `${r.GuestName} ${r.Phone} ${r.Code}`.toLowerCase();
-          if(s && !hay.includes(s)) return false;
-          if(rf !== "all" && (r.RSVP || "pending") !== rf) return false;
-          if(cf !== "all" && (r.Status || "no") !== cf) return false;
-          return true;
-        });
-
-        // Sort: declined first? (اختياري) — نخلي confirmed ثم pending ثم declined؟
-        const order = {confirmed:1,pending:2,declined:3};
-        filtered.sort((a,b)=> (order[a.RSVP]||9) - (order[b.RSVP]||9));
-
-        renderTable(filtered);
-        renderStats(filtered);
-
-        lastRows = filtered;
-      }catch(e){
-        showErr("خطأ في التحميل: " + (e?.message || e));
-      }finally{
-        setLoading(false);
-      }
+      $("#kTotal").textContent = total;
+      $("#kPending").textContent = pending;
+      $("#kConfirmed").textContent = confirmed;
+      $("#kDeclined").textContent = declined;
+      $("#kCheckin").textContent = checkin;
+      $("#count").textContent = total;
+      $("#lastAt").textContent = nowStr();
+      $("#printAt").textContent = nowStr();
+      $("#printEvent").textContent = $("#eventName").value.trim();
     }
 
-    function renderStats(list){
-      const total = list.length;
-      const inCount = list.filter(x=>x.Status==="yes").length;
-      const outCount = total - inCount;
-      const conf = list.filter(x=>x.RSVP==="confirmed").length;
-      const decl = list.filter(x=>x.RSVP==="declined").length;
-      const pend = list.filter(x=>(x.RSVP||"pending")==="pending").length;
-
-      $("stTotal").textContent = total;
-      $("stIn").textContent = inCount;
-      $("stOut").textContent = outCount;
-      $("stConf").textContent = conf;
-      $("stDecl").textContent = decl;
-      $("stPend").textContent = pend;
+    async function setRSVP(code, val){
+      await db.collection("invites").doc(code).set({ RSVP: val, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+    }
+    async function toggleCheckIn(code, toYes){
+      await db.collection("invites").doc(code).set({ CheckIn: toYes ? "yes" : "no", Status: toYes ? "yes" : "no", checkInAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
     }
 
-    function renderTable(list){
-      const tbody = $("tbody");
-      tbody.innerHTML = "";
+    function render(rows){
+      // filter by query
+      const q = norm($("#q").value);
+      const filtered = !q ? rows : rows.filter(r=>{
+        return norm(r.Code).includes(q) || norm(r.GuestName).includes(q) || norm(r.Phone).includes(q);
+      });
 
-      if(!list.length){
-        const tr = el("tr");
-        const td = el("td");
-        td.colSpan = 7;
-        td.style.color = "var(--muted)";
-        td.textContent = "لا توجد بيانات مطابقة للفلاتر الحالية.";
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-        return;
-      }
+      tb.innerHTML = filtered.map(r=>{
+        const code = r.Code || "—";
+        const guest = r.GuestName || r.Name || "—";
+        const phone = r.Phone || "—";
+        const ev = r.EventName || "—";
+        const rsvp = r.RSVP || "pending";
+        const ci = r.CheckIn || r.Status || "no";
 
-      for(const r of list){
-        const tr = el("tr");
+        const times = [
+          r.RSVPAt ? ("RSVP: " + r.RSVPAt) : "",
+          r.checkInAt ? ("Check-in: " + r.checkInAt) : ""
+        ].filter(Boolean).join(" • ") || "—";
 
-        const rsvp = rsvpLabel(r.RSVP);
-        const chk  = checkinLabel(r.Status);
-
-        // RSVP select
-        const sel = el("select");
-        sel.innerHTML = `
-          <option value="pending" ${r.RSVP==="pending"?"selected":""}>لم يرد</option>
-          <option value="confirmed" ${r.RSVP==="confirmed"?"selected":""}>أكد</option>
-          <option value="declined" ${r.RSVP==="declined"?"selected":""}>اعتذر</option>
+        return `
+          <tr>
+            <td><b>${code}</b></td>
+            <td>${guest}</td>
+            <td>${phone}</td>
+            <td class="muted">${ev}</td>
+            <td>${tagRSVP(rsvp)}</td>
+            <td>${tagCheck(ci)}</td>
+            <td>
+              <div class="actions noPrint">
+                <button class="mini ok" onclick="window.__setRSVP('${code}','confirmed')">تأكيد</button>
+                <button class="mini no" onclick="window.__setRSVP('${code}','declined')">اعتذار</button>
+                <button class="mini ci" onclick="window.__toggleCI('${code}', true)">تسجيل دخول</button>
+                <button class="mini" onclick="window.__toggleCI('${code}', false)">إلغاء دخول</button>
+              </div>
+            </td>
+            <td class="noPrint muted">${times}</td>
+          </tr>
         `;
-        sel.style.minWidth = "140px";
-        sel.dataset.id = r.id;
+      }).join("");
 
-        // Name input (edit)
-        const nameInput = el("input");
-        nameInput.value = r.GuestName || "";
-        nameInput.placeholder = "اسم الضيف";
-        nameInput.dataset.id = r.id;
-
-        // Phone input (edit)
-        const phoneInput = el("input");
-        phoneInput.value = r.Phone || "";
-        phoneInput.placeholder = "9715xxxxxxx";
-        phoneInput.classList.add("ltr","mono");
-        phoneInput.dataset.id = r.id;
-
-        const tdName = el("td"); tdName.appendChild(nameInput);
-        const tdPhone = el("td"); tdPhone.appendChild(phoneInput);
-
-        const tdCode = el("td");
-        tdCode.className = "mono ltr code";
-        tdCode.textContent = r.Code;
-
-        const tdEvent = el("td");
-        tdEvent.textContent = r.EventName || "—";
-
-        const tdRSVP = el("td");
-        const chip = el("span", `chip ${rsvp.cls}`);
-        chip.innerHTML = `<span class="dot"></span><span>${rsvp.t}</span>`;
-        chip.style.marginInlineEnd = "8px";
-        tdRSVP.appendChild(chip);
-        tdRSVP.appendChild(sel);
-
-        const tdCheck = el("td");
-        const chip2 = el("span", `chip ${chk.cls}`);
-        chip2.innerHTML = `<span class="dot"></span><span>${chk.t}</span>`;
-        tdCheck.appendChild(chip2);
-
-        const tdAct = el("td");
-        tdAct.className = "actions";
-
-        const btnSave = el("button","miniBtn");
-        btnSave.textContent = "حفظ";
-        btnSave.onclick = async ()=>{
-          showErr("");
-          try{
-            const id = r.id;
-            const newName = normalize(nameInput.value);
-            const newPhone = normalize(phoneInput.value).replaceAll(" ","");
-            const newRSVP = sel.value;
-
-            await updateDoc(doc(db,"invites",id), {
-              GuestName: newName || "",
-              Phone: newPhone || "",
-              RSVP: newRSVP,
-              RSVPAt: new Date()
-            });
-
-            // تحديث الشيب فورًا
-            const rr = rsvpLabel(newRSVP);
-            chip.className = `chip ${rr.cls}`;
-            chip.innerHTML = `<span class="dot"></span><span>${rr.t}</span>`;
-
-          }catch(e){
-            showErr("فشل الحفظ: " + (e?.message || e));
-          }
-        };
-
-        const btnDelete = el("button","miniBtn danger");
-        btnDelete.textContent = "حذف";
-        btnDelete.onclick = async ()=>{
-          showErr("");
-          if(!confirm("تأكيد حذف هذا الـ Invite؟")) return;
-          try{
-            await deleteDoc(doc(db,"invites",r.id));
-            tr.remove();
-          }catch(e){
-            showErr("فشل الحذف: " + (e?.message || e));
-          }
-        };
-
-        tdAct.appendChild(btnSave);
-        tdAct.appendChild(btnDelete);
-
-        tr.appendChild(tdName);
-        tr.appendChild(tdPhone);
-        tr.appendChild(tdCode);
-        tr.appendChild(tdEvent);
-        tr.appendChild(tdRSVP);
-        tr.appendChild(tdCheck);
-        tr.appendChild(tdAct);
-
-        tbody.appendChild(tr);
-      }
+      calcKPIs(filtered);
     }
 
-    // =============================
-    // Export CSV
-    // =============================
-    function exportCSV(){
-      if(!lastRows.length){
-        alert("لا توجد بيانات للتصدير.");
-        return;
-      }
-      const headers = ["GuestName","Phone","Code","EventName","RSVP","Status"];
-      const lines = [headers.join(",")];
+    window.__setRSVP = async (code,val)=>{ try{ await setRSVP(code,val); }catch(e){ alert("خطأ: "+e.message); } };
+    window.__toggleCI = async (code,toYes)=>{ try{ await toggleCheckIn(code,toYes); }catch(e){ alert("خطأ: "+e.message); } };
 
-      for(const r of lastRows){
-        lines.push([
-          safeCSV(r.GuestName),
-          safeCSV(r.Phone),
-          safeCSV(r.Code),
-          safeCSV(r.EventName),
-          safeCSV(r.RSVP),
-          safeCSV(r.Status),
-        ].join(","));
-      }
+    function load(){
+      const ev = $("#eventName").value.trim();
+      $("#evLabel").textContent = ev || "—";
+      if(unsub) unsub();
 
-      const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `KRS_INVITES_${Date.now()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      // realtime
+      unsub = db.collection("invites").where("EventName","==", ev).onSnapshot((snap)=>{
+        allRows = snap.docs.map(d=>{
+          const x = d.data() || {};
+          // Convert timestamps to readable text (optional)
+          const conv = (t)=> t && t.toDate ? t.toDate().toLocaleString("ar-AE") : null;
+          return {
+            ...x,
+            Code: x.Code || d.id,
+            RSVPAt: conv(x.RSVPAt),
+            checkInAt: conv(x.checkInAt),
+          };
+        }).sort((a,b)=> (a.Code||"").localeCompare(b.Code||"", "en"));
+        render(allRows);
+      }, (err)=>{
+        alert("فشل تحميل البيانات: " + err.message);
+      });
     }
 
-    // =============================
-    // UI events
-    // =============================
-    $("btnLoad").onclick = loadInvites;
-    $("btnRefresh").onclick = loadInvites;
-    $("btnExport").onclick = exportCSV;
+    $("#btnLoad").addEventListener("click", load);
+    $("#q").addEventListener("input", ()=>render(allRows));
+    $("#btnPrint").addEventListener("click", ()=>window.print());
 
-    $("btnClear").onclick = ()=>{
-      $("eventName").value = "";
-      $("search").value = "";
-      $("rsvpFilter").value = "all";
-      $("checkinFilter").value = "all";
-    };
-
-    // تحميل تلقائي أول مرة (اختياري)
-    // loadInvites();
-
+    // auto load
+    load();
   </script>
 </body>
 </html>
