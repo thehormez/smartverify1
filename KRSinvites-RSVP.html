@@ -4,218 +4,389 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <title>KRS INVITE — RSVP Dashboard</title>
+
   <style>
     :root{
-      --bg0:#06080f; --bg1:#0a0f1d;
-      --card:rgba(255,255,255,.06);
-      --card2:rgba(255,255,255,.04);
-      --stroke:rgba(255,255,255,.10);
-      --stroke2:rgba(255,255,255,.14);
-      --ink:#e9edf5; --muted:#a7b0c3;
-      --gold:#d6b15e; --gold2:#b48a18;
-      --green:#16a34a; --red:#ef4444; --amber:#f59e0b; --blue:#2563eb;
-      --shadow:0 18px 60px rgba(0,0,0,.45);
-      --r:18px;
+      --radius: 18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans Arabic", Arial, sans-serif;
+
+      /* Accent */
+      --gold:#d6b15e;
+      --gold2:#b48a18;
+      --good:#13c296;
+      --bad:#ff5c7a;
+      --warn:#fbbf24;
+
+      /* Default = Dark */
+      --bg0:#05060b;
+      --bg1:#0a0f1d;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.04);
+      --stroke: rgba(255,255,255,.10);
+      --ink:#e9edf5;
+      --muted:#a7b0c3;
+
+      --shadow: 0 18px 60px rgba(0,0,0,.55);
+      --glass: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035));
+      --input: rgba(0,0,0,.25);
+
+      /* Glows */
+      --glowA: rgba(214,177,94,.18);
+      --glowB: rgba(30,64,175,.14);
+      --glowC: rgba(255,92,122,.10);
     }
-    html,body{height:100%}
+
+    /* Light theme overrides */
+    [data-theme="light"]{
+      --bg0:#f7f8fb;
+      --bg1:#eef1f7;
+      --card: rgba(0,0,0,.04);
+      --card2: rgba(0,0,0,.03);
+      --stroke: rgba(0,0,0,.10);
+      --ink:#0b1220;
+      --muted:#52607a;
+
+      --shadow: 0 18px 50px rgba(12, 18, 32, .10);
+      --glass: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.78));
+      --input: rgba(255,255,255,.75);
+
+      --glowA: rgba(214,177,94,.25);
+      --glowB: rgba(30,64,175,.10);
+      --glowC: rgba(255,92,122,.10);
+    }
+
+    *{box-sizing:border-box}
     body{
       margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;
-      color:var(--ink);
+      font-family: var(--sans);
+      color: var(--ink);
+      min-height:100vh;
       background:
-        radial-gradient(1200px 600px at 10% 10%, rgba(214,177,94,.18), transparent 60%),
-        radial-gradient(900px 500px at 90% 0%, rgba(37,99,235,.10), transparent 60%),
-        linear-gradient(180deg,var(--bg0),var(--bg1));
+        radial-gradient(1200px 800px at 20% -10%, var(--glowA), transparent 55%),
+        radial-gradient(900px 700px at 90% 0%, var(--glowB), transparent 55%),
+        radial-gradient(1000px 800px at 70% 110%, var(--glowC), transparent 50%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
     }
-    .wrap{max-width:1240px;margin:0 auto;padding:18px}
-    .top{
-      display:flex;gap:12px;align-items:center;flex-wrap:wrap;
-      justify-content:space-between;margin-bottom:12px
+
+    .wrap{max-width:1200px;margin:0 auto;padding:22px}
+    .topbar{
+      display:flex;gap:14px;align-items:center;justify-content:space-between;
+      margin-bottom:16px;
     }
-    .brand{display:flex;gap:12px;align-items:center}
-    .logo{
-      width:44px;height:44px;border-radius:14px;
-      background:linear-gradient(135deg,#111827,#0b1220);
-      border:1px solid rgba(214,177,94,.35);
-      display:grid;place-items:center;box-shadow:var(--shadow)
-    }
-    .logo span{font-weight:900;color:var(--gold)}
-    h1{font-size:16px;margin:0;font-weight:900;letter-spacing:.2px}
-    .sub{font-size:12px;color:var(--muted);margin-top:2px}
-    .grid{display:grid;gap:12px}
-    .grid-2{grid-template-columns:1.1fr .9fr}
-    .grid-3{grid-template-columns:repeat(5,1fr)}
-    @media(max-width:1100px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:repeat(2,1fr)}}
-    .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
-      border:1px solid var(--stroke);
-      border-radius:var(--r);
-      box-shadow:var(--shadow);
-      padding:14px;
+    .brand{
+      display:flex;gap:12px;align-items:center;
+      padding:12px 14px;border:1px solid var(--stroke);
+      background: var(--glass);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
       backdrop-filter: blur(10px);
     }
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .pill{
-      padding:8px 10px;border-radius:999px;
-      border:1px solid var(--stroke2);
-      background:rgba(0,0,0,.18);
-      color:var(--muted);font-size:12px
+    .logo{
+      width:44px;height:44px;border-radius:14px;
+      background: radial-gradient(circle at 30% 30%, rgba(214,177,94,.55), rgba(214,177,94,.14));
+      border:1px solid rgba(214,177,94,.30);
+      display:grid;place-items:center;
+      font-weight:900;color:var(--gold);
+      letter-spacing:.5px;
+      box-shadow: 0 10px 30px rgba(214,177,94,.10);
     }
-    .input,.btn,select{
-      border-radius:14px;border:1px solid var(--stroke2);
-      background:rgba(0,0,0,.25);color:var(--ink);
-      padding:10px 12px;font-size:13px;outline:none
+    .brand h1{margin:0;font-size:16px;line-height:1.1}
+    .brand p{margin:2px 0 0;color:var(--muted);font-size:12px}
+
+    .grid{display:grid;gap:14px}
+    .grid.cols2{grid-template-columns: 1.25fr .75fr}
+    @media (max-width: 980px){ .grid.cols2{grid-template-columns:1fr} }
+
+    .card{
+      background: var(--glass);
+      border:1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(10px);
     }
-    .input{min-width:260px}
-    .btn{cursor:pointer}
-    .btn:hover{background:rgba(0,0,0,.34)}
+    .card .hd{
+      padding:14px 16px;
+      border-bottom:1px solid var(--stroke);
+      display:flex;gap:10px;align-items:center;justify-content:space-between;
+    }
+    .card .hd .title{font-weight:800}
+    .card .bd{padding:14px 16px}
+
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .field{display:flex;flex-direction:column;gap:6px;min-width: 180px;flex:1}
+    label{font-size:12px;color:var(--muted)}
+    input, select{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: var(--input);
+      color: var(--ink);
+      outline:none;
+    }
+    [data-theme="light"] input, [data-theme="light"] select{
+      border-color: rgba(0,0,0,.10);
+    }
+    input::placeholder{color: rgba(167,176,195,.65)}
+    [data-theme="light"] input::placeholder{color: rgba(82,96,122,.55)}
+
+    .btn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--ink);
+      padding:11px 14px;
+      border-radius:14px;
+      cursor:pointer;
+      font-weight:700;
+      display:inline-flex;align-items:center;gap:10px;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    [data-theme="light"] .btn{
+      border-color: rgba(0,0,0,.10);
+      background: rgba(255,255,255,.65);
+    }
+    .btn:hover{background: rgba(255,255,255,.11)}
+    [data-theme="light"] .btn:hover{background: rgba(255,255,255,.82)}
+    .btn:active{transform: translateY(1px)}
     .btn.gold{
-      border-color:rgba(214,177,94,.45);
-      background:linear-gradient(180deg, rgba(214,177,94,.18), rgba(0,0,0,.25));
+      border-color: rgba(214,177,94,.35);
+      background: linear-gradient(180deg, rgba(214,177,94,.28), rgba(180,138,24,.14));
+      color: #fff;
     }
+    .btn.danger{
+      border-color: rgba(255,92,122,.35);
+      background: linear-gradient(180deg, rgba(255,92,122,.18), rgba(255,92,122,.08));
+    }
+    .btn.small{padding:9px 10px;border-radius:12px;font-size:12px}
+    .pill{
+      padding:8px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.20); font-size:12px; color: var(--muted);
+      display:inline-flex;gap:8px;align-items:center;
+    }
+    [data-theme="light"] .pill{
+      background: rgba(255,255,255,.65);
+      border-color: rgba(0,0,0,.10);
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background: rgba(167,176,195,.65)}
+    .dot.good{background: var(--good)}
+    .dot.bad{background: var(--bad)}
+    .dot.warn{background: var(--warn)}
+
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap:12px;
+    }
+    @media (max-width: 980px){ .kpis{grid-template-columns: repeat(2, 1fr)} }
     .kpi{
-      display:flex;flex-direction:column;gap:6px;
-      padding:12px;border-radius:16px;
-      border:1px solid var(--stroke2);
-      background:rgba(0,0,0,.20)
+      padding:14px 14px;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      background: rgba(0,0,0,.16);
     }
-    .kpi .n{font-size:26px;font-weight:900;line-height:1}
-    .kpi .t{font-size:12px;color:var(--muted)}
-    .kpi.green .n{color:rgba(34,197,94,.95)}
-    .kpi.red .n{color:rgba(239,68,68,.95)}
-    .kpi.amb .n{color:rgba(245,158,11,.95)}
-    .kpi.blue .n{color:rgba(37,99,235,.95)}
-    .tableWrap{overflow:auto;border-radius:16px;border:1px solid var(--stroke);background:rgba(0,0,0,.18)}
-    table{width:100%;border-collapse:collapse;min-width:960px}
-    thead th{
-      text-align:right;font-size:12px;color:var(--muted);
-      padding:12px;border-bottom:1px solid var(--stroke);
-      background:rgba(0,0,0,.20)
+    [data-theme="light"] .kpi{
+      background: rgba(255,255,255,.75);
+      border-color: rgba(0,0,0,.08);
     }
-    tbody td{
-      padding:12px;border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:13px;vertical-align:middle
-    }
-    tbody tr:hover{background:rgba(255,255,255,.03)}
-    .tag{
+    .kpi .n{font-size:22px;font-weight:900}
+    .kpi .t{font-size:12px;color:var(--muted);margin-top:4px}
+
+    .tableWrap{overflow:auto;border-radius: 16px;border:1px solid rgba(255,255,255,.10)}
+    [data-theme="light"] .tableWrap{border-color: rgba(0,0,0,.10)}
+    table{width:100%;border-collapse:collapse;min-width: 980px;background: rgba(0,0,0,.14)}
+    [data-theme="light"] table{background: rgba(255,255,255,.70)}
+    th, td{padding:12px 10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:right;vertical-align:middle}
+    [data-theme="light"] th, [data-theme="light"] td{border-bottom:1px solid rgba(0,0,0,.06)}
+    th{position:sticky;top:0;background: rgba(10,15,29,.92);backdrop-filter: blur(6px);font-size:12px;color:var(--muted);z-index:2}
+    [data-theme="light"] th{background: rgba(255,255,255,.92)}
+    td{font-size:13px}
+    .code{font-family: var(--mono);letter-spacing:.4px;color: var(--ink)}
+    .muted{color: var(--muted)}
+    .chip{
       display:inline-flex;align-items:center;gap:8px;
-      padding:7px 10px;border-radius:999px;
-      border:1px solid var(--stroke2);font-size:12px
+      padding:7px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      font-size:12px;
     }
-    .dot{width:8px;height:8px;border-radius:99px;background:var(--amber)}
-    .tag.pending .dot{background:var(--amber)}
-    .tag.confirmed .dot{background:var(--green)}
-    .tag.declined .dot{background:var(--red)}
-    .tag.yes .dot{background:var(--green)}
-    .tag.no .dot{background:rgba(148,163,184,.9)}
-    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    [data-theme="light"] .chip{border-color: rgba(0,0,0,.10); background: rgba(255,255,255,.85)}
+    .chip.good{border-color: rgba(19,194,150,.25); background: rgba(19,194,150,.12)}
+    .chip.bad{border-color: rgba(255,92,122,.25); background: rgba(255,92,122,.12)}
+    .chip.warn{border-color: rgba(251,191,36,.25); background: rgba(251,191,36,.12)}
+    .chip.neutral{border-color: rgba(167,176,195,.18); background: rgba(167,176,195,.08)}
+    .right{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+
+    .notice{
+      padding:12px 14px;border-radius:16px;
+      border:1px solid rgba(214,177,94,.28);
+      background: rgba(214,177,94,.10);
+      color: var(--ink);
+      line-height:1.5;
+      font-size:13px;
+    }
+
     .mini{
-      padding:8px 10px;border-radius:14px;font-size:12px;
-      border:1px solid var(--stroke2);background:rgba(0,0,0,.25);color:var(--ink);
-      cursor:pointer
+      font-size:12px;color:var(--muted);
+      display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;
     }
-    .mini:hover{background:rgba(0,0,0,.34)}
-    .mini.ok{border-color:rgba(34,197,94,.35)}
-    .mini.no{border-color:rgba(239,68,68,.35)}
-    .mini.ci{border-color:rgba(214,177,94,.35)}
-    .muted{color:var(--muted)}
-    .rightInfo{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-    .printOnly{display:none}
+    .sep{opacity:.5}
+
+    /* Print report */
     @media print{
-      body{background:#fff;color:#111}
-      .noPrint{display:none !important}
-      .printOnly{display:block}
+      body{background:#fff !important;color:#111}
+      .no-print{display:none !important}
       .card{box-shadow:none;border:1px solid #ddd;background:#fff}
-      .tableWrap{border:1px solid #ddd;background:#fff}
-      thead th{background:#f5f5f5;color:#333}
-      tbody td{border-bottom:1px solid #eee}
+      .brand{box-shadow:none;background:#fff;border:1px solid #ddd}
+      table{min-width:auto;background:#fff}
+      th{background:#f5f5f5;color:#111}
+      .chip{border:1px solid #ddd;background:#f9f9f9;color:#111}
+      .kpi{border:1px solid #ddd;background:#fff}
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="top">
+
+    <div class="topbar no-print">
       <div class="brand">
-        <div class="logo"><span>KRS</span></div>
+        <div class="logo">KRS</div>
         <div>
-          <h1>لوحة RSVP + تقرير نهائي — KRS INVITE</h1>
-          <div class="sub">Confirmed / Declined / Pending + Check-in yes/no (Firestore: invites)</div>
+          <h1>KRS INVITE — RSVP Dashboard</h1>
+          <p>Confirmed / Declined / Pending + Check-in Report</p>
         </div>
       </div>
 
-      <div class="row noPrint">
-        <span class="pill" id="pillConn">Database: Firestore</span>
-        <input id="eventName" class="input" value="zafaf_khaled" placeholder="EventName مثل: zafaf_khaled" />
-        <input id="q" class="input" placeholder="بحث بالكود / الاسم / الرقم" />
-        <button id="btnLoad" class="btn gold">تحميل البيانات</button>
-        <button id="btnPrint" class="btn">تقرير للطباعة</button>
+      <div class="right">
+        <button class="btn" id="btnTheme" title="تبديل الوضع">🌙 / ☀️</button>
+        <span class="pill" id="authPill"><span class="dot warn"></span><span id="authText">غير مسجل دخول</span></span>
+        <button class="btn" id="btnSignIn">تسجيل دخول</button>
+        <button class="btn danger" id="btnSignOut" disabled>تسجيل خروج</button>
+        <button class="btn gold" id="btnPrint" disabled>طباعة التقرير</button>
       </div>
     </div>
 
-    <div class="grid grid-2">
+    <div class="grid cols2">
+
+      <!-- Controls -->
+      <div class="card no-print">
+        <div class="hd">
+          <div class="title">التحكم</div>
+          <div class="muted" style="font-size:12px">Database: Firestore (Live)</div>
+        </div>
+        <div class="bd">
+          <div class="row">
+            <div class="field">
+              <label>EventName (اسم الحدث)</label>
+              <input id="eventName" placeholder="مثال: zafaf_khaled" />
+            </div>
+
+            <div class="field">
+              <label>بحث</label>
+              <input id="q" placeholder="ابحث بالكود / الاسم / الرقم" />
+            </div>
+
+            <div class="field" style="min-width:260px;flex:0">
+              <label>&nbsp;</label>
+              <div class="right">
+                <button class="btn gold" id="btnLoad" disabled>تحميل / تشغيل Live</button>
+                <button class="btn" id="btnStop" disabled>إيقاف Live</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+
+          <div class="notice">
+            ✅ يسحب من <b>invites</b> ويعتمد على الحقول:
+            <div class="muted" style="margin-top:6px">
+              Code (doc id), EventName, GuestName, Phone, RSVP, RSVPAt, CheckIn/Status, CheckedInAt
+            </div>
+            <div class="mini" style="margin-top:8px">
+              <span>مزامنة مباشرة:</span>
+              <span class="sep">•</span>
+              <span id="liveHint" class="muted">غير مفعلة</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPIs -->
       <div class="card">
-        <div class="rightInfo">
-          <div class="pill">Event: <b id="evLabel">—</b></div>
-          <div class="pill muted">آخر تحديث: <span id="lastAt">—</span></div>
+        <div class="hd">
+          <div class="title">الإحصائيات</div>
+          <div class="muted" id="kpiSub" style="font-size:12px">—</div>
         </div>
+        <div class="bd">
+          <div class="kpis">
+            <div class="kpi"><div class="n" id="k_total">0</div><div class="t">Total Invites</div></div>
+            <div class="kpi"><div class="n" id="k_confirmed">0</div><div class="t">Confirmed</div></div>
+            <div class="kpi"><div class="n" id="k_declined">0</div><div class="t">Declined</div></div>
+            <div class="kpi"><div class="n" id="k_pending">0</div><div class="t">Pending</div></div>
+            <div class="kpi"><div class="n" id="k_checkedin_yes">0</div><div class="t">Check-in Yes</div></div>
+            <div class="kpi"><div class="n" id="k_checkedin_no">0</div><div class="t">Check-in No</div></div>
+          </div>
 
-        <div class="grid grid-3" style="margin-top:12px">
-          <div class="kpi blue"><div class="n" id="kTotal">0</div><div class="t">Total Invites</div></div>
-          <div class="kpi amb"><div class="n" id="kPending">0</div><div class="t">Pending</div></div>
-          <div class="kpi green"><div class="n" id="kConfirmed">0</div><div class="t">Confirmed</div></div>
-          <div class="kpi red"><div class="n" id="kDeclined">0</div><div class="t">Declined</div></div>
-          <div class="kpi"><div class="n" id="kCheckin">0</div><div class="t">Check-in YES</div></div>
+          <div style="height:10px"></div>
+          <div class="muted" style="font-size:12px;line-height:1.6" id="lastLoadInfo">—</div>
         </div>
       </div>
 
-      <div class="card">
-        <div style="font-weight:800;margin-bottom:8px">ملاحظات تشغيل</div>
-        <div class="muted" style="font-size:13px;line-height:1.8">
-          ✅ يعتمد على حقول داخل <b>invites</b>:<br/>
-          <b>Code (doc id)</b>, <b>EventName</b>, <b>GuestName</b>, <b>Phone</b>, <b>RSVP</b>, <b>CheckIn</b><br/><br/>
-          إذا كان Guest/Phone يظهر “—” فهذا يعني الدوكومنت ما فيه البيانات — والكود اللي فوق صار يكتبها تلقائيًا عند الإرسال.
+    </div>
+
+    <!-- Table -->
+    <div class="card" style="margin-top:14px">
+      <div class="hd no-print">
+        <div class="title">قائمة الضيوف</div>
+        <div class="right">
+          <span class="pill"><span class="dot"></span><span id="rowsInfo">0 صف</span></span>
+        </div>
+      </div>
+
+      <div class="bd">
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Guest</th>
+                <th>Phone</th>
+                <th>EventName</th>
+                <th>RSVP</th>
+                <th>Check-in</th>
+                <th class="no-print">Actions</th>
+                <th>Times</th>
+              </tr>
+            </thead>
+            <tbody id="tbody">
+              <tr><td colspan="8" class="muted">سجل دخول أولاً ثم اضغط تحميل / تشغيل Live.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <div class="card" style="margin-top:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-        <div style="font-weight:900">قائمة الضيوف</div>
-        <div class="pill muted">النتائج: <span id="count">0</span></div>
-      </div>
-
-      <div class="tableWrap" style="margin-top:12px">
-        <table>
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Guest</th>
-              <th>Phone</th>
-              <th>EventName</th>
-              <th>RSVP</th>
-              <th>Check-in</th>
-              <th>Actions</th>
-              <th class="noPrint">Times</th>
-            </tr>
-          </thead>
-          <tbody id="tb"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card printOnly" style="margin-top:12px">
-      <div style="font-weight:900;font-size:18px">KRS INVITE — Final Report</div>
-      <div class="muted" style="margin-top:6px">Event: <span id="printEvent">—</span> • Generated: <span id="printAt">—</span></div>
-    </div>
   </div>
 
-  <!-- Firebase compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+  <!-- Firebase (Modular) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      query,
+      where,
+      onSnapshot,
+      updateDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-  <script>
-    // ✅ ضع Firebase config لمشروعك (hormez-inv)
+    // ✅ Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
       authDomain: "hormez-inv.firebaseapp.com",
@@ -225,141 +396,314 @@
       appId: "1:747519941805:web:468fada2492700e9da3a24"
     };
 
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
 
-    const $ = (s)=>document.querySelector(s);
-    const tb = $("#tb");
+    // UI refs
+    const btnTheme  = document.getElementById("btnTheme");
+    const authPill  = document.getElementById("authPill");
+    const authText  = document.getElementById("authText");
+    const btnSignIn = document.getElementById("btnSignIn");
+    const btnSignOut= document.getElementById("btnSignOut");
+    const btnPrint  = document.getElementById("btnPrint");
 
-    let allRows = [];
+    const btnLoad   = document.getElementById("btnLoad");
+    const btnStop   = document.getElementById("btnStop");
+    const liveHint  = document.getElementById("liveHint");
+
+    const eventNameEl = document.getElementById("eventName");
+    const qEl         = document.getElementById("q");
+    const tbody       = document.getElementById("tbody");
+    const rowsInfo    = document.getElementById("rowsInfo");
+    const lastLoadInfo= document.getElementById("lastLoadInfo");
+    const kpiSub      = document.getElementById("kpiSub");
+
+    const k_total        = document.getElementById("k_total");
+    const k_confirmed    = document.getElementById("k_confirmed");
+    const k_declined     = document.getElementById("k_declined");
+    const k_pending      = document.getElementById("k_pending");
+    const k_checkedin_yes= document.getElementById("k_checkedin_yes");
+    const k_checkedin_no = document.getElementById("k_checkedin_no");
+
+    // Theme (auto from system)
+    const root = document.documentElement;
+    const savedTheme = localStorage.getItem("krs_theme");
+    if (savedTheme) {
+      root.setAttribute("data-theme", savedTheme);
+    } else {
+      const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+      root.setAttribute("data-theme", prefersLight ? "light" : "dark");
+    }
+    btnTheme.addEventListener("click", () => {
+      const cur = root.getAttribute("data-theme") || "dark";
+      const next = (cur === "dark") ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      localStorage.setItem("krs_theme", next);
+    });
+
+    // Data
+    let ALL_ROWS = [];
     let unsub = null;
+    let activeField = "EventName"; // or eventId
 
-    function nowStr(){
-      const d = new Date();
-      return d.toLocaleString("ar-AE");
+    function norm(s){ return String(s||"").trim(); }
+    function normPhoneDigits(p){ return String(p||"").replace(/[^\d]/g,""); }
+
+    function getGuestName(d){ return norm(d.GuestName || d.guestName || d.name || d.Name || "—"); }
+    function getPhone(d){ return norm(d.Phone || d.phone || d.to || "—"); }
+    function getEvent(d){ return norm(d.EventName || d.eventId || d.eventName || "—"); }
+
+    function getRSVP(d){
+      const v = norm(d.RSVP || d.rsvp || "");
+      if (!v) return "pending";
+      const x = v.toLowerCase();
+      if (x === "confirmed" || x.includes("confirm") || x.includes("yes") || x.includes("حضور")) return "confirmed";
+      if (x === "declined"  || x.includes("declin")  || x.includes("no")  || x.includes("اعتذار")) return "declined";
+      return "pending";
+    }
+    function getCheckIn(d){
+      const v = norm(d.CheckIn || d.checkIn || d.CheckedIn || d.status || d.Status || "");
+      const x = v.toLowerCase();
+      if (x === "yes" || x === "true" || x.includes("yes")) return "yes";
+      return "no";
     }
 
-    function norm(s){ return String(s||"").toLowerCase().trim(); }
-
-    function tagRSVP(v){
-      const x = norm(v);
-      if(x==="confirmed") return `<span class="tag confirmed"><span class="dot"></span>Confirmed</span>`;
-      if(x==="declined") return `<span class="tag declined"><span class="dot"></span>Declined</span>`;
-      return `<span class="tag pending"><span class="dot"></span>Pending</span>`;
+    function fmtTime(ts){
+      if (!ts) return "—";
+      try{
+        const d = ts.toDate ? ts.toDate() : new Date(ts);
+        return d.toLocaleString("ar-AE");
+      }catch{ return "—"; }
     }
 
-    function tagCheck(v){
-      const x = norm(v);
-      if(x==="yes") return `<span class="tag yes"><span class="dot"></span>YES</span>`;
-      return `<span class="tag no"><span class="dot"></span>NO</span>`;
+    function chipRSVP(v){
+      if (v==="confirmed") return `<span class="chip good"><span class="dot good"></span>Confirmed</span>`;
+      if (v==="declined")  return `<span class="chip bad"><span class="dot bad"></span>Declined</span>`;
+      return `<span class="chip warn"><span class="dot warn"></span>Pending</span>`;
+    }
+    function chipCheck(v){
+      if (v==="yes") return `<span class="chip good"><span class="dot good"></span>Yes</span>`;
+      return `<span class="chip neutral"><span class="dot"></span>No</span>`;
     }
 
-    function calcKPIs(rows){
-      const total = rows.length;
-      let pending=0, confirmed=0, declined=0, checkin=0;
-      for(const r of rows){
-        const rr = norm(r.RSVP);
-        if(rr==="confirmed") confirmed++;
-        else if(rr==="declined") declined++;
-        else pending++;
+    function setAuthUI(isIn, email="") {
+      authText.textContent = isIn ? `مسجل: ${email}` : "غير مسجل دخول";
+      authPill.innerHTML = isIn
+        ? `<span class="dot good"></span><span>${authText.textContent}</span>`
+        : `<span class="dot warn"></span><span>${authText.textContent}</span>`;
 
-        if(norm(r.CheckIn)==="yes") checkin++;
+      btnSignOut.disabled = !isIn;
+      btnLoad.disabled    = !isIn;
+      btnStop.disabled    = true;
+      btnPrint.disabled   = !isIn;
+
+      if (!isIn) {
+        stopLive();
+        tbody.innerHTML = `<tr><td colspan="8" class="muted">سجل دخول أولاً ثم اضغط تحميل / تشغيل Live.</td></tr>`;
       }
-      $("#kTotal").textContent = total;
-      $("#kPending").textContent = pending;
-      $("#kConfirmed").textContent = confirmed;
-      $("#kDeclined").textContent = declined;
-      $("#kCheckin").textContent = checkin;
-      $("#count").textContent = total;
-      $("#lastAt").textContent = nowStr();
-      $("#printAt").textContent = nowStr();
-      $("#printEvent").textContent = $("#eventName").value.trim();
     }
 
-    async function setRSVP(code, val){
-      await db.collection("invites").doc(code).set({ RSVP: val, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-    }
-    async function toggleCheckIn(code, toYes){
-      await db.collection("invites").doc(code).set({ CheckIn: toYes ? "yes" : "no", Status: toYes ? "yes" : "no", checkInAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-    }
+    onAuthStateChanged(auth, (user) => {
+      if (user) setAuthUI(true, user.email || "Admin");
+      else setAuthUI(false);
+    });
 
-    function render(rows){
-      // filter by query
-      const q = norm($("#q").value);
-      const filtered = !q ? rows : rows.filter(r=>{
-        return norm(r.Code).includes(q) || norm(r.GuestName).includes(q) || norm(r.Phone).includes(q);
+    btnSignIn.addEventListener("click", async () => {
+      const email = prompt("اكتب ايميل الأدمن في Firebase Auth:", "");
+      if (!email) return;
+      const pass  = prompt("اكتب كلمة المرور:", "");
+      if (!pass) return;
+
+      try{
+        await signInWithEmailAndPassword(auth, email, pass);
+      }catch(e){
+        alert("فشل تسجيل الدخول: " + (e?.message || e));
+        console.error(e);
+      }
+    });
+
+    btnSignOut.addEventListener("click", async () => {
+      try{ await signOut(auth); }catch(e){ alert("فشل تسجيل الخروج: " + (e?.message || e)); }
+    });
+
+    btnPrint.addEventListener("click", () => window.print());
+
+    function render() {
+      const q = norm(qEl.value).toLowerCase();
+      const filtered = ALL_ROWS.filter(r => {
+        if (!q) return true;
+        return (
+          (r.code||"").toLowerCase().includes(q) ||
+          (r.guest||"").toLowerCase().includes(q) ||
+          (r.phone||"").toLowerCase().includes(q) ||
+          (r.event||"").toLowerCase().includes(q)
+        );
       });
 
-      tb.innerHTML = filtered.map(r=>{
-        const code = r.Code || "—";
-        const guest = r.GuestName || r.Name || "—";
-        const phone = r.Phone || "—";
-        const ev = r.EventName || "—";
-        const rsvp = r.RSVP || "pending";
-        const ci = r.CheckIn || r.Status || "no";
+      rowsInfo.textContent = `${filtered.length} صف`;
 
-        const times = [
-          r.RSVPAt ? ("RSVP: " + r.RSVPAt) : "",
-          r.checkInAt ? ("Check-in: " + r.checkInAt) : ""
-        ].filter(Boolean).join(" • ") || "—";
+      const total     = filtered.length;
+      const confirmed = filtered.filter(x => x.rsvp==="confirmed").length;
+      const declined  = filtered.filter(x => x.rsvp==="declined").length;
+      const pending   = filtered.filter(x => x.rsvp==="pending").length;
+      const cinYes    = filtered.filter(x => x.checkin==="yes").length;
+      const cinNo     = total - cinYes;
+
+      k_total.textContent        = total;
+      k_confirmed.textContent    = confirmed;
+      k_declined.textContent     = declined;
+      k_pending.textContent      = pending;
+      k_checkedin_yes.textContent= cinYes;
+      k_checkedin_no.textContent = cinNo;
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="muted">لا توجد بيانات مطابقة.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(r => {
+        const times = `
+          <div class="muted" style="font-size:12px;line-height:1.7">
+            RSVP: ${fmtTime(r.rsvpAt)}<br/>
+            Check-in: ${fmtTime(r.checkAt)}
+          </div>
+        `;
 
         return `
           <tr>
-            <td><b>${code}</b></td>
-            <td>${guest}</td>
-            <td>${phone}</td>
-            <td class="muted">${ev}</td>
-            <td>${tagRSVP(rsvp)}</td>
-            <td>${tagCheck(ci)}</td>
-            <td>
-              <div class="actions noPrint">
-                <button class="mini ok" onclick="window.__setRSVP('${code}','confirmed')">تأكيد</button>
-                <button class="mini no" onclick="window.__setRSVP('${code}','declined')">اعتذار</button>
-                <button class="mini ci" onclick="window.__toggleCI('${code}', true)">تسجيل دخول</button>
-                <button class="mini" onclick="window.__toggleCI('${code}', false)">إلغاء دخول</button>
+            <td class="code">${r.code}</td>
+            <td>${r.guest}</td>
+            <td class="muted">${r.phone}</td>
+            <td class="muted">${r.event}</td>
+            <td>${chipRSVP(r.rsvp)}</td>
+            <td>${chipCheck(r.checkin)}</td>
+            <td class="no-print">
+              <div class="right">
+                <button class="btn small" data-act="confirm" data-code="${r.code}">تأكيد</button>
+                <button class="btn small danger" data-act="decline" data-code="${r.code}">اعتذار</button>
+                <button class="btn small gold" data-act="toggle_checkin" data-code="${r.code}">
+                  ${r.checkin==="yes" ? "إلغاء دخول" : "تسجيل دخول"}
+                </button>
               </div>
             </td>
-            <td class="noPrint muted">${times}</td>
+            <td>${times}</td>
           </tr>
         `;
       }).join("");
-
-      calcKPIs(filtered);
     }
 
-    window.__setRSVP = async (code,val)=>{ try{ await setRSVP(code,val); }catch(e){ alert("خطأ: "+e.message); } };
-    window.__toggleCI = async (code,toYes)=>{ try{ await toggleCheckIn(code,toYes); }catch(e){ alert("خطأ: "+e.message); } };
+    function stopLive(){
+      if (typeof unsub === "function") {
+        unsub();
+        unsub = null;
+      }
+      btnStop.disabled = true;
+      liveHint.textContent = "غير مفعلة";
+    }
 
-    function load(){
-      const ev = $("#eventName").value.trim();
-      $("#evLabel").textContent = ev || "—";
-      if(unsub) unsub();
+    btnStop.addEventListener("click", stopLive);
 
-      // realtime
-      unsub = db.collection("invites").where("EventName","==", ev).onSnapshot((snap)=>{
-        allRows = snap.docs.map(d=>{
-          const x = d.data() || {};
-          // Convert timestamps to readable text (optional)
-          const conv = (t)=> t && t.toDate ? t.toDate().toLocaleString("ar-AE") : null;
-          return {
-            ...x,
-            Code: x.Code || d.id,
-            RSVPAt: conv(x.RSVPAt),
-            checkInAt: conv(x.checkInAt),
-          };
-        }).sort((a,b)=> (a.Code||"").localeCompare(b.Code||"", "en"));
-        render(allRows);
-      }, (err)=>{
-        alert("فشل تحميل البيانات: " + err.message);
+    function startLive(fieldName){
+      stopLive();
+      activeField = fieldName;
+
+      const ev = norm(eventNameEl.value);
+      if (!ev) {
+        alert("اكتب EventName أولاً.");
+        return;
+      }
+
+      tbody.innerHTML = `<tr><td colspan="8" class="muted">جارٍ تشغيل Live…</td></tr>`;
+      ALL_ROWS = [];
+
+      const col = collection(db, "invites");
+      const qy  = query(col, where(fieldName, "==", ev));
+
+      liveHint.textContent = `مفعلة (فلترة: ${fieldName} = ${ev})`;
+      btnStop.disabled = false;
+
+      // ✅ LIVE listener
+      unsub = onSnapshot(qy, (snap) => {
+        const rows = [];
+        snap.forEach(docu => {
+          const d = docu.data() || {};
+          rows.push({
+            code: docu.id,
+            guest: getGuestName(d),
+            phone: getPhone(d),
+            event: getEvent(d),
+            rsvp: getRSVP(d),
+            checkin: getCheckIn(d),
+            rsvpAt: d.RSVPAt || d.rsvpAt || null,
+            checkAt: d.CheckedInAt || d.checkInAt || d.updatedAt || null,
+          });
+        });
+
+        ALL_ROWS = rows;
+        kpiSub.textContent = `Event: ${ev}`;
+        lastLoadInfo.textContent = `Live تحديث: ${new Date().toLocaleString("ar-AE")} — إجمالي سجلات: ${ALL_ROWS.length}`;
+        render();
+
+        // إذا كانت فاضية على EventName نجرب eventId مرة واحدة تلقائياً
+        if (ALL_ROWS.length === 0 && fieldName === "EventName") {
+          // بدل على eventId
+          startLive("eventId");
+        }
+      }, (err) => {
+        console.error(err);
+        alert("فشل Live (صلاحيات/قواعد): " + (err?.message || err));
+        tbody.innerHTML = `<tr><td colspan="8" class="muted">خطأ Live: ${err?.message||err}</td></tr>`;
+        stopLive();
       });
     }
 
-    $("#btnLoad").addEventListener("click", load);
-    $("#q").addEventListener("input", ()=>render(allRows));
-    $("#btnPrint").addEventListener("click", ()=>window.print());
+    btnLoad.addEventListener("click", () => startLive("EventName"));
 
-    // auto load
-    load();
+    // Search render (debounced light)
+    let t = null;
+    qEl.addEventListener("input", () => {
+      clearTimeout(t);
+      t = setTimeout(render, 80);
+    });
+
+    // Actions (manual admin updates)
+    tbody.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-act]");
+      if (!btn) return;
+
+      const act  = btn.getAttribute("data-act");
+      const code = btn.getAttribute("data-code");
+      if (!code) return;
+
+      const ref = doc(db, "invites", code);
+
+      try{
+        if (act === "confirm") {
+          await updateDoc(ref, { RSVP: "confirmed", RSVPAt: serverTimestamp() });
+        }
+        if (act === "decline") {
+          await updateDoc(ref, { RSVP: "declined", RSVPAt: serverTimestamp() });
+        }
+        if (act === "toggle_checkin") {
+          const row = ALL_ROWS.find(x => x.code === code);
+          const next = (row && row.checkin === "yes") ? "no" : "yes";
+          await updateDoc(ref, {
+            CheckIn: next,
+            Status: next,
+            CheckedInAt: serverTimestamp(),
+          });
+        }
+        // لا نحتاج reload — onSnapshot سيحدث الجدول مباشرة
+      }catch(err){
+        alert("فشل التحديث: " + (err?.message || err));
+        console.error(err);
+      }
+    });
+
+    // تحسين صغير: اكتب event افتراضي لو موجود عندك
+    // eventNameEl.value = "zafaf_khaled";
+
   </script>
 </body>
 </html>
