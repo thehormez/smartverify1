@@ -261,6 +261,7 @@
   <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
 
   <script>
   (function(){
@@ -311,6 +312,16 @@
     const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
     if(!firebase.apps.length){ firebase.initializeApp(cfg); }
     const db=firebase.firestore();
+    // ✅ Auto anonymous sign-in (needed for Firestore write)
+(async ()=>{
+  try{
+    if(!firebase.auth().currentUser){
+      await firebase.auth().signInAnonymously();
+    }
+  }catch(e){
+    console.error("Anonymous auth failed:", e);
+  }
+})();
 
     // ===== Event gate =====
     const URL_EVENT = new URLSearchParams(location.search).get('event');
