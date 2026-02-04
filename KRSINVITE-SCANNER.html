@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>KRS INVITE — Scanner</title>
+
+  <style>
+    :root{
+      --bg0:#05060b; --bg1:#0a0f1d;
+      --card: rgba(255,255,255,.07);
+      --stroke: rgba(255,255,255,.12);
+      --ink:#e9edf5; --muted:#a7b0c3;
+      --gold:#d6b15e; --good:#13c296; --bad:#ff5c7a; --warn:#fbbf24;
+      --shadow: 0 18px 60px rgba(0,0,0,.55);
+      --r:18px;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans Arabic", Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans); color:var(--ink);
+      background:
+        radial-gradient(1200px 800px at 20% -10%, rgba(214,177,94,.16), transparent 55%),
+        radial-gradient(900px 700px at 90% 0%, rgba(30,64,175,.16), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      min-height:100vh;
+    }
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
+    .top{
+      display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .brand{
+      display:flex; gap:12px; align-items:center;
+      padding:12px 14px;border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+    }
+    .logo{
+      width:44px;height:44px;border-radius:14px;
+      background: radial-gradient(circle at 30% 30%, rgba(214,177,94,.45), rgba(214,177,94,.12));
+      border:1px solid rgba(214,177,94,.30);
+      display:grid;place-items:center;
+      font-weight:900;color:var(--gold);
+      letter-spacing:.5px;
+    }
+    .brand h1{margin:0;font-size:15px}
+    .brand p{margin:2px 0 0;color:var(--muted);font-size:12px}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035));
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .hd{
+      padding:12px 14px; border-bottom:1px solid var(--stroke);
+      display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
+    .bd{padding:14px}
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    .field{display:flex; flex-direction:column; gap:6px; min-width:180px; flex:1}
+    label{font-size:12px;color:var(--muted)}
+    input,select{
+      width:100%; padding:12px 12px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+      color: var(--ink);
+      outline:none;
+    }
+    .btn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--ink);
+      padding:11px 14px;
+      border-radius:14px;
+      cursor:pointer;
+      font-weight:800;
+      display:inline-flex;align-items:center;gap:10px;
+      transition: transform .08s ease, background .15s ease;
+      user-select:none;
+      min-height:44px;
+    }
+    .btn:hover{background: rgba(255,255,255,.11)}
+    .btn:active{transform: translateY(1px)}
+    .btn.gold{
+      border-color: rgba(214,177,94,.35);
+      background: linear-gradient(180deg, rgba(214,177,94,.25), rgba(180,138,24,.12));
+      color: #fff;
+    }
+    .pill{
+      padding:8px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25); font-size:12px; color: var(--muted);
+      display:inline-flex;gap:8px;align-items:center;
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background: rgba(167,176,195,.65)}
+    .dot.good{background: var(--good)}
+    .dot.bad{background: var(--bad)}
+    .dot.warn{background: var(--warn)}
+    .scannerBox{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      overflow:hidden;
+      background: rgba(0,0,0,.25);
+    }
+    #reader{width:100%}
+    .big{
+      font-size:22px; font-weight:1000; letter-spacing:.3px;
+      font-family: var(--mono);
+    }
+    .msg{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+      line-height:1.6;
+      font-size:13px;
+    }
+    .msg.ok{border-color: rgba(19,194,150,.25); background: rgba(19,194,150,.10)}
+    .msg.err{border-color: rgba(255,92,122,.25); background: rgba(255,92,122,.10)}
+    .msg.warn{border-color: rgba(251,191,36,.25); background: rgba(251,191,36,.10)}
+    .hint{color:var(--muted); font-size:12px; margin-top:8px}
+  </style>
+
+  <!-- ✅ مكتبة تدعم QR + Barcodes -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="logo">KRS</div>
+        <div>
+          <h1>KRS INVITE — Scanner</h1>
+          <p>QR + Barcode (KH_001) + Firestore Check-in</p>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:flex-end">
+        <span class="pill" id="connPill"><span class="dot warn"></span><span id="connTxt">جاهز</span></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd">
+        <div style="font-weight:900">الإعدادات</div>
+        <div class="pill"><span class="dot"></span><span id="evMini">—</span></div>
+      </div>
+      <div class="bd">
+        <div class="row">
+          <div class="field">
+            <label>EventName</label>
+            <input id="eventName" placeholder="مثال: zafaf_khaled" />
+          </div>
+
+          <div class="field" style="min-width:220px">
+            <label>Camera</label>
+            <select id="cameraSel"></select>
+          </div>
+
+          <div class="field" style="min-width:260px;flex:0">
+            <label>&nbsp;</label>
+            <div class="row" style="justify-content:flex-end">
+              <button class="btn gold" id="btnStart">تشغيل الماسح</button>
+              <button class="btn" id="btnStop" disabled>إيقاف</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="scannerBox">
+          <div id="reader"></div>
+        </div>
+
+        <div class="hint">
+          💡 إذا ما يقرأ باركود KH_001: قرّب شوي + إضاءة جيدة + جرّب الكاميرا الخلفية.  
+          يدعم Code128/Code39/EAN/QR (حسب دعم المتصفح والكاميرا).
+        </div>
+
+        <div class="msg warn" id="statusBox">
+          <div class="muted">آخر قراءة:</div>
+          <div class="big" id="lastCode">—</div>
+          <div id="lastInfo" class="muted" style="margin-top:6px">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase (Modular) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      updateDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    // ✅ Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.firebasestorage.app",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    // ✅ غيّرها لو تبغى
+    const EVENT_NAME_DEFAULT = "zafaf_khaled";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const eventNameEl = document.getElementById("eventName");
+    const evMini = document.getElementById("evMini");
+    const cameraSel = document.getElementById("cameraSel");
+    const btnStart = document.getElementById("btnStart");
+    const btnStop = document.getElementById("btnStop");
+
+    const statusBox = document.getElementById("statusBox");
+    const lastCodeEl = document.getElementById("lastCode");
+    const lastInfoEl = document.getElementById("lastInfo");
+
+    const connPill = document.getElementById("connPill");
+    const connTxt = document.getElementById("connTxt");
+
+    function pill(state, text){
+      connTxt.textContent = text;
+      if(state==="ok"){
+        connPill.innerHTML = '<span class="dot good"></span><span>'+text+'</span>';
+      } else if(state==="bad"){
+        connPill.innerHTML = '<span class="dot bad"></span><span>'+text+'</span>';
+      } else {
+        connPill.innerHTML = '<span class="dot warn"></span><span>'+text+'</span>';
+      }
+    }
+
+    function setBox(type, code, info){
+      lastCodeEl.textContent = code || "—";
+      lastInfoEl.textContent = info || "—";
+      statusBox.className = "msg " + (type || "warn");
+    }
+
+    function normalizeCode(raw){
+      let s = String(raw || "").trim();
+
+      // لو كان QR فيه رابط، نطلع آخر جزء (مثلاً ?code=KH_001 أو /KH_001)
+      try{
+        if (s.startsWith("http://") || s.startsWith("https://")) {
+          const u = new URL(s);
+          const qp = u.searchParams.get("code") || u.searchParams.get("Code");
+          if (qp) s = qp;
+          else {
+            const parts = u.pathname.split("/").filter(Boolean);
+            if (parts.length) s = parts[parts.length - 1];
+          }
+        }
+      }catch{}
+
+      // نظافة عامة
+      s = s.replace(/\s+/g, "");
+      return s;
+    }
+
+    // ✅ منع تكرار نفس القراءة خلال ثواني
+    let lastScanAt = 0;
+    let lastScanCode = "";
+
+    async function checkIn(code, eventName){
+      const ref = doc(db, "invites", code);
+
+      const snap = await getDoc(ref);
+      if(!snap.exists()){
+        // لو الوثيقة غير موجودة: ننشئها (اختياري)
+        await setDoc(ref, {
+          Code: code,
+          EventName: eventName,
+          Status: "yes",
+          CheckIn: "yes",
+          CheckedInAt: serverTimestamp(),
+          scannedAt: serverTimestamp()
+        }, { merge: true });
+
+        return { created: true, already: false };
+      }
+
+      const d = snap.data() || {};
+      const already = String(d.Status||"no").toLowerCase() === "yes";
+
+      await updateDoc(ref, {
+        EventName: d.EventName || eventName, // لا نخربه لو موجود
+        Status: "yes",
+        CheckIn: "yes",
+        CheckedInAt: serverTimestamp(),
+        scannedAt: serverTimestamp(),
+        lastScanSource: "camera"
+      });
+
+      return { created: false, already };
+    }
+
+    // ============ Camera / Scanner ============
+    let html5Qr = null;
+
+    async function loadCameras(){
+      const devices = await Html5Qrcode.getCameras();
+      cameraSel.innerHTML = "";
+      devices.forEach((d, idx) => {
+        const opt = document.createElement("option");
+        opt.value = d.id;
+        opt.textContent = d.label || ("Camera " + (idx+1));
+        cameraSel.appendChild(opt);
+      });
+
+      // حاول تختار الخلفية تلقائيًا
+      const back = devices.find(d => (d.label||"").toLowerCase().includes("back")) ||
+                   devices.find(d => (d.label||"").toLowerCase().includes("rear"));
+      if(back) cameraSel.value = back.id;
+    }
+
+    async function start(){
+      const ev = (eventNameEl.value || "").trim() || EVENT_NAME_DEFAULT;
+      eventNameEl.value = ev;
+      evMini.textContent = ev;
+
+      if(!html5Qr) html5Qr = new Html5Qrcode("reader");
+
+      const camId = cameraSel.value;
+      if(!camId){
+        setBox("err", "—", "لا توجد كاميرات متاحة. تأكد من السماح للكاميرا.");
+        pill("bad", "لا توجد كاميرا");
+        return;
+      }
+
+      pill("warn", "جارٍ التشغيل…");
+      setBox("warn", "—", "وجّه الكاميرا على الباركود/QR");
+
+      btnStart.disabled = true;
+      btnStop.disabled = false;
+
+      const config = {
+        fps: 12,
+        qrbox: { width: 320, height: 220 },
+        // ✅ مهم: هذه تفعّل دعم الباركود بالإضافة للـ QR (حسب دعم المتصفح)
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        rememberLastUsedCamera: true
+      };
+
+      try{
+        await html5Qr.start(
+          { deviceId: { exact: camId } },
+          config,
+          async (decodedText) => {
+            const code = normalizeCode(decodedText);
+            const now = Date.now();
+
+            if(!code) return;
+
+            // anti-spam
+            if(code === lastScanCode && (now - lastScanAt) < 2500) return;
+            lastScanCode = code;
+            lastScanAt = now;
+
+            setBox("warn", code, "جارٍ تسجيل الدخول…");
+
+            try{
+              const result = await checkIn(code, ev);
+              if(result.already){
+                setBox("warn", code, "⚠️ هذا الكود مسجّل دخول مسبقًا (تم التحديث).");
+                pill("warn", "مكرر");
+              } else {
+                setBox("ok", code, result.created ? "✅ تم تسجيل الدخول (تم إنشاء الوثيقة)." : "✅ تم تسجيل الدخول بنجاح.");
+                pill("ok", "نجاح");
+              }
+            }catch(err){
+              console.error(err);
+              setBox("err", code, "❌ فشل التسجيل: " + (err?.message || err));
+              pill("bad", "فشل");
+            }
+          },
+          () => {
+            // ignore scan errors to keep scanning smooth
+          }
+        );
+
+        pill("ok", "يقرأ الآن");
+      }catch(err){
+        console.error(err);
+        btnStart.disabled = false;
+        btnStop.disabled = true;
+        setBox("err", "—", "فشل تشغيل الكاميرا: " + (err?.message || err));
+        pill("bad", "فشل التشغيل");
+      }
+    }
+
+    async function stop(){
+      try{
+        if(html5Qr){
+          await html5Qr.stop();
+          await html5Qr.clear();
+        }
+      }catch{}
+      btnStart.disabled = false;
+      btnStop.disabled = true;
+      pill("warn", "متوقف");
+      setBox("warn", "—", "تم إيقاف الماسح");
+    }
+
+    // init
+    eventNameEl.value = EVENT_NAME_DEFAULT;
+    evMini.textContent = EVENT_NAME_DEFAULT;
+
+    // لازم user gesture في بعض الأجهزة لفتح الكاميرا
+    btnStart.addEventListener("click", start);
+    btnStop.addEventListener("click", stop);
+
+    // load cameras
+    try{
+      await loadCameras();
+      pill("ok", "جاهز");
+    }catch(err){
+      console.error(err);
+      pill("bad", "لا يمكن قراءة الكاميرات");
+      setBox("err", "—", "لا يمكن قراءة الكاميرات. افتح الصفحة عبر HTTPS واسمح للكاميرا.");
+    }
+  </script>
+</body>
+</html>
