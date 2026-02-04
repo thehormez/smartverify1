@@ -79,7 +79,7 @@
 </head>
 <body>
 
-  <!-- ✅ Hidden input for EY-034s (keyboard wedge scanners) -->
+  <!-- ✅ Hidden input for keyboard wedge scanners -->
   <input id="scannerInput"
          class="input"
          style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px"
@@ -91,6 +91,7 @@
       <div class="row"><div style="font-weight:900">HS</div><div class="muted" id="titleSub">ماسح الباركود — مناسبة محددة</div></div>
       <div class="row">
         <span class="tag"><span id="lblEventTag">الحدث</span>: <b id="evTag">—</b></span>
+        <span class="tag"><span class="muted">Auth</span>: <b id="authTag">—</b></span>
         <button id="langBtn" class="btn">AR</button>
       </div>
     </div>
@@ -155,7 +156,7 @@
           <div class="row" style="margin-top:6px">
             <div style="width:160px">
               <div class="muted" id="lblPause">فترة التوقف (ملّي ثانية)</div>
-              <input id="pauseMs" class="input" type="number" value="600" />
+              <input id="pauseMs" class="input" type="number" value="650" />
             </div>
             <div style="width:150px">
               <div class="muted" id="lblSound">الأصوات</div>
@@ -177,7 +178,7 @@
           <div class="row" style="margin-top:10px">
             <div style="flex:1">
               <div class="muted" id="lblRegex">نمط الكود (Regex)</div>
-              <input id="codeRegex" class="input mono" value="^[A-Z0-9_]{4,64}$" />
+              <input id="codeRegex" class="input mono" value="^[A-Z]{1,6}_[0-9]{1,6}$|^[A-Z0-9_]{4,64}$" />
             </div>
             <div style="width:170px">
               <div class="muted" id="lblStrict">وضع صارم</div>
@@ -187,19 +188,6 @@
               </select>
             </div>
           </div>
-
-          <!-- ✅ إضافة اختيار وضع القراءة -->
-          <div class="row" style="margin-top:10px">
-            <div style="flex:1">
-              <div class="muted">Mode</div>
-              <select id="scanMode" class="select">
-                <option value="auto" selected>Auto (QR + Barcode)</option>
-                <option value="qr">QR فقط</option>
-                <option value="bar">Barcode فقط</option>
-              </select>
-            </div>
-          </div>
-
         </div>
       </div>
 
@@ -212,7 +200,7 @@
         <div style="flex:1">
           <div class="muted" id="lblManual">إدخال يدوي</div>
           <div class="row">
-            <input id="manualCode" class="input" placeholder="KH_001 أو X001Q7G2L5" />
+            <input id="manualCode" class="input" placeholder="KH_007" />
             <button id="manualBtn" class="btn" disabled>تحقق</button>
           </div>
         </div>
@@ -254,13 +242,13 @@
       ];
       function load(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
       window.ensureZXing=async()=>{if(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))return true;for(const u of CANDS){try{await load(u);if(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))return true;}catch(_){} }return !!(window.ZXing&&(window.ZXing.BrowserMultiFormatReader||window.ZXing.BrowserQRCodeReader))};
-      window.hasNativeDetector = 'BarcodeDetector' in window;
     })();
   </script>
 
   <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+  <!-- ✅ REQUIRED -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
 
   <script>
@@ -273,23 +261,25 @@
         titleSub:'ماسح الباركود — مناسبة محددة', eventTag:'الحدث',
         ready:'جاهز',checking:'جاري التحقق…',start:'▶️ تشغيل',stop:'⏹️ إيقاف',switch:'🔄 تبديل',flash:'💡 فلاش',
         camera:'الكاميرا',manual:'إدخال يدوي',ok:'✅ مقبول',dupe:'⚠️ تم استخدامه سابقًا',mismatch:'❌ لا يخص هذه المناسبة',notfound:'❌ الكود غير موجود',
-        needHttps:'الكاميرا تتطلب HTTPS أو localhost',camlib:'⚠️ مكتبة القراءة لم تُحمّل',paused:'⏸️ إيقاف مؤقت',needEvent:'الرجاء تعيين اسم المناسبة أولاً',
+        needHttps:'الكاميرا تتطلب HTTPS أو localhost',camlib:'⚠️ مكتبة الكاميرا لم تُحمّل',paused:'⏸️ إيقاف مؤقت',needEvent:'الرجاء تعيين اسم المناسبة أولاً',
         settings:'الإعدادات',pause:'فترة التوقف (ملّي ثانية)',sounds:'الأصوات',reader:'حجم القارئ',regex:'نمط الكود (Regex)',strict:'وضع صارم',
         last:'النتيجة الأخيرة',hist:'السجل (محفوظ محليًا حسب المناسبة)',check:'تحقق',httpsWarn:'الكاميرا تتطلب HTTPS أو localhost',
         accOpen:'فتح الإعدادات', accClose:'إغلاق الإعدادات',
         accepted:'تم القبول ✅', rejected:'مرفوض',
         received:'📥 تم استلام الكود…',
+        auth:'موثّق'
       },
       en:{
         titleSub:'Barcode Scanner — Event Locked', eventTag:'Event',
         ready:'Ready',checking:'Checking…',start:'▶️ Start',stop:'⏹️ Stop',switch:'🔄 Switch',flash:'💡 Torch',
         camera:'Camera',manual:'Manual input',ok:'✅ Accepted',dupe:'⚠️ Already used',mismatch:'❌ Not this event',notfound:'❌ Code not found',
-        needHttps:'Camera requires HTTPS or localhost',camlib:'⚠️ Decoder library not loaded',paused:'⏸️ Paused',needEvent:'Please set the event name first',
+        needHttps:'Camera requires HTTPS or localhost',camlib:'⚠️ Camera library not loaded',paused:'⏸️ Paused',needEvent:'Please set the event name first',
         settings:'Settings',pause:'Pause (ms)',sounds:'Sounds',reader:'Scan size',regex:'Code pattern (Regex)',strict:'Strict mode',
         last:'Last result',hist:'History (locally per event)',check:'Check',httpsWarn:'Camera requires HTTPS or localhost',
         accOpen:'Open settings', accClose:'Close settings',
         accepted:'Accepted ✅', rejected:'Rejected',
         received:'📥 Code received…',
+        auth:'Authed'
       }
     };
 
@@ -309,28 +299,37 @@
     }
 
     // ===== Firebase =====
-    const cfg={ apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac", authDomain:"hormez-inv.firebaseapp.com", projectId:"hormez-inv" };
+    const cfg={
+      apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain:"hormez-inv.firebaseapp.com",
+      projectId:"hormez-inv"
+    };
     if(!firebase.apps.length){ firebase.initializeApp(cfg); }
     const db=firebase.firestore();
-    // ✅ Auto anonymous sign-in (needed for Firestore write)
-(async ()=>{
-  try{
-    if(!firebase.auth().currentUser){
-      await firebase.auth().signInAnonymously();
+
+    // ✅ REQUIRED: Anonymous auth so rules (signedIn()) passes
+    async function ensureAnonAuth(){
+      try{
+        const auth = firebase.auth();
+        // wait for auth ready
+        await new Promise((res)=>auth.onAuthStateChanged(()=>res(), ()=>res()));
+        if(!auth.currentUser){
+          await auth.signInAnonymously();
+        }
+        const uid = auth.currentUser?.uid || 'ok';
+        $('#authTag').textContent = uid.slice(0,8);
+        return true;
+      }catch(e){
+        console.error("Anonymous auth failed:", e);
+        $('#authTag').textContent = 'FAIL';
+        alert("❌ فشل تسجيل الدخول المجهول. فعل Anonymous Auth من Firebase Authentication.");
+        return false;
+      }
     }
-  }catch(e){
-    console.error("Anonymous auth failed:", e);
-  }
-})();
 
     // ===== Event gate =====
     const URL_EVENT = new URLSearchParams(location.search).get('event');
     let EVENT_NAME = '';
-
-    // ✅ تطبيع اسم الحدث لو كتبته بالانجليزي مع مسافات (zafaf khaled -> zafaf_khaled)
-    function normalizeEventName(v){
-      return String(v||'').trim().replace(/\s+/g,'_');
-    }
 
     function allowUI(enable){
       $('#content').style.display = enable ? '' : 'none';
@@ -341,7 +340,7 @@
       $('#manualBtn').disabled = !enable;
     }
     function setEvent(name){
-      EVENT_NAME = normalizeEventName(name);
+      EVENT_NAME = String(name||'').trim();
       $('#evTag').textContent = EVENT_NAME || '—';
       localStorage.setItem('hs:evscan:event', EVENT_NAME);
       renderHist();
@@ -350,7 +349,7 @@
     function tryInitEvent(){
       const saved = localStorage.getItem('hs:evscan:event')||'';
       if(URL_EVENT){
-        setEvent(URL_EVENT); $('#gate').style.display='none'; allowUI(true);
+        setEvent(URL_EVENT); $('#gate').style.display='none';
       }else if(saved){
         $('#gate').style.display='flex';
         $('#gateEvent').value = saved;
@@ -374,8 +373,8 @@
     function pushHist(code,msg,good){ const h=getHist(); h.unshift({code,msg,at:Date.now(),good}); localStorage.setItem(hKey(), JSON.stringify(h.slice(0,80))); renderHist(); }
     function renderHist(){
       const box=$('#hist'); box.innerHTML='';
-      const h=getHist(); if(!EVENT_NAME){ box.innerHTML=`<div class="muted">${T[LANG].needEvent}</div>`; return; }
-      if(!h.length){ box.innerHTML = `<div class="muted">—</div>`; return; }
+      if(!EVENT_NAME){ box.innerHTML=`<div class="muted">${T[LANG].needEvent}</div>`; return; }
+      const h=getHist(); if(!h.length){ box.innerHTML = `<div class="muted">—</div>`; return; }
       h.forEach(x=>{
         const d=document.createElement('div');
         d.style.padding='6px';
@@ -388,7 +387,7 @@
     // ===== Audio =====
     let audioCtx=null;
     function ensureAudio(){ try{ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended') audioCtx.resume(); }catch{} }
-    window.__hsPlayTone=function(type='ok'){
+    function playTone(type='ok'){
       if($('#soundMode')?.value==='off') return;
       try{
         ensureAudio(); if(!audioCtx) return;
@@ -419,12 +418,12 @@
       $('#lastCode').style.color=good?'#86efac':'#fca5a5';
       $('#lastMsg').textContent=msg||'—';
       drawQRPreview(code||'');
-      try{ window.__hsPlayTone(good?'ok':'err'); navigator.vibrate?.(good?60:120); }catch{}
+      try{ playTone(good?'ok':'err'); navigator.vibrate?.(good?60:120); }catch{}
       if(good) showGreenOverlay(code);
       else showRedOverlay(code, msg);
     }
 
-    // ===== Scanner input (EY-034s) focus + capture =====
+    // ===== Scanner input (keyboard wedge) =====
     const scannerInput = document.getElementById('scannerInput');
     let scannerEnabled = false;
 
@@ -450,11 +449,8 @@
       scannerInput.value = '';
       const code = normalizeScanValue(raw);
       if(!code) return;
-
-      // ✅ عرض “استلام” بدون ما نعتبره قبول
       showLast(code, T[LANG].received, true);
       setStatus(T[LANG].received, '#22c55e');
-
       handleRawScan(code);
     }
     scannerInput.addEventListener('keydown', (e)=>{
@@ -473,7 +469,7 @@
     let locked=false;
     function lockPause(){
       locked=true;
-      const ms=Math.max(250, parseInt($('#pauseMs')?.value||'600',10));
+      const ms=Math.max(250, parseInt($('#pauseMs')?.value||'650',10));
       setTimeout(()=>{ locked=false; }, ms);
     }
 
@@ -481,14 +477,20 @@
     function strictOn(){ return ($('#strictMode')?.value||'off')==='on'; }
     function codeRegex(){ try{ return new RegExp($('#codeRegex')?.value||''); }catch{ return null; } }
 
-    function scanMode(){ return ($('#scanMode')?.value||'auto'); } // auto|qr|bar
-
-    // ===== Firestore verification (FAST) =====
+    // ===== Firestore verification =====
     async function verifyAndMark(code){
       const L=T[LANG];
       setStatus(L.checking,'#f59e0b');
 
       try{
+        // ✅ ensure signed in (anon)
+        const ok = await ensureAnonAuth();
+        if(!ok){
+          showLast(code, "Auth failed", false);
+          pushHist(code, "Auth failed", false);
+          return;
+        }
+
         const docRef = db.collection('invites').doc(code);
         const snap = await docRef.get();
 
@@ -514,6 +516,7 @@
           return;
         }
 
+        // ✅ update
         await docRef.set({
           Status:'yes',
           scannedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -521,12 +524,14 @@
 
         showLast(code, L.ok, true);
         pushHist(code, L.ok, true);
+        setStatus(L.ok,'#22c55e');
 
       }catch(e){
         console.error('Firestore error:', e);
         const msg = e?.message || 'Error';
         showLast(code, (LANG==='ar'?'خطأ: ':'Error: ') + msg, false);
         pushHist(code, (LANG==='ar'?'خطأ: ':'Error: ') + msg, false);
+        setStatus((LANG==='ar'?'خطأ':'Error'),'#ef4444');
       }
     }
 
@@ -565,7 +570,6 @@
         tmp.getTracks().forEach(t=>t.stop());
       }catch{}
     }
-
     async function listCams(){
       const all=await navigator.mediaDevices.enumerateDevices();
       devices=all.filter(d=>d.kind==='videoinput');
@@ -585,53 +589,14 @@
       }
     }
 
-    // ✅ إعداد ZXing للفورمات (QR + Barcodes)
-    function buildZXingReader(){
-      if(!window.ZXing) return null;
-
-      const ZX = window.ZXing;
-      const hints = new Map();
-
-      // لو ما كانت موجودة في هذه النسخة، نتجاهل
-      try{
-        const fm = [];
-        const mode = scanMode();
-
-        if(mode === 'qr' || mode === 'auto'){
-          fm.push(ZX.BarcodeFormat.QR_CODE);
-        }
-        if(mode === 'bar' || mode === 'auto'){
-          fm.push(
-            ZX.BarcodeFormat.CODE_128,
-            ZX.BarcodeFormat.CODE_39,
-            ZX.BarcodeFormat.EAN_13,
-            ZX.BarcodeFormat.EAN_8,
-            ZX.BarcodeFormat.UPC_A,
-            ZX.BarcodeFormat.UPC_E,
-            ZX.BarcodeFormat.ITF,
-            ZX.BarcodeFormat.DATA_MATRIX,
-            ZX.BarcodeFormat.PDF_417,
-            ZX.BarcodeFormat.AZTEC
-          );
-        }
-
-        if(ZX.DecodeHintType && ZX.DecodeHintType.POSSIBLE_FORMATS && fm.length){
-          hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, fm);
-        }
-      }catch{}
-
-      // timeBetweenScansMs (يقلل الاهتزاز)
-      try{
-        return new ZX.BrowserMultiFormatReader(hints, 120);
-      }catch{
-        try{ return new ZX.BrowserMultiFormatReader(); }catch{ return null; }
-      }
-    }
-
     async function start(){
       const L=T[LANG];
       if(!EVENT_NAME){ alert(L.needEvent); return; }
       if(!httpsOK()){ alert(L.needHttps); return; }
+
+      // ✅ Ensure auth before camera scanning too
+      const ok = await ensureAnonAuth();
+      if(!ok) return;
 
       await ensurePerm(); await listCams();
 
@@ -643,9 +608,9 @@
         video: {
           deviceId: dev ? { exact: dev } : undefined,
           facingMode: { ideal: "environment" },
-          width:  { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30, max: 60 }
+          width:  { ideal: 640 },
+          height: { ideal: 480 },
+          frameRate: { ideal: 20, max: 30 }
         },
         audio:false
       });
@@ -653,8 +618,6 @@
       video.srcObject=stream;
       await video.play().catch(()=>{});
       track=stream.getVideoTracks()[0]||null;
-
-      // ✅ محاولة فوكس مستمر
       try{ await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); }catch(_){}
 
       scanning=true;
@@ -666,73 +629,32 @@
 
       const zxingOk=await window.ensureZXing();
 
-      // ✅ 1) ZXing (أفضل خيار للـ QR + Barcode)
       if(zxingOk && window.ZXing && window.ZXing.BrowserMultiFormatReader){
-        reader = buildZXingReader();
-        if(reader){
-          reader.decodeFromVideoDevice(dev||null, video, (res,err)=>{
-            if(res){
-              if(locked) return;
-              const text=res.getText?res.getText():(res.text||'');
-              const v = String(text||'').trim();
-              if(!v) return;
-
-              // ✅ فلترة وضع القراءة (qr/bar/auto) لو احتجت
-              // ZXing يرجع النص فقط، لذلك نخليها حسب السلوك العام
-              handleRawScan(v);
-            }
-          });
-          return;
-        }
-      }
-
-      // ✅ 2) BarcodeDetector (Native) — الآن يدعم barcodes أيضًا
-      if('BarcodeDetector' in window){
-        const mode = scanMode();
-
-        // ملاحظة: الأجهزة تختلف في دعم formats
-        const FORMATS_ALL = [
-          'qr_code',
-          'code_128','code_39','code_93',
-          'ean_13','ean_8',
-          'upc_a','upc_e',
-          'itf',
-          'pdf417',
-          'aztec',
-          'data_matrix'
-        ];
-
-        let formats = FORMATS_ALL.slice();
-        if(mode === 'qr') formats = ['qr_code'];
-        if(mode === 'bar') formats = FORMATS_ALL.filter(f => f !== 'qr_code');
-
-        try{
-          ndet = new window.BarcodeDetector({ formats });
-        }catch{
-          // fallback: بدون formats
-          ndet = new window.BarcodeDetector();
-        }
-
+        reader=new window.ZXing.BrowserMultiFormatReader();
+        reader.decodeFromVideoDevice(dev||null, video, (res,err)=>{
+          if(res){
+            if(locked) return;
+            const text=res.getText?res.getText():(res.text||'');
+            handleRawScan(String(text||'').trim());
+          }
+        });
+      } else if('BarcodeDetector' in window){
+        ndet=new window.BarcodeDetector({formats:['qr_code']});
         const loop=async()=>{
           if(!scanning) return;
           try{
             if(!locked){
               const bar=await ndet.detect(video);
-              if(bar && bar.length){
-                const raw = String(bar[0].rawValue||'').trim();
-                if(raw) handleRawScan(raw);
-              }
+              if(bar && bar.length) handleRawScan(String(bar[0].rawValue||'').trim());
             }
           }catch{}
           rafId=requestAnimationFrame(loop);
         };
         loop();
-        return;
+      } else {
+        alert(T[LANG].camlib);
+        setStatus(T[LANG].camlib,'#f59e0b');
       }
-
-      // ❌ لا يوجد Decoder
-      alert(T[LANG].camlib);
-      setStatus(T[LANG].camlib,'#f59e0b');
     }
 
     async function stop(){
@@ -772,21 +694,31 @@
     }
 
     // ===== Gate actions =====
-    function enterFromGate(){
+    async function enterFromGate(){
       const v = ($('#gateEvent').value||'').trim();
       if(!v){ $('#gateMsg').textContent = (LANG==='ar'?'أدخل اسم الحدث':'Enter event name'); return; }
+
+      // ✅ ensure auth before entering
+      const ok = await ensureAnonAuth();
+      if(!ok) return;
+
       setEvent(v);
       $('#gate').style.display='none';
       allowUI(true);
 
+      // enable scanner focus after entering event
       scannerEnabled = true;
       setTimeout(focusScannerInput, 120);
       setTimeout(focusScannerInput, 450);
     }
 
     // ===== Wire =====
-    document.addEventListener('DOMContentLoaded', ()=>{
+    document.addEventListener('DOMContentLoaded', async ()=>{
       applyDir(); i18n(); httpsOK(); tryInitEvent(); renderHist(); drawQRPreview('');
+      $('#authTag').textContent = '...';
+
+      // start auth early
+      await ensureAnonAuth();
 
       $('#gateEnter').addEventListener('click', enterFromGate);
       $('#gateEvent').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); enterFromGate(); } });
@@ -806,14 +738,6 @@
         LANG=(LANG==='ar')?'en':'ar';
         localStorage.setItem('hs:evscan:lang',LANG);
         applyDir(); i18n(); renderHist();
-      });
-
-      // ✅ لو غيرت mode أثناء التشغيل: أعد تشغيل الماسح
-      $('#scanMode').addEventListener('change', async ()=>{
-        if(scanning){
-          await stop();
-          await start();
-        }
       });
 
       $('#startBtn').addEventListener('click', ()=>{ ensureAudio(); start(); focusScannerInput(); });
