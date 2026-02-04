@@ -501,14 +501,26 @@
         }
 
         const data = snap.data() || {};
-        const ev = String(data.EventName || '').trim();
-        const statusRaw = String(data.Status || '').trim().toLowerCase();
 
-        if(ev !== EVENT_NAME){
-          showLast(code, L.mismatch, false);
-          pushHist(code, L.mismatch, false);
-          return;
-        }
+const evRaw = String(data.EventName || data.eventName || data.eventId || '');
+const ev = evRaw.trim();
+
+const statusRaw = String(data.Status || data.status || '').trim().toLowerCase();
+
+// ✅ مقارنة آمنة (بدون حساسية للكابيتال والمسافات)
+const evN = ev.toLowerCase();
+const eventN = String(EVENT_NAME || '').trim().toLowerCase();
+
+if (evN !== eventN) {
+  const msg =
+    (LANG === 'ar')
+      ? `❌ لا يخص هذه المناسبة (DB: ${ev} | الصفحة: ${EVENT_NAME})`
+      : `❌ Not this event (DB: ${ev} | page: ${EVENT_NAME})`;
+
+  showLast(code, msg, false);
+  pushHist(code, msg, false);
+  return;
+}
 
         if(statusRaw === 'yes'){
           showLast(code, L.dupe, false);
