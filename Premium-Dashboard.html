@@ -837,13 +837,34 @@ function openContent(){
 
   startStream();
 }
-function handleEnter(){
-  const ev=$('#eventInput').value.trim();
-  const pw=$('#passInput').value.trim();
-  if(ev!==PAGE_EVENT){ $('#gateMsg').textContent=STR[state.lang].badname; return; }
-  if(pw!==PAGE_PASSWORD){ $('#gateMsg').textContent=STR[state.lang].badpass; return; }
-  localStorage.setItem(sessKey(),'ok'); openContent();
+function norm(v){
+  return String(v ?? "")
+    .trim()
+    .replace(/\s+/g,'')     // يشيل المسافات داخل النص كمان
+    .toLowerCase();
 }
+
+function handleEnter(){
+  const ev = norm($('#eventInput').value);
+  const pw = norm($('#passInput').value);
+
+  const okEv = ev === norm(PAGE_EVENT);
+  const okPw = pw === norm(PAGE_PASSWORD);
+
+  if(!okEv){
+    $('#gateMsg').textContent = STR[state.lang].badname + ` (Expected: ${PAGE_EVENT})`;
+    return;
+  }
+  if(!okPw){
+    $('#gateMsg').textContent = STR[state.lang].badpass;
+    return;
+  }
+
+  $('#gateMsg').textContent = "";
+  localStorage.setItem(sessKey(),'ok');
+  openContent();
+}
+
 function tryAutoLogin(){
   $('#eventInput').value=PAGE_EVENT;
   if(localStorage.getItem(sessKey())==='ok') openContent();
