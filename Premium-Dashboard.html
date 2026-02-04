@@ -868,12 +868,52 @@ function setLastUpdate(ts){
 }
 setInterval(()=>{ if(state.lastSnapshotAt) setLastUpdate(state.lastSnapshotAt); }, 1000);
 
-/* ===================== Data & Render ===================== */
-let allRows=[];     // latest scans only (with scannedAt)
+/* ===================== Data & Render (FIXED FOR YOUR DATA) ===================== */
+let allRows=[];     // latest actions (updatedAt/RSVPAt/scannedAt)
 let allDocs=[];     // all docs for KPIs
 let filtRows=[];
 let unsubA=null, unsubB=null;
 const merged = new Map();
+
+const RSVP_PRE_VALUES = ["confirmed", "yes", "going", "attending", "accepted"];
+const RSVP_DECL_VALUES = ["declined", "no", "notgoing", "cancelled", "canceled", "اعتذر", "اعتذار", "رفض"];
+
+function pick(obj, keys, def=null){
+  for(const k of keys){
+    if(obj && obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
+  }
+  return def;
+}
+function toDateMaybe(v){
+  if(!v) return null;
+  if(v?.toDate?.()) return v.toDate();
+  if(v instanceof Date) return v;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+function isYesStatus(v){
+  return String(v||"").toLowerCase()==="yes";
+}
+function normRSVP(v){
+  return String(v||"").trim().toLowerCase();
+}
+
+/**
+ * نعطي كل سجل "تصنيف" واضح:
+ * - yes       => تم الدخول
+ * - pre       => قبل الحضور (RSVP confirmed) ولم يدخل
+ * - declined  => اعتذر (RSVP declined)
+ * - no        => لا يوجد تأكيد ولا دخول
+ */
+function classify(row){
+  const statusYes = isYesStatus(row.Status);
+  const rsvp = normRSVP(row.RSVP);
+
+  if(statusYes) return "yes";
+  if(RSVP_DECL_VALUES.includes(rsvp)) return "declined";
+  if(RSVP_PRE_VALUES.includes(rsvp)) return "pre";
+  return "no";
+}
 
 function startStream(){
   if(unsubA) unsubA();
@@ -883,8 +923,8 @@ function startStream(){
   setConn(navigator.onLine);
 
   const colRef = collection(db,'invites');
-  const qA = query(colRef, where('EventName','==',PAGE_EVENT)); // قديم
-  const qB = query(colRef, where('eventName','==',PAGE_EVENT)); // جديد
+  const qA = query(colRef, where('EventName','==',PAGE_EVENT));
+  const qB = query(colRef, where('eventName','==',PAGE_EVENT));
 
   const ingest = (snap)=>{
     snap.forEach(d=>{
@@ -894,20 +934,30 @@ function startStream(){
       const statusRaw = pick(x, ["Status","status"], "no");
       const evRaw     = pick(x, ["EventName","eventName"], PAGE_EVENT);
 
-      const scannedAtRaw = pick(x, ["scannedAt","ScannedAt","scanTime","scanned_time"], null);
-      const scannedAt =
-        scannedAtRaw?.toDate?.() ? scannedAtRaw.toDate()
-        : (scannedAtRaw instanceof Date ? scannedAtRaw : null);
+      const rsvpRaw   = pick(x, ["RSVP","rsvp"], "");
+      const phone     = pick(x, ["Phone","phone","mobile","Mobile"], "");
+      const name      = pick(x, ["GuestName","guestName","Name","name"], "");
 
-      const name  = pick(x, ["name","Name","guestName","guest_name"], null);
-      const phone = pick(x, ["phone","Phone","mobile","Mobile"], null);
+      const scannedAt = toDateMaybe(pick(x, ["scannedAt","ScannedAt","scanTime","scanned_time"], null));
+      const rsvpAt    = toDateMaybe(pick(x, ["RSVPAt","rsvpAt"], null));
+      const updatedAt = toDateMaybe(pick(x, ["updatedAt","UpdatedAt","lastUpdate"], null));
+
+      // أفضل وقت لعرض "الوقت" في الجدول:
+      // - لو تم دخول => scannedAt (إذا موجود) وإلا updatedAt
+      // - لو قبل الحضور/اعتذر => RSVPAt (إذا موجود) وإلا updatedAt
+      const actionAt =
+        (isYesStatus(statusRaw) ? (scannedAt || updatedAt || rsvpAt) : (rsvpAt || updatedAt || scannedAt));
 
       merged.set(d.id, {
         id: d.id,
         Code: String(codeRaw),
         Status: String(statusRaw),
+        RSVP: String(rsvpRaw || ""),
         EventName: String(evRaw),
         scannedAt,
+        RSVPAt: rsvpAt,
+        updatedAt,
+        actionAt,
         name,
         phone
       });
@@ -931,16 +981,19 @@ function rebuildUI(){
 
   for(const row of docs){
     total++;
-    const s = normStatus(row.Status);
-    if(s==="yes") used++;
-    else if(s==="pre") pre++;
-    else if(s==="declined") declined++;
+    const cls = classify(row);
 
-    if(row.scannedAt instanceof Date){
+    if(cls==="yes") used++;
+    else if(cls==="pre") pre++;
+    else if(cls==="declined") declined++;
+
+    // لإظهار آخر 100 نشاط (دخول/تأكيد/اعتذار)
+    if(row.actionAt instanceof Date){
       rec.push({
         Code: row.Code,
         Status: row.Status,
-        scannedAt: row.scannedAt,
+        RSVP: row.RSVP,
+        scannedAt: row.actionAt, // نستخدم نفس الحقل اللي الكود الأصلي يتوقعه
         name: row.name,
         phone: row.phone
       });
@@ -957,14 +1010,17 @@ function rebuildUI(){
   }
 
   renderKPIs(total, used, pre, declined);
-  renderTodayCount();
+
+  // "مسحات اليوم" نخليها = دخول اليوم فقط (Status yes)
+  renderTodayCount_usedOnly(docs);
+
   setLastUpdate(now);
   flashIfNewRow();
   applyFilters();
   drawCharts(total, used);
 
   if(total===0){
-    const msg = `لا توجد بيانات لهذا الحدث. تأكد أن (eventName أو EventName) يساوي: ${PAGE_EVENT}`;
+    const msg = `لا توجد بيانات لهذا الحدث. تأكد أن (EventName أو eventName) يساوي: ${PAGE_EVENT}`;
     $('#rowsBody').innerHTML = `<tr><td colspan="3" class="muted" style="text-align:center">${msg}</td></tr>`;
   }
 }
@@ -975,22 +1031,31 @@ function flashIfNewRow(){
   if(lastTopCode && top !== lastTopCode){
     ['kpiTotal','kpiUsed','kpiLeft','kpiRate','kpiPre','kpiDecl'].forEach(id=>{
       const el = $('#'+id);
+      if(!el) return;
       el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
     });
   }
   lastTopCode = top;
 }
 
-function renderTodayCount(){
+// ✅ مسحات اليوم = دخول اليوم فقط (Status yes) — حتى لو ما عندك scannedAt
+function renderTodayCount_usedOnly(docs){
   const start = new Date(); start.setHours(0,0,0,0);
   let cnt=0;
-  for(const r of allRows){
-    if(r.scannedAt && r.scannedAt >= start) cnt++;
+
+  for(const row of docs){
+    const cls = classify(row);
+    if(cls!=="yes") continue;
+
+    // وقت الدخول: scannedAt إن وجد، وإلا updatedAt
+    const t = row.scannedAt || row.updatedAt || null;
+    if(t && t >= start) cnt++;
   }
   $('#todayCnt').textContent = String(cnt);
 }
 
 function animateNumber(el, to, suffix=""){
+  if(!el) return;
   const from = Number((el.textContent||'0').replace(/[^\d]/g,'')) || 0;
   const start = performance.now();
   const dur = 300;
@@ -1010,7 +1075,9 @@ function renderKPIs(total, used, pre, declined){
   animateNumber($('#kpiTotal'), total);
   animateNumber($('#kpiUsed'), used);
   animateNumber($('#kpiLeft'), left);
-  $('#kpiRate').textContent = rate + '%';
+  if($('#kpiRate')) $('#kpiRate').textContent = rate + '%';
+
+  // ✅ KPIs الجديدة
   animateNumber($('#kpiPre'), pre);
   animateNumber($('#kpiDecl'), declined);
 }
