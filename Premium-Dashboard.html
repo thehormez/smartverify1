@@ -15,12 +15,11 @@
       --stroke2:rgba(255,255,255,.14);
       --ink:#e9edf5; --muted:#a7b0c3;
       --gold:#d6b15e; --gold2:#b48a18;
-      --blue:#1e40af; --rose:#be123c; --green:#047857;
+      --blue:#1e40af; --rose:#be123c; --green:#047857; --amber:#d97706;
       --shadow:0 18px 60px rgba(0,0,0,.45);
       --r16:16px; --r20:20px; --r24:24px;
       --focus: 0 0 0 4px rgba(214,177,94,.12);
     }
-    /* Light Minimal */
     [data-theme="light"]{
       --bg0:#f8fafc; --bg1:#eef2ff;
       --card:rgba(0,0,0,.04);
@@ -54,7 +53,6 @@
       border-bottom:1px solid var(--stroke);
     }
     [data-theme="light"] .topbar{ background: rgba(248,250,252,.72); }
-
     .top-inner{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
     .brand{display:flex; align-items:center; gap:12px; min-width: 280px}
     .logoWrap{
@@ -78,20 +76,11 @@
       0%{transform:translateX(-30%) rotate(25deg)}
       100%{transform:translateX(30%) rotate(25deg)}
     }
-    .logoImg{
-      width:34px;height:34px;border-radius:999px;
-      object-fit:contain;
-      z-index:1;
-      filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
-    }
+    .logoImg{width:34px;height:34px;border-radius:999px;object-fit:contain;z-index:1;filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));}
     .logoFallback{
-      z-index:1;
-      font-weight:1000;
-      letter-spacing:.6px;
-      color:#1b1405;
+      z-index:1;font-weight:1000;letter-spacing:.6px;
       background: linear-gradient(180deg, #1b1405, #000);
-      -webkit-background-clip:text; background-clip:text;
-      color:transparent;
+      -webkit-background-clip:text; background-clip:text;color:transparent;
       font-size:12px;
     }
 
@@ -105,10 +94,7 @@
       box-shadow: 0 0 0 4px rgba(34,197,94,.14);
       vertical-align:middle;
     }
-    .statusDot.off{
-      background:#ef4444;
-      box-shadow: 0 0 0 4px rgba(239,68,68,.14);
-    }
+    .statusDot.off{background:#ef4444;box-shadow: 0 0 0 4px rgba(239,68,68,.14);}
     .mini{font-size:12px;color:var(--muted)}
     .mini b{color:var(--ink)}
     .actions{margin-inline-start:auto; display:flex; gap:8px; flex-wrap:wrap}
@@ -130,10 +116,7 @@
     }
     .btn:hover{background:rgba(255,255,255,.08); border-color:rgba(214,177,94,.30); transform: translateY(-1px)}
     .btn:active{transform: translateY(0px)}
-    .btn.primary{
-      background: linear-gradient(135deg, rgba(214,177,94,.30), rgba(180,138,24,.12));
-      border-color: rgba(214,177,94,.35);
-    }
+    .btn.primary{background: linear-gradient(135deg, rgba(214,177,94,.30), rgba(180,138,24,.12)); border-color: rgba(214,177,94,.35);}
     .btn.danger{border-color: rgba(190,18,60,.45); background: rgba(190,18,60,.10)}
     .btn.ghost{background:transparent}
     .btn.block{width:100%}
@@ -150,11 +133,7 @@
       outline:none;
       transition: border-color .12s ease, background .12s ease, box-shadow .12s ease;
     }
-    .input:focus{
-      border-color: rgba(214,177,94,.42);
-      background: rgba(255,255,255,.07);
-      box-shadow: var(--focus);
-    }
+    .input:focus{border-color: rgba(214,177,94,.42);background: rgba(255,255,255,.07);box-shadow: var(--focus);}
 
     .card{
       background: var(--card);
@@ -165,19 +144,18 @@
     }
     .card.soft{background: var(--card2); box-shadow: 0 14px 40px rgba(0,0,0,.18)}
     .muted{color:var(--muted);font-size:12px}
-    .error{color:#ff9fb3;font-size:12px;margin-top:8px}
+    .error{color:#ff9fb3;font-size:12px;margin-top:8px; white-space:pre-wrap}
 
     .grid{display:grid; gap:12px}
     .grid-2{grid-template-columns: 1fr 1fr}
     .grid-3{grid-template-columns: 1.1fr .9fr 1fr}
     .grid-4{grid-template-columns: repeat(4, 1fr)}
-    .grid-6{grid-template-columns: repeat(6, 1fr)}
     @media(max-width:1060px){.grid-3{grid-template-columns:1fr}}
-    @media(max-width:980px){.grid-4{grid-template-columns: 1fr 1fr}.grid-6{grid-template-columns: 1fr 1fr}}
-    @media(max-width:760px){.grid-2{grid-template-columns:1fr}.grid-6{grid-template-columns:1fr}}
+    @media(max-width:980px){.grid-4{grid-template-columns: 1fr 1fr}}
+    @media(max-width:760px){.grid-2{grid-template-columns:1fr}}
     @media(max-width:520px){.grid-4{grid-template-columns:1fr}.container{padding:12px}}
 
-    /* ===== Gate (Login) ===== */
+    /* ===== Gate ===== */
     .gateWrap{
       margin-top: 14px;
       display:grid;
@@ -186,7 +164,6 @@
       align-items:stretch;
     }
     @media(max-width:900px){.gateWrap{grid-template-columns:1fr}}
-
     .hero{
       border-radius: var(--r24);
       padding: 18px;
@@ -211,7 +188,7 @@
     }
     .pill.gold{border-color: rgba(214,177,94,.28); background: rgba(214,177,94,.10)}
 
-    /* ===== Filters (chips) ===== */
+    /* ===== Chips ===== */
     .chips{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
     .chip{
       border:1px solid var(--stroke2);
@@ -234,21 +211,13 @@
 
     /* ===== KPI ===== */
     .kpi{
-      position:relative;
-      border:none;
-      overflow:hidden;
-      padding:14px;
-      border-radius: var(--r20);
-      min-height: 92px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
+      position:relative;border:none;overflow:hidden;padding:14px;border-radius: var(--r20);
+      min-height: 92px;display:flex;flex-direction:column;justify-content:space-between;
     }
     .kpi .t{font-weight:1000;font-size:12px;letter-spacing:.35px;opacity:.95}
     .kpi .n{font-size:26px;font-weight:1100;letter-spacing:.4px}
     .kpi:before{
-      content:"";
-      position:absolute; inset:-60%;
+      content:"";position:absolute; inset:-60%;
       background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 55%);
       transform: rotate(15deg);
       pointer-events:none;
@@ -257,8 +226,7 @@
     .kpi.gold{background:linear-gradient(135deg, rgba(214,177,94,1), rgba(180,138,24,.40)); color:#161106}
     .kpi.rose{background:linear-gradient(135deg, rgba(190,18,60,1), rgba(190,18,60,.40)); color:#fff}
     .kpi.green{background:linear-gradient(135deg, rgba(4,120,87,1), rgba(4,120,87,.40)); color:#fff}
-    .kpi.purple{background:linear-gradient(135deg, rgba(124,58,237,1), rgba(124,58,237,.38)); color:#fff}
-    .kpi.gray{background:linear-gradient(135deg, rgba(71,85,105,1), rgba(71,85,105,.38)); color:#fff}
+    .kpi.amber{background:linear-gradient(135deg, rgba(217,119,6,1), rgba(217,119,6,.38)); color:#fff}
 
     .pop{animation: pop .22s ease-out;}
     @keyframes pop{0%{transform:scale(.98); opacity:.7}100%{transform:scale(1); opacity:1}}
@@ -293,28 +261,19 @@
       font-weight:1000;
       letter-spacing:.3px;
     }
-    tbody td{
-      padding:10px;
-      border-top:1px solid rgba(255,255,255,.08);
-    }
+    tbody td{padding:10px;border-top:1px solid rgba(255,255,255,.08);}
     tbody tr:hover td{background: rgba(214,177,94,.06)}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
 
     .badge{
-      padding:6px 10px;
-      border-radius: 999px;
-      font-weight:1000;
-      font-size:12px;
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      border:1px solid var(--stroke);
+      padding:6px 10px;border-radius: 999px;font-weight:1000;font-size:12px;
+      display:inline-flex;align-items:center;gap:6px;border:1px solid var(--stroke);
       background: rgba(255,255,255,.06);
     }
     .badge.ok{border-color:rgba(34,197,94,.25); background:rgba(34,197,94,.10); color:rgba(34,197,94,.95)}
     .badge.no{border-color:rgba(244,63,94,.25); background:rgba(244,63,94,.10); color:rgba(244,63,94,.95)}
-    .badge.pre{border-color:rgba(124,58,237,.25); background:rgba(124,58,237,.10); color:rgba(124,58,237,.95)}
-    .badge.decl{border-color:rgba(148,163,184,.30); background:rgba(148,163,184,.12); color:rgba(148,163,184,.95)}
+    .badge.pre{border-color:rgba(217,119,6,.28); background:rgba(217,119,6,.12); color:rgba(217,119,6,.95)}
+    .badge.decl{border-color:rgba(190,18,60,.35); background:rgba(190,18,60,.12); color:rgba(190,18,60,.95)}
 
     /* ===== Mobile Cards ===== */
     #desktopTableWrap{display:block}
@@ -330,25 +289,17 @@
         margin-bottom:10px;
         box-shadow: 0 18px 50px rgba(0,0,0,.20);
       }
-      .scan-head{
-        display:flex; justify-content:space-between; align-items:center; gap:10px;
-        padding-bottom:10px; margin-bottom:10px;
-        border-bottom:1px dashed rgba(255,255,255,.14);
-      }
+      .scan-head{display:flex; justify-content:space-between; align-items:center; gap:10px;padding-bottom:10px; margin-bottom:10px;border-bottom:1px dashed rgba(255,255,255,.14);}
       .scan-code{font-weight:1100; letter-spacing:.3px}
       .scan-line{display:flex; justify-content:space-between; gap:12px; margin:8px 0}
       .scan-label{color:var(--muted);font-weight:1000;font-size:12px}
       .scan-value{font-size:14px}
     }
 
-    /* ===== Modal (details) ===== */
+    /* ===== Modal ===== */
     .modalBackdrop{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,.55);
-      display:none;
-      align-items:center; justify-content:center;
-      z-index: 50;
-      padding:16px;
+      position:fixed; inset:0;background: rgba(0,0,0,.55);
+      display:none;align-items:center; justify-content:center;z-index: 50;padding:16px;
     }
     .modal{
       width:min(520px, 100%);
@@ -360,59 +311,28 @@
       overflow:hidden;
     }
     [data-theme="light"] .modal{ background: rgba(248,250,252,.95); }
-    .modalHead{
-      display:flex; justify-content:space-between; align-items:center; gap:10px;
-      padding:12px 14px;
-      border-bottom:1px solid rgba(255,255,255,.12);
-    }
+    .modalHead{display:flex; justify-content:space-between; align-items:center; gap:10px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.12);}
     .modalTitle{font-weight:1100}
     .modalBody{padding:14px}
     .kv{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
     @media(max-width:520px){.kv{grid-template-columns:1fr}}
-    .kv .item{
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.04);
-      border-radius: 16px;
-      padding:10px;
-    }
+    .kv .item{border:1px solid var(--stroke);background: rgba(255,255,255,.04);border-radius: 16px;padding:10px;}
     .kv .k{color:var(--muted); font-size:12px; font-weight:900}
     .kv .v{margin-top:6px; font-weight:1000}
     .modalFoot{display:flex; gap:8px; justify-content:flex-end; padding:12px 14px; border-top:1px solid rgba(255,255,255,.12)}
 
     /* ===== Skeleton ===== */
     .skeleton{
-      position:relative;
-      overflow:hidden;
-      background: rgba(255,255,255,.06);
-      border:1px solid var(--stroke);
-      border-radius: var(--r20);
-      min-height: 92px;
+      position:relative;overflow:hidden;background: rgba(255,255,255,.06);
+      border:1px solid var(--stroke);border-radius: var(--r20);min-height: 92px;
     }
     .skeleton:after{
-      content:"";
-      position:absolute; inset:-40%;
+      content:"";position:absolute; inset:-40%;
       background: linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
       transform: translateX(-40%);
       animation: sk 1.2s linear infinite;
     }
-    @keyframes sk{0%{transform: translateX(-40%)}100%{transform: translateX(40%)}}
-
-    /* ===== Print Summary (PDF) ===== */
-    #printHeader{display:none}
-    @media print{
-      .topbar, #gateWrap, #logoutBtn, #langBtn, #refreshBtn, #exportBtn, #printBtn, #themeBtn{display:none!important}
-      body{background:#fff;color:#111}
-      .card, .tableWrap, .canvasWrap{box-shadow:none;border:1px solid #ddd;background:#fff}
-      thead th{background:#f5f5f5;color:#111}
-      tbody td{color:#111}
-      #printHeader{display:block;margin:0 0 12px 0}
-      .printRow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-      .printBrand{display:flex;align-items:center;gap:10px}
-      .printLogo{width:42px;height:42px;border-radius:12px;border:1px solid #ddd;display:grid;place-items:center;overflow:hidden}
-      .printLogo img{width:34px;height:34px;object-fit:contain}
-      .printTitle{font-weight:900;font-size:16px}
-      .printMeta{font-size:12px;color:#333}
-    }
+    @keyframes sk{0%{transform: translateX(-40%)}100%{transform:translateX(40%)}}
   </style>
 </head>
 
@@ -432,7 +352,6 @@
             <span id="hdrTitlePrefix">لوحة تحكم الحدث — </span>
             <span class="ev" id="evNameTitle">—</span>
           </div>
-
           <div class="subline">
             <div class="mini">
               <span id="dot" class="statusDot"></span>
@@ -440,7 +359,7 @@
             </div>
             <div class="mini">آخر تحديث: <b id="lastUpd">—</b></div>
             <div class="mini">مسحات اليوم: <b id="todayCnt">—</b></div>
-            <div class="mini">الإصدار: <b>v1.1</b></div>
+            <div class="mini">الإصدار: <b>v1.2</b></div>
           </div>
         </div>
       </div>
@@ -460,11 +379,13 @@
     <div class="gateWrap" id="gateWrap">
       <div class="hero">
         <h3 class="heroTitle">لوحة تحكم <span class="g">KRS INVITE</span> للفعاليات</h3>
-        <p class="heroP" id="heroP">واجهة فاخرة وسريعة للزبائن: إحصائيات مباشرة، بحث فوري، رسوم بيانية، وتصدير/طباعة خلال ثواني.</p>
+        <p class="heroP" id="heroP">
+          واجهة فاخرة وسريعة للزبائن: إحصائيات مباشرة، بحث فوري، رسوم بيانية، وتصدير/طباعة خلال ثواني.
+        </p>
         <div class="heroBadges">
           <span class="pill gold">Premium Dashboard</span>
           <span class="pill">Live Updates</span>
-          <span class="pill">Charts</span>
+          <span class="pill">RSVP + Entry</span>
           <span class="pill">Client Ready</span>
         </div>
       </div>
@@ -486,25 +407,6 @@
       </div>
     </div>
 
-    <!-- PRINT HEADER -->
-    <div id="printHeader">
-      <div class="printRow">
-        <div class="printBrand">
-          <div class="printLogo">
-            <img id="printLogoImg" alt="Logo" style="display:none" />
-            <div id="printLogoFallback" style="font-weight:900">KRS</div>
-          </div>
-          <div>
-            <div class="printTitle" id="printTitle">تقرير الحدث</div>
-            <div class="printMeta">
-              الحدث: <b id="printEvent">—</b> • التاريخ: <b id="printDate">—</b>
-            </div>
-          </div>
-        </div>
-        <div class="printMeta">Powered by KRS INVITE</div>
-      </div>
-    </div>
-
     <!-- CONTENT -->
     <div id="content" style="display:none; margin-top:14px">
 
@@ -512,7 +414,7 @@
         <!-- Search -->
         <div class="card soft">
           <div class="muted" id="lblSearch">ابحث عن كود…</div>
-          <input id="searchInput" class="input" placeholder="FA_001" />
+          <input id="searchInput" class="input" placeholder="KH_001" />
         </div>
 
         <!-- Filters -->
@@ -537,20 +439,16 @@
         </div>
       </div>
 
-      <!-- KPI Skeleton -->
-      <div id="kpiSkeleton" class="grid grid-6" style="margin-top:12px">
-        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
-        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      <!-- KPI -->
+      <div id="kpiSkeleton" class="grid grid-4" style="margin-top:12px">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
       </div>
 
-      <!-- KPI -->
-      <div id="kpiGrid" class="grid grid-6" style="margin-top:12px; display:none">
+      <div id="kpiGrid" class="grid grid-4" style="margin-top:12px; display:none">
         <div class="kpi blue"><div class="t" id="kpiTotalLbl">الإجمالي</div><div id="kpiTotal" class="n">—</div></div>
-        <div class="kpi gold"><div class="t" id="kpiUsedLbl">تم الدخول</div><div id="kpiUsed" class="n">—</div></div>
-        <div class="kpi rose"><div class="t" id="kpiLeftLbl">المتبقي</div><div id="kpiLeft" class="n">—</div></div>
-        <div class="kpi green"><div class="t" id="kpiRateLbl">نسبة الحضور</div><div id="kpiRate" class="n">—%</div></div>
-        <div class="kpi purple"><div class="t" id="kpiPreLbl">قبل الحضور</div><div id="kpiPre" class="n">—</div></div>
-        <div class="kpi gray"><div class="t" id="kpiDeclLbl">اعتذر</div><div id="kpiDecl" class="n">—</div></div>
+        <div class="kpi green"><div class="t" id="kpiUsedLbl">تم الدخول</div><div id="kpiUsed" class="n">—</div></div>
+        <div class="kpi amber"><div class="t" id="kpiPreLbl">قبل الحضور</div><div id="kpiPre" class="n">—</div></div>
+        <div class="kpi rose"><div class="t" id="kpiDeclLbl">اعتذر</div><div id="kpiDecl" class="n">—</div></div>
       </div>
 
       <!-- Charts -->
@@ -568,7 +466,7 @@
         <div class="card soft chartCard">
           <div class="chartTop">
             <div class="chartTitle" id="barTitle">آخر 60 دقيقة</div>
-            <div class="muted" id="barHint">عدد المسحات/5 دقائق</div>
+            <div class="muted" id="barHint">عدد النشاط/5 دقائق</div>
           </div>
           <div class="canvasWrap">
             <canvas id="bars" width="900" height="420"></canvas>
@@ -578,7 +476,7 @@
 
       <!-- Recent -->
       <div class="card soft" style="margin-top:12px">
-        <div class="muted" id="recentLbl">أحدث المسحات (آخر 100)</div>
+        <div class="muted" id="recentLbl">آخر 100 نشاط</div>
 
         <!-- Desktop table -->
         <div id="desktopTableWrap" class="tableWrap" style="margin-top:10px">
@@ -605,7 +503,7 @@
   <div class="modalBackdrop" id="modalBack">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modalHead">
-        <div class="modalTitle" id="modalTitle">تفاصيل المسح</div>
+        <div class="modalTitle" id="modalTitle">تفاصيل</div>
         <button class="btn ghost" id="modalClose">✕</button>
       </div>
       <div class="modalBody">
@@ -627,853 +525,835 @@
   </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+  import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-/* ===================== شعار ===================== */
-const LOGO_URL = ""; // ضع رابط شعارك PNG شفاف هنا
+  /* ===================== إعدادات سريعة ===================== */
+  const LOGO_URL = ""; // ضع رابط شعارك هنا
 
-/* ===================== i18n ===================== */
-const STR={
-  ar:{
-    org:"KRS INVITE",
-    titlePrefix:"لوحة تحكم الحدث — ",
-    hero:"واجهة فاخرة وسريعة للزبائن: إحصائيات مباشرة، بحث فوري، رسوم بيانية، وتصدير/طباعة خلال ثواني.",
-    gateHint:"ادخل اسم الحدث وكلمة المرور",
-    event:"الحدث", pass:"كلمة المرور", enter:"دخول", logout:"خروج",
-    badpass:"كلمة المرور غير صحيحة", badname:"❌ اسم الحدث غير صحيح",
-    search:"ابحث عن كود…",
-    filter:"فلترة سريعة",
-    all:"الكل", yesOnly:"تم الدخول", preOnly:"قبل الحضور", declOnly:"اعتذر", noOnly:"لم يدخل",
-    today:"اليوم", hour:"آخر ساعة", clear:"مسح الفلاتر",
-    export:"تصدير CSV", print:"طباعة",
-    total:"الإجمالي", used:"تم الدخول", left:"المتبقي", rate:"نسبة الحضور",
-    pre:"قبل الحضور", declined:"اعتذر",
-    recent:"أحدث المسحات (آخر 100)",
-    code:"الكود", status:"الحالة", time:"الوقت",
-    yes:"تم الدخول", no:"لم يدخل", preLbl:"قبل الحضور", declLbl:"اعتذر",
-    noRows:"لا توجد مسحات",
-    donutTitle:"المستخدم مقابل المتبقي",
-    donutHint:"تحديث مباشر",
-    barTitle:"آخر 60 دقيقة",
-    barHint:"عدد المسحات/5 دقائق",
-    connOn:"متصل", connOff:"غير متصل",
-    modalTitle:"تفاصيل المسح",
-    mEvent:"الحدث", mCode:"الكود", mStatus:"الحالة", mTime:"الوقت", mName:"الاسم", mPhone:"الهاتف",
-  },
-  en:{
-    org:"KRS INVITE",
-    titlePrefix:"Event Dashboard — ",
-    hero:"A premium client dashboard: live stats, instant search, charts, export/print in seconds.",
-    gateHint:"Enter event name and password",
-    event:"Event", pass:"Password", enter:"Enter", logout:"Logout",
-    badpass:"Wrong password", badname:"❌ Wrong event name",
-    search:"Search code…",
-    filter:"Quick filters",
-    all:"All", yesOnly:"Checked-in", preOnly:"Pre-check", declOnly:"Declined", noOnly:"Not yet",
-    today:"Today", hour:"Last hour", clear:"Clear",
-    export:"Export CSV", print:"Print",
-    total:"Total", used:"Checked-in", left:"Remaining", rate:"Attendance",
-    pre:"Pre-check", declined:"Declined",
-    recent:"Recent scans (latest 100)",
-    code:"Code", status:"Status", time:"Time",
-    yes:"Checked-in", no:"Not yet", preLbl:"Pre-check", declLbl:"Declined",
-    noRows:"No scans yet",
-    donutTitle:"Used vs Remaining",
-    donutHint:"Live",
-    barTitle:"Last 60 minutes",
-    barHint:"Scans / 5 min",
-    connOn:"Online", connOff:"Offline",
-    modalTitle:"Scan details",
-    mEvent:"Event", mCode:"Code", mStatus:"Status", mTime:"Time", mName:"Name", mPhone:"Phone",
-  }
-};
+  /* ✅ إعدادات صفحة الحدث */
+  const PAGE_EVENT    = "zafaf_khaled";
+  const PAGE_PASSWORD = "9900";
 
-const $=(s,r=document)=>r.querySelector(s);
-const state={
-  lang: localStorage.getItem('hs:dash:lang')||'ar',
-  theme: localStorage.getItem('hs:dash:theme')||'dark',
-  filter: { status:'all', range:'all' }, // status: all/yes/no/pre/declined | range: all/today/hour
-  lastSnapshotAt: null,
-  firstLoaded: false
-};
-
-function setTheme(t){
-  state.theme=t;
-  document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('hs:dash:theme', t);
-}
-
-function applyLogo(){
-  const img=$('#logoImg');
-  const fb=$('#logoFallback');
-  const pimg=$('#printLogoImg');
-  const pfb=$('#printLogoFallback');
-  if(LOGO_URL){
-    img.src=LOGO_URL; img.style.display='block'; fb.style.display='none';
-    pimg.src=LOGO_URL; pimg.style.display='block'; pfb.style.display='none';
-  }else{
-    img.style.display='none'; fb.style.display='block';
-    pimg.style.display='none'; pfb.style.display='block';
-  }
-}
-
-function applyLang(){
-  const L=STR[state.lang];
-  const isAr=state.lang==='ar';
-  document.documentElement.lang=state.lang;
-  document.documentElement.dir=isAr?'rtl':'ltr';
-
-  $('#hdrOrg').textContent=L.org;
-  $('#hdrTitlePrefix').textContent=L.titlePrefix;
-  $('#heroP').textContent=L.hero;
-
-  $('#langBtn').textContent=isAr?'EN':'AR';
-  $('#logoutTxt').textContent=L.logout;
-
-  $('#gateHint').textContent=L.gateHint;
-  $('#lblEvent').textContent=L.event;
-  $('#lblPass').textContent=L.pass;
-  $('#enterBtn').textContent=L.enter;
-
-  $('#lblSearch').textContent=L.search;
-  $('#lblFilter').textContent=L.filter;
-
-  $('#chipAll').textContent=L.all;
-  $('#chipYes').textContent=L.yesOnly;
-  $('#chipPre').textContent=L.preOnly;
-  $('#chipDecl').textContent=L.declOnly;
-  $('#chipNo').textContent=L.noOnly;
-  $('#chipToday').textContent=L.today;
-  $('#chipHour').textContent=L.hour;
-  $('#chipClear').textContent=L.clear;
-
-  $('#exportBtn').textContent='⤓ ' + L.export;
-  $('#printTxt').textContent=L.print;
-
-  $('#kpiTotalLbl').textContent=L.total;
-  $('#kpiUsedLbl').textContent=L.used;
-  $('#kpiLeftLbl').textContent=L.left;
-  $('#kpiRateLbl').textContent=L.rate;
-  $('#kpiPreLbl').textContent=L.pre;
-  $('#kpiDeclLbl').textContent=L.declined;
-
-  $('#recentLbl').textContent=L.recent;
-  $('#thCode').textContent=L.code;
-  $('#thStatus').textContent=L.status;
-  $('#thTime').textContent=L.time;
-
-  $('#donutTitle').textContent=L.donutTitle;
-  $('#donutHint').textContent=L.donutHint;
-  $('#barTitle').textContent=L.barTitle;
-  $('#barHint').textContent=L.barHint;
-
-  $('#modalTitle').textContent=L.modalTitle;
-  $('#mEventK').textContent=L.mEvent;
-  $('#mCodeK').textContent=L.mCode;
-  $('#mStatusK').textContent=L.mStatus;
-  $('#mTimeK').textContent=L.mTime;
-  $('#mNameK').textContent=L.mName;
-  $('#mPhoneK').textContent=L.mPhone;
-
-  $('#searchInput').placeholder = (isAr?'مثال: ':'e.g. ') + 'FA_001';
-}
-
-/* ===================== Firebase ===================== */
-const app=initializeApp({
-  apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-  authDomain:"hormez-inv.firebaseapp.com",
-  projectId:"hormez-inv",
-  storageBucket:"hormez-inv.firebasestorage.app",
-  messagingSenderId:"747519941805",
-  appId:"1:747519941805:web:468fada2492700e9da3a24"
-});
-const db=getFirestore(app);
-
-// ✅ عدّل هنا اسم الحدث + كلمة المرور
-const PAGE_EVENT='zafaf_khaled';
-const PAGE_PASSWORD='9900';
-const sessKey=()=>`hs:dash:${PAGE_EVENT}`;
-
-/* ===================== Helpers: دعم اختلاف أسماء الحقول ===================== */
-function pick(obj, keys, fallback=null){
-  for(const k of keys){
-    if(obj && obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
-  }
-  return fallback;
-}
-
-function normStatus(v){
-  const s = String(v ?? "").trim().toLowerCase();
-
-  // حضور
-  if(["yes","y","1","true","حاضر","تم الدخول","checked","checked-in"].includes(s)) return "yes";
-
-  // اعتذار
-  if(["declined","اعتذر","اعتذار","no_rsvp","sorry","canceled","cancelled"].includes(s)) return "declined";
-
-  // قبل الحضور
-  if(["pre","pending","قبل الحضور","قبل-الحضور","before"].includes(s)) return "pre";
-
-  // لم يدخل
-  if(["no","n","0","false","لم يدخل","not yet","notyet"].includes(s)) return "no";
-
-  // default
-  return s || "no";
-}
-
-function isYes(v){ return normStatus(v)==="yes"; }
-
-/* ===================== Gate ===================== */
-function openContent(){
-  $('#gateWrap').style.display='none';
-  $('#content').style.display='block';
-  $('#logoutBtn').style.display='inline-flex';
-  $('#evNameTitle').textContent=PAGE_EVENT;
-
-  $('#printTitle').textContent = (state.lang==='ar' ? 'تقرير الحدث' : 'Event Report');
-  $('#printEvent').textContent = PAGE_EVENT;
-  $('#printDate').textContent = new Date().toLocaleDateString(state.lang==='ar'?'ar-EG':'en-GB');
-
-  startStream();
-}
-function norm(v){
-  return String(v ?? "")
-    .trim()
-    .replace(/\s+/g,'')     // يشيل المسافات داخل النص كمان
-    .toLowerCase();
-}
-
-function handleEnter(){
-  const ev = norm($('#eventInput').value);
-  const pw = norm($('#passInput').value);
-
-  const okEv = ev === norm(PAGE_EVENT);
-  const okPw = pw === norm(PAGE_PASSWORD);
-
-  if(!okEv){
-    $('#gateMsg').textContent = STR[state.lang].badname + ` (Expected: ${PAGE_EVENT})`;
-    return;
-  }
-  if(!okPw){
-    $('#gateMsg').textContent = STR[state.lang].badpass;
-    return;
-  }
-
-  $('#gateMsg').textContent = "";
-  localStorage.setItem(sessKey(),'ok');
-  openContent();
-}
-
-function tryAutoLogin(){
-  $('#eventInput').value=PAGE_EVENT;
-  if(localStorage.getItem(sessKey())==='ok') openContent();
-}
-function logout(){ localStorage.removeItem(sessKey()); location.href=location.pathname; }
-
-/* ===================== Connection indicator ===================== */
-function setConn(isOnline){
-  const L=STR[state.lang];
-  $('#dot').className = 'statusDot' + (isOnline ? '' : ' off');
-  $('#connTxt').textContent = isOnline ? L.connOn : L.connOff;
-}
-window.addEventListener('online', ()=>setConn(true));
-window.addEventListener('offline', ()=>setConn(false));
-
-function setLastUpdate(ts){
-  state.lastSnapshotAt = ts || new Date();
-  const now = new Date();
-  const diff = Math.max(0, Math.round((now - state.lastSnapshotAt)/1000));
-  if(diff <= 2) $('#lastUpd').textContent = (state.lang==='ar' ? 'الآن' : 'Now');
-  else $('#lastUpd').textContent = (state.lang==='ar' ? `قبل ${diff} ث` : `${diff}s ago`);
-}
-setInterval(()=>{ if(state.lastSnapshotAt) setLastUpdate(state.lastSnapshotAt); }, 1000);
-
-/* ===================== Data & Render (FIXED FOR YOUR DATA) ===================== */
-let allRows=[];     // latest actions (updatedAt/RSVPAt/scannedAt)
-let allDocs=[];     // all docs for KPIs
-let filtRows=[];
-let unsubA=null, unsubB=null;
-const merged = new Map();
-
-const RSVP_PRE_VALUES = ["confirmed", "yes", "going", "attending", "accepted"];
-const RSVP_DECL_VALUES = ["declined", "no", "notgoing", "cancelled", "canceled", "اعتذر", "اعتذار", "رفض"];
-
-function pick(obj, keys, def=null){
-  for(const k of keys){
-    if(obj && obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
-  }
-  return def;
-}
-function toDateMaybe(v){
-  if(!v) return null;
-  if(v?.toDate?.()) return v.toDate();
-  if(v instanceof Date) return v;
-  const d = new Date(v);
-  return isNaN(d.getTime()) ? null : d;
-}
-function isYesStatus(v){
-  return String(v||"").toLowerCase()==="yes";
-}
-function normRSVP(v){
-  return String(v||"").trim().toLowerCase();
-}
-
-/**
- * نعطي كل سجل "تصنيف" واضح:
- * - yes       => تم الدخول
- * - pre       => قبل الحضور (RSVP confirmed) ولم يدخل
- * - declined  => اعتذر (RSVP declined)
- * - no        => لا يوجد تأكيد ولا دخول
- */
-function classify(row){
-  const statusYes = isYesStatus(row.Status);
-  const rsvp = normRSVP(row.RSVP);
-
-  if(statusYes) return "yes";
-  if(RSVP_DECL_VALUES.includes(rsvp)) return "declined";
-  if(RSVP_PRE_VALUES.includes(rsvp)) return "pre";
-  return "no";
-}
-
-function startStream(){
-  if(unsubA) unsubA();
-  if(unsubB) unsubB();
-  merged.clear();
-
-  setConn(navigator.onLine);
-
-  const colRef = collection(db,'invites');
-  const qA = query(colRef, where('EventName','==',PAGE_EVENT));
-  const qB = query(colRef, where('eventName','==',PAGE_EVENT));
-
-  const ingest = (snap)=>{
-    snap.forEach(d=>{
-      const x = d.data() || {};
-
-      const codeRaw   = pick(x, ["Code","code"], d.id);
-      const statusRaw = pick(x, ["Status","status"], "no");
-      const evRaw     = pick(x, ["EventName","eventName"], PAGE_EVENT);
-
-      const rsvpRaw   = pick(x, ["RSVP","rsvp"], "");
-      const phone     = pick(x, ["Phone","phone","mobile","Mobile"], "");
-      const name      = pick(x, ["GuestName","guestName","Name","name"], "");
-
-      const scannedAt = toDateMaybe(pick(x, ["scannedAt","ScannedAt","scanTime","scanned_time"], null));
-      const rsvpAt    = toDateMaybe(pick(x, ["RSVPAt","rsvpAt"], null));
-      const updatedAt = toDateMaybe(pick(x, ["updatedAt","UpdatedAt","lastUpdate"], null));
-
-      // أفضل وقت لعرض "الوقت" في الجدول:
-      // - لو تم دخول => scannedAt (إذا موجود) وإلا updatedAt
-      // - لو قبل الحضور/اعتذر => RSVPAt (إذا موجود) وإلا updatedAt
-      const actionAt =
-        (isYesStatus(statusRaw) ? (scannedAt || updatedAt || rsvpAt) : (rsvpAt || updatedAt || scannedAt));
-
-      merged.set(d.id, {
-        id: d.id,
-        Code: String(codeRaw),
-        Status: String(statusRaw),
-        RSVP: String(rsvpRaw || ""),
-        EventName: String(evRaw),
-        scannedAt,
-        RSVPAt: rsvpAt,
-        updatedAt,
-        actionAt,
-        name,
-        phone
-      });
-    });
-
-    rebuildUI();
+  /* ===================== i18n ===================== */
+  const STR={
+    ar:{
+      org:"KRS INVITE",
+      titlePrefix:"لوحة تحكم الحدث — ",
+      hero:"واجهة فاخرة وسريعة للزبائن: إحصائيات مباشرة، بحث فوري، رسوم بيانية، وتصدير/طباعة خلال ثواني.",
+      gateHint:"ادخل اسم الحدث وكلمة المرور",
+      event:"الحدث", pass:"كلمة المرور", enter:"دخول", logout:"خروج",
+      badpass:"كلمة المرور غير صحيحة",
+      badname:"❌ اسم الحدث غير صحيح",
+      emptyEvent:"⚠️ الرجاء إدخال اسم الحدث.",
+      emptyPass:"⚠️ الرجاء إدخال كلمة المرور.",
+      search:"ابحث عن كود…",
+      filter:"فلترة سريعة",
+      all:"الكل",
+      yesOnly:"تم الدخول",
+      preOnly:"قبل الحضور",
+      declOnly:"اعتذر",
+      noOnly:"لم يدخل",
+      today:"اليوم",
+      hour:"آخر ساعة",
+      clear:"مسح الفلاتر",
+      export:"تصدير CSV", print:"طباعة",
+      total:"الإجمالي",
+      used:"تم الدخول",
+      pre:"قبل الحضور",
+      decl:"اعتذر",
+      recent:"آخر 100 نشاط",
+      code:"الكود", status:"الحالة", time:"الوقت",
+      yes:"تم الدخول",
+      preText:"قبل الحضور",
+      declText:"اعتذر",
+      no:"لم يدخل",
+      noRows:"لا توجد بيانات",
+      donutTitle:"الدخول مقابل المتبقي",
+      donutHint:"تحديث مباشر",
+      barTitle:"آخر 60 دقيقة",
+      barHint:"عدد النشاط/5 دقائق",
+      connOn:"متصل", connOff:"غير متصل",
+      lastUpd:"آخر تحديث",
+      todayScans:"مسحات اليوم",
+      modalTitle:"تفاصيل",
+      mEvent:"الحدث", mCode:"الكود", mStatus:"الحالة", mTime:"الوقت", mName:"الاسم", mPhone:"الهاتف",
+    },
+    en:{
+      org:"KRS INVITE",
+      titlePrefix:"Event Dashboard — ",
+      hero:"A premium client dashboard: live stats, instant search, charts, export/print in seconds.",
+      gateHint:"Enter event name and password",
+      event:"Event", pass:"Password", enter:"Enter", logout:"Logout",
+      badpass:"Wrong password",
+      badname:"❌ Wrong event name",
+      emptyEvent:"⚠️ Please enter the event name.",
+      emptyPass:"⚠️ Please enter the password.",
+      search:"Search code…",
+      filter:"Quick filters",
+      all:"All",
+      yesOnly:"Checked-in",
+      preOnly:"Confirmed",
+      declOnly:"Declined",
+      noOnly:"Not yet",
+      today:"Today",
+      hour:"Last hour",
+      clear:"Clear",
+      export:"Export CSV", print:"Print",
+      total:"Total",
+      used:"Checked-in",
+      pre:"Confirmed",
+      decl:"Declined",
+      recent:"Latest 100 activities",
+      code:"Code", status:"Status", time:"Time",
+      yes:"Checked-in",
+      preText:"Confirmed",
+      declText:"Declined",
+      no:"Not yet",
+      noRows:"No data",
+      donutTitle:"Checked-in vs Remaining",
+      donutHint:"Live",
+      barTitle:"Last 60 minutes",
+      barHint:"Activity / 5 min",
+      connOn:"Online", connOff:"Offline",
+      lastUpd:"Last update",
+      todayScans:"Today check-ins",
+      modalTitle:"Details",
+      mEvent:"Event", mCode:"Code", mStatus:"Status", mTime:"Time", mName:"Name", mPhone:"Phone",
+    }
   };
 
-  unsubA = onSnapshot(qA, ingest, (err)=>{ console.error("Snapshot A:", err); setConn(false); });
-  unsubB = onSnapshot(qB, ingest, (err)=>{ console.error("Snapshot B:", err); setConn(false); });
-}
+  const $=(s,r=document)=>r.querySelector(s);
+  const state={
+    lang: localStorage.getItem('hs:dash:lang')||'ar',
+    theme: localStorage.getItem('hs:dash:theme')||'dark',
+    filter: { status:'all', range:'all' }, // status: all/yes/pre/declined/no | range: all/today/hour
+    lastSnapshotAt: null,
+    firstLoaded: false
+  };
 
-let lastTopCode=null;
+  function setTheme(t){
+    state.theme=t;
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('hs:dash:theme', t);
+  }
+  function applyLogo(){
+    const img=$('#logoImg'); const fb=$('#logoFallback');
+    if(LOGO_URL){
+      img.src=LOGO_URL; img.style.display='block'; fb.style.display='none';
+    }else{
+      img.style.display='none'; fb.style.display='block';
+    }
+  }
 
-function rebuildUI(){
-  const now = new Date();
-  const docs = Array.from(merged.values());
+  function applyLang(){
+    const L=STR[state.lang];
+    const isAr=state.lang==='ar';
+    document.documentElement.lang=state.lang;
+    document.documentElement.dir=isAr?'rtl':'ltr';
 
-  let total=0, used=0, pre=0, declined=0;
-  const rec=[];
+    $('#hdrOrg').textContent=L.org;
+    $('#hdrTitlePrefix').textContent=L.titlePrefix;
+    $('#heroP').textContent=L.hero;
 
-  for(const row of docs){
-    total++;
-    const cls = classify(row);
+    $('#langBtn').textContent=isAr?'EN':'AR';
+    $('#logoutTxt').textContent=L.logout;
 
-    if(cls==="yes") used++;
-    else if(cls==="pre") pre++;
-    else if(cls==="declined") declined++;
+    $('#gateHint').textContent=L.gateHint;
+    $('#lblEvent').textContent=L.event;
+    $('#lblPass').textContent=L.pass;
+    $('#enterBtn').textContent=L.enter;
 
-    // لإظهار آخر 100 نشاط (دخول/تأكيد/اعتذار)
-    if(row.actionAt instanceof Date){
-      rec.push({
-        Code: row.Code,
-        Status: row.Status,
-        RSVP: row.RSVP,
-        scannedAt: row.actionAt, // نستخدم نفس الحقل اللي الكود الأصلي يتوقعه
-        name: row.name,
-        phone: row.phone
+    $('#lblSearch').textContent=L.search;
+    $('#lblFilter').textContent=L.filter;
+
+    $('#chipAll').textContent=L.all;
+    $('#chipYes').textContent=L.yesOnly;
+    $('#chipPre').textContent=L.preOnly;
+    $('#chipDecl').textContent=L.declOnly;
+    $('#chipNo').textContent=L.noOnly;
+    $('#chipToday').textContent=L.today;
+    $('#chipHour').textContent=L.hour;
+    $('#chipClear').textContent=L.clear;
+
+    $('#exportBtn').textContent='⤓ ' + L.export;
+    $('#printTxt').textContent=L.print;
+
+    $('#kpiTotalLbl').textContent=L.total;
+    $('#kpiUsedLbl').textContent=L.used;
+    $('#kpiPreLbl').textContent=L.pre;
+    $('#kpiDeclLbl').textContent=L.decl;
+
+    $('#recentLbl').textContent=L.recent;
+    $('#thCode').textContent=L.code;
+    $('#thStatus').textContent=L.status;
+    $('#thTime').textContent=L.time;
+
+    $('#donutTitle').textContent=L.donutTitle;
+    $('#donutHint').textContent=L.donutHint;
+    $('#barTitle').textContent=L.barTitle;
+    $('#barHint').textContent=L.barHint;
+
+    $('#modalTitle').textContent=L.modalTitle;
+    $('#mEventK').textContent=L.mEvent;
+    $('#mCodeK').textContent=L.mCode;
+    $('#mStatusK').textContent=L.mStatus;
+    $('#mTimeK').textContent=L.mTime;
+    $('#mNameK').textContent=L.mName;
+    $('#mPhoneK').textContent=L.mPhone;
+
+    $('#searchInput').placeholder = (isAr?'مثال: ':'e.g. ') + 'KH_001';
+  }
+
+  /* ===================== Firebase ===================== */
+  const app=initializeApp({
+    apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+    authDomain:"hormez-inv.firebaseapp.com",
+    projectId:"hormez-inv",
+    storageBucket:"hormez-inv.firebasestorage.app",
+    messagingSenderId:"747519941805",
+    appId:"1:747519941805:web:468fada2492700e9da3a24"
+  });
+  const db=getFirestore(app);
+
+  /* ===================== Gate (Refactored) ===================== */
+  const sessKey=()=>`hs:dash:${PAGE_EVENT}`;
+
+  function normalizeInput(value){
+    return String(value ?? "")
+      .trim()
+      .replace(/\s+/g,'')   // remove whitespace
+      .toLowerCase();
+  }
+
+  function openContent(){
+    $('#gateWrap').style.display='none';
+    $('#content').style.display='block';
+    $('#logoutBtn').style.display='inline-flex';
+    $('#evNameTitle').textContent=PAGE_EVENT;
+    startStream();
+  }
+
+  function handleEnter(){
+    const rawEvent = $('#eventInput').value;
+    const rawPass  = $('#passInput').value;
+
+    const ev = normalizeInput(rawEvent);
+    const pw = normalizeInput(rawPass);
+
+    const expectedEvent = normalizeInput(PAGE_EVENT);
+    const expectedPass  = normalizeInput(PAGE_PASSWORD);
+
+    $('#gateMsg').textContent = "";
+
+    if(!ev){ $('#gateMsg').textContent = STR[state.lang].emptyEvent; return; }
+    if(!pw){ $('#gateMsg').textContent = STR[state.lang].emptyPass; return; }
+
+    if(ev !== expectedEvent){
+      const msgAr = `❌ اسم الحدث غير صحيح.\nالمطلوب: ${PAGE_EVENT}\nالمدخل: ${rawEvent}`;
+      const msgEn = `❌ Wrong event name.\nExpected: ${PAGE_EVENT}\nEntered: ${rawEvent}`;
+      $('#gateMsg').textContent = (state.lang==='ar') ? msgAr : msgEn;
+      return;
+    }
+    if(pw !== expectedPass){
+      $('#gateMsg').textContent = STR[state.lang].badpass;
+      return;
+    }
+
+    localStorage.setItem(sessKey(),'ok');
+    openContent();
+  }
+
+  function tryAutoLogin(){
+    $('#eventInput').value=PAGE_EVENT;
+    if(localStorage.getItem(sessKey())==='ok') openContent();
+  }
+  function logout(){ localStorage.removeItem(sessKey()); location.href=location.pathname; }
+
+  /* ===================== Live connection indicator ===================== */
+  function setConn(isOnline){
+    const L=STR[state.lang];
+    $('#dot').className = 'statusDot' + (isOnline ? '' : ' off');
+    $('#connTxt').textContent = isOnline ? L.connOn : L.connOff;
+  }
+  window.addEventListener('online', ()=>setConn(true));
+  window.addEventListener('offline', ()=>setConn(false));
+
+  function setLastUpdate(ts){
+    state.lastSnapshotAt = ts || new Date();
+    const now = new Date();
+    const diff = Math.max(0, Math.round((now - state.lastSnapshotAt)/1000));
+    if(diff <= 2) $('#lastUpd').textContent = (state.lang==='ar' ? 'الآن' : 'Now');
+    else $('#lastUpd').textContent = (state.lang==='ar' ? `قبل ${diff} ث` : `${diff}s ago`);
+  }
+  setInterval(()=>{ if(state.lastSnapshotAt) setLastUpdate(state.lastSnapshotAt); }, 1000);
+
+  /* ===================== Data & Render (FIXED FOR YOUR FIELDS) ===================== */
+  let allRows=[];     // latest activities (uses actionAt stored in scannedAt key)
+  let allDocs=[];     // all docs for KPIs
+  let filtRows=[];
+  let unsubA=null, unsubB=null;
+  const merged = new Map();
+
+  const RSVP_PRE_VALUES  = ["confirmed","yes","going","attending","accepted"];
+  const RSVP_DECL_VALUES = ["declined","no","notgoing","cancelled","canceled","اعتذر","اعتذار","رفض"];
+
+  function pick(obj, keys, def=null){
+    for(const k of keys){
+      if(obj && obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
+    }
+    return def;
+  }
+  function toDateMaybe(v){
+    if(!v) return null;
+    if(v?.toDate?.()) return v.toDate();
+    if(v instanceof Date) return v;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function isYesStatus(v){ return String(v||"").toLowerCase()==="yes"; }
+  function normRSVP(v){ return String(v||"").trim().toLowerCase(); }
+
+  function classify(row){
+    const statusYes = isYesStatus(row.Status);
+    const rsvp = normRSVP(row.RSVP);
+    if(statusYes) return "yes";
+    if(RSVP_DECL_VALUES.includes(rsvp)) return "declined";
+    if(RSVP_PRE_VALUES.includes(rsvp)) return "pre";
+    return "no";
+  }
+
+  function startStream(){
+    if(unsubA) unsubA();
+    if(unsubB) unsubB();
+    merged.clear();
+    setConn(navigator.onLine);
+
+    const colRef = collection(db,'invites');
+    const qA = query(colRef, where('EventName','==',PAGE_EVENT));
+    const qB = query(colRef, where('eventName','==',PAGE_EVENT));
+
+    const ingest = (snap)=>{
+      snap.forEach(d=>{
+        const x = d.data() || {};
+
+        const codeRaw   = pick(x, ["Code","code"], d.id);
+        const statusRaw = pick(x, ["Status","status"], "no");
+        const evRaw     = pick(x, ["EventName","eventName"], PAGE_EVENT);
+
+        const rsvpRaw   = pick(x, ["RSVP","rsvp"], "");
+        const phone     = pick(x, ["Phone","phone","mobile","Mobile"], "");
+        const name      = pick(x, ["GuestName","guestName","Name","name"], "");
+
+        const scannedAt = toDateMaybe(pick(x, ["scannedAt","ScannedAt","scanTime","scanned_time"], null));
+        const rsvpAt    = toDateMaybe(pick(x, ["RSVPAt","rsvpAt"], null));
+        const updatedAt = toDateMaybe(pick(x, ["updatedAt","UpdatedAt","lastUpdate"], null));
+
+        const actionAt =
+          (isYesStatus(statusRaw) ? (scannedAt || updatedAt || rsvpAt) : (rsvpAt || updatedAt || scannedAt));
+
+        merged.set(d.id, {
+          id: d.id,
+          Code: String(codeRaw),
+          Status: String(statusRaw),
+          RSVP: String(rsvpRaw || ""),
+          EventName: String(evRaw),
+          scannedAt,
+          RSVPAt: rsvpAt,
+          updatedAt,
+          actionAt,
+          name,
+          phone
+        });
+      });
+
+      rebuildUI();
+    };
+
+    unsubA = onSnapshot(qA, ingest, (err)=>{ console.error("Snapshot A:", err); setConn(false); });
+    unsubB = onSnapshot(qB, ingest, (err)=>{ console.error("Snapshot B:", err); setConn(false); });
+  }
+
+  let lastTopCode=null;
+
+  function rebuildUI(){
+    const now = new Date();
+    const docs = Array.from(merged.values());
+
+    let total=0, used=0, pre=0, declined=0;
+    const rec=[];
+
+    for(const row of docs){
+      total++;
+      const cls = classify(row);
+      if(cls==="yes") used++;
+      else if(cls==="pre") pre++;
+      else if(cls==="declined") declined++;
+
+      if(row.actionAt instanceof Date){
+        rec.push({
+          Code: row.Code,
+          Status: row.Status,
+          RSVP: row.RSVP,
+          scannedAt: row.actionAt,  // reuse existing rendering
+          name: row.name,
+          phone: row.phone
+        });
+      }
+    }
+
+    allDocs = docs;
+    allRows = rec.sort((a,b)=> b.scannedAt - a.scannedAt);
+
+    if(!state.firstLoaded){
+      state.firstLoaded = true;
+      $('#kpiSkeleton').style.display='none';
+      $('#kpiGrid').style.display='grid';
+    }
+
+    renderKPIs(total, used, pre, declined);
+    renderTodayCount_usedOnly(docs);
+    setLastUpdate(now);
+    flashIfNewRow();
+    applyFilters();
+    drawCharts(total, used);
+
+    if(total===0){
+      const msg = `لا توجد بيانات لهذا الحدث. تأكد أن (EventName أو eventName) يساوي: ${PAGE_EVENT}`;
+      $('#rowsBody').innerHTML = `<tr><td colspan="3" class="muted" style="text-align:center">${msg}</td></tr>`;
+    }
+  }
+
+  function flashIfNewRow(){
+    const top = allRows[0]?.Code || null;
+    if(!top) return;
+    if(lastTopCode && top !== lastTopCode){
+      ['kpiTotal','kpiUsed','kpiPre','kpiDecl'].forEach(id=>{
+        const el = $('#'+id);
+        if(!el) return;
+        el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
       });
     }
+    lastTopCode = top;
   }
 
-  allDocs = docs;
-  allRows = rec.sort((a,b)=> b.scannedAt - a.scannedAt);
-
-  if(!state.firstLoaded){
-    state.firstLoaded = true;
-    $('#kpiSkeleton').style.display='none';
-    $('#kpiGrid').style.display='grid';
-  }
-
-  renderKPIs(total, used, pre, declined);
-
-  // "مسحات اليوم" نخليها = دخول اليوم فقط (Status yes)
-  renderTodayCount_usedOnly(docs);
-
-  setLastUpdate(now);
-  flashIfNewRow();
-  applyFilters();
-  drawCharts(total, used);
-
-  if(total===0){
-    const msg = `لا توجد بيانات لهذا الحدث. تأكد أن (EventName أو eventName) يساوي: ${PAGE_EVENT}`;
-    $('#rowsBody').innerHTML = `<tr><td colspan="3" class="muted" style="text-align:center">${msg}</td></tr>`;
-  }
-}
-
-function flashIfNewRow(){
-  const top = allRows[0]?.Code || null;
-  if(!top) return;
-  if(lastTopCode && top !== lastTopCode){
-    ['kpiTotal','kpiUsed','kpiLeft','kpiRate','kpiPre','kpiDecl'].forEach(id=>{
-      const el = $('#'+id);
-      if(!el) return;
-      el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
-    });
-  }
-  lastTopCode = top;
-}
-
-// ✅ مسحات اليوم = دخول اليوم فقط (Status yes) — حتى لو ما عندك scannedAt
-function renderTodayCount_usedOnly(docs){
-  const start = new Date(); start.setHours(0,0,0,0);
-  let cnt=0;
-
-  for(const row of docs){
-    const cls = classify(row);
-    if(cls!=="yes") continue;
-
-    // وقت الدخول: scannedAt إن وجد، وإلا updatedAt
-    const t = row.scannedAt || row.updatedAt || null;
-    if(t && t >= start) cnt++;
-  }
-  $('#todayCnt').textContent = String(cnt);
-}
-
-function animateNumber(el, to, suffix=""){
-  if(!el) return;
-  const from = Number((el.textContent||'0').replace(/[^\d]/g,'')) || 0;
-  const start = performance.now();
-  const dur = 300;
-  function tick(t){
-    const p = Math.min(1, (t-start)/dur);
-    const v = Math.round(from + (to-from)*p);
-    el.textContent = v + suffix;
-    if(p<1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-
-function renderKPIs(total, used, pre, declined){
-  const left=Math.max(total-used,0);
-  const rate= total>0? Math.round((used/total)*100):0;
-
-  animateNumber($('#kpiTotal'), total);
-  animateNumber($('#kpiUsed'), used);
-  animateNumber($('#kpiLeft'), left);
-  if($('#kpiRate')) $('#kpiRate').textContent = rate + '%';
-
-  // ✅ KPIs الجديدة
-  animateNumber($('#kpiPre'), pre);
-  animateNumber($('#kpiDecl'), declined);
-}
-
-/* ===================== Filters ===================== */
-function setChipActive(){
-  document.querySelectorAll('.chip[data-filter]').forEach(c=>{
-    const f=c.getAttribute('data-filter');
-    const isStatus = ['all','yes','no','pre','declined'].includes(f);
-    const isRange  = ['today','hour'].includes(f);
-    let active=false;
-
-    if(isStatus) active = (state.filter.status===f);
-    if(isRange){
-      if(f==='today') active = (state.filter.range==='today');
-      if(f==='hour')  active = (state.filter.range==='hour');
+  function renderTodayCount_usedOnly(docs){
+    const start = new Date(); start.setHours(0,0,0,0);
+    let cnt=0;
+    for(const row of docs){
+      if(classify(row)!=="yes") continue;
+      const t = row.scannedAt || row.updatedAt || null;
+      if(t && t >= start) cnt++;
     }
-    if(f==='clear') active=false;
-
-    c.classList.toggle('active', active);
-  });
-}
-
-function applyFilters(){
-  const q = ($('#searchInput').value||'').trim().toLowerCase();
-  let list = allRows.slice();
-
-  if(state.filter.status==='yes') list = list.filter(r=>normStatus(r.Status)==='yes');
-  if(state.filter.status==='no')  list = list.filter(r=>normStatus(r.Status)==='no');
-  if(state.filter.status==='pre') list = list.filter(r=>normStatus(r.Status)==='pre');
-  if(state.filter.status==='declined') list = list.filter(r=>normStatus(r.Status)==='declined');
-
-  const now = new Date();
-  if(state.filter.range==='today'){
-    const start=new Date(); start.setHours(0,0,0,0);
-    list = list.filter(r=>r.scannedAt && r.scannedAt>=start);
-  }
-  if(state.filter.range==='hour'){
-    const since = new Date(now.getTime()-60*60*1000);
-    list = list.filter(r=>r.scannedAt && r.scannedAt>=since);
+    $('#todayCnt').textContent = String(cnt);
   }
 
-  if(q) list = list.filter(r => (r.Code||'').toLowerCase().includes(q));
-
-  filtRows = list.slice(0,100);
-  setChipActive();
-  renderRows();
-}
-
-/* ===================== Modal ===================== */
-function statusBadge(status){
-  const L=STR[state.lang];
-  const s = normStatus(status);
-  if(s==="yes") return {cls:"ok", txt:L.yes};
-  if(s==="pre") return {cls:"pre", txt:L.preLbl};
-  if(s==="declined") return {cls:"decl", txt:L.declLbl};
-  return {cls:"no", txt:L.no};
-}
-
-function openModal(row){
-  const L=STR[state.lang];
-  $('#mEventV').textContent = PAGE_EVENT;
-  $('#mCodeV').textContent = row.Code || '—';
-
-  const sb = statusBadge(row.Status);
-  $('#mStatusV').textContent = sb.txt;
-
-  $('#mTimeV').textContent = row.scannedAt ? row.scannedAt.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB') : '—';
-
-  if(row.name){
-    $('#mNameBox').style.display='block';
-    $('#mNameV').textContent = row.name;
-  }else{
-    $('#mNameBox').style.display='none';
-  }
-  if(row.phone){
-    $('#mPhoneBox').style.display='block';
-    $('#mPhoneV').textContent = row.phone;
-  }else{
-    $('#mPhoneBox').style.display='none';
-  }
-
-  $('#modalBack').style.display='flex';
-}
-function closeModal(){ $('#modalBack').style.display='none'; }
-
-/* ===================== Rows render ===================== */
-function renderRows(){
-  const L=STR[state.lang];
-
-  const tb=$('#rowsBody'); tb.innerHTML='';
-  if(filtRows.length===0){
-    const tr=document.createElement('tr');
-    const td=document.createElement('td');
-    td.colSpan=3; td.className='muted'; td.style.textAlign='center'; td.textContent=L.noRows;
-    tr.appendChild(td); tb.appendChild(tr);
-  }else{
-    for(const r of filtRows){
-      const tr=document.createElement('tr');
-      tr.style.cursor='pointer';
-      tr.addEventListener('click', ()=>openModal(r));
-
-      const td1=document.createElement('td');
-      td1.textContent=r.Code; td1.className='mono';
-
-      const td2=document.createElement('td');
-      const b=document.createElement('span');
-      const sb = statusBadge(r.Status);
-      b.className='badge ' + sb.cls;
-      b.textContent = sb.txt;
-      td2.appendChild(b);
-
-      const td3=document.createElement('td');
-      td3.textContent = r.scannedAt ? r.scannedAt.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB') : '—';
-
-      tr.append(td1,td2,td3); tb.appendChild(tr);
+  function animateNumber(el, to){
+    if(!el) return;
+    const from = Number((el.textContent||'0').replace(/[^\d]/g,'')) || 0;
+    const start = performance.now();
+    const dur = 280;
+    function tick(t){
+      const p = Math.min(1, (t-start)/dur);
+      const v = Math.round(from + (to-from)*p);
+      el.textContent = String(v);
+      if(p<1) requestAnimationFrame(tick);
     }
+    requestAnimationFrame(tick);
   }
 
-  const listBox = $('#mobileList'); listBox.innerHTML='';
-  if(filtRows.length===0){
-    const empty=document.createElement('div');
-    empty.className='muted';
-    empty.style.textAlign='center';
-    empty.textContent=L.noRows;
-    listBox.appendChild(empty);
-  }else{
-    for(const r of filtRows){
-      const sb = statusBadge(r.Status);
-
-      const card=document.createElement('div'); card.className='scan-card';
-      card.style.cursor='pointer';
-      card.addEventListener('click', ()=>openModal(r));
-
-      const head=document.createElement('div'); head.className='scan-head';
-      const code=document.createElement('div'); code.className='scan-code mono'; code.textContent=r.Code;
-      const badge=document.createElement('span'); badge.className='badge ' + sb.cls; badge.textContent= sb.txt;
-      head.append(code,badge);
-
-      const line1=document.createElement('div'); line1.className='scan-line';
-      const l1=document.createElement('div'); l1.className='scan-label'; l1.textContent=L.time;
-      const v1=document.createElement('div'); v1.className='scan-value';
-      v1.textContent = r.scannedAt ? r.scannedAt.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB') : '—';
-      line1.append(l1,v1);
-
-      card.append(head,line1);
-      listBox.appendChild(card);
-    }
-  }
-}
-
-/* ===================== Export CSV ===================== */
-function exportCSV(){
-  const L=STR[state.lang];
-  const header=[L.code,L.status,'EventName',L.time,'Name','Phone'].join(',');
-  const lines=filtRows.map(r=>[
-    safeCSV(r.Code),
-    safeCSV(statusBadge(r.Status).txt),
-    safeCSV(PAGE_EVENT),
-    safeCSV(r.scannedAt ? r.scannedAt.toISOString() : ''),
-    safeCSV(r.name || ''),
-    safeCSV(r.phone || '')
-  ].join(','));
-  const csv=[header,...lines].join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=`${PAGE_EVENT}-scans.csv`; a.click(); URL.revokeObjectURL(url);
-}
-function safeCSV(v){
-  const s=String(v??'');
-  if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
-  return s;
-}
-
-/* ===================== Charts (Canvas) ===================== */
-function drawCharts(total, used){
-  drawDonut(total, used);
-  drawBars();
-}
-function clearCanvas(c){
-  const ctx=c.getContext('2d');
-  ctx.clearRect(0,0,c.width,c.height);
-  return ctx;
-}
-function drawDonut(total, used){
-  const c=$('#donut');
-  const ctx=clearCanvas(c);
-
-  const rem=Math.max(0,total-used);
-  const W=c.width, H=c.height;
-
-  const cx=W/2, cy=H/2;
-  const r=Math.min(W,H)*0.30;
-  const thick=r*0.42;
-
-  const theme=document.documentElement.getAttribute('data-theme')||'dark';
-  const bgRing = theme==='light' ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.08)';
-  const usedCol = theme==='light' ? 'rgba(180,138,24,.92)' : 'rgba(214,177,94,.92)';
-  const remCol  = theme==='light' ? 'rgba(30,64,175,.75)' : 'rgba(30,64,175,.70)';
-
-  ctx.lineWidth = thick;
-  ctx.lineCap='round';
-  ctx.beginPath();
-  ctx.strokeStyle = bgRing;
-  ctx.arc(cx, cy, r, 0, Math.PI*2);
-  ctx.stroke();
-
-  const ratio = total>0 ? used/total : 0;
-  const start = -Math.PI/2;
-  const endUsed = start + Math.PI*2*ratio;
-
-  ctx.beginPath();
-  ctx.strokeStyle = usedCol;
-  ctx.arc(cx, cy, r, start, endUsed);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.strokeStyle = remCol;
-  ctx.arc(cx, cy, r, endUsed, start + Math.PI*2);
-  ctx.stroke();
-
-  ctx.fillStyle = theme==='light' ? 'rgba(11,18,32,.90)' : 'rgba(233,237,245,.95)';
-  ctx.textAlign='center';
-  ctx.font='900 56px system-ui';
-  const pct = total>0 ? Math.round(ratio*100) : 0;
-  ctx.fillText(pct + '%', cx, cy + 10);
-
-  ctx.fillStyle = theme==='light' ? 'rgba(71,85,105,.95)' : 'rgba(167,176,195,.95)';
-  ctx.font='700 18px system-ui';
-  ctx.fillText((state.lang==='ar'?'حضور':'Attendance'), cx, cy + 46);
-
-  const L=STR[state.lang];
-  const lx = W*0.14, ly=H*0.82;
-  ctx.textAlign='start';
-  ctx.font='800 18px system-ui';
-  ctx.fillStyle = usedCol;
-  ctx.fillText(`${L.used}: ${used}`, lx, ly);
-  ctx.fillStyle = remCol;
-  ctx.fillText(`${L.left}: ${rem}`, lx + 250, ly);
-}
-function drawBars(){
-  const c=$('#bars');
-  const ctx=clearCanvas(c);
-  const W=c.width, H=c.height;
-
-  const theme=document.documentElement.getAttribute('data-theme')||'dark';
-  const axis = theme==='light' ? 'rgba(0,0,0,.10)' : 'rgba(255,255,255,.10)';
-  const ink  = theme==='light' ? 'rgba(11,18,32,.90)' : 'rgba(233,237,245,.90)';
-  const mut  = theme==='light' ? 'rgba(71,85,105,.90)' : 'rgba(167,176,195,.90)';
-  const barC = theme==='light' ? 'rgba(30,64,175,.70)' : 'rgba(214,177,94,.60)';
-
-  const pad=40;
-  const chartW=W-pad*2;
-  const chartH=H-pad*2;
-
-  const now=new Date();
-  const since = new Date(now.getTime()-60*60*1000);
-  const bins = new Array(12).fill(0);
-
-  for(const r of allRows){
-    if(!r.scannedAt) continue;
-    if(r.scannedAt < since) break;
-    const diffMin = (now - r.scannedAt)/60000;
-    const idx = Math.floor(diffMin/5);
-    if(idx>=0 && idx<12) bins[idx]++;
+  function renderKPIs(total, used, pre, declined){
+    animateNumber($('#kpiTotal'), total);
+    animateNumber($('#kpiUsed'), used);
+    animateNumber($('#kpiPre'), pre);
+    animateNumber($('#kpiDecl'), declined);
   }
 
-  const max = Math.max(1, ...bins);
-
-  ctx.strokeStyle = axis;
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.moveTo(pad, H-pad);
-  ctx.lineTo(W-pad, H-pad);
-  ctx.stroke();
-
-  const gap=10;
-  const bw = (chartW - gap*(bins.length-1))/bins.length;
-
-  for(let i=0;i<bins.length;i++){
-    const val=bins[i];
-    const h = (val/max)*chartH;
-    const x = pad + i*(bw+gap);
-    const y = (H-pad) - h;
-
-    ctx.fillStyle = barC;
-    roundRect(ctx, x, y, bw, h, 12);
-    ctx.fill();
-
-    if(i%2===0){
-      ctx.fillStyle = mut;
-      ctx.font='700 14px system-ui';
-      ctx.textAlign='center';
-      const minutesAgo = i*5;
-      const label = (state.lang==='ar') ? `-${minutesAgo}` : `-${minutesAgo}m`;
-      ctx.fillText(label, x+bw/2, H-pad+22);
-    }
-  }
-
-  ctx.fillStyle = ink;
-  ctx.font='900 18px system-ui';
-  ctx.textAlign='start';
-  ctx.fillText(state.lang==='ar' ? 'آخر 60 دقيقة' : 'Last 60 minutes', pad, pad-8);
-}
-function roundRect(ctx, x, y, w, h, r){
-  const rr=Math.min(r,w/2,h/2);
-  ctx.beginPath();
-  ctx.moveTo(x+rr, y);
-  ctx.arcTo(x+w, y, x+w, y+h, rr);
-  ctx.arcTo(x+w, y+h, x, y+h, rr);
-  ctx.arcTo(x, y+h, x, y, rr);
-  ctx.arcTo(x, y, x+w, y, rr);
-  ctx.closePath();
-}
-
-/* ===================== UI wiring ===================== */
-document.addEventListener('DOMContentLoaded', ()=>{
-  setTheme(state.theme);
-  applyLogo();
-  applyLang();
-  tryAutoLogin();
-  setConn(navigator.onLine);
-
-  $('#langBtn').addEventListener('click', ()=>{
-    state.lang = (state.lang==='ar') ? 'en' : 'ar';
-    localStorage.setItem('hs:dash:lang', state.lang);
-    applyLang();
-    applyFilters();
-    drawCharts(getKpiNumbers().total, getKpiNumbers().used);
-  });
-
-  $('#themeBtn').addEventListener('click', ()=>{
-    setTheme(state.theme==='dark' ? 'light' : 'dark');
-    drawCharts(getKpiNumbers().total, getKpiNumbers().used);
-  });
-
-  $('#refreshBtn').addEventListener('click', ()=> location.reload());
-  $('#logoutBtn').addEventListener('click', logout);
-
-  $('#enterBtn').addEventListener('click', handleEnter);
-  $('#passInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleEnter(); } });
-
-  $('#searchInput').addEventListener('input', applyFilters);
-
-  document.querySelectorAll('.chip[data-filter]').forEach(ch=>{
-    ch.addEventListener('click', ()=>{
-      const f = ch.getAttribute('data-filter');
-      if(f==='clear'){
-        state.filter = { status:'all', range:'all' };
-      }else if(['all','yes','no','pre','declined'].includes(f)){
-        state.filter.status = f;
-      }else if(f==='today'){
-        state.filter.range = (state.filter.range==='today' ? 'all' : 'today');
-      }else if(f==='hour'){
-        state.filter.range = (state.filter.range==='hour' ? 'all' : 'hour');
+  /* ===================== Filters ===================== */
+  function setChipActive(){
+    document.querySelectorAll('.chip[data-filter]').forEach(c=>{
+      const f=c.getAttribute('data-filter');
+      const isStatus = ['all','yes','pre','declined','no'].includes(f);
+      const isRange  = ['today','hour'].includes(f);
+      let active=false;
+      if(isStatus) active = (state.filter.status===f);
+      if(isRange){
+        if(f==='today') active = (state.filter.range==='today');
+        if(f==='hour')  active = (state.filter.range==='hour');
       }
-      applyFilters();
+      if(f==='clear') active=false;
+      c.classList.toggle('active', active);
     });
+  }
+
+  function applyFilters(){
+    const q = ($('#searchInput').value||'').trim().toLowerCase();
+    let list = allRows.slice(); // contains scannedAt/actionAt
+
+    // status filter (based on Status+RSVP)
+    if(state.filter.status !== 'all'){
+      list = list.filter(r=>{
+        const cls = classify(r);
+        return cls === state.filter.status;
+      });
+    }
+
+    // range
+    const now = new Date();
+    if(state.filter.range==='today'){
+      const start=new Date(); start.setHours(0,0,0,0);
+      list = list.filter(r=>r.scannedAt && r.scannedAt>=start);
+    }
+    if(state.filter.range==='hour'){
+      const since = new Date(now.getTime()-60*60*1000);
+      list = list.filter(r=>r.scannedAt && r.scannedAt>=since);
+    }
+
+    // search
+    if(q) list = list.filter(r => (r.Code||'').toLowerCase().includes(q));
+
+    filtRows = list.slice(0,100);
+    setChipActive();
+    renderRows();
+  }
+
+  /* ===================== Modal ===================== */
+  function openModal(row){
+    const L=STR[state.lang];
+    $('#mEventV').textContent = PAGE_EVENT;
+    $('#mCodeV').textContent = row.Code || '—';
+
+    const cls = classify(row);
+    const statusText =
+      cls==="yes" ? L.yes :
+      cls==="pre" ? L.preText :
+      cls==="declined" ? L.declText :
+      L.no;
+
+    $('#mStatusV').textContent = statusText;
+    $('#mTimeV').textContent = row.scannedAt ? row.scannedAt.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB') : '—';
+
+    if(row.name){
+      $('#mNameBox').style.display='block';
+      $('#mNameV').textContent = row.name;
+    }else $('#mNameBox').style.display='none';
+
+    if(row.phone){
+      $('#mPhoneBox').style.display='block';
+      $('#mPhoneV').textContent = row.phone;
+    }else $('#mPhoneBox').style.display='none';
+
+    $('#modalBack').style.display='flex';
+  }
+  function closeModal(){ $('#modalBack').style.display='none'; }
+
+  /* ===================== Rows render ===================== */
+  function renderRows(){
+    const L=STR[state.lang];
+    const tb=$('#rowsBody'); tb.innerHTML='';
+
+    if(filtRows.length===0){
+      const tr=document.createElement('tr');
+      const td=document.createElement('td');
+      td.colSpan=3; td.className='muted'; td.style.textAlign='center'; td.textContent=L.noRows;
+      tr.appendChild(td); tb.appendChild(tr);
+    }else{
+      for(const r of filtRows){
+        const tr=document.createElement('tr');
+        tr.style.cursor='pointer';
+        tr.addEventListener('click', ()=>openModal(r));
+
+        const cls = classify(r);
+
+        const td1=document.createElement('td');
+        td1.textContent=r.Code; td1.className='mono';
+
+        const td2=document.createElement('td');
+        const b=document.createElement('span');
+
+        if(cls==="yes"){ b.className='badge ok'; b.textContent=L.yes; }
+        else if(cls==="pre"){ b.className='badge pre'; b.textContent=L.preText; }
+        else if(cls==="declined"){ b.className='badge decl'; b.textContent=L.declText; }
+        else { b.className='badge no'; b.textContent=L.no; }
+
+        td2.appendChild(b);
+
+        const td3=document.createElement('td');
+        td3.textContent = r.scannedAt ? r.scannedAt.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB') : '—';
+
+        tr.append(td1,td2,td3); tb.appendChild(tr);
+      }
+    }
+
+    // Mobile cards
+    const listBox = $('#mobileList'); listBox.innerHTML='';
+    if(filtRows.length===0){
+      const empty=document.createElement('div');
+      empty.className='muted';
+      empty.style.textAlign='center';
+      empty.textContent=L.noRows;
+      listBox.appendChild(empty);
+    }else{
+      for(const r of filtRows){
+        const cls = classify(r);
+        const card=document.createElement('div'); card.className='scan-card';
+        card.style.cursor='pointer';
+        card.addEventListener('click', ()=>openModal(r));
+
+        const head=document.createElement('div'); head.className='scan-head';
+        const code=document.createElement('div'); code.className='scan-code mono'; code.textContent=r.Code;
+
+        const badge=document.createElement('span');
+        if(cls==="yes"){ badge.className='badge ok'; badge.textContent=L.yes; }
+        else if(cls==="pre"){ badge.className='badge pre'; badge.textContent=L.preText; }
+        else if(cls==="declined"){ badge.className='badge decl'; badge.textContent=L.declText; }
+        else { badge.className='badge no'; badge.textContent=L.no; }
+
+        head.append(code,badge);
+
+        const line1=document.createElement('div'); line1.className='scan-line';
+        const l1=document.createElement('div'); l1.className='scan-label'; l1.textContent=L.time;
+        const v1=document.createElement('div'); v1.className='scan-value';
+        v1.textContent = r.scannedAt ? r.scannedAt.toLocaleString(state.lang==='ar'?'ar-EG':'en-GB') : '—';
+        line1.append(l1,v1);
+
+        card.append(head,line1);
+        listBox.appendChild(card);
+      }
+    }
+  }
+
+  /* ===================== Export CSV ===================== */
+  function exportCSV(){
+    const L=STR[state.lang];
+    const header=[L.code,L.status,'RSVP','EventName',L.time,'Name','Phone'].join(',');
+    const lines=filtRows.map(r=>[
+      safeCSV(r.Code),
+      safeCSV(
+        classify(r)==="yes"?L.yes :
+        classify(r)==="pre"?L.preText :
+        classify(r)==="declined"?L.declText : L.no
+      ),
+      safeCSV(r.RSVP || ''),
+      safeCSV(PAGE_EVENT),
+      safeCSV(r.scannedAt ? r.scannedAt.toISOString() : ''),
+      safeCSV(r.name || ''),
+      safeCSV(r.phone || '')
+    ].join(','));
+    const csv=[header,...lines].join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`${PAGE_EVENT}-activities.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }
+  function safeCSV(v){
+    const s=String(v??'');
+    if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+    return s;
+  }
+
+  /* ===================== Charts (Canvas) ===================== */
+  function drawCharts(total, used){
+    drawDonut(total, used);
+    drawBars();
+  }
+  function clearCanvas(c){
+    const ctx=c.getContext('2d');
+    ctx.clearRect(0,0,c.width,c.height);
+    return ctx;
+  }
+
+  function drawDonut(total, used){
+    const c=$('#donut');
+    const ctx=clearCanvas(c);
+    const rem=Math.max(0,total-used);
+    const W=c.width, H=c.height;
+    const cx=W/2, cy=H/2;
+    const r=Math.min(W,H)*0.30;
+    const thick=r*0.42;
+
+    const theme=document.documentElement.getAttribute('data-theme')||'dark';
+    const bgRing = theme==='light' ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.08)';
+    const usedCol = theme==='light' ? 'rgba(4,120,87,.92)' : 'rgba(34,197,94,.82)';
+    const remCol  = theme==='light' ? 'rgba(30,64,175,.75)' : 'rgba(30,64,175,.70)';
+
+    ctx.lineWidth = thick;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.strokeStyle = bgRing;
+    ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.stroke();
+
+    const ratio = total>0 ? used/total : 0;
+    const start = -Math.PI/2;
+    const endUsed = start + Math.PI*2*ratio;
+
+    ctx.beginPath();
+    ctx.strokeStyle = usedCol;
+    ctx.arc(cx, cy, r, start, endUsed);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.strokeStyle = remCol;
+    ctx.arc(cx, cy, r, endUsed, start + Math.PI*2);
+    ctx.stroke();
+
+    ctx.fillStyle = theme==='light' ? 'rgba(11,18,32,.90)' : 'rgba(233,237,245,.95)';
+    ctx.textAlign='center';
+    ctx.font='900 56px system-ui';
+    const pct = total>0 ? Math.round(ratio*100) : 0;
+    ctx.fillText(pct + '%', cx, cy + 10);
+
+    ctx.fillStyle = theme==='light' ? 'rgba(71,85,105,.95)' : 'rgba(167,176,195,.95)';
+    ctx.font='700 18px system-ui';
+    ctx.fillText((state.lang==='ar'?'دخول':'Check-in'), cx, cy + 46);
+
+    const L=STR[state.lang];
+    const lx = W*0.14, ly=H*0.82;
+    ctx.textAlign='start';
+    ctx.font='800 18px system-ui';
+    ctx.fillStyle = usedCol;
+    ctx.fillText(`${L.used}: ${used}`, lx, ly);
+    ctx.fillStyle = remCol;
+    ctx.fillText(`${(state.lang==='ar'?'المتبقي':'Remaining')}: ${rem}`, lx + 250, ly);
+  }
+
+  function drawBars(){
+    const c=$('#bars');
+    const ctx=clearCanvas(c);
+    const W=c.width, H=c.height;
+
+    const theme=document.documentElement.getAttribute('data-theme')||'dark';
+    const axis = theme==='light' ? 'rgba(0,0,0,.10)' : 'rgba(255,255,255,.10)';
+    const ink  = theme==='light' ? 'rgba(11,18,32,.90)' : 'rgba(233,237,245,.90)';
+    const mut  = theme==='light' ? 'rgba(71,85,105,.90)' : 'rgba(167,176,195,.90)';
+    const barC = theme==='light' ? 'rgba(30,64,175,.70)' : 'rgba(214,177,94,.60)';
+
+    const pad=40;
+    const chartW=W-pad*2;
+    const chartH=H-pad*2;
+
+    const now=new Date();
+    const since = new Date(now.getTime()-60*60*1000);
+    const bins = new Array(12).fill(0);
+
+    for(const r of allRows){
+      if(!r.scannedAt) continue;
+      if(r.scannedAt < since) break; // sorted desc
+      const diffMin = (now - r.scannedAt)/60000;
+      const idx = Math.floor(diffMin/5);
+      if(idx>=0 && idx<12) bins[idx]++;
+    }
+
+    const max = Math.max(1, ...bins);
+
+    ctx.strokeStyle = axis;
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(pad, H-pad);
+    ctx.lineTo(W-pad, H-pad);
+    ctx.stroke();
+
+    const gap=10;
+    const bw = (chartW - gap*(bins.length-1))/bins.length;
+
+    for(let i=0;i<bins.length;i++){
+      const val=bins[i];
+      const h = (val/max)*chartH;
+      const x = pad + i*(bw+gap);
+      const y = (H-pad) - h;
+
+      ctx.fillStyle = barC;
+      roundRect(ctx, x, y, bw, h, 12);
+      ctx.fill();
+
+      if(i%2===0){
+        ctx.fillStyle = mut;
+        ctx.font='700 14px system-ui';
+        ctx.textAlign='center';
+        const minutesAgo = i*5;
+        const label = (state.lang==='ar') ? `-${minutesAgo}` : `-${minutesAgo}m`;
+        ctx.fillText(label, x+bw/2, H-pad+22);
+      }
+    }
+
+    ctx.fillStyle = ink;
+    ctx.font='900 18px system-ui';
+    ctx.textAlign='start';
+    ctx.fillText(state.lang==='ar' ? 'آخر 60 دقيقة' : 'Last 60 minutes', pad, pad-8);
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    const rr=Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr, y);
+    ctx.arcTo(x+w, y, x+w, y+h, rr);
+    ctx.arcTo(x+w, y+h, x, y+h, rr);
+    ctx.arcTo(x, y+h, x, y, rr);
+    ctx.arcTo(x, y, x+w, y, rr);
+    ctx.closePath();
+  }
+
+  /* ===================== UI wiring ===================== */
+  document.addEventListener('DOMContentLoaded', ()=>{
+    setTheme(state.theme);
+    applyLogo();
+    applyLang();
+    tryAutoLogin();
+    setConn(navigator.onLine);
+
+    $('#langBtn').addEventListener('click', ()=>{
+      state.lang = (state.lang==='ar') ? 'en' : 'ar';
+      localStorage.setItem('hs:dash:lang', state.lang);
+      applyLang();
+      applyFilters();
+      drawCharts(Number($('#kpiTotal')?.textContent||0), Number($('#kpiUsed')?.textContent||0));
+    });
+
+    $('#themeBtn').addEventListener('click', ()=>{
+      setTheme(state.theme==='dark' ? 'light' : 'dark');
+      drawCharts(Number($('#kpiTotal')?.textContent||0), Number($('#kpiUsed')?.textContent||0));
+    });
+
+    $('#refreshBtn').addEventListener('click', ()=> location.reload());
+    $('#logoutBtn').addEventListener('click', logout);
+
+    // Gate
+    $('#enterBtn').addEventListener('click', handleEnter);
+    $('#passInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleEnter(); } });
+    $('#eventInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handleEnter(); } });
+
+    // Filters
+    $('#searchInput').addEventListener('input', applyFilters);
+    document.querySelectorAll('.chip[data-filter]').forEach(ch=>{
+      ch.addEventListener('click', ()=>{
+        const f = ch.getAttribute('data-filter');
+        if(f==='clear'){
+          state.filter = { status:'all', range:'all' };
+        }else if(['all','yes','pre','declined','no'].includes(f)){
+          state.filter.status = f;
+        }else if(f==='today'){
+          state.filter.range = (state.filter.range==='today' ? 'all' : 'today');
+        }else if(f==='hour'){
+          state.filter.range = (state.filter.range==='hour' ? 'all' : 'hour');
+        }
+        applyFilters();
+      });
+    });
+
+    // Export / Print
+    $('#exportBtn').addEventListener('click', exportCSV);
+    $('#printBtn').addEventListener('click', ()=>window.print());
+
+    // Modal
+    $('#modalClose').addEventListener('click', closeModal);
+    $('#modalClose2').addEventListener('click', closeModal);
+    $('#modalBack').addEventListener('click', (e)=>{ if(e.target.id==='modalBack') closeModal(); });
+    $('#modalPrint').addEventListener('click', ()=>window.print());
+
+    // Fill event input default
+    $('#eventInput').value = PAGE_EVENT;
   });
-
-  $('#exportBtn').addEventListener('click', exportCSV);
-  $('#printBtn').addEventListener('click', ()=>window.print());
-
-  $('#modalClose').addEventListener('click', closeModal);
-  $('#modalClose2').addEventListener('click', closeModal);
-  $('#modalBack').addEventListener('click', (e)=>{ if(e.target.id==='modalBack') closeModal(); });
-  $('#modalPrint').addEventListener('click', ()=>window.print());
-
-  $('#eventInput').value = PAGE_EVENT;
-});
-
-function getKpiNumbers(){
-  const total = Number(($('#kpiTotal').textContent||'0').replace(/[^\d]/g,''))||0;
-  const used  = Number(($('#kpiUsed').textContent||'0').replace(/[^\d]/g,''))||0;
-  return { total, used };
-}
 </script>
 </body>
 </html>
