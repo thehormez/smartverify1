@@ -310,13 +310,29 @@
         if(l) l.classList.toggle('disabled', locked);
       }
 
-      async function ensureLogin(){
-        if(auth.currentUser) return auth.currentUser;
-        const provider = new firebase.auth.GoogleAuthProvider();
-        // Popup (أفضل لـ GitHub/Netlify)
-        await auth.signInWithPopup(provider);
-        return auth.currentUser;
-      }
+async function ensureLogin(){
+  if(auth.currentUser) return auth.currentUser;
+
+  // 1) حاول Google أولاً (لو مفعّل)
+  try{
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+    return auth.currentUser;
+  }catch(e){
+    // 2) fallback: Anonymous (يخلي الصفحة تشتغل حتى لو Google غير مفعّل)
+    try{
+      await auth.signInAnonymously();
+      return auth.currentUser;
+    }catch(e2){
+      // لو حتى Anonymous فشل (نادر) ارجع برسالة واضحة
+      throw new Error(
+        "تعذر تسجيل الدخول (Google و Anonymous).\n" +
+        "Google: " + (e?.message || e) + "\n" +
+        "Anonymous: " + (e2?.message || e2)
+      );
+    }
+  }
+}
 
       // ===== Firestore write =====
       async function upsertCode(code, eventName){
