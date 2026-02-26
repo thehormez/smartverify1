@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KRS INVITE — Control Panel</title>
+  <style>
+    :root{
+      --bg:#0b0b0c; --panel:#14151a; --stroke:#2a2b32;
+      --gold:#d4af37; --txt:#e7e7e7; --muted:#a7a7a7;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial;background:var(--bg);color:var(--txt)}
+    .app{display:grid;grid-template-columns:280px 1fr;grid-template-rows:56px 1fr;height:100vh}
+    .topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;
+      padding:12px 14px;border-bottom:1px solid var(--stroke);background:#0a0a0c;position:sticky;top:0;z-index:10}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900}
+    .dot{width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #ffe8a3, var(--gold))}
+    .sub{color:var(--muted);font-size:12px;font-weight:700}
+    .side{border-left:1px solid var(--stroke);background:var(--panel);padding:12px;overflow:auto}
+    .nav a{display:flex;gap:10px;align-items:center;text-decoration:none;color:var(--txt);
+      padding:12px;border-radius:12px;border:1px solid transparent;font-weight:800}
+    .nav a:hover{border-color:var(--stroke);background:#111217}
+    .nav a.active{border-color:var(--gold);background:#111217}
+    .content{position:relative}
+    iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#0b0b0c}
+    .hint{padding:10px 12px;margin-top:10px;border:1px solid var(--stroke);border-radius:12px;color:var(--muted);font-size:12px;line-height:1.6}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .btn{border:1px solid var(--stroke);background:#121318;color:#fff;padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:800}
+    .btn:hover{border-color:var(--gold)}
+    @media (max-width: 900px){
+      .app{grid-template-columns:1fr;grid-template-rows:56px auto 1fr}
+      .side{border-left:0;border-top:1px solid var(--stroke)}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span> KRS INVITE <span class="sub">— لوحة موحّدة</span></div>
+      <div class="row">
+        <button class="btn" onclick="openStandalone()">فتح الصفحة الحالية لوحدها</button>
+        <button class="btn" onclick="refreshFrame()">تحديث</button>
+      </div>
+    </div>
+
+    <aside class="side">
+      <nav class="nav" id="nav"></nav>
+
+      <div class="hint">
+        ✅ هذه اللوحة لا تغيّر صفحاتك الأصلية، فقط تجمعها في مكان واحد.<br/>
+        إذا حبيت لاحقًا نخليها صفحة واحدة بدون Iframe (دمج كود كامل)، نقدر نسويه بعد ما نتأكد كل شيء ثابت.
+      </div>
+    </aside>
+
+    <main class="content">
+      <iframe id="frame" src=""></iframe>
+    </main>
+  </div>
+
+  <script>
+    // عدّل الأسماء فقط لو غيرتها في الريبو
+    const PAGES = [
+      { id:"gen",  title:"1) توليد الباركود + الحدث", file:"KRS-upload-RSVP.html" },
+      { id:"merge",title:"2) دمج الباركود مع الكرت",  file:"KRS-merge-qr.html" },
+      { id:"send", title:"3) مركز الإرسال",           file:"KRS-center.html" },
+      { id:"wa",   title:"4) حالة الرسائل (WA)",      file:"wa-dashboard.html" },
+      { id:"dash", title:"5) الداشبورد",              file:"krs-Client-Dashboard.html" },
+    ];
+
+    // GitHub Pages base (نفس الدومين/المجلد)
+    const BASE = location.origin + location.pathname.replace(/\/[^\/]*$/, "/");
+
+    const nav = document.getElementById("nav");
+    const frame = document.getElementById("frame");
+
+    function setActive(id){
+      document.querySelectorAll(".nav a").forEach(a=>a.classList.toggle("active", a.dataset.id===id));
+    }
+
+    function go(id){
+      const p = PAGES.find(x=>x.id===id) || PAGES[0];
+      const url = BASE + p.file;
+
+      frame.src = url;
+      setActive(p.id);
+      history.replaceState({}, "", "#"+p.id);
+      localStorage.setItem("KRS_PANEL_LAST", p.id);
+    }
+
+    function refreshFrame(){
+      try{ frame.contentWindow.location.reload(); }catch{ frame.src = frame.src; }
+    }
+
+    function openStandalone(){
+      const src = frame.src || (BASE + PAGES[0].file);
+      window.open(src, "_blank");
+    }
+
+    // Build menu
+    PAGES.forEach(p=>{
+      const a = document.createElement("a");
+      a.href = "#"+p.id;
+      a.dataset.id = p.id;
+      a.textContent = p.title;
+      a.onclick = (e)=>{ e.preventDefault(); go(p.id); };
+      nav.appendChild(a);
+    });
+
+    // Boot
+    (function(){
+      const fromHash = (location.hash || "").replace("#","").trim();
+      const saved = localStorage.getItem("KRS_PANEL_LAST");
+      const id = fromHash || saved || PAGES[0].id;
+      go(id);
+    })();
+
+    window.addEventListener("hashchange", ()=>{
+      const id = (location.hash||"").replace("#","").trim();
+      if(id) go(id);
+    });
+  </script>
+</body>
+</html>
