@@ -1,350 +1,369 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hormez — حذف أحداث متعددة من Firebase</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KRS — حذف حدث</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet" />
+
   <style>
-    :root{--bg:#0b1020;--ink:#e5e7eb;--muted:#94a3b8;--line:#334155;--card:#0e172a;--ok:#22c55e;--bad:#ef4444;--warn:#f59e0b}
-    html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0f1d);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial}
-    .topbar{position:sticky;top:0;z-index:10;background:rgba(11,16,32,.85);backdrop-filter:blur(6px);border-bottom:1px solid #243047}
-    .container{max-width:900px;margin:0 auto;padding:14px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
-    .btn{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--ink);border-radius:10px;padding:10px 12px;cursor:pointer}
-    .btn.primary{background:#7c2d12;border-color:#a16207}
-    .btn.danger{background:#7f1d1d;border-color:#dc2626}
-    .btn.ghost{background:#0b1220}
+    :root{
+      --bg:#0b0b0c; --panel:#121318; --panel2:#0f1013; --stroke:#2a2b32;
+      --gold:#d4af37; --txt:#e7e7e7; --muted:#a7a7a7; --danger:#ef4444; --ok:#25d366;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Noto Sans Arabic",system-ui;background:var(--bg);color:var(--txt)}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .top{
+      position:sticky;top:0;z-index:10;background:rgba(10,10,12,.92);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--stroke);
+    }
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900}
+    .logo{
+      width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+      background:#0f1013;border:1px solid var(--stroke);color:var(--gold);
+    }
+    .pill{
+      padding:7px 10px;border-radius:999px;border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);font-size:12px;display:inline-flex;gap:6px;align-items:center
+    }
+    .pill b{color:#ffe8a3}
+    .card{background:var(--panel);border:1px solid var(--stroke);border-radius:18px;padding:14px}
+    .hint{color:var(--muted);font-size:12px;line-height:1.7}
+    .input, select{
+      width:100%;min-height:44px;border:1px solid var(--stroke);border-radius:14px;
+      background:var(--panel2);color:#fff;padding:10px 12px
+    }
+    .btn{
+      border:1px solid var(--stroke);background:#121318;color:#fff;
+      padding:11px 14px;border-radius:14px;cursor:pointer;font-weight:900;min-height:44px
+    }
+    .btn:hover{border-color:rgba(212,175,55,.55)}
+    .btn.ok{border-color:rgba(37,211,102,.5)}
+    .btn.danger{border-color:rgba(239,68,68,.55)}
     .btn:disabled{opacity:.55;cursor:not-allowed}
-    .btn:hover{background:#0d1528}
-    .input,.select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0b1220;color:var(--ink)}
-    .muted{color:var(--muted)}
-    .tag{display:inline-flex;gap:6px;align-items:center;border:1px dashed var(--line);padding:6px 10px;border-radius:999px;background:#0b1220}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    .list{max-height:46vh;overflow:auto;border:1px solid rgba(255,255,255,.08);border-radius:12px}
-    .item{display:flex;align-items:center;gap:10px;padding:10px;border-top:1px solid rgba(255,255,255,.06)}
-    .item:first-child{border-top:none}
-    .event-pill{padding:6px 10px;border-radius:999px;background:#0e172a;border:1px solid var(--line)}
-    .count{font-weight:700}
-    .progress{height:10px;background:#0b1220;border:1px solid var(--line);border-radius:999px;overflow:hidden}
-    .bar{height:100%;background:linear-gradient(90deg,#f59e0b,#fde047)}
-    .hint{font-size:12px;color:var(--muted)}
-    @media(max-width:640px){.container{padding:10px} .btn{padding:10px}}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width: 900px){.grid{grid-template-columns:1fr}}
+    .log{
+      white-space:pre-wrap;
+      background:#0b0f13;border:1px solid var(--stroke);border-radius:14px;
+      padding:12px;min-height:180px;max-height:360px;overflow:auto;font-size:12px
+    }
+    .okTxt{color:#b7ffc8}
+    .errTxt{color:#ffb3b3}
+    .bar{
+      height:10px;background:#0b0f13;border:1px solid var(--stroke);
+      border-radius:999px;overflow:hidden
+    }
+    .bar > div{height:100%;width:0%}
+    .dangerBox{
+      border:1px solid rgba(239,68,68,.35);
+      background: rgba(239,68,68,.08);
+      padding:12px;border-radius:16px
+    }
   </style>
-</head>
-<body>
-  <div class="topbar">
-    <div class="container row" style="justify-content:space-between">
-      <div class="row"><div style="font-weight:900">HS</div><div class="muted" id="subTitle">حذف أحداث متعددة من Firebase</div></div>
-      <div class="row">
-        <span class="tag"><span id="langTag">AR</span></span>
-        <button id="langBtn" class="btn">EN</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="card">
-      <h2 id="hdr">🗑️ حذف أحداث متعددة</h2>
-      <p class="muted" id="desc">يتم جلب أسماء الأحداث تلقائيًا من مجموعة <code class="mono">invites</code> بالحقل <code class="mono">EventName</code>.</p>
-
-      <div class="row">
-        <button id="loadBtn" class="btn primary">جلب/تحديث قائمة الأحداث</button>
-        <input id="search" class="input" placeholder="بحث عن حدث…" />
-      </div>
-
-      <div class="row" style="justify-content:space-between;margin-top:6px">
-        <div class="hint" id="foundLbl">—</div>
-        <div class="row">
-          <button id="selectAllBtn" class="btn ghost">تحديد الكل</button>
-          <button id="clearSelBtn" class="btn ghost">مسح التحديد</button>
-        </div>
-      </div>
-
-      <div id="list" class="list" style="margin-top:8px"></div>
-
-      <div class="card" style="margin-top:10px">
-        <div class="row" style="justify-content:space-between">
-          <div>
-            <button id="countBtn" class="btn">حساب العناصر المختارة</button>
-            <button id="deleteBtn" class="btn danger" disabled>حذف نهائي</button>
-            <button id="localBtn" class="btn" title="حذف التخزين المحلي للأحداث المختارة">مسح المحلي فقط</button>
-          </div>
-          <div class="hint" id="tips">⚠️ يلزم سماح القواعد بالحذف أو استخدام حساب بصلاحيات. الحذف يتم بدُفعات 500.</div>
-        </div>
-        <div class="row" style="align-items:center;margin-top:8px">
-          <div style="flex:1">
-            <div class="progress"><div id="bar" class="bar" style="width:0%"></div></div>
-          </div>
-          <div id="pct" class="mono" style="min-width:46px;text-align:end">0%</div>
-        </div>
-        <div id="log" class="muted mono" style="margin-top:8px;font-size:12px;white-space:pre-wrap;max-height:170px;overflow:auto"></div>
-      </div>
-    </div>
-  </div>
 
   <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-storage-compat.js"></script>
+</head>
 
-  <script>
-  (function(){
-    const $=(s,root=document)=>root.querySelector(s);
-    const STR={
-      ar:{
-        subTitle:'حذف أحداث متعددة من Firebase',
-        hdr:'🗑️ حذف أحداث متعددة',
-        desc:'يتم جلب أسماء الأحداث تلقائيًا من مجموعة invites بالحقل EventName.',
-        load:'جلب/تحديث قائمة الأحداث',
-        searchPh:'بحث عن حدث…',
-        selectAll:'تحديد الكل',
-        clearSel:'مسح التحديد',
-        count:'حساب العناصر المختارة',
-        del:'حذف نهائي',
-        local:'مسح المحلي فقط',
-        tips:'⚠️ يلزم سماح القواعد بالحذف أو استخدام حساب بصلاحيات. الحذف يتم بدُفعات 500.',
-        found:n=>`تم العثور على ${n} حدث(ًا).`,
-        none:'لا توجد أحداث.',
-        counting:'جاري العد…',
-        foundItems:(ev,n)=>`[${ev}] عدد العناصر: ${n}`,
-        totalItems:n=>`إجمالي العناصر: ${n}`,
-        confirm1:n=>`سيتم حذف كل الدعوات لعدد (${n}) من الأحداث نهائيًا من Firebase. متابعة؟`,
-        confirm2:'تأكيد أخير: هذا الإجراء لا يمكن التراجع عنه. متابعة؟',
-        deleting:'جاري الحذف…',
-        deletedEvent:(ev,n)=>`[${ev}] تم حذف ${n} عنصر.`,
-        doneDel:n=>`تم الحذف النهائي. المجموع: ${n} عنصر.`,
-        err:e=>'خطأ: '+e,
-        localDone:n=>`تم مسح التخزين المحلي لعدد (${n}) حدث.`,
-        btnEN:'EN', btnAR:'AR',
-        loadWarn:'قد يتطلب فهرسًا للترتيب حسب EventName. إن ظهرت رسالة فهرس، أنشئ الفهرس ثم أعد المحاولة.'
-      },
-      en:{
-        subTitle:'Delete Multiple Events from Firebase',
-        hdr:'🗑️ Delete Multiple Events',
-        desc:'Event names are fetched automatically from invites collection (EventName field).',
-        load:'Fetch/Refresh event list',
-        searchPh:'Search events…',
-        selectAll:'Select all',
-        clearSel:'Clear selection',
-        count:'Count selected items',
-        del:'Delete permanently',
-        local:'Clear local only',
-        tips:'⚠️ Your Firestore rules must allow deletion or use an authenticated account. Deletion runs in 500-doc batches.',
-        found:n=>`${n} event(s) found.`,
-        none:'No events.',
-        counting:'Counting…',
-        foundItems:(ev,n)=>`[${ev}] items: ${n}`,
-        totalItems:n=>`Total items: ${n}`,
-        confirm1:n=>`This will permanently delete invites for (${n}) events. Continue?`,
-        confirm2:'Final confirmation: this cannot be undone. Proceed?',
-        deleting:'Deleting…',
-        deletedEvent:(ev,n)=>`[${ev}] deleted ${n}.`,
-        doneDel:n=>`Done. Total deleted: ${n}`,
-        err:e=>'Error: '+e,
-        localDone:n=>`Cleared local storage for (${n}) event(s).`,
-        btnEN:'AR', btnAR:'EN',
-        loadWarn:'You may need an index to order by EventName. If prompted, create the index then retry.'
-      }
-    };
-    let LANG=localStorage.getItem('hs:delmulti:lang')||'ar';
-    function L(){return STR[LANG];}
-    function applyLang(){
-      document.documentElement.lang=LANG;
-      document.documentElement.dir=(LANG==='ar'?'rtl':'ltr');
-      $('#subTitle').textContent=L().subTitle;
-      $('#hdr').textContent=L().hdr;
-      $('#desc').textContent=L().desc;
-      $('#loadBtn').textContent=L().load;
-      $('#search').placeholder=L().searchPh;
-      $('#selectAllBtn').textContent=L().selectAll;
-      $('#clearSelBtn').textContent=L().clearSel;
-      $('#countBtn').textContent=L().count;
-      $('#deleteBtn').textContent=L().del;
-      $('#localBtn').textContent=L().local;
-      $('#tips').textContent=L().tips;
-      $('#langBtn').textContent = (LANG==='ar' ? STR.ar.btnEN : STR.en.btnEN);
-      $('#langTag').textContent = (LANG==='ar' ? 'AR' : 'EN');
-    }
+<body>
+  <div class="top">
+    <div class="wrap">
+      <div class="row">
+        <div class="brand">
+          <div class="logo">KRS</div>
+          <div>
+            <div style="font-size:13px">KRS INVITE</div>
+            <div style="font-weight:900">حذف حدث بالكامل</div>
+          </div>
+        </div>
 
-    // ===== Firebase init (ضع إعدادات مشروعك) =====
-    const firebaseConfig = {
-      apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
-      authDomain:"hormez-inv.firebaseapp.com",
-      projectId:"hormez-inv"
-    };
-    if(!firebase.apps.length){ firebase.initializeApp(firebaseConfig); }
-    const db=firebase.firestore();
+        <div style="flex:1"></div>
 
-    // ===== State =====
-    let allEvents=[];       // [{name, count: null|number, selected:false}]
-    let filtered=[];
+        <button id="loginBtn" class="btn ok">تسجيل دخول Google</button>
+        <button id="logoutBtn" class="btn" style="display:none">خروج</button>
+        <span class="pill">Auth: <b id="who">غير مسجل</b></span>
+      </div>
+    </div>
+  </div>
 
-    function setProgress(p){ p=Math.max(0,Math.min(100,p||0)); $('#bar').style.width=p+'%'; $('#pct').textContent=Math.round(p)+'%'; }
-    function logLine(t){ const el=$('#log'); el.textContent += (t+'\n'); el.scrollTop = el.scrollHeight; }
-    function render(){
-      const q = ($('#search').value||'').toLowerCase();
-      filtered = allEvents.filter(e=> e.name.toLowerCase().includes(q));
-      $('#foundLbl').textContent = filtered.length ? L().found(filtered.length) : L().none;
-      const box=$('#list'); box.innerHTML='';
-      filtered.forEach((ev)=>{
-        const row=document.createElement('div'); row.className='item';
-        row.innerHTML = `
-          <input type="checkbox" ${ev.selected?'checked':''} data-ev="${ev.name}">
-          <span class="event-pill mono">${ev.name}</span>
-          <span class="muted">${ev.count==null?'—':(LANG==='ar'?'عدد العناصر: ':'items: ')}<b class="count">${ev.count==null?'?':ev.count}</b></span>
-        `;
-        box.appendChild(row);
-      });
-      // bind checkboxes
-      box.querySelectorAll('input[type="checkbox"]').forEach(ch=>{
-        ch.addEventListener('change', e=>{
-          const name=e.target.getAttribute('data-ev');
-          const obj=allEvents.find(x=>x.name===name);
-          if(obj){ obj.selected = e.target.checked; }
-        });
-      });
-    }
+  <div class="wrap">
 
-    // جلب كل الأسماء الفريدة عبر paginate
-    async function fetchDistinctEvents(){
-      allEvents=[]; render(); setProgress(0); $('#log').textContent='';
-      logLine(L().load+' …'); logLine(L().loadWarn);
-      const seen=new Set();
-      let last=null; const PAGE=800; // اضبطه حسب حجم بياناتك
-      while(true){
-        let q = db.collection('invites').orderBy('EventName').limit(PAGE);
-        if(last) q = q.startAfter(last);
-        const snap = await q.get();
-        if(snap.empty) break;
-        snap.docs.forEach(d=>{
-          const ev = d.get('EventName')||'';
-          if(ev && !seen.has(ev)){
-            seen.add(ev);
-            allEvents.push({name:ev, count:null, selected:false});
-          }
-        });
-        last = snap.docs[snap.docs.length-1];
-        if(snap.size < PAGE) break;
-      }
-      setProgress(100);
-      render();
-      logLine((LANG==='ar'?'تم جمع أحداث فريدة: ':'Unique events collected: ')+allEvents.length);
-    }
+    <div class="dangerBox">
+      <div style="font-weight:900;color:#ffb3b3">⚠️ تحذير</div>
+      <div class="hint">
+        هذا الإجراء سيحذف:
+        <br/>1) كل وثائق <b>invites</b> للحدث
+        <br/>2) كل الصور من Storage داخل <b>cards/{EventName}/</b>
+        <br/><br/>
+        استخدمها فقط بعد انتهاء الحدث.
+      </div>
+    </div>
 
-    async function countForEvent(ev){
-      const qs = await db.collection('invites').where('EventName','==',ev).get();
-      return qs.size;
-    }
+    <div class="grid" style="margin-top:12px">
+      <div class="card">
+        <div class="hint">اختر الحدث الذي تريد حذفه (يسحب من Field: <b>EventName</b> داخل invites)</div>
 
-    // ✅ الإصلاح: تفعيل زر الحذف بعد العد إذا total > 0
-    async function countSelected(){
-      $('#log').textContent=''; 
-      setProgress(0); 
-      logLine(L().counting);
+        <div class="row" style="margin-top:10px">
+          <button id="btnLoadEvents" class="btn">تحميل الأحداث</button>
+          <button id="btnRefreshCount" class="btn">حساب عدد الدعوات</button>
+        </div>
 
-      const btnDel = $('#deleteBtn');
-      btnDel.disabled = true; // عطّل أثناء العد
+        <div style="margin-top:10px">
+          <select id="eventSelect"></select>
+          <div class="row" style="margin-top:10px">
+            <span class="pill">Invites: <b id="countInvites">—</b></span>
+            <span class="pill">Cards: <b id="countCards">—</b></span>
+          </div>
+        </div>
 
-      const targets = allEvents.filter(e=>e.selected);
-      if(!targets.length){
-        logLine(L().none);
-        setProgress(100);
-        btnDel.disabled = true;
-        return { total: 0 };
-      }
+        <div style="margin-top:12px" class="row">
+          <input id="confirmText" class="input" placeholder='اكتب DELETE للتأكيد' />
+          <button id="btnDelete" class="btn danger" disabled>حذف الحدث الآن</button>
+        </div>
 
-      let total = 0, done = 0;
-      for(const t of targets){
-        const n = await countForEvent(t.name);
-        t.count = n; 
-        total += n; 
-        done++;
-        logLine(L().foundItems(t.name, n));
-        setProgress((done/targets.length)*100);
-        render();
-      }
+        <div style="margin-top:12px">
+          <div class="hint">التقدم</div>
+          <div class="bar"><div id="barFill"></div></div>
+          <div class="hint" style="margin-top:6px">
+            <span class="pill">Progress: <b id="progressTxt">0%</b></span>
+            <span class="pill">Deleted: <b id="deletedTxt">0</b></span>
+            <span class="pill">Failed: <b id="failedTxt">0</b></span>
+          </div>
+        </div>
+      </div>
 
-      logLine('—'); 
-      logLine(L().totalItems(total));
+      <div class="card">
+        <div class="hint">السجل</div>
+        <div id="log" class="log" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
 
-      // فعّل زر الحذف فقط إذا هناك عناصر فعلًا
-      btnDel.disabled = !(total > 0);
+<script>
+/* =========================
+   Firebase Config (مشروعك)
+   ========================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+  authDomain: "hormez-inv.firebaseapp.com",
+  projectId: "hormez-inv",
+  storageBucket: "hormez-inv.firebasestorage.app",
+  messagingSenderId: "747519941805",
+  appId: "1:747519941805:web:468fada2492700e9da3a24"
+};
 
-      return { total, targets };
-    }
+firebase.initializeApp(firebaseConfig);
 
-    function clearLocalForEvent(ev){
-      try{
-        const keyEvent='hs:evscan:event';
-        const saved=localStorage.getItem(keyEvent);
-        if(saved && saved===ev){ localStorage.removeItem(keyEvent); }
-        localStorage.removeItem(`hs:evscan:hist:${ev}`);
-      }catch{}
-    }
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-    async function deleteBatchesForEvent(ev){
-      let deleted=0;
-      const LIMIT=500;
-      while(true){
-        const snap = await db.collection('invites').where('EventName','==',ev).limit(LIMIT).get();
-        if(snap.empty) break;
-        const batch = db.batch();
-        snap.forEach(doc=> batch.delete(doc.ref));
-        await batch.commit();
-        deleted += snap.size;
-        logLine(`   - ${snap.size} …`);
-      }
-      return deleted;
-    }
+const $ = (id)=>document.getElementById(id);
 
-    async function deleteSelected(){
-      $('#deleteBtn').disabled=true; $('#countBtn').disabled=true;
-      $('#log').textContent=''; setProgress(0); logLine(L().deleting);
+function log(msg, cls){
+  const el = $("log");
+  const d = document.createElement("div");
+  d.textContent = msg;
+  if(cls) d.className = cls;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+}
 
-      const { total, targets } = await countSelected();
-      if(!targets || !targets.length){ $('#deleteBtn').disabled=false; $('#countBtn').disabled=false; return; }
-      if(total===0){ $('#deleteBtn').disabled=false; $('#countBtn').disabled=false; return; }
+function setProgress(p){
+  const pct = Math.max(0, Math.min(100, Math.floor(p)));
+  $("barFill").style.width = pct + "%";
+  $("progressTxt").textContent = pct + "%";
+}
 
-      if(!confirm(L().confirm1(targets.length))) { $('#deleteBtn').disabled=false; $('#countBtn').disabled=false; return; }
-      if(!confirm(L().confirm2)) { $('#deleteBtn').disabled=false; $('#countBtn').disabled=false; return; }
+function lockActions(locked){
+  $("btnLoadEvents").disabled = locked;
+  $("btnRefreshCount").disabled = locked;
+  $("eventSelect").disabled = locked;
+  $("confirmText").disabled = locked;
+  $("btnDelete").disabled = locked || ($("confirmText").value.trim().toUpperCase() !== "DELETE");
+}
 
-      let deletedAll=0, step=0;
-      for(const t of targets){
-        const del = await deleteBatchesForEvent(t.name);
-        deletedAll += del; step++;
-        clearLocalForEvent(t.name);
-        logLine(L().deletedEvent(t.name, del));
-        setProgress( (step/targets.length)*100 );
-      }
-      logLine('—'); logLine(L().doneDel(deletedAll));
-      // إزالة الأحداث المحذوفة من القائمة
-      allEvents = allEvents.filter(e=> !targets.find(t=>t.name===e.name));
-      render();
-      $('#deleteBtn').disabled=false; $('#countBtn').disabled=false;
-    }
+async function login(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  await auth.signInWithPopup(provider);
+}
 
-    function clearLocalSelected(){
-      const targets = allEvents.filter(e=>e.selected);
-      targets.forEach(t=> clearLocalForEvent(t.name));
-      alert(L().localDone(targets.length));
-    }
+async function logout(){
+  await auth.signOut();
+}
 
-    // ===== Wire UI =====
-    document.addEventListener('DOMContentLoaded', ()=>{
-      applyLang();
-      $('#langBtn').addEventListener('click', ()=>{ LANG=(LANG==='ar'?'en':'ar'); localStorage.setItem('hs:delmulti:lang',LANG); applyLang(); render(); });
-      $('#loadBtn').addEventListener('click', fetchDistinctEvents);
-      $('#search').addEventListener('input', render);
-      $('#selectAllBtn').addEventListener('click', ()=>{ filtered.forEach(ev=>{ ev.selected=true; }); render(); });
-      $('#clearSelBtn').addEventListener('click', ()=>{ filtered.forEach(ev=>{ ev.selected=false; }); render(); });
-      $('#countBtn').addEventListener('click', countSelected);
-      $('#deleteBtn').addEventListener('click', deleteSelected);
-      $('#localBtn').addEventListener('click', clearLocalSelected);
-      // تحميل تلقائي عند الفتح
-      fetchDistinctEvents().catch(e=>{ logLine(STR[LANG].err(e.message||e)); });
+auth.onAuthStateChanged(u=>{
+  $("who").textContent = u ? (u.email || u.uid) : "غير مسجل";
+  $("loginBtn").style.display = u ? "none" : "inline-block";
+  $("logoutBtn").style.display = u ? "inline-block" : "none";
+  lockActions(!u);
+  if(u) log("✅ تم تسجيل الدخول: " + (u.email || u.uid), "okTxt");
+});
+
+$("loginBtn").onclick = async ()=>{
+  try{ await login(); }
+  catch(e){
+    log("❌ فشل تسجيل الدخول: " + (e?.message || e), "errTxt");
+    alert("فشل تسجيل الدخول. تأكد من تفعيل Google Sign-in وإضافة الدومين ضمن Authorized domains.");
+  }
+};
+
+$("logoutBtn").onclick = async ()=>{
+  try{ await logout(); log("تم تسجيل الخروج", "okTxt"); }
+  catch(e){ log("❌ فشل الخروج: " + (e?.message || e), "errTxt"); }
+};
+
+// Enable delete button only when typed DELETE
+$("confirmText").addEventListener("input", ()=>{
+  lockActions(!auth.currentUser);
+});
+
+/* =========================
+   Load events from invites
+   ========================= */
+$("btnLoadEvents").onclick = async ()=>{
+  try{
+    lockActions(true);
+    log("⏳ تحميل الأحداث...", "");
+    const snap = await db.collection("invites").get();
+    const events = new Set();
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      if(d.EventName) events.add(String(d.EventName).trim());
     });
-  })();
-  </script>
+
+    const sel = $("eventSelect");
+    sel.innerHTML = "";
+    [...events].sort().forEach(ev=>{
+      const op = document.createElement("option");
+      op.value = ev;
+      op.textContent = ev;
+      sel.appendChild(op);
+    });
+
+    $("countInvites").textContent = "—";
+    $("countCards").textContent = "—";
+    log("✅ تم تحميل الأحداث: " + events.size, "okTxt");
+  }catch(e){
+    log("❌ خطأ تحميل الأحداث: " + (e?.message || e), "errTxt");
+  }finally{
+    lockActions(!auth.currentUser);
+  }
+};
+
+/* =========================
+   Count invites + cards
+   ========================= */
+$("btnRefreshCount").onclick = async ()=>{
+  try{
+    const eventName = $("eventSelect").value;
+    if(!eventName) return alert("اختر حدث");
+
+    lockActions(true);
+    log("⏳ حساب الدعوات للحدث: " + eventName, "");
+
+    // count invites
+    const q = await db.collection("invites").where("EventName","==",eventName).get();
+    $("countInvites").textContent = q.size;
+
+    // count cards (list storage folder) — قد يفشل لو Storage rules تمنع list
+    // لذلك نحسبها "تقريبياً" = عدد الدعوات
+    $("countCards").textContent = q.size + " (تقريبي)";
+
+    log("✅ العدد: " + q.size, "okTxt");
+  }catch(e){
+    log("❌ خطأ الحساب: " + (e?.message || e), "errTxt");
+  }finally{
+    lockActions(!auth.currentUser);
+  }
+};
+
+/* =========================
+   Delete event (invites + cards)
+   ========================= */
+$("btnDelete").onclick = async ()=>{
+  const eventName = $("eventSelect").value;
+  if(!eventName) return alert("اختر حدث");
+
+  const confirmWord = $("confirmText").value.trim().toUpperCase();
+  if(confirmWord !== "DELETE") return alert("اكتب DELETE للتأكيد");
+
+  const ok = confirm(
+    "⚠️ سيتم حذف الحدث بالكامل:\n\n" + eventName +
+    "\n\n(دعوات + صور)\n\nمتأكد؟"
+  );
+  if(!ok) return;
+
+  try{
+    lockActions(true);
+    $("deletedTxt").textContent = "0";
+    $("failedTxt").textContent = "0";
+    setProgress(0);
+
+    log("🚨 بدء الحذف للحدث: " + eventName, "errTxt");
+
+    const q = await db.collection("invites").where("EventName","==",eventName).get();
+    const total = q.size;
+    if(!total){
+      log("لا يوجد invites لهذا الحدث.", "errTxt");
+      return;
+    }
+
+    let deleted = 0;
+    let failed = 0;
+
+    for(let i=0; i<q.docs.length; i++){
+      const doc = q.docs[i];
+      const code = doc.id;
+
+      // 1) delete firestore doc
+      try{
+        await db.collection("invites").doc(code).delete();
+        deleted++;
+        $("deletedTxt").textContent = String(deleted);
+        log("✅ حذف invite: " + code, "okTxt");
+      }catch(e){
+        failed++;
+        $("failedTxt").textContent = String(failed);
+        log("❌ فشل حذف invite: " + code + " — " + (e?.message||e), "errTxt");
+      }
+
+      // 2) delete storage file (ignore if missing)
+      try{
+        await storage.ref(`cards/${eventName}/${code}.png`).delete();
+        log("🗑️ حذف card: " + `cards/${eventName}/${code}.png`, "okTxt");
+      }catch(e){
+        // ignore (maybe not exists or no permission)
+      }
+
+      const pct = ((i+1) / total) * 100;
+      setProgress(pct);
+      await new Promise(r=>setTimeout(r, 80));
+    }
+
+    log("✅ انتهى الحذف. Deleted: " + deleted + " / Failed: " + failed, "okTxt");
+    alert("تمت العملية ✅\nDeleted: " + deleted + "\nFailed: " + failed);
+
+  }catch(e){
+    log("❌ خطأ عام: " + (e?.message || e), "errTxt");
+    alert("خطأ: " + (e?.message || e));
+  }finally{
+    lockActions(!auth.currentUser);
+  }
+};
+
+// start locked until login
+lockActions(true);
+log("جاهز. سجل دخول Google أولاً ✅", "okTxt");
+</script>
+
 </body>
 </html>
