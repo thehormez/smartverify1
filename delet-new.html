@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KRS — حذف حدث</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --bg:#0b0b0c; --panel:#121318; --panel2:#0f1013; --stroke:#2a2b32;
+      --gold:#d4af37; --txt:#e7e7e7; --muted:#a7a7a7; --danger:#ef4444; --ok:#25d366;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Noto Sans Arabic",system-ui;background:var(--bg);color:var(--txt)}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .top{
+      position:sticky;top:0;z-index:10;background:rgba(10,10,12,.92);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--stroke);
+    }
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900}
+    .logo{
+      width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+      background:#0f1013;border:1px solid var(--stroke);color:var(--gold);
+    }
+    .pill{
+      padding:7px 10px;border-radius:999px;border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);font-size:12px;display:inline-flex;gap:6px;align-items:center
+    }
+    .pill b{color:#ffe8a3}
+    .card{background:var(--panel);border:1px solid var(--stroke);border-radius:18px;padding:14px}
+    .hint{color:var(--muted);font-size:12px;line-height:1.7}
+    .input, select{
+      width:100%;min-height:44px;border:1px solid var(--stroke);border-radius:14px;
+      background:var(--panel2);color:#fff;padding:10px 12px
+    }
+    .btn{
+      border:1px solid var(--stroke);background:#121318;color:#fff;
+      padding:11px 14px;border-radius:14px;cursor:pointer;font-weight:900;min-height:44px
+    }
+    .btn:hover{border-color:rgba(212,175,55,.55)}
+    .btn.ok{border-color:rgba(37,211,102,.5)}
+    .btn.danger{border-color:rgba(239,68,68,.55)}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width: 900px){.grid{grid-template-columns:1fr}}
+    .log{
+      white-space:pre-wrap;
+      background:#0b0f13;border:1px solid var(--stroke);border-radius:14px;
+      padding:12px;min-height:180px;max-height:360px;overflow:auto;font-size:12px
+    }
+    .okTxt{color:#b7ffc8}
+    .errTxt{color:#ffb3b3}
+    .bar{
+      height:10px;background:#0b0f13;border:1px solid var(--stroke);
+      border-radius:999px;overflow:hidden
+    }
+    .bar > div{height:100%;width:0%}
+    .dangerBox{
+      border:1px solid rgba(239,68,68,.35);
+      background: rgba(239,68,68,.08);
+      padding:12px;border-radius:16px
+    }
+  </style>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-storage-compat.js"></script>
+</head>
+
+<body>
+  <div class="top">
+    <div class="wrap">
+      <div class="row">
+        <div class="brand">
+          <div class="logo">KRS</div>
+          <div>
+            <div style="font-size:13px">KRS INVITE</div>
+            <div style="font-weight:900">حذف حدث بالكامل</div>
+          </div>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <button id="loginBtn" class="btn ok">تسجيل دخول Google</button>
+        <button id="logoutBtn" class="btn" style="display:none">خروج</button>
+        <span class="pill">Auth: <b id="who">غير مسجل</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="dangerBox">
+      <div style="font-weight:900;color:#ffb3b3">⚠️ تحذير</div>
+      <div class="hint">
+        هذا الإجراء سيحذف:
+        <br/>1) كل وثائق <b>invites</b> للحدث
+        <br/>2) كل الصور من Storage داخل <b>cards/{EventName}/</b>
+        <br/><br/>
+        استخدمها فقط بعد انتهاء الحدث.
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:12px">
+      <div class="card">
+        <div class="hint">اختر الحدث الذي تريد حذفه (يسحب من Field: <b>EventName</b> داخل invites)</div>
+
+        <div class="row" style="margin-top:10px">
+          <button id="btnLoadEvents" class="btn">تحميل الأحداث</button>
+          <button id="btnRefreshCount" class="btn">حساب عدد الدعوات</button>
+        </div>
+
+        <div style="margin-top:10px">
+          <select id="eventSelect"></select>
+          <div class="row" style="margin-top:10px">
+            <span class="pill">Invites: <b id="countInvites">—</b></span>
+            <span class="pill">Cards: <b id="countCards">—</b></span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="row">
+          <input id="confirmText" class="input" placeholder='اكتب DELETE للتأكيد' />
+          <button id="btnDelete" class="btn danger" disabled>حذف الحدث الآن</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="hint">التقدم</div>
+          <div class="bar"><div id="barFill"></div></div>
+          <div class="hint" style="margin-top:6px">
+            <span class="pill">Progress: <b id="progressTxt">0%</b></span>
+            <span class="pill">Deleted: <b id="deletedTxt">0</b></span>
+            <span class="pill">Failed: <b id="failedTxt">0</b></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hint">السجل</div>
+        <div id="log" class="log" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* =========================
+   Firebase Config (مشروعك)
+   ========================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+  authDomain: "hormez-inv.firebaseapp.com",
+  projectId: "hormez-inv",
+  storageBucket: "hormez-inv.firebasestorage.app",
+  messagingSenderId: "747519941805",
+  appId: "1:747519941805:web:468fada2492700e9da3a24"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+const $ = (id)=>document.getElementById(id);
+
+function log(msg, cls){
+  const el = $("log");
+  const d = document.createElement("div");
+  d.textContent = msg;
+  if(cls) d.className = cls;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setProgress(p){
+  const pct = Math.max(0, Math.min(100, Math.floor(p)));
+  $("barFill").style.width = pct + "%";
+  $("progressTxt").textContent = pct + "%";
+}
+
+function lockActions(locked){
+  $("btnLoadEvents").disabled = locked;
+  $("btnRefreshCount").disabled = locked;
+  $("eventSelect").disabled = locked;
+  $("confirmText").disabled = locked;
+  $("btnDelete").disabled = locked || ($("confirmText").value.trim().toUpperCase() !== "DELETE");
+}
+
+async function login(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  await auth.signInWithPopup(provider);
+}
+
+async function logout(){
+  await auth.signOut();
+}
+
+auth.onAuthStateChanged(u=>{
+  $("who").textContent = u ? (u.email || u.uid) : "غير مسجل";
+  $("loginBtn").style.display = u ? "none" : "inline-block";
+  $("logoutBtn").style.display = u ? "inline-block" : "none";
+  lockActions(!u);
+  if(u) log("✅ تم تسجيل الدخول: " + (u.email || u.uid), "okTxt");
+});
+
+$("loginBtn").onclick = async ()=>{
+  try{ await login(); }
+  catch(e){
+    log("❌ فشل تسجيل الدخول: " + (e?.message || e), "errTxt");
+    alert("فشل تسجيل الدخول. تأكد من تفعيل Google Sign-in وإضافة الدومين ضمن Authorized domains.");
+  }
+};
+
+$("logoutBtn").onclick = async ()=>{
+  try{ await logout(); log("تم تسجيل الخروج", "okTxt"); }
+  catch(e){ log("❌ فشل الخروج: " + (e?.message || e), "errTxt"); }
+};
+
+// Enable delete button only when typed DELETE
+$("confirmText").addEventListener("input", ()=>{
+  lockActions(!auth.currentUser);
+});
+
+/* =========================
+   Load events from invites
+   ========================= */
+$("btnLoadEvents").onclick = async ()=>{
+  try{
+    lockActions(true);
+    log("⏳ تحميل الأحداث...", "");
+    const snap = await db.collection("invites").get();
+    const events = new Set();
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      if(d.EventName) events.add(String(d.EventName).trim());
+    });
+
+    const sel = $("eventSelect");
+    sel.innerHTML = "";
+    [...events].sort().forEach(ev=>{
+      const op = document.createElement("option");
+      op.value = ev;
+      op.textContent = ev;
+      sel.appendChild(op);
+    });
+
+    $("countInvites").textContent = "—";
+    $("countCards").textContent = "—";
+    log("✅ تم تحميل الأحداث: " + events.size, "okTxt");
+  }catch(e){
+    log("❌ خطأ تحميل الأحداث: " + (e?.message || e), "errTxt");
+  }finally{
+    lockActions(!auth.currentUser);
+  }
+};
+
+/* =========================
+   Count invites + cards
+   ========================= */
+$("btnRefreshCount").onclick = async ()=>{
+  try{
+    const eventName = $("eventSelect").value;
+    if(!eventName) return alert("اختر حدث");
+
+    lockActions(true);
+    log("⏳ حساب الدعوات للحدث: " + eventName, "");
+
+    // count invites
+    const q = await db.collection("invites").where("EventName","==",eventName).get();
+    $("countInvites").textContent = q.size;
+
+    // count cards (list storage folder) — قد يفشل لو Storage rules تمنع list
+    // لذلك نحسبها "تقريبياً" = عدد الدعوات
+    $("countCards").textContent = q.size + " (تقريبي)";
+
+    log("✅ العدد: " + q.size, "okTxt");
+  }catch(e){
+    log("❌ خطأ الحساب: " + (e?.message || e), "errTxt");
+  }finally{
+    lockActions(!auth.currentUser);
+  }
+};
+
+/* =========================
+   Delete event (invites + cards)
+   ========================= */
+$("btnDelete").onclick = async ()=>{
+  const eventName = $("eventSelect").value;
+  if(!eventName) return alert("اختر حدث");
+
+  const confirmWord = $("confirmText").value.trim().toUpperCase();
+  if(confirmWord !== "DELETE") return alert("اكتب DELETE للتأكيد");
+
+  const ok = confirm(
+    "⚠️ سيتم حذف الحدث بالكامل:\n\n" + eventName +
+    "\n\n(دعوات + صور)\n\nمتأكد؟"
+  );
+  if(!ok) return;
+
+  try{
+    lockActions(true);
+    $("deletedTxt").textContent = "0";
+    $("failedTxt").textContent = "0";
+    setProgress(0);
+
+    log("🚨 بدء الحذف للحدث: " + eventName, "errTxt");
+
+    const q = await db.collection("invites").where("EventName","==",eventName).get();
+    const total = q.size;
+    if(!total){
+      log("لا يوجد invites لهذا الحدث.", "errTxt");
+      return;
+    }
+
+    let deleted = 0;
+    let failed = 0;
+
+    for(let i=0; i<q.docs.length; i++){
+      const doc = q.docs[i];
+      const code = doc.id;
+
+      // 1) delete firestore doc
+      try{
+        await db.collection("invites").doc(code).delete();
+        deleted++;
+        $("deletedTxt").textContent = String(deleted);
+        log("✅ حذف invite: " + code, "okTxt");
+      }catch(e){
+        failed++;
+        $("failedTxt").textContent = String(failed);
+        log("❌ فشل حذف invite: " + code + " — " + (e?.message||e), "errTxt");
+      }
+
+      // 2) delete storage file (ignore if missing)
+      try{
+        await storage.ref(`cards/${eventName}/${code}.png`).delete();
+        log("🗑️ حذف card: " + `cards/${eventName}/${code}.png`, "okTxt");
+      }catch(e){
+        // ignore (maybe not exists or no permission)
+      }
+
+      const pct = ((i+1) / total) * 100;
+      setProgress(pct);
+      await new Promise(r=>setTimeout(r, 80));
+    }
+
+    log("✅ انتهى الحذف. Deleted: " + deleted + " / Failed: " + failed, "okTxt");
+    alert("تمت العملية ✅\nDeleted: " + deleted + "\nFailed: " + failed);
+
+  }catch(e){
+    log("❌ خطأ عام: " + (e?.message || e), "errTxt");
+    alert("خطأ: " + (e?.message || e));
+  }finally{
+    lockActions(!auth.currentUser);
+  }
+};
+
+// start locked until login
+lockActions(true);
+log("جاهز. سجل دخول Google أولاً ✅", "okTxt");
+</script>
+
+</body>
+</html>
