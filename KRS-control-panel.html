@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KRS Control Panel</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --bg:#0b0b0c; --panel:#121318; --panel2:#0f1013; --stroke:#2a2b32;
+      --gold:#d4af37; --txt:#e7e7e7; --muted:#a7a7a7; --ok:#25d366; --danger:#ef4444;
+      --chip:#15161b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:"Noto Sans Arabic",system-ui; background:var(--bg); color:var(--txt);
+    }
+    .topbar{
+      position:sticky; top:0; z-index:999;
+      background:rgba(10,10,12,.92);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--stroke);
+    }
+    .wrap{max-width:1400px;margin:0 auto;padding:14px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .brand{
+      display:flex;align-items:center;gap:10px;font-weight:900;
+      letter-spacing:.2px
+    }
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      display:grid;place-items:center;background:#0f1013;border:1px solid var(--stroke);
+      color:var(--gold); font-weight:900;
+    }
+    .pill{
+      padding:7px 10px;border-radius:999px;border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04); color:#fff; font-size:12px;
+      display:inline-flex;align-items:center;gap:6px;
+    }
+    .pill b{color:#ffe8a3}
+    .btn{
+      border:1px solid var(--stroke); background:#121318; color:#fff;
+      padding:10px 12px;border-radius:12px; cursor:pointer; font-weight:800;
+      min-height:40px;
+    }
+    .btn:hover{border-color:rgba(212,175,55,.6)}
+    .btn.gold{border-color:rgba(212,175,55,.5)}
+    .btn.danger{border-color:rgba(239,68,68,.5)}
+    .hint{color:var(--muted);font-size:12px}
+    .grid{
+      display:grid; gap:12px; padding:14px;
+      max-width:1400px; margin:0 auto;
+      grid-template-columns: 330px 1fr;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .side{
+      background:var(--panel); border:1px solid var(--stroke);
+      border-radius:18px; padding:12px;
+    }
+    .main{
+      background:var(--panel); border:1px solid var(--stroke);
+      border-radius:18px; overflow:hidden;
+      min-height: 78vh;
+      display:flex; flex-direction:column;
+    }
+
+    .nav{
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .nav .item{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      padding:10px 12px; border-radius:14px;
+      border:1px solid var(--stroke); background:var(--panel2);
+      cursor:pointer;
+      user-select:none;
+    }
+    .nav .item.active{
+      border-color:rgba(212,175,55,.8);
+      box-shadow: 0 0 0 2px rgba(212,175,55,.12) inset;
+    }
+    .nav .item .title{font-weight:900}
+    .nav .item .tag{
+      font-size:11px; padding:4px 8px; border-radius:999px;
+      background:rgba(255,255,255,.06); border:1px solid var(--stroke);
+      color:#ddd;
+    }
+
+    .toolbar{
+      border-bottom:1px solid var(--stroke);
+      padding:10px 12px;
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      background:rgba(255,255,255,.02);
+    }
+    .toolbar .spacer{flex:1}
+    .input{
+      min-height:40px;
+      border:1px solid var(--stroke);
+      background:#0f1013;
+      color:#fff;
+      padding:10px 12px;
+      border-radius:12px;
+      width: 220px;
+    }
+    .frame{
+      width:100%;
+      border:0;
+      flex:1;
+      background:#0b0b0c;
+    }
+    .mini{
+      font-size:11px; color:var(--muted);
+      line-height:1.6;
+    }
+    .dangerBox{
+      border:1px solid rgba(239,68,68,.35);
+      background: rgba(239,68,68,.08);
+      padding:10px; border-radius:14px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="wrap">
+      <div class="row">
+        <div class="brand">
+          <div class="logo">KRS</div>
+          <div>
+            <div style="font-size:13px;font-weight:900">KRS Control Panel</div>
+            <div class="hint">لوحة واحدة لكل أدوات الدعوات (بدون ما نكسر صفحاتك الحالية)</div>
+          </div>
+        </div>
+
+        <div class="spacer" style="flex:1"></div>
+
+        <span class="pill">Project: <b>hormez-inv</b></span>
+        <span class="pill">Mode: <b id="modeTxt">Embed</b></span>
+
+        <button class="btn gold" onclick="openCurrentInNewTab()">فتح الصفحة الحالية ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Sidebar -->
+    <aside class="side">
+      <div class="row" style="justify-content:space-between">
+        <div style="font-weight:900">الأقسام</div>
+        <span class="pill">Event: <b id="eventLbl">—</b></span>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <input id="eventInput" class="input" placeholder="eventName (مثال: zafaf_khaled)" />
+        <button class="btn" onclick="saveEvent()">حفظ</button>
+      </div>
+      <div class="mini" style="margin-top:6px">
+        هذا فقط لمساعدتك في التذكير والتوحيد بين الصفحات. كل صفحة عندك لها إعداداتها الخاصة.
+      </div>
+
+      <div style="margin-top:12px" class="nav" id="nav">
+        <!-- items injected -->
+      </div>
+
+      <div style="margin-top:14px" class="dangerBox">
+        <div style="font-weight:900;color:#ffb3b3">تنبيه</div>
+        <div class="mini">
+          صفحة الحذف (Delete) خطيرة. تأكد أنك أدمن وأنك فاهم ماذا تحذف.
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <section class="main">
+      <div class="toolbar">
+        <span class="pill">Section: <b id="sectionLbl">—</b></span>
+        <span class="pill">File: <b id="fileLbl">—</b></span>
+
+        <div class="spacer"></div>
+
+        <button class="btn" onclick="reloadFrame()">تحديث الصفحة</button>
+        <button class="btn" onclick="toggleFullscreen()">ملء الشاشة</button>
+      </div>
+
+      <iframe id="frame" class="frame" src=""></iframe>
+    </section>
+  </div>
+
+<script>
+  // ==========================
+  // 1) Your existing pages
+  // ==========================
+  const PAGES = [
+    { id:"gen",   title:"توليد الأكواد + الحدث", tag:"Generate", file:"KRS-upload-RSVP.html" },
+    { id:"merge", title:"دمج QR مع الكرت",       tag:"Merge",    file:"KRS-merge-qr.html" },
+    { id:"send",  title:"مركز الإرسال",          tag:"Send",     file:"KRS-center.html" },
+    { id:"wa",    title:"حالة الرسائل",          tag:"WA",       file:"wa-dashboard.html" },
+    { id:"dash",  title:"Dashboard",             tag:"Stats",    file:"krs-Client-Dashboard.html" },
+    { id:"rsvp",  title:"RSVP Page",             tag:"RSVP",     file:"KRSinvites-RSVP.html" },
+    { id:"del",   title:"حذف حدث",               tag:"Delete",   file:"KRS-delete.html", danger:true },
+  ];
+
+  // ==========================
+  // 2) Repo base (GitHub Pages)
+  // ==========================
+  // If you publish on: https://thehormez.github.io/smartverify1/
+  const BASE = "https://thehormez.github.io/smartverify1/";
+
+  const LS_KEY = "krs_control_panel_v1";
+  const state = loadState();
+
+  const nav = document.getElementById("nav");
+  const frame = document.getElementById("frame");
+  const sectionLbl = document.getElementById("sectionLbl");
+  const fileLbl = document.getElementById("fileLbl");
+  const eventLbl = document.getElementById("eventLbl");
+  const eventInput = document.getElementById("eventInput");
+
+  function loadState(){
+    try{
+      return JSON.parse(localStorage.getItem(LS_KEY) || "null") || {
+        activeId: "gen",
+        eventName: "zafaf_khaled"
+      };
+    }catch{
+      return { activeId:"gen", eventName:"zafaf_khaled" };
+    }
+  }
+  function saveState(){
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+  }
+
+  function renderNav(){
+    nav.innerHTML = "";
+    for(const p of PAGES){
+      const el = document.createElement("div");
+      el.className = "item" + (p.id === state.activeId ? " active" : "");
+      el.onclick = ()=> openPage(p.id);
+
+      const left = document.createElement("div");
+      left.innerHTML = `<div class="title">${p.title}</div><div class="hint">${p.file}</div>`;
+
+      const right = document.createElement("div");
+      right.className = "tag";
+      right.textContent = p.tag;
+      if(p.danger){
+        right.style.borderColor = "rgba(239,68,68,.5)";
+        right.style.background  = "rgba(239,68,68,.10)";
+        right.style.color = "#ffb3b3";
+      }
+
+      el.appendChild(left);
+      el.appendChild(right);
+      nav.appendChild(el);
+    }
+  }
+
+  function openPage(id){
+    const p = PAGES.find(x=>x.id===id) || PAGES[0];
+    state.activeId = p.id;
+    saveState();
+
+    renderNav();
+
+    sectionLbl.textContent = p.title;
+    fileLbl.textContent = p.file;
+
+    const url = BASE + p.file + location.search; // keep query if you use it
+    frame.src = url;
+  }
+
+  function openCurrentInNewTab(){
+    const p = PAGES.find(x=>x.id===state.activeId) || PAGES[0];
+    window.open(BASE + p.file, "_blank");
+  }
+
+  function reloadFrame(){
+    try{
+      frame.contentWindow.location.reload();
+    }catch{
+      // cross-origin
+      frame.src = frame.src;
+    }
+  }
+
+  function toggleFullscreen(){
+    const main = document.querySelector(".main");
+    if(!document.fullscreenElement){
+      main.requestFullscreen?.();
+    }else{
+      document.exitFullscreen?.();
+    }
+  }
+
+  function saveEvent(){
+    const v = (eventInput.value || "").trim();
+    if(!v){ alert("اكتب eventName"); return; }
+    state.eventName = v;
+    saveState();
+    refreshEventUI();
+    alert("تم حفظ الحدث ✅");
+  }
+
+  function refreshEventUI(){
+    eventLbl.textContent = state.eventName || "—";
+    eventInput.value = state.eventName || "";
+  }
+
+  // Boot
+  (function(){
+    document.getElementById("modeTxt").textContent = "Embed";
+    refreshEventUI();
+    renderNav();
+    openPage(state.activeId || "gen");
+  })();
+</script>
+</body>
+</html>
