@@ -718,7 +718,1388 @@
   </main>
 
   <script>
-    // Full JS omitted here in canvas for brevity in tool payload? No, include functional minimal complete JS:
+    const DEFAULT_EVENT = "افراح الحداد";
+    const DEFAULT_PASS  = "12345";
+    const DEFAULT_CARD_STOCK = 300;
+    const CLOUD_EVENT_ID = "افراح الحداد";
+
+    const LS_CLOUD_CFG = "hormez_cloud_cfg_v2";
+    const DEFAULT_UPLOAD_URL = "https://uploadbarcodecard-veaqamnndq-uc.a.run.app";
+    const DEFAULT_SEND_URL   = "https://sendwelcomeandcards-veaqamnndq-uc.a.run.app";
+    const DEFAULT_REMINDER_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendReminderText";
+
+    function getCloudCfg(){
+      try{
+        const o = JSON.parse(localStorage.getItem(LS_CLOUD_CFG) || "null");
+        return {
+          uploadUrl: (o?.uploadUrl || DEFAULT_UPLOAD_URL).trim(),
+          sendUrl: (o?.sendUrl || DEFAULT_SEND_URL).trim(),
+          reminderUrl: (o?.reminderUrl || DEFAULT_REMINDER_URL).trim()
+        };
+      }catch{
+        return {
+          uploadUrl: DEFAULT_UPLOAD_URL,
+          sendUrl: DEFAULT_SEND_URL,
+          reminderUrl: DEFAULT_REMINDER_URL
+        };
+      }
+    }
+
+    function saveCloudCfg(){
+      const uploadUrl = (document.getElementById("cfgUploadUrl").value || "").trim() || DEFAULT_UPLOAD_URL;
+      const sendUrl = (document.getElementById("cfgSendUrl").value || "").trim() || DEFAULT_SEND_URL;
+      const reminderUrl = (document.getElementById("cfgReminderUrl").value || "").trim() || DEFAULT_REMINDER_URL;
+      localStorage.setItem(LS_CLOUD_CFG, JSON.stringify({ uploadUrl, sendUrl, reminderUrl }));
+      alert("تم حفظ روابط Cloud ✅");
+    }
+
+    const LS_THEME = "krs_theme_mode";
+    function applyTheme(mode){
+      document.documentElement.setAttribute("data-theme", mode);
+      localStorage.setItem(LS_THEME, mode);
+    }
+    function toggleTheme(){
+      const cur = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(cur === "dark" ? "light" : "dark");
+    }
+
+    const LS_AUTH='hormez_auth_event';
+    const LS_GUESTS='hormez_guests';
+    const LS_QR='hormez_qrcards';
+    const LS_MSG='hormez_message_template';
+    const LS_EVENT_NAME='hormez_event_name';
+    const LS_CLOUD_UPLOAD_MARK='hormez_cloud_upload_mark';
+    const LS_REMINDER_TEXT='hormez_reminder_text';
+    const LS_REMINDER_LOC='hormez_reminder_loc';
+    const LS_REMINDER_PLACE='hormez_reminder_place';
+
+    const getJSON=(k,fb)=>{ try{ return JSON.parse(localStorage.getItem(k)||JSON.stringify(fb)) }catch{return fb} };
+    const setJSON=(k,v)=>{ try{ localStorage.setItem(k, JSON.stringify(v)) }catch{} };
+
+    let guests = getJSON(LS_GUESTS, []);
+    let barcodeImages = {};
+    let availableQrIds = getJSON(LS_QR, []);
+    let internalGuestIdCounter = guests.reduce((m,g)=>Math.max(m,g.internalId||0), 0);
+    const fixedStock = DEFAULT_CARD_STOCK;
+
+    function normalizeGuestShape(g){
+      return {
+        internalId: g.internalId || 0,
+        name: g.name || "",
+        phone: g.phone || "",
+        totalNeeded: g.totalNeeded || 1,
+        assignedQrIds: Array.isArray(g.assignedQrIds) ? g.assignedQrIds : [],
+        isManuallyAssigned: !!g.isManuallyAssigned,
+
+        inviteStatus: g.inviteStatus || (g.status === "sent" ? "sent" : g.status === "failed" ? "failed" : g.status === "sending" ? "sending" : "new"),
+        reminderStatus: g.reminderStatus || "",
+        inviteAlreadySent: !!g.inviteAlreadySent,
+
+        wamid: g.wamid || "",
+        reminderWamid: g.reminderWamid || "",
+        err: g.err || "",
+        reminderErr: g.reminderErr || ""
+      };
+    }
+
+    guests = guests.map(normalizeGuestShape);
+
+    function safeStr(x){ return String(x ?? "").trim(); }
+    function normPhone(p){ return String(p||'').replace(/[^\d]/g,''); }
+
+    function normalizeUAEPhone(input){
+      let p = normPhone(input);
+      if (!p) return "";
+      if (p.startsWith("05") && p.length === 10) return "971" + p.slice(1);
+      if (p.startsWith("5") && p.length === 9) return "971" + p;
+      if (p.startsWith("971")) return p;
+      return p;
+    }
+
+    function prettyErr(e){
+      try{
+        if(!e) return "Unknown error";
+        if(typeof e === "string") return e;
+        if(e instanceof Error) return e.message || String(e);
+        if(typeof e === "object") return JSON.stringify(e, null, 2);
+        return String(e);
+      }catch{
+        return "Unknown error";
+      }
+    }
+
+    async function postJsonStrict(url, payload){
+      const r = await fetch(url, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const raw = await r.text();
+      let j = null;
+      try { j = JSON.parse(raw); } catch(_) {}
+
+      if(!r.ok) throw new Error(`HTTP ${r.status} :: ${raw}`);
+      if(j && j.ok === false) throw new Error(`APP_ERROR :: ${raw}`);
+      return j || { raw };
+    }
+
+    let selectedGuestIds = new Set();
+
+    function toggleSelectGuest(id, checked){
+      if(checked) selectedGuestIds.add(id);
+      else selectedGuestIds.delete(id);
+      const selectedCountEl = document.getElementById("selectedCount");
+      if(selectedCountEl) selectedCountEl.textContent = selectedGuestIds.size;
+    }
+
+    function selectAllGuests(){
+      if(!guests.length){ alert('لا يوجد ضيوف لتحديدهم.'); return; }
+      guests.forEach(g=> selectedGuestIds.add(g.internalId));
+      renderGuestTable();
+    }
+
+    function clearSelection(){
+      selectedGuestIds.clear();
+      renderGuestTable();
+    }
+
+    function deleteSelectedGuests(){
+      if(selectedGuestIds.size === 0){
+        alert('لم يتم تحديد أي ضيف.');
+        return;
+      }
+      if(!confirm(`حذف ${selectedGuestIds.size} ضيف؟`)) return;
+
+      guests = guests.filter(g => !selectedGuestIds.has(g.internalId));
+      selectedGuestIds.clear();
+
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+    }
+
+    function deleteAllGuests(){
+      if(!guests.length){
+        alert('لا يوجد ضيوف للحذف.');
+        return;
+      }
+      if(!confirm(`سيتم حذف كل الضيوف (${guests.length}). هل أنت متأكد؟`)) return;
+
+      guests = [];
+      selectedGuestIds.clear();
+
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+    }
+
+    function showAuth(){ document.getElementById('authGate').style.display='flex' }
+    function hideAuth(){ document.getElementById('authGate').style.display='none' }
+
+    function authLogin(){
+      const name=document.getElementById('authEvent').value.trim();
+      const pass=document.getElementById('authPass').value;
+      const err=document.getElementById('authErr');
+      err.textContent='';
+      if(name!==DEFAULT_EVENT || pass!==DEFAULT_PASS){
+        err.textContent='اسم الحدث أو كلمة المرور غير صحيحة';
+        return;
+      }
+      localStorage.setItem(LS_AUTH, JSON.stringify({event:DEFAULT_EVENT}));
+      localStorage.setItem(LS_EVENT_NAME, DEFAULT_EVENT);
+      document.getElementById('currentEvent').textContent = DEFAULT_EVENT;
+      document.getElementById('eventName').value = DEFAULT_EVENT;
+      hideAuth();
+    }
+
+    function logout(){
+      localStorage.removeItem(LS_AUTH);
+      showAuth();
+    }
+
+    let assignGuestId = null;
+
+    function openAssignModal(id){
+      assignGuestId = id;
+      const guest = guests.find(g=>g.internalId===id);
+      if(!guest) return;
+
+      const need = guest.totalNeeded;
+      const cap = Math.min(fixedStock, availableQrIds.length);
+      const allowed = availableQrIds.slice(0, cap);
+
+      const usedByOthers = guests
+        .filter(g=>g.internalId!==id)
+        .flatMap(g=>g.assignedQrIds||[]);
+
+      const container = document.getElementById('chipsContainer');
+      container.innerHTML = '';
+
+      allowed.forEach(code=>{
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = code;
+        const selected = (guest.assignedQrIds||[]).includes(code);
+        if(selected) chip.classList.add('selected');
+
+        chip.onclick = ()=>{
+          if(chip.classList.contains('selected')){
+            chip.classList.remove('selected');
+          }else{
+            if(usedByOthers.includes(code)){
+              alert(`الكود "${code}" مستخدم حالياً لضيف آخر.`);
+              return;
+            }
+            const curSel = container.querySelectorAll('.chip.selected').length;
+            if(curSel>=need){
+              alert(`لا يمكنك اختيار أكثر من ${need} كود لهذا الضيف.`);
+              return;
+            }
+            chip.classList.add('selected');
+          }
+          updateAssignHint();
+        };
+        container.appendChild(chip);
+      });
+
+      updateAssignHint();
+      document.getElementById('assignGate').style.display='flex';
+    }
+
+    function updateAssignHint(){
+      const guest = guests.find(g=>g.internalId===assignGuestId);
+      if(!guest) return;
+      const need = guest.totalNeeded;
+      const curSel = document.querySelectorAll('#chipsContainer .chip.selected').length;
+      document.getElementById('assignHint').textContent = `اختر ${need} كود (المحدد حالياً: ${curSel})`;
+    }
+
+    function closeAssign(){
+      assignGuestId=null;
+      document.getElementById('assignGate').style.display='none';
+    }
+
+    function saveAssign(){
+      const guest = guests.find(g=>g.internalId===assignGuestId);
+      if(!guest) return;
+
+      const need = guest.totalNeeded;
+      const sel = Array.from(document.querySelectorAll('#chipsContainer .chip.selected')).map(el=>el.textContent);
+
+      if(sel.length!==need){
+        alert(`يجب اختيار ${need} كود بالضبط.`);
+        return;
+      }
+
+      const others = guests
+        .filter(g=>g.internalId!==guest.internalId)
+        .flatMap(g=>g.assignedQrIds||[]);
+
+      if(sel.some(c=>others.includes(c))){
+        alert('أحد الأكواد المختارة مستخدم لضيف آخر.');
+        return;
+      }
+
+      guest.assignedQrIds = sel;
+      guest.isManuallyAssigned = true;
+      persistAll();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+      closeAssign();
+    }
+
+    document.querySelectorAll('#tabs .tab').forEach(tab=>{
+      tab.addEventListener('click',()=>{
+        document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        const id=tab.dataset.section;
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+        document.querySelector(id).classList.add('active');
+      });
+    });
+
+    function persistAll(){
+      setJSON(LS_GUESTS, guests);
+      setJSON(LS_QR, availableQrIds);
+
+      const msgEl=document.getElementById('messageTemplate');
+      if(msgEl) localStorage.setItem(LS_MSG, msgEl.value||'');
+
+      localStorage.setItem(LS_EVENT_NAME, document.getElementById('eventName')?.value || '');
+      localStorage.setItem(LS_REMINDER_TEXT, document.getElementById('reminderText')?.value || '');
+      localStorage.setItem(LS_REMINDER_LOC, document.getElementById('reminderLocation')?.value || '');
+      localStorage.setItem(LS_REMINDER_PLACE, document.getElementById('reminderPlace')?.value || '');
+    }
+
+    function exportJSON(){
+      const payload = {
+        version:7,
+        eventName: document.getElementById('eventName').value || DEFAULT_EVENT,
+        guests,
+        availableQrIds,
+        internalGuestIdCounter,
+        fixedStock,
+        messageTemplate: document.getElementById('messageTemplate')?.value || '',
+        reminderText: document.getElementById('reminderText')?.value || '',
+        reminderLocation: document.getElementById('reminderLocation')?.value || '',
+        reminderPlace: document.getElementById('reminderPlace')?.value || '',
+        cloudCfg: getCloudCfg(),
+        cloudUploadMark: localStorage.getItem(LS_CLOUD_UPLOAD_MARK) || ""
+      };
+      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+      saveAs(blob, `sender_${payload.eventName||'event'}_${Date.now()}.json`);
+    }
+
+    function importJSONFile(file){
+      if(!file) return;
+      const r=new FileReader();
+      r.onload=(e)=>{
+        try{
+          const data=JSON.parse(e.target.result);
+          guests = Array.isArray(data.guests)? data.guests.map(normalizeGuestShape): [];
+          availableQrIds = Array.isArray(data.availableQrIds)? data.availableQrIds: [];
+          internalGuestIdCounter = data.internalGuestIdCounter || guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
+
+          document.getElementById('eventName').value = data.eventName || DEFAULT_EVENT;
+          document.getElementById('currentEvent').textContent = data.eventName || DEFAULT_EVENT;
+
+          if (data.messageTemplate) document.getElementById('messageTemplate').value = data.messageTemplate;
+          if (data.reminderText) document.getElementById('reminderText').value = data.reminderText;
+          if (data.reminderLocation) document.getElementById('reminderLocation').value = data.reminderLocation;
+          if (data.reminderPlace) document.getElementById('reminderPlace').value = data.reminderPlace;
+
+          if (data.cloudCfg) localStorage.setItem(LS_CLOUD_CFG, JSON.stringify(data.cloudCfg));
+          if (data.cloudUploadMark) localStorage.setItem(LS_CLOUD_UPLOAD_MARK, data.cloudUploadMark);
+
+          selectedGuestIds.clear();
+
+          renderGuestTable();
+          updateKPIs();
+          refreshQrUI();
+          persistAll();
+          refreshCloudUploadBadge();
+
+          const cfg = getCloudCfg();
+          document.getElementById("cfgUploadUrl").value = cfg.uploadUrl;
+          document.getElementById("cfgSendUrl").value = cfg.sendUrl;
+          document.getElementById("cfgReminderUrl").value = cfg.reminderUrl;
+
+          alert('تم الاستيراد بنجاح ✅');
+        }catch{
+          alert('ملف JSON غير صالح');
+        }
+      };
+      r.readAsText(file);
+    }
+
+    function handleFileUpload(){
+      const f=document.getElementById('guestListUpload').files[0];
+      if(!f){ alert('اختر ملفًا'); return }
+      const ext=f.name.split('.').pop().toLowerCase();
+      if(ext==='csv') readCSV(f);
+      else if(['xlsx','xls'].includes(ext)) readExcel(f);
+      else alert('استخدم CSV أو XLSX');
+    }
+
+    function readCSV(file){
+      Papa.parse(file,{
+        header:true,
+        skipEmptyLines:true,
+        complete:(res)=>processImportedData(res.data),
+        error:(e)=>alert('CSV خطأ: '+e.message)
+      });
+    }
+
+    function readExcel(file){
+      const r=new FileReader();
+      r.onload=(e)=>{
+        const data=new Uint8Array(e.target.result);
+        const wb=XLSX.read(data,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const arr=XLSX.utils.sheet_to_json(ws);
+        processImportedData(arr);
+      };
+      r.readAsArrayBuffer(file);
+    }
+
+    function processImportedData(data){
+      if(!Array.isArray(data) || !data.length){ alert('الملف فارغ'); return; }
+
+      const alias = {
+        name: ['name','full name','guest','guest name','الاسم','اسم','اسم الضيف'],
+        phone: ['phone','mobile','tel','number','الجوال','الهاتف','رقم','رقم الهاتف','رقم الجوال'],
+        totalneeded: ['totalneeded','total needed','total_needed','count','qty','tickets','invites','total','total cards','عدد','عدد الدعوات','عدد البطاقات','العدد']
+      };
+
+      const keys = Object.keys(data[0] || {});
+      const norm = (s)=>String(s ?? '').toLowerCase().trim();
+      const findKey = (wanted) => {
+        const list = alias[wanted].map(norm);
+        return keys.find(k => list.includes(norm(k))) || null;
+      };
+
+      const kName  = findKey('name');
+      const kPhone = findKey('phone');
+      const kTotal = findKey('totalneeded');
+
+      if(!kName || !kPhone || !kTotal){
+        alert('الأعمدة المطلوبة: name/الاسم + phone/الهاتف + totalNeeded/عدد الدعوات');
+        return;
+      }
+
+      internalGuestIdCounter = guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
+
+      const newOnes=[];
+      data.forEach(row=>{
+        const name  = String(row[kName]  ?? '').trim();
+        const phone = normalizeUAEPhone(String(row[kPhone] ?? '').trim());
+        const total = Math.max(1, parseInt(row[kTotal] ?? 1) || 1);
+
+        if(!name || !phone) return;
+        if(guests.some(x=>normPhone(x.phone)===normPhone(phone))) return;
+
+        internalGuestIdCounter++;
+        newOnes.push(normalizeGuestShape({
+          internalId: internalGuestIdCounter,
+          name, phone,
+          totalNeeded: total,
+          assignedQrIds: [],
+          isManuallyAssigned: false,
+          inviteStatus: 'new',
+          reminderStatus: '',
+          wamid: '',
+          reminderWamid: '',
+          err: '',
+          reminderErr: '',
+          inviteAlreadySent: false
+        }));
+      });
+
+      guests = guests.concat(newOnes);
+
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+      document.getElementById('guestCount').textContent=guests.length;
+      alert(`تم إضافة ${newOnes.length} ضيف جديد ✅`);
+    }
+
+    async function importFromContacts(){
+      try{
+        if (!('contacts' in navigator) || !('select' in navigator.contacts)){
+          alert('ميزة استيراد جهات الاتصال غير مدعومة على هذا المتصفح.');
+          return;
+        }
+        const picked = await navigator.contacts.select(['name','tel'], { multiple:true });
+        if (!picked || !picked.length){ alert('لم يتم اختيار أي جهة اتصال'); return; }
+
+        let added=0;
+        picked.forEach(c=>{
+          const name=(c.name && c.name[0])||'بدون اسم';
+          const phone=normalizeUAEPhone((c.tel && c.tel[0])||'');
+          if(!phone) return;
+          if(guests.some(x=>normPhone(x.phone)===normPhone(phone))) return;
+
+          internalGuestIdCounter++;
+          guests.push(normalizeGuestShape({
+            internalId:internalGuestIdCounter,
+            name, phone,
+            totalNeeded:1,
+            assignedQrIds:[],
+            isManuallyAssigned:false,
+            inviteStatus:'new',
+            reminderStatus:'',
+            wamid:'',
+            reminderWamid:'',
+            err:'',
+            reminderErr:'',
+            inviteAlreadySent:false
+          }));
+          added++;
+        });
+
+        persistAll();
+        autoDistribute();
+        renderGuestTable();
+        updateKPIs();
+        refreshQrUI();
+        alert(`تم استيراد ${added} جهة اتصال ✅`);
+      }catch(e){
+        console.error(e);
+        alert('تعذر الوصول لجهات الاتصال.');
+      }
+    }
+
+    function addGuestManually(){
+      const n=document.getElementById('newGuestName').value.trim();
+      const p=normalizeUAEPhone(document.getElementById('newGuestPhone').value.trim());
+      const c=Math.max(1, parseInt(document.getElementById('newGuestTotalNeeded').value)||1);
+
+      if(!n||!p){ alert('أدخل الاسم والهاتف'); return }
+
+      internalGuestIdCounter++;
+      guests.push(normalizeGuestShape({
+        internalId:internalGuestIdCounter,
+        name:n, phone:p,
+        totalNeeded:c,
+        assignedQrIds:[],
+        isManuallyAssigned:false,
+        inviteStatus:'new',
+        reminderStatus:'',
+        wamid:'',
+        reminderWamid:'',
+        err:'',
+        reminderErr:'',
+        inviteAlreadySent:false
+      }));
+
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+
+      document.getElementById('newGuestName').value='';
+      document.getElementById('newGuestPhone').value='';
+      document.getElementById('newGuestTotalNeeded').value='1';
+      document.getElementById('guestCount').textContent=guests.length;
+    }
+
+    function loadBarcodes(){
+      const files=document.getElementById('barcodeUpload').files;
+      if(!files.length){ alert('اختر ملفات'); return }
+
+      barcodeImages={};
+      availableQrIds=[];
+      let ok=0;
+      const total=files.length;
+
+      Array.from(files).forEach(file=>{
+        const reader=new FileReader();
+        reader.onload=(e)=>{
+          const id=file.name.replace(/\.[^.]+$/,'').trim();
+          barcodeImages[id]=e.target.result;
+          if(!availableQrIds.includes(id)) availableQrIds.push(id);
+          ok++;
+          document.getElementById('barcodeCount').textContent=ok;
+          document.getElementById('importedQrCodes').textContent=availableQrIds.join(', ');
+          if(ok===total){
+            availableQrIds.sort((a,b)=>{
+              const A=parseInt(a),B=parseInt(b);
+              if(!isNaN(A)&&!isNaN(B)) return A-B;
+              return a.localeCompare(b);
+            });
+
+            localStorage.removeItem(LS_CLOUD_UPLOAD_MARK);
+            refreshCloudUploadBadge();
+
+            persistAll();
+            autoDistribute();
+            renderGuestTable();
+            updateKPIs();
+            refreshQrUI();
+
+            alert(`تم استيراد ${ok} كود ✅ وتوزيعها تلقائيًا.`);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function autoDistribute(){
+      const cap = Math.min(fixedStock, availableQrIds.length);
+      const allowed = availableQrIds.slice(0, cap);
+      const usedByManual = guests.filter(g=>g.isManuallyAssigned).flatMap(g=>g.assignedQrIds);
+      const free = allowed.filter(id=>!usedByManual.includes(id));
+
+      guests.forEach(g=>{ if(!g.isManuallyAssigned) g.assignedQrIds=[]; });
+
+      let i=0;
+      guests.forEach(g=>{
+        if(!g.isManuallyAssigned){
+          const need=g.totalNeeded;
+          if(i+need<=free.length){
+            g.assignedQrIds=free.slice(i,i+need);
+            i+=need;
+          } else {
+            g.assignedQrIds=[];
+          }
+        }
+      });
+    }
+
+    function refreshQrUI(){
+      const cap = Math.min(fixedStock, availableQrIds.length);
+      const used = guests.reduce((s,g)=>s + (g.assignedQrIds?.length||0), 0);
+      const free = Math.max(cap - used, 0);
+
+      document.getElementById('kpiStock').textContent = fixedStock;
+      document.getElementById('kpiUsedCards').textContent = used;
+      document.getElementById('kpiFreeCards').textContent = free;
+
+      const need=guests.reduce((s,g)=>s+g.totalNeeded,0);
+      const el=document.getElementById('qrMismatchAlert');
+      if(!el) return;
+
+      if(cap<need){
+        el.style.display='block';
+        el.textContent=`تحذير: المتاح ضمن الرصيد (${cap}) أقل من المطلوب (${need}).`;
+      } else if(cap>need){
+        el.style.display='block';
+        el.textContent=`ملاحظة: المتاح (${cap}) أكثر من المطلوب (${need}). المتبقي: ${cap-need}`;
+      } else {
+        el.style.display='none';
+      }
+    }
+
+    function assignBarcode(id){ openAssignModal(id); }
+
+    function editTotalNeeded(id){
+      const g=guests.find(x=>x.internalId===id);
+      if(!g) return;
+      const s=prompt(`عدد جديد لـ ${g.name}:`, g.totalNeeded);
+      if(s===null||s.trim()==='') return;
+      const n=parseInt(s);
+      if(isNaN(n)||n<1){ alert('عدد غير صالح'); return; }
+      g.totalNeeded=n;
+      g.isManuallyAssigned=false;
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+    }
+
+    function editGuestDetails(id, field){
+      const g=guests.find(x=>x.internalId===id);
+      if(!g) return;
+      const s=prompt(field==='name' ? `اسم جديد لـ ${g.name}:` : `هاتف جديد لـ ${g.name}:`, g[field]);
+      if(s===null||s.trim()==='') return;
+      g[field] = field === "phone" ? normalizeUAEPhone(s.trim()) : s.trim();
+      persistAll();
+      renderGuestTable();
+    }
+
+    async function downloadBarcodeImage(guest){
+      const ids=(guest.assignedQrIds||[]).map(x=>String(x).trim()).filter(Boolean);
+      if(!ids.length){ alert('لا توجد كروت لهذا الضيف'); return }
+
+      const present=ids.filter(id=>barcodeImages[id]);
+      if(!present.length){
+        alert('لا توجد صور متاحة لهذا الضيف — أعد استيراد صور الباركود على هذا الجهاز.');
+        return;
+      }
+
+      if(ids.length===1){
+        const id=present[0];
+        const a=document.createElement('a');
+        a.href=barcodeImages[id];
+        a.download=`${guest.name}_${id}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
+      }
+
+      const zip=new JSZip();
+      let added=0;
+      for(const id of present){
+        const b64=barcodeImages[id].split(',')[1];
+        zip.file(`${id}.png`, b64, {base64:true});
+        added++;
+      }
+
+      if(!added){ alert('لم يتم العثور على صور'); return; }
+      const blob=await zip.generateAsync({type:'blob'});
+      saveAs(blob, `${guest.name}_${present.length}_Cards.zip`);
+
+      if(present.length<ids.length){
+        alert(`تم تنزيل ${present.length} من أصل ${ids.length}. بعض الصور غير مستوردة على هذا الجهاز.`);
+      }
+    }
+
+    function deleteGuest(id){
+      if(!confirm('حذف الضيف؟')) return;
+      guests = guests.filter(g=>g.internalId!==id);
+      selectedGuestIds.delete(id);
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+    }
+
+    function sendWhatsAppMessage(guest){
+      if(!guest.assignedQrIds.length){ alert('لا كروت للضيف'); return }
+      const msgEl=document.getElementById('messageTemplate');
+      let txt= msgEl ? msgEl.value : `مرحباً ${guest.name}`;
+      txt=txt.replace(/#\{\{GUEST_NAME\}\}#/g, guest.name).replace(/#\{\{TOTAL_COUNT\}\}#/g, guest.totalNeeded);
+      const url=`https://wa.me/${normPhone(guest.phone)}?text=${encodeURIComponent(txt)}`;
+      window.open(url,'_blank');
+    }
+
+    function sendAllWhatsApp(){
+      if(!guests.length){ alert('لا يوجد ضيوف'); return }
+      if(!confirm('سيتم فتح عدة نوافذ واتساب. هل تريد المتابعة؟')) return;
+      const template=document.getElementById('messageTemplate')?.value||'';
+      let delay=0;
+      guests.forEach((guest)=>{
+        const txt=template.replace(/#\{\{GUEST_NAME\}\}#/g,guest.name).replace(/#\{\{TOTAL_COUNT\}\}#/g,guest.totalNeeded);
+        const url=`https://wa.me/${normPhone(guest.phone)}?text=${encodeURIComponent(txt)}`;
+        setTimeout(()=>{ window.open(url,'_blank'); }, delay);
+        delay+=1400;
+      });
+    }
+
+    function getWelcomeText(guest){
+      const tpl = document.getElementById("messageTemplate")?.value || "";
+      return tpl
+        .replace(/#\{\{GUEST_NAME\}\}#/g, guest.name || "")
+        .replace(/#\{\{TOTAL_COUNT\}\}#/g, String(guest.totalNeeded || 1))
+        .trim();
+    }
+
+    function getReminderText(guest){
+      const tpl = document.getElementById("reminderText")?.value || "";
+      return tpl
+        .replace(/#\{\{GUEST_NAME\}\}#/g, guest.name || "")
+        .replace(/#\{\{EVENT_ID\}\}#/g, CLOUD_EVENT_ID)
+        .replace(/#\{\{LOCATION_URL\}\}#/g, document.getElementById("reminderLocation")?.value || "")
+        .replace(/#\{\{CODE\}\}#/g, (guest.assignedQrIds||[])[0] || "")
+        .trim();
+    }
+
+    function refreshCloudUploadBadge(){
+      const mark = localStorage.getItem(LS_CLOUD_UPLOAD_MARK);
+      const st = document.getElementById("cloudUploadStatus");
+      const tm = document.getElementById("cloudUploadTime");
+      if(mark){
+        st.textContent = "مرفوع ✅";
+        tm.textContent = "آخر رفع: " + mark;
+      } else {
+        st.textContent = "غير مرفوع";
+        tm.textContent = "";
+      }
+    }
+
+    async function uploadAllCardsToCloud(){
+      const cfg = getCloudCfg();
+      const eventNameLocal = (localStorage.getItem(LS_EVENT_NAME) || DEFAULT_EVENT || "event").trim();
+
+      if(!availableQrIds.length){
+        alert("لا توجد أكواد. استورد صور الباركود أولاً.");
+        return;
+      }
+      if(!Object.keys(barcodeImages||{}).length){
+        alert("لا توجد صور في الذاكرة. استورد صور الباركود أولاً.");
+        return;
+      }
+
+      if(!confirm(`سيتم رفع ${availableQrIds.length} صورة للسيرفر.\nالحدث (local): ${eventNameLocal}\nCloud eventId: ${CLOUD_EVENT_ID}\nمتابعة؟`)) return;
+
+      let ok=0, fail=0;
+
+      for(const code of availableQrIds){
+        const dataUrl = barcodeImages[code];
+        if(!dataUrl){ fail++; continue; }
+
+        try{
+          await postJsonStrict(cfg.uploadUrl, {
+            eventId: CLOUD_EVENT_ID,
+            code,
+            dataUrl
+          });
+          ok++;
+        }catch(e){
+          fail++;
+          console.error("Upload failed", code, e);
+        }
+
+        await new Promise(r=>setTimeout(r, 120));
+      }
+
+      const mark = new Date().toLocaleString("en-GB", { hour12:false });
+      if(ok>0){
+        localStorage.setItem(LS_CLOUD_UPLOAD_MARK, mark + ` (ok:${ok} fail:${fail})`);
+      }
+      refreshCloudUploadBadge();
+      alert(`رفع المخزون انتهى ✅\nنجح: ${ok}\nفشل: ${fail}`);
+    }
+
+    async function sendWelcomeAndCardsCloud(guest){
+      const cfg = getCloudCfg();
+
+      if(!guest.assignedQrIds || !guest.assignedQrIds.length){
+        throw new Error("لا توجد أكواد مخصصة لهذا الضيف");
+      }
+
+      const welcomeText = getWelcomeText(guest);
+      if(!welcomeText) throw new Error("نص الترحيب فارغ");
+
+      const payload = {
+        eventId: CLOUD_EVENT_ID,
+        to: normPhone(guest.phone),
+        name: guest.name,
+        welcomeText,
+        codes: guest.assignedQrIds
+      };
+
+      return await postJsonStrict(cfg.sendUrl, payload);
+    }
+
+    async function sendReminderCloud(guest){
+      const cfg = getCloudCfg();
+
+      const locationUrl = (document.getElementById("reminderLocation").value || "").trim();
+      const place = (document.getElementById("reminderPlace").value || "").trim();
+
+      if(!locationUrl){
+        throw new Error("ضع رابط اللوكيشن أولاً");
+      }
+
+      if(!guest.assignedQrIds || !guest.assignedQrIds.length){
+        throw new Error("لا توجد أكواد مخصصة لهذا الضيف");
+      }
+
+      const payload = {
+        eventId: CLOUD_EVENT_ID,
+        to: normPhone(guest.phone),
+        name: guest.name,
+        code: guest.assignedQrIds[0],
+        locationUrl,
+        place,
+        text: getReminderText(guest)
+      };
+
+      return await postJsonStrict(cfg.reminderUrl, payload);
+    }
+
+    async function sendAllCloud(){
+      if(!guests.length){ alert("لا يوجد ضيوف"); return; }
+
+      const mark = localStorage.getItem(LS_CLOUD_UPLOAD_MARK);
+      if(!mark){
+        if(!confirm("تنبيه: لم يتم رفع صور الباركود للسيرفر بعد.\nقد يفشل الإرسال.\nمتابعة؟")) return;
+      } else {
+        if(!confirm("سيتم إرسال (ترحيب + كروت) للجميع عبر Cloud API.\nمتابعة؟")) return;
+      }
+
+      let ok=0, fail=0, skipped=0;
+
+      for (let i=0; i<guests.length; i++){
+        const g = guests[i];
+
+        if(g.inviteStatus === "sent" || g.inviteAlreadySent){
+          skipped++;
+          continue;
+        }
+
+        try{
+          g.inviteStatus = "sending";
+          g.err = "";
+          renderGuestTable();
+
+          const out = await sendWelcomeAndCardsCloud(g);
+
+          g.inviteStatus = "sent";
+          g.inviteAlreadySent = true;
+          g.wamid  = out.templateWamid || out.textWamid || "";
+          g.err = "";
+          ok++;
+        }catch(e){
+          const msg = prettyErr(e?.message || e);
+          if(msg.includes("تم إرسالها مسبقًا")){
+            g.inviteStatus = "sent";
+            g.inviteAlreadySent = true;
+            g.err = "";
+            skipped++;
+          }else{
+            g.inviteStatus = "failed";
+            g.err = msg;
+            fail++;
+          }
+        }
+
+        persistAll();
+        renderGuestTable();
+        await new Promise(r=>setTimeout(r, 450));
+      }
+
+      alert(`تم الإرسال ✅\nنجح: ${ok}\nتم إرسالها مسبقًا: ${skipped}\nفشل: ${fail}`);
+    }
+
+    async function sendSelectedCloud(){
+      const list = guests.filter(g => selectedGuestIds.has(g.internalId));
+      if(!list.length){ alert("لم يتم تحديد أي ضيف"); return; }
+
+      const mark = localStorage.getItem(LS_CLOUD_UPLOAD_MARK);
+      if(!mark){
+        if(!confirm("تنبيه: لم يتم رفع صور الباركود للسيرفر بعد.\nقد يفشل الإرسال.\nمتابعة؟")) return;
+      } else {
+        if(!confirm(`سيتم إرسال (ترحيب + كروت) لـ ${list.length} ضيف محدد.\nمتابعة؟`)) return;
+      }
+
+      let ok=0, fail=0, skipped=0;
+
+      for (const g of list){
+        if(g.inviteStatus === "sent" || g.inviteAlreadySent){
+          skipped++;
+          continue;
+        }
+
+        try{
+          g.inviteStatus = "sending";
+          g.err = "";
+          renderGuestTable();
+
+          const out = await sendWelcomeAndCardsCloud(g);
+
+          g.inviteStatus = "sent";
+          g.inviteAlreadySent = true;
+          g.wamid  = out.templateWamid || out.textWamid || "";
+          g.err = "";
+          ok++;
+        }catch(e){
+          const msg = prettyErr(e?.message || e);
+          if(msg.includes("تم إرسالها مسبقًا")){
+            g.inviteStatus = "sent";
+            g.inviteAlreadySent = true;
+            g.err = "";
+            skipped++;
+          }else{
+            g.inviteStatus = "failed";
+            g.err = msg;
+            fail++;
+          }
+        }
+
+        persistAll();
+        renderGuestTable();
+        await new Promise(r=>setTimeout(r, 450));
+      }
+
+      alert(`تم الإرسال ✅\nنجح: ${ok}\nتم إرسالها مسبقًا: ${skipped}\nفشل: ${fail}`);
+    }
+
+    async function sendSelectedReminder(){
+      const list = guests.filter(g => selectedGuestIds.has(g.internalId));
+      if(!list.length){ alert("لم يتم تحديد أي ضيف"); return; }
+
+      let ok=0, fail=0;
+
+      for(const g of list){
+        try{
+          const out = await sendReminderCloud(g);
+          g.reminderStatus = "sent";
+          g.reminderWamid = out?.wamid || "";
+          g.reminderErr = "";
+          ok++;
+        }catch(e){
+          g.reminderStatus = "failed";
+          g.reminderErr = prettyErr(e?.message || e);
+          fail++;
+          console.error("Reminder failed", g.name, e);
+        }
+
+        persistAll();
+        renderGuestTable();
+        await new Promise(r=>setTimeout(r, 450));
+      }
+
+      alert(`تم التذكير ✅\nنجح: ${ok}\nفشل: ${fail}`);
+    }
+
+    async function sendAllReminder(){
+      if(!guests.length){ alert("لا يوجد ضيوف"); return; }
+
+      let ok=0, fail=0;
+
+      for(const g of guests){
+        try{
+          const out = await sendReminderCloud(g);
+          g.reminderStatus = "sent";
+          g.reminderWamid = out?.wamid || "";
+          g.reminderErr = "";
+          ok++;
+        }catch(e){
+          g.reminderStatus = "failed";
+          g.reminderErr = prettyErr(e?.message || e);
+          fail++;
+          console.error("Reminder failed", g.name, e);
+        }
+
+        persistAll();
+        renderGuestTable();
+        await new Promise(r=>setTimeout(r, 450));
+      }
+
+      alert(`تم التذكير ✅\nنجح: ${ok}\nفشل: ${fail}`);
+    }
+
+    async function pasteLocation(){
+      try{
+        const txt = await navigator.clipboard.readText();
+        if(txt && txt.trim()){
+          document.getElementById("reminderLocation").value = txt.trim();
+          persistAll();
+          return;
+        }
+      }catch(_){}
+      const v = prompt("الصق رابط اللوكيشن:");
+      if(v){
+        document.getElementById("reminderLocation").value = v.trim();
+        persistAll();
+      }
+    }
+
+    function updateKPIs(){
+      const total=guests.length;
+      const sent=guests.filter(g=>g.inviteStatus==='sent').length;
+      const remain=Math.max(total - sent, 0);
+      document.getElementById('kpiTotal').textContent=total;
+      document.getElementById('kpiSent').textContent=sent;
+      document.getElementById('kpiRemain').textContent=remain;
+    }
+
+    function getFilteredGuests(){
+      const q = (document.getElementById("guestSearch")?.value || "").trim().toLowerCase();
+      const statusFilter = document.getElementById("guestStatusFilter")?.value || "all";
+      const sortBy = document.getElementById("guestSortBy")?.value || "default";
+
+      let list = [...guests];
+
+      if(q){
+        list = list.filter(g => {
+          const name = String(g.name || "").toLowerCase();
+          const phone = String(g.phone || "").toLowerCase();
+          const codes = (g.assignedQrIds || []).join(" ").toLowerCase();
+          return name.includes(q) || phone.includes(q) || codes.includes(q);
+        });
+      }
+
+      if(statusFilter !== "all"){
+        list = list.filter(g => (g.inviteStatus || "new") === statusFilter);
+      }
+
+      if(sortBy === "name"){
+        list.sort((a,b)=> String(a.name||"").localeCompare(String(b.name||""), "ar"));
+      }else if(sortBy === "count_desc"){
+        list.sort((a,b)=> (b.totalNeeded||0) - (a.totalNeeded||0));
+      }else if(sortBy === "count_asc"){
+        list.sort((a,b)=> (a.totalNeeded||0) - (b.totalNeeded||0));
+      }else if(sortBy === "sent_first"){
+        const rank = (s)=>{
+          if(s==="sent") return 0;
+          if(s==="sending") return 1;
+          if(s==="new") return 2;
+          if(s==="failed") return 3;
+          return 4;
+        };
+        list.sort((a,b)=> rank(a.inviteStatus) - rank(b.inviteStatus));
+      }
+
+      return list;
+    }
+
+    function renderGuestTable(){
+      const body = document.getElementById('guestTableBody');
+      if(!body) return;
+
+      body.innerHTML = '';
+      document.getElementById('guestCount').textContent = guests.length;
+
+      const idsNow = new Set(guests.map(g=>g.internalId));
+      selectedGuestIds.forEach(id=>{ if(!idsNow.has(id)) selectedGuestIds.delete(id); });
+
+      const list = getFilteredGuests();
+
+      const selectedCountEl = document.getElementById("selectedCount");
+      if(selectedCountEl) selectedCountEl.textContent = selectedGuestIds.size;
+
+      const filteredCountEl = document.getElementById("filteredCount");
+      if(filteredCountEl) filteredCountEl.textContent = list.length;
+
+      list.forEach(guest=>{
+        const tr = document.createElement('tr');
+
+        const tdSel = document.createElement('td');
+        tdSel.setAttribute('data-label','تحديد');
+        tdSel.style.textAlign='center';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = selectedGuestIds.has(guest.internalId);
+        cb.style.transform = 'scale(1.15)';
+        cb.onchange = (e)=>toggleSelectGuest(guest.internalId, e.target.checked);
+
+        tdSel.appendChild(cb);
+        tr.appendChild(tdSel);
+
+        const tdName = document.createElement('td');
+        tdName.setAttribute('data-label','الضيف');
+        tdName.innerHTML = `
+          <div class="guest-cell">
+            <div class="guest-name editable" onclick="editGuestDetails(${guest.internalId||0}, 'name')">${guest.name || ''}</div>
+            <div class="guest-meta">ID: ${guest.internalId || '—'}</div>
+          </div>
+        `;
+        tr.appendChild(tdName);
+
+        const tdCount = document.createElement('td');
+        tdCount.setAttribute('data-label','عدد الدعوات');
+        tdCount.innerHTML = `
+          <div class="guest-cell">
+            <div class="editable" onclick="editTotalNeeded(${guest.internalId||0})">${guest.totalNeeded || 0}</div>
+            <div class="guest-meta">قابل للتعديل</div>
+          </div>
+        `;
+        tr.appendChild(tdCount);
+
+        const tdPhone = document.createElement('td');
+        tdPhone.setAttribute('data-label','رقم الهاتف');
+        tdPhone.innerHTML = `
+          <div class="guest-cell">
+            <div class="editable" onclick="editGuestDetails(${guest.internalId||0}, 'phone')">${guest.phone || ''}</div>
+            <div class="guest-meta">اضغط للتعديل</div>
+          </div>
+        `;
+        tr.appendChild(tdPhone);
+
+        const tdQr = document.createElement('td');
+        tdQr.setAttribute('data-label','الأكواد');
+        const codes = guest.assignedQrIds || [];
+        if(codes.length){
+          tdQr.innerHTML = `
+            <div class="codes-wrap">
+              ${codes.map(code => `<span class="code-badge">${code}</span>`).join('')}
+            </div>
+            <div class="small" style="margin-top:8px">
+              <span class="editable" onclick="assignBarcode(${guest.internalId||0})">تعيين / تعديل</span>
+            </div>
+          `;
+        }else{
+          tdQr.innerHTML = `
+            <div class="guest-cell">
+              <div style="color:var(--danger); font-weight:900">لم يخصَّص</div>
+              <div class="small">
+                <span class="editable" onclick="assignBarcode(${guest.internalId||0})">اختيار الأكواد</span>
+              </div>
+            </div>
+          `;
+        }
+        tr.appendChild(tdQr);
+
+        const tdStatus = document.createElement('td');
+        tdStatus.setAttribute('data-label','الحالة');
+
+        const inviteStatus = guest.inviteStatus || "new";
+        const reminderStatus = guest.reminderStatus || "";
+
+        if(inviteStatus === "sending"){
+          tdStatus.innerHTML = `<div class="guest-cell">
+            <span class="status sending">جاري إرسال الدعوة...</span>
+          </div>`;
+        }
+        else if(inviteStatus === "failed"){
+          tdStatus.innerHTML = `<div class="guest-cell">
+            <span class="status failed">فشل الإرسال</span>
+            <div class="small" title="${String(guest.err || '').replace(/"/g,'&quot;')}">${guest.err ? 'يوجد سبب خطأ' : ''}</div>
+          </div>`;
+        }
+        else if(inviteStatus === "sent"){
+          let extra = guest.inviteAlreadySent
+            ? `<span class="status warn">تم إرسالها مسبقًا</span>`
+            : `<span class="status sent">مرسل</span>`;
+
+          if(reminderStatus === "sent"){
+            extra += `<br><br><span class="status sending">تم إرسال التذكير</span>`;
+          }else if(reminderStatus === "failed"){
+            extra += `<br><br><span class="status failed">فشل التذكير</span>`;
+          }
+
+          tdStatus.innerHTML = `<div class="guest-cell">
+            ${extra}
+            <div class="small">${guest.wamid ? 'تم حفظ معرف الرسالة' : ''}</div>
+          </div>`;
+        }
+        else{
+          if(reminderStatus === "sent"){
+            tdStatus.innerHTML = `<div class="guest-cell">
+              <span class="status sending">تم إرسال التذكير</span>
+            </div>`;
+          }else{
+            tdStatus.innerHTML = `<span class="status new">جديدة</span>`;
+          }
+        }
+
+        tr.appendChild(tdStatus);
+
+        const tdAct = document.createElement('td');
+        tdAct.className = 'actions';
+        tdAct.style.textAlign = 'left';
+        tdAct.setAttribute('data-label','الإجراءات');
+
+        tdAct.innerHTML = `
+          <div class="actions-stack">
+            <button class="btn" onclick="assignBarcode(${guest.internalId||0})">تعيين</button>
+            <button class="btn" onclick="downloadBarcodeImageById(${guest.internalId||0})">${guest.totalNeeded===1 ? 'PNG' : 'ZIP'}</button>
+            <button class="btn ok" onclick="sendInviteById(${guest.internalId||0})">إرسال الدعوة</button>
+            <button class="btn gold" onclick="sendReminderById(${guest.internalId||0})">التذكير</button>
+            <button class="btn" onclick="sendWhatsAppById(${guest.internalId||0})">فتح واتساب</button>
+            <button class="btn warn" onclick="deleteGuest(${guest.internalId||0})">حذف</button>
+          </div>
+        `;
+        tr.appendChild(tdAct);
+
+        body.appendChild(tr);
+      });
+
+      updateKPIs();
+      refreshQrUI();
+      persistAll();
+    }
+
+    function getGuestById(id){
+      return guests.find(g => g.internalId === id);
+    }
+
+    async function sendInviteById(id){
+      const guest = getGuestById(id);
+      if(!guest) return;
+
+      if (guest.inviteStatus === "sent" || guest.inviteAlreadySent) {
+        guest.inviteStatus = "sent";
+        guest.inviteAlreadySent = true;
+        persistAll();
+        renderGuestTable();
+        alert("تم إرسالها مسبقًا");
+        return;
+      }
+
+      try{
+        guest.inviteStatus = "sending";
+        guest.err = "";
+        renderGuestTable();
+
+        const out = await sendWelcomeAndCardsCloud(guest);
+        guest.inviteStatus = "sent";
+        guest.inviteAlreadySent = false;
+        guest.wamid = out.templateWamid || out.textWamid || "";
+        guest.err = "";
+      }catch(e){
+        const msg = prettyErr(e?.message || e);
+
+        if (msg.includes("تم إرسالها مسبقًا")) {
+          guest.inviteStatus = "sent";
+          guest.inviteAlreadySent = true;
+          guest.err = "";
+          alert("تم إرسالها مسبقًا");
+        } else {
+          guest.inviteStatus = "failed";
+          guest.err = msg;
+          alert("فشل الإرسال:\n" + guest.err);
+        }
+      }
+
+      persistAll();
+      renderGuestTable();
+    }
+
+    async function sendReminderById(id){
+      const guest = getGuestById(id);
+      if(!guest) return;
+
+      try{
+        const out = await sendReminderCloud(guest);
+        guest.reminderStatus = "sent";
+        guest.reminderWamid = out?.wamid || "";
+        guest.reminderErr = "";
+        persistAll();
+        renderGuestTable();
+        alert("✅ تم إرسال التذكير");
+      }catch(e){
+        guest.reminderStatus = "failed";
+        guest.reminderErr = prettyErr(e?.message || e);
+        persistAll();
+        renderGuestTable();
+        alert("❌ فشل التذكير:\n" + guest.reminderErr);
+      }
+    }
+
+    function sendWhatsAppById(id){
+      const guest = getGuestById(id);
+      if(!guest) return;
+      sendWhatsAppMessage(guest);
+    }
+
+    function downloadBarcodeImageById(id){
+      const guest = getGuestById(id);
+      if(!guest) return;
+      downloadBarcodeImage(guest);
+    }
+
+    (function boot(){
+      applyTheme(localStorage.getItem(LS_THEME) || "dark");
+
+      const cfg = getCloudCfg();
+      document.getElementById("cfgUploadUrl").value = cfg.uploadUrl;
+      document.getElementById("cfgSendUrl").value = cfg.sendUrl;
+      document.getElementById("cfgReminderUrl").value = cfg.reminderUrl;
+
+      try{
+        const s=JSON.parse(localStorage.getItem(LS_AUTH)||'null');
+        if(!s?.event){
+          showAuth();
+        } else {
+          document.getElementById('currentEvent').textContent = s.event;
+        }
+
+        document.getElementById('eventName').value = localStorage.getItem(LS_EVENT_NAME) || DEFAULT_EVENT;
+
+        const savedMsg = localStorage.getItem(LS_MSG);
+        if (savedMsg && document.getElementById('messageTemplate')) document.getElementById('messageTemplate').value = savedMsg;
+
+        const rText = localStorage.getItem(LS_REMINDER_TEXT);
+        if (rText) document.getElementById('reminderText').value = rText;
+
+        const rLoc = localStorage.getItem(LS_REMINDER_LOC);
+        if (rLoc) document.getElementById('reminderLocation').value = rLoc;
+
+        const rPlace = localStorage.getItem(LS_REMINDER_PLACE);
+        if (rPlace) document.getElementById('reminderPlace').value = rPlace;
+
+        document.getElementById('kpiStock').textContent = fixedStock;
+      }catch{
+        showAuth();
+      }
+
+      refreshCloudUploadBadge();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+    })();
+
+    (function bindAutoSave(){
+      const el=document.getElementById('messageTemplate');
+      if(el) el.addEventListener('input', ()=> localStorage.setItem(LS_MSG, el.value||''));
+
+      const rt=document.getElementById('reminderText');
+      if(rt) rt.addEventListener('input', ()=> localStorage.setItem(LS_REMINDER_TEXT, rt.value||''));
+
+      const rl=document.getElementById('reminderLocation');
+      if(rl) rl.addEventListener('input', ()=> localStorage.setItem(LS_REMINDER_LOC, rl.value||''));
+
+      const rp=document.getElementById('reminderPlace');
+      if(rp) rp.addEventListener('input', ()=> localStorage.setItem(LS_REMINDER_PLACE, rp.value||''));
+    })();
   </script>
 </body>
 </html>
