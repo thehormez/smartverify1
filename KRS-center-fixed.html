@@ -317,11 +317,13 @@
       padding:8px 11px; border-radius:999px;
       font-size:12px; font-weight:900;
       border:1px solid var(--stroke);
+      width:max-content;
     }
     .status.new{ background:var(--badge-bg) }
     .status.sending{ background:rgba(37,99,235,.14); border-color:rgba(37,99,235,.24) }
     .status.sent{ background:rgba(34,197,94,.14); border-color:rgba(34,197,94,.24) }
     .status.failed{ background:rgba(239,68,68,.14); border-color:rgba(239,68,68,.24) }
+    .status.warn{ background:rgba(212,175,55,.14); border-color:rgba(212,175,55,.24) }
 
     .actions-stack{
       display:grid; grid-template-columns:1fr 1fr; gap:8px;
@@ -621,8 +623,8 @@
               <option value="all">كل الحالات</option>
               <option value="new">جديدة</option>
               <option value="sending">جاري الإرسال</option>
-              <option value="sent">مُرسلة</option>
-              <option value="failed">فشل</option>
+              <option value="sent">مرسل</option>
+              <option value="failed">فشل الإرسال</option>
             </select>
             <select id="guestSortBy" class="btn" onchange="renderGuestTable()">
               <option value="default">الترتيب الافتراضي</option>
@@ -779,6 +781,28 @@
     let availableQrIds = getJSON(LS_QR, []);
     let internalGuestIdCounter = guests.reduce((m,g)=>Math.max(m,g.internalId||0), 0);
     const fixedStock = DEFAULT_CARD_STOCK;
+
+    function normalizeGuestShape(g){
+      return {
+        internalId: g.internalId || 0,
+        name: g.name || "",
+        phone: g.phone || "",
+        totalNeeded: g.totalNeeded || 1,
+        assignedQrIds: Array.isArray(g.assignedQrIds) ? g.assignedQrIds : [],
+        isManuallyAssigned: !!g.isManuallyAssigned,
+
+        inviteStatus: g.inviteStatus || (g.status === "sent" ? "sent" : g.status === "failed" ? "failed" : g.status === "sending" ? "sending" : "new"),
+        reminderStatus: g.reminderStatus || "",
+        inviteAlreadySent: !!g.inviteAlreadySent,
+
+        wamid: g.wamid || "",
+        reminderWamid: g.reminderWamid || "",
+        err: g.err || "",
+        reminderErr: g.reminderErr || ""
+      };
+    }
+
+    guests = guests.map(normalizeGuestShape);
 
     function safeStr(x){ return String(x ?? "").trim(); }
     function normPhone(p){ return String(p||'').replace(/[^\d]/g,''); }
@@ -1015,7 +1039,7 @@
 
     function exportJSON(){
       const payload = {
-        version:6,
+        version:7,
         eventName: document.getElementById('eventName').value || DEFAULT_EVENT,
         guests,
         availableQrIds,
@@ -1038,7 +1062,7 @@
       r.onload=(e)=>{
         try{
           const data=JSON.parse(e.target.result);
-          guests = Array.isArray(data.guests)? data.guests: [];
+          guests = Array.isArray(data.guests)? data.guests.map(normalizeGuestShape): [];
           availableQrIds = Array.isArray(data.availableQrIds)? data.availableQrIds: [];
           internalGuestIdCounter = data.internalGuestIdCounter || guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
 
@@ -1141,16 +1165,20 @@
         if(guests.some(x=>normPhone(x.phone)===normPhone(phone))) return;
 
         internalGuestIdCounter++;
-        newOnes.push({
+        newOnes.push(normalizeGuestShape({
           internalId: internalGuestIdCounter,
           name, phone,
           totalNeeded: total,
           assignedQrIds: [],
           isManuallyAssigned: false,
-          status: 'new',
+          inviteStatus: 'new',
+          reminderStatus: '',
           wamid: '',
-          err: ''
-        });
+          reminderWamid: '',
+          err: '',
+          reminderErr: '',
+          inviteAlreadySent: false
+        }));
       });
 
       guests = guests.concat(newOnes);
@@ -1181,16 +1209,20 @@
           if(guests.some(x=>normPhone(x.phone)===normPhone(phone))) return;
 
           internalGuestIdCounter++;
-          guests.push({
+          guests.push(normalizeGuestShape({
             internalId:internalGuestIdCounter,
             name, phone,
             totalNeeded:1,
             assignedQrIds:[],
             isManuallyAssigned:false,
-            status:'new',
+            inviteStatus:'new',
+            reminderStatus:'',
             wamid:'',
-            err:''
-          });
+            reminderWamid:'',
+            err:'',
+            reminderErr:'',
+            inviteAlreadySent:false
+          }));
           added++;
         });
 
@@ -1214,16 +1246,20 @@
       if(!n||!p){ alert('أدخل الاسم والهاتف'); return }
 
       internalGuestIdCounter++;
-      guests.push({
+      guests.push(normalizeGuestShape({
         internalId:internalGuestIdCounter,
         name:n, phone:p,
         totalNeeded:c,
         assignedQrIds:[],
         isManuallyAssigned:false,
-        status:'new',
+        inviteStatus:'new',
+        reminderStatus:'',
         wamid:'',
-        err:''
-      });
+        reminderWamid:'',
+        err:'',
+        reminderErr:'',
+        inviteAlreadySent:false
+      }));
 
       persistAll();
       autoDistribute();
@@ -1556,26 +1592,40 @@
         if(!confirm("سيتم إرسال (ترحيب + كروت) للجميع عبر Cloud API.\nمتابعة؟")) return;
       }
 
-      let ok=0, fail=0;
+      let ok=0, fail=0, skipped=0;
 
       for (let i=0; i<guests.length; i++){
         const g = guests[i];
 
+        if(g.inviteStatus === "sent" || g.inviteAlreadySent){
+          skipped++;
+          continue;
+        }
+
         try{
-          g.status = "sending";
+          g.inviteStatus = "sending";
           g.err = "";
           renderGuestTable();
 
           const out = await sendWelcomeAndCardsCloud(g);
 
-          g.status = "sent";
+          g.inviteStatus = "sent";
+          g.inviteAlreadySent = true;
           g.wamid  = out.templateWamid || out.textWamid || "";
           g.err = "";
           ok++;
         }catch(e){
-          g.status = "failed";
-          g.err = prettyErr(e?.message || e);
-          fail++;
+          const msg = prettyErr(e?.message || e);
+          if(msg.includes("تم إرسالها مسبقًا")){
+            g.inviteStatus = "sent";
+            g.inviteAlreadySent = true;
+            g.err = "";
+            skipped++;
+          }else{
+            g.inviteStatus = "failed";
+            g.err = msg;
+            fail++;
+          }
         }
 
         persistAll();
@@ -1583,7 +1633,7 @@
         await new Promise(r=>setTimeout(r, 450));
       }
 
-      alert(`تم الإرسال ✅\nنجح: ${ok}\nفشل: ${fail}`);
+      alert(`تم الإرسال ✅\nنجح: ${ok}\nتم إرسالها مسبقًا: ${skipped}\nفشل: ${fail}`);
     }
 
     async function sendSelectedCloud(){
@@ -1597,24 +1647,38 @@
         if(!confirm(`سيتم إرسال (ترحيب + كروت) لـ ${list.length} ضيف محدد.\nمتابعة؟`)) return;
       }
 
-      let ok=0, fail=0;
+      let ok=0, fail=0, skipped=0;
 
       for (const g of list){
+        if(g.inviteStatus === "sent" || g.inviteAlreadySent){
+          skipped++;
+          continue;
+        }
+
         try{
-          g.status = "sending";
+          g.inviteStatus = "sending";
           g.err = "";
           renderGuestTable();
 
           const out = await sendWelcomeAndCardsCloud(g);
 
-          g.status = "sent";
+          g.inviteStatus = "sent";
+          g.inviteAlreadySent = true;
           g.wamid  = out.templateWamid || out.textWamid || "";
           g.err = "";
           ok++;
         }catch(e){
-          g.status = "failed";
-          g.err = prettyErr(e?.message || e);
-          fail++;
+          const msg = prettyErr(e?.message || e);
+          if(msg.includes("تم إرسالها مسبقًا")){
+            g.inviteStatus = "sent";
+            g.inviteAlreadySent = true;
+            g.err = "";
+            skipped++;
+          }else{
+            g.inviteStatus = "failed";
+            g.err = msg;
+            fail++;
+          }
         }
 
         persistAll();
@@ -1622,7 +1686,7 @@
         await new Promise(r=>setTimeout(r, 450));
       }
 
-      alert(`تم الإرسال ✅\nنجح: ${ok}\nفشل: ${fail}`);
+      alert(`تم الإرسال ✅\nنجح: ${ok}\nتم إرسالها مسبقًا: ${skipped}\nفشل: ${fail}`);
     }
 
     async function sendSelectedReminder(){
@@ -1633,12 +1697,20 @@
 
       for(const g of list){
         try{
-          await sendReminderCloud(g);
+          const out = await sendReminderCloud(g);
+          g.reminderStatus = "sent";
+          g.reminderWamid = out?.wamid || "";
+          g.reminderErr = "";
           ok++;
         }catch(e){
+          g.reminderStatus = "failed";
+          g.reminderErr = prettyErr(e?.message || e);
           fail++;
           console.error("Reminder failed", g.name, e);
         }
+
+        persistAll();
+        renderGuestTable();
         await new Promise(r=>setTimeout(r, 450));
       }
 
@@ -1652,12 +1724,20 @@
 
       for(const g of guests){
         try{
-          await sendReminderCloud(g);
+          const out = await sendReminderCloud(g);
+          g.reminderStatus = "sent";
+          g.reminderWamid = out?.wamid || "";
+          g.reminderErr = "";
           ok++;
         }catch(e){
+          g.reminderStatus = "failed";
+          g.reminderErr = prettyErr(e?.message || e);
           fail++;
           console.error("Reminder failed", g.name, e);
         }
+
+        persistAll();
+        renderGuestTable();
         await new Promise(r=>setTimeout(r, 450));
       }
 
@@ -1682,7 +1762,7 @@
 
     function updateKPIs(){
       const total=guests.length;
-      const sent=guests.filter(g=>g.status==='sent').length;
+      const sent=guests.filter(g=>g.inviteStatus==='sent').length;
       const remain=Math.max(total - sent, 0);
       document.getElementById('kpiTotal').textContent=total;
       document.getElementById('kpiSent').textContent=sent;
@@ -1706,7 +1786,7 @@
       }
 
       if(statusFilter !== "all"){
-        list = list.filter(g => (g.status || "new") === statusFilter);
+        list = list.filter(g => (g.inviteStatus || "new") === statusFilter);
       }
 
       if(sortBy === "name"){
@@ -1723,7 +1803,7 @@
           if(s==="failed") return 3;
           return 4;
         };
-        list.sort((a,b)=> rank(a.status) - rank(b.status));
+        list.sort((a,b)=> rank(a.inviteStatus) - rank(b.inviteStatus));
       }
 
       return list;
@@ -1820,25 +1900,46 @@
         const tdStatus = document.createElement('td');
         tdStatus.setAttribute('data-label','الحالة');
 
-        if(guest.status === "sending"){
-          tdStatus.innerHTML = `<span class="status sending">جاري الإرسال...</span>`;
-        } else if(guest.status === "failed"){
-          tdStatus.innerHTML = `
-            <div class="guest-cell">
-              <span class="status failed">فشل</span>
-              <div class="small" title="${String(guest.err || '').replace(/"/g,'&quot;')}">${guest.err ? 'يوجد سبب خطأ' : ''}</div>
-            </div>
-          `;
-        } else if(guest.status === "sent"){
-          tdStatus.innerHTML = `
-            <div class="guest-cell">
-              <span class="status sent">مُرسلة</span>
-              <div class="small">${guest.wamid ? 'تم حفظ المعرف' : ''}</div>
-            </div>
-          `;
-        } else {
-          tdStatus.innerHTML = `<span class="status new">جديدة</span>`;
+        const inviteStatus = guest.inviteStatus || "new";
+        const reminderStatus = guest.reminderStatus || "";
+
+        if(inviteStatus === "sending"){
+          tdStatus.innerHTML = `<div class="guest-cell">
+            <span class="status sending">جاري إرسال الدعوة...</span>
+          </div>`;
         }
+        else if(inviteStatus === "failed"){
+          tdStatus.innerHTML = `<div class="guest-cell">
+            <span class="status failed">فشل الإرسال</span>
+            <div class="small" title="${String(guest.err || '').replace(/"/g,'&quot;')}">${guest.err ? 'يوجد سبب خطأ' : ''}</div>
+          </div>`;
+        }
+        else if(inviteStatus === "sent"){
+          let extra = guest.inviteAlreadySent
+            ? `<span class="status warn">تم إرسالها مسبقًا</span>`
+            : `<span class="status sent">مرسل</span>`;
+
+          if(reminderStatus === "sent"){
+            extra += `<br><br><span class="status sending">تم إرسال التذكير</span>`;
+          }else if(reminderStatus === "failed"){
+            extra += `<br><br><span class="status failed">فشل التذكير</span>`;
+          }
+
+          tdStatus.innerHTML = `<div class="guest-cell">
+            ${extra}
+            <div class="small">${guest.wamid ? 'تم حفظ معرف الرسالة' : ''}</div>
+          </div>`;
+        }
+        else{
+          if(reminderStatus === "sent"){
+            tdStatus.innerHTML = `<div class="guest-cell">
+              <span class="status sending">تم إرسال التذكير</span>
+            </div>`;
+          }else{
+            tdStatus.innerHTML = `<span class="status new">جديدة</span>`;
+          }
+        }
+
         tr.appendChild(tdStatus);
 
         const tdAct = document.createElement('td');
@@ -1874,19 +1975,38 @@
       const guest = getGuestById(id);
       if(!guest) return;
 
+      if (guest.inviteStatus === "sent" || guest.inviteAlreadySent) {
+        guest.inviteStatus = "sent";
+        guest.inviteAlreadySent = true;
+        persistAll();
+        renderGuestTable();
+        alert("تم إرسالها مسبقًا");
+        return;
+      }
+
       try{
-        guest.status = "sending";
+        guest.inviteStatus = "sending";
         guest.err = "";
         renderGuestTable();
 
         const out = await sendWelcomeAndCardsCloud(guest);
-        guest.status = "sent";
+        guest.inviteStatus = "sent";
+        guest.inviteAlreadySent = false;
         guest.wamid = out.templateWamid || out.textWamid || "";
         guest.err = "";
       }catch(e){
-        guest.status = "failed";
-        guest.err = prettyErr(e?.message || e);
-        alert("فشل الإرسال:\n" + guest.err);
+        const msg = prettyErr(e?.message || e);
+
+        if (msg.includes("تم إرسالها مسبقًا")) {
+          guest.inviteStatus = "sent";
+          guest.inviteAlreadySent = true;
+          guest.err = "";
+          alert("تم إرسالها مسبقًا");
+        } else {
+          guest.inviteStatus = "failed";
+          guest.err = msg;
+          alert("فشل الإرسال:\n" + guest.err);
+        }
       }
 
       persistAll();
@@ -1898,10 +2018,19 @@
       if(!guest) return;
 
       try{
-        await sendReminderCloud(guest);
+        const out = await sendReminderCloud(guest);
+        guest.reminderStatus = "sent";
+        guest.reminderWamid = out?.wamid || "";
+        guest.reminderErr = "";
+        persistAll();
+        renderGuestTable();
         alert("✅ تم إرسال التذكير");
       }catch(e){
-        alert("❌ فشل التذكير:\n" + prettyErr(e?.message || e));
+        guest.reminderStatus = "failed";
+        guest.reminderErr = prettyErr(e?.message || e);
+        persistAll();
+        renderGuestTable();
+        alert("❌ فشل التذكير:\n" + guest.reminderErr);
       }
     }
 
