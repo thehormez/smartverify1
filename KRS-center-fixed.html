@@ -1972,17 +1972,36 @@
     }
 
     async function sendInviteById(id){
-      const guest = getGuestById(id);
-      if(!guest) return;
+  const guest = getGuestById(id);
+  if(!guest) return;
 
-      if (guest.inviteStatus === "sent" || guest.inviteAlreadySent) {
-        guest.inviteStatus = "sent";
-        guest.inviteAlreadySent = true;
-        persistAll();
-        renderGuestTable();
-        alert("تم إرسالها مسبقًا");
-        return;
-      }
+  if (guest.inviteStatus === "sent" || guest.inviteAlreadySent) {
+    const again = confirm("تم إرسالها مسبقًا.\nهل تريد إعادة إرسال الدعوة لهذا الضيف؟");
+    if (!again) return;
+  }
+
+  try{
+    guest.inviteStatus = "sending";
+    guest.err = "";
+    renderGuestTable();
+
+    const out = await sendWelcomeAndCardsCloud(guest);
+
+    guest.inviteStatus = "sent";
+    guest.inviteAlreadySent = true;
+    guest.wamid = out.templateWamid || out.textWamid || "";
+    guest.err = "";
+
+    alert("✅ تم إرسال الدعوة");
+  }catch(e){
+    guest.inviteStatus = "failed";
+    guest.err = prettyErr(e?.message || e);
+    alert("❌ فشل الإرسال:\n" + guest.err);
+  }
+
+  persistAll();
+  renderGuestTable();
+}
 
       try{
         guest.inviteStatus = "sending";
