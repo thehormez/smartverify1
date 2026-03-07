@@ -486,7 +486,7 @@
             <b>sendWelcomeAndCards</b>
             ويضيف لك التذكير عبر:
             <b>sendReminderText</b>
-            بدون التأثير على مسار الدعوة.
+            مع السماح بإعادة إرسال الدعوة من اللوحة.
           </div>
         </div>
 
@@ -500,8 +500,8 @@
             <div class="hint">استيراد صور الأكواد ثم رفعها إلى السيرفر قبل الإرسال.</div>
           </div>
           <div class="card">
-            <h3>3) إرسال / تذكير</h3>
-            <div class="hint">إرسال الدعوة أولاً ثم التذكير لاحقًا حسب نافذة 24 ساعة.</div>
+            <h3>3) إرسال / إعادة إرسال / تذكير</h3>
+            <div class="hint">يمكنك الآن إعادة إرسال الدعوة حتى لو كانت مرسلة سابقًا من داخل اللوحة.</div>
           </div>
         </div>
       </div>
@@ -790,11 +790,9 @@
         totalNeeded: g.totalNeeded || 1,
         assignedQrIds: Array.isArray(g.assignedQrIds) ? g.assignedQrIds : [],
         isManuallyAssigned: !!g.isManuallyAssigned,
-
         inviteStatus: g.inviteStatus || (g.status === "sent" ? "sent" : g.status === "failed" ? "failed" : g.status === "sending" ? "sending" : "new"),
         reminderStatus: g.reminderStatus || "",
         inviteAlreadySent: !!g.inviteAlreadySent,
-
         wamid: g.wamid || "",
         reminderWamid: g.reminderWamid || "",
         err: g.err || "",
@@ -1039,7 +1037,7 @@
 
     function exportJSON(){
       const payload = {
-        version:7,
+        version:8,
         eventName: document.getElementById('eventName').value || DEFAULT_EVENT,
         guests,
         availableQrIds,
@@ -1592,15 +1590,10 @@
         if(!confirm("سيتم إرسال (ترحيب + كروت) للجميع عبر Cloud API.\nمتابعة؟")) return;
       }
 
-      let ok=0, fail=0, skipped=0;
+      let ok=0, fail=0, previouslySent=0;
 
       for (let i=0; i<guests.length; i++){
         const g = guests[i];
-
-        if(g.inviteStatus === "sent" || g.inviteAlreadySent){
-          skipped++;
-          continue;
-        }
 
         try{
           g.inviteStatus = "sending";
@@ -1610,17 +1603,18 @@
           const out = await sendWelcomeAndCardsCloud(g);
 
           g.inviteStatus = "sent";
-          g.inviteAlreadySent = true;
+          g.inviteAlreadySent = false;
           g.wamid  = out.templateWamid || out.textWamid || "";
           g.err = "";
           ok++;
         }catch(e){
           const msg = prettyErr(e?.message || e);
+
           if(msg.includes("تم إرسالها مسبقًا")){
             g.inviteStatus = "sent";
-            g.inviteAlreadySent = true;
-            g.err = "";
-            skipped++;
+            g.inviteAlreadySent = false;
+            g.err = "تم الإرسال سابقًا من السيرفر، لكن إعادة الإرسال مسموحة من اللوحة";
+            previouslySent++;
           }else{
             g.inviteStatus = "failed";
             g.err = msg;
@@ -1633,7 +1627,7 @@
         await new Promise(r=>setTimeout(r, 450));
       }
 
-      alert(`تم الإرسال ✅\nنجح: ${ok}\nتم إرسالها مسبقًا: ${skipped}\nفشل: ${fail}`);
+      alert(`تمت العملية ✅\nنجح: ${ok}\nمرسلة سابقًا من السيرفر: ${previouslySent}\nفشل: ${fail}`);
     }
 
     async function sendSelectedCloud(){
@@ -1647,14 +1641,9 @@
         if(!confirm(`سيتم إرسال (ترحيب + كروت) لـ ${list.length} ضيف محدد.\nمتابعة؟`)) return;
       }
 
-      let ok=0, fail=0, skipped=0;
+      let ok=0, fail=0, previouslySent=0;
 
       for (const g of list){
-        if(g.inviteStatus === "sent" || g.inviteAlreadySent){
-          skipped++;
-          continue;
-        }
-
         try{
           g.inviteStatus = "sending";
           g.err = "";
@@ -1663,17 +1652,18 @@
           const out = await sendWelcomeAndCardsCloud(g);
 
           g.inviteStatus = "sent";
-          g.inviteAlreadySent = true;
+          g.inviteAlreadySent = false;
           g.wamid  = out.templateWamid || out.textWamid || "";
           g.err = "";
           ok++;
         }catch(e){
           const msg = prettyErr(e?.message || e);
+
           if(msg.includes("تم إرسالها مسبقًا")){
             g.inviteStatus = "sent";
-            g.inviteAlreadySent = true;
-            g.err = "";
-            skipped++;
+            g.inviteAlreadySent = false;
+            g.err = "تم الإرسال سابقًا من السيرفر، لكن إعادة الإرسال مسموحة من اللوحة";
+            previouslySent++;
           }else{
             g.inviteStatus = "failed";
             g.err = msg;
@@ -1686,7 +1676,7 @@
         await new Promise(r=>setTimeout(r, 450));
       }
 
-      alert(`تم الإرسال ✅\nنجح: ${ok}\nتم إرسالها مسبقًا: ${skipped}\nفشل: ${fail}`);
+      alert(`تمت العملية ✅\nنجح: ${ok}\nمرسلة سابقًا من السيرفر: ${previouslySent}\nفشل: ${fail}`);
     }
 
     async function sendSelectedReminder(){
@@ -1915,9 +1905,7 @@
           </div>`;
         }
         else if(inviteStatus === "sent"){
-          let extra = guest.inviteAlreadySent
-            ? `<span class="status warn">تم إرسالها مسبقًا</span>`
-            : `<span class="status sent">مرسل</span>`;
+          let extra = `<span class="status sent">مرسل</span>`;
 
           if(reminderStatus === "sent"){
             extra += `<br><br><span class="status sending">تم إرسال التذكير</span>`;
@@ -1927,7 +1915,7 @@
 
           tdStatus.innerHTML = `<div class="guest-cell">
             ${extra}
-            <div class="small">${guest.wamid ? 'تم حفظ معرف الرسالة' : ''}</div>
+            <div class="small">${guest.err ? guest.err : (guest.wamid ? 'تم حفظ معرف الرسالة' : '')}</div>
           </div>`;
         }
         else{
@@ -1951,7 +1939,7 @@
           <div class="actions-stack">
             <button class="btn" onclick="assignBarcode(${guest.internalId||0})">تعيين</button>
             <button class="btn" onclick="downloadBarcodeImageById(${guest.internalId||0})">${guest.totalNeeded===1 ? 'PNG' : 'ZIP'}</button>
-            <button class="btn ok" onclick="sendInviteById(${guest.internalId||0})">إرسال الدعوة</button>
+            <button class="btn ok" onclick="sendInviteById(${guest.internalId||0})">${guest.inviteStatus === 'sent' ? 'إعادة الإرسال' : 'إرسال الدعوة'}</button>
             <button class="btn gold" onclick="sendReminderById(${guest.internalId||0})">التذكير</button>
             <button class="btn" onclick="sendWhatsAppById(${guest.internalId||0})">فتح واتساب</button>
             <button class="btn warn" onclick="deleteGuest(${guest.internalId||0})">حذف</button>
@@ -1975,37 +1963,30 @@
       const guest = getGuestById(id);
       if(!guest) return;
 
-      if (guest.inviteStatus === "sent" || guest.inviteAlreadySent) {
-        guest.inviteStatus = "sent";
-        guest.inviteAlreadySent = true;
-        persistAll();
-        renderGuestTable();
-        alert("تم إرسالها مسبقًا");
-        return;
-      }
-
       try{
         guest.inviteStatus = "sending";
         guest.err = "";
         renderGuestTable();
 
         const out = await sendWelcomeAndCardsCloud(guest);
+
         guest.inviteStatus = "sent";
         guest.inviteAlreadySent = false;
         guest.wamid = out.templateWamid || out.textWamid || "";
         guest.err = "";
+        alert("✅ تم إرسال الدعوة");
       }catch(e){
         const msg = prettyErr(e?.message || e);
 
         if (msg.includes("تم إرسالها مسبقًا")) {
           guest.inviteStatus = "sent";
-          guest.inviteAlreadySent = true;
-          guest.err = "";
-          alert("تم إرسالها مسبقًا");
+          guest.inviteAlreadySent = false;
+          guest.err = "تم الإرسال سابقًا من السيرفر، لكن يمكنك إعادة الإرسال من اللوحة";
+          alert("ℹ️ هذه الدعوة كانت مرسلة سابقًا من جهة السيرفر");
         } else {
           guest.inviteStatus = "failed";
           guest.err = msg;
-          alert("فشل الإرسال:\n" + guest.err);
+          alert("❌ فشل الإرسال:\n" + guest.err);
         }
       }
 
