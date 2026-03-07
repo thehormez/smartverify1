@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>مركز الإرسال — KRS INVITE (Cloud + Cards + Reminder)</title>
+  <title>مركز الإرسال — KRS INVITE</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -13,86 +13,327 @@
 
   <style>
     :root{
-      --bg:#0b0b0c; --panel:#14151a; --panel-2:#111217; --stroke:#2a2b32;
-      --gold:#d4af37; --txt:#e7e7e7; --muted:#a7a7a7; --danger:#ef4444; --ok:#25d366;
-      --solid-gold:#b48a18; --solid-blue:#1e40af; --solid-rose:#be123c; --solid-emerald:#047857;
+      --radius:18px;
+      --shadow:0 10px 30px rgba(0,0,0,.18);
+      --shadow-soft:0 6px 20px rgba(0,0,0,.12);
+      --transition:.22s ease;
     }
+
+    html[data-theme="dark"]{
+      --bg:#0b0b0d;
+      --bg-2:#101115;
+      --panel:#15161c;
+      --panel-2:#1a1c24;
+      --stroke:#2a2d37;
+      --txt:#f3f4f6;
+      --muted:#b4b7c3;
+      --gold:#d4af37;
+      --gold-2:#f4d77a;
+      --ok:#22c55e;
+      --danger:#ef4444;
+      --blue:#1d4ed8;
+      --rose:#be123c;
+      --emerald:#047857;
+      --input:#0f1116;
+      --thead:#1c1e27;
+      --row:#111318;
+      --row-hover:#171922;
+      --topbar:#0c0d11cc;
+      --badge-bg:rgba(255,255,255,.08);
+    }
+
+    html[data-theme="light"]{
+      --bg:#f4f6fb;
+      --bg-2:#eef2f8;
+      --panel:#ffffff;
+      --panel-2:#fafbff;
+      --stroke:#d8deea;
+      --txt:#111827;
+      --muted:#5f6b7a;
+      --gold:#b88719;
+      --gold-2:#d6a93a;
+      --ok:#16a34a;
+      --danger:#dc2626;
+      --blue:#2563eb;
+      --rose:#e11d48;
+      --emerald:#059669;
+      --input:#ffffff;
+      --thead:#f1f5f9;
+      --row:#ffffff;
+      --row-hover:#f8fafc;
+      --topbar:#ffffffd9;
+      --badge-bg:rgba(17,24,39,.04);
+    }
+
     *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
     html,body{ height:100% }
-    body{ margin:0; font-family:'Noto Sans Arabic', system-ui, -apple-system, Segoe UI, Arial; background:var(--bg); color:var(--txt) }
-    .container{ max-width:1200px; margin:0 auto; padding:16px }
+    body{
+      margin:0;
+      font-family:'Noto Sans Arabic', system-ui, -apple-system, Segoe UI, Arial;
+      background:
+        radial-gradient(circle at top right, rgba(212,175,55,.07), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(37,99,235,.06), transparent 24%),
+        var(--bg);
+      color:var(--txt);
+      transition:background var(--transition), color var(--transition);
+    }
 
-    .topbar{ position:sticky; top:0; z-index:50; background:#0a0a0c; border-bottom:1px solid var(--stroke) }
-    .brand{ display:flex; align-items:center; gap:10px; font-weight:900 }
-    .brand .dot{ width:12px; height:12px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ffe8a3, var(--gold)) }
-    .event-name{ font-weight:900; color:#ffe8a3 }
+    .container{ max-width:1280px; margin:0 auto; padding:18px }
+    .topbar{
+      position:sticky; top:0; z-index:60;
+      backdrop-filter:blur(12px);
+      background:var(--topbar);
+      border-bottom:1px solid var(--stroke);
+    }
+    .topbar-inner{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:14px 18px; max-width:1280px; margin:0 auto;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; font-weight:900; letter-spacing:.2px }
+    .brand-mark{
+      width:14px; height:14px; border-radius:50%;
+      background:radial-gradient(circle at 30% 30%, #fff2b8, var(--gold));
+      box-shadow:0 0 0 5px rgba(212,175,55,.12);
+    }
+    .brand-text small{ display:block; font-size:12px; color:var(--muted); font-weight:700 }
+
+    .event-name{
+      font-weight:900; color:var(--gold-2);
+      padding:8px 12px; border-radius:999px;
+      background:rgba(212,175,55,.12); border:1px solid rgba(212,175,55,.24);
+    }
 
     .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-    .btn{
-      border:1px solid var(--stroke); background:#121318; color:#fff; padding:12px 14px; border-radius:12px;
-      cursor:pointer; font-weight:800; font-size:16px; min-height:44px
-    }
-    .btn:active{ transform:scale(0.99) }
-    .btn.warn{ border-color:#7a1f1f }
-    .btn.ok{ border-color:#1b8c4f }
-    .btn.gold{ border-color: rgba(212,175,55,.55) }
-    .hint{ color:var(--muted); font-size:13px }
-    .small{ font-size:12px; color:#cfcfcf; opacity:.9 }
+    .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
+    .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px }
+    .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px }
 
-    .tabs{ display:flex; gap:10px; padding:12px 0; flex-wrap:wrap }
-    .tab{
-      border:1px solid var(--stroke); background:#111217; color:#ddd; padding:12px 16px; border-radius:14px;
-      cursor:pointer; font-weight:800; font-size:15px; min-height:44px
+    .btn, input, textarea, select{
+      border:1px solid var(--stroke);
+      background:var(--input);
+      color:var(--txt);
+      padding:12px 14px;
+      border-radius:14px;
+      font-size:15px;
+      min-height:46px;
+      transition:all var(--transition);
+      outline:none;
     }
-    .tab.active{ border-color:var(--gold); color:#fff }
+    .btn{
+      cursor:pointer;
+      font-weight:800;
+      box-shadow:var(--shadow-soft);
+    }
+    .btn:hover{ transform:translateY(-1px) }
+    .btn:active{ transform:scale(.99) }
+    .btn.ok{ border-color:rgba(34,197,94,.4) }
+    .btn.warn{ border-color:rgba(239,68,68,.35) }
+    .btn.gold{ border-color:rgba(212,175,55,.35) }
+    .btn.ghost{ background:transparent }
+    .btn.block{ width:100% }
+
+    input:focus, textarea:focus, select:focus, .btn:focus{
+      border-color:var(--gold);
+      box-shadow:0 0 0 3px rgba(212,175,55,.12);
+    }
+
+    textarea{
+      width:100%;
+      resize:vertical;
+      line-height:1.9;
+      min-height:110px;
+    }
+
+    .tabs{ display:flex; gap:10px; padding:14px 0; flex-wrap:wrap }
+    .tab{
+      border:1px solid var(--stroke);
+      background:var(--panel);
+      color:var(--txt);
+      padding:12px 16px;
+      border-radius:16px;
+      cursor:pointer;
+      font-weight:800;
+      min-height:46px;
+      transition:all var(--transition);
+    }
+    .tab.active{
+      border-color:rgba(212,175,55,.45);
+      background:linear-gradient(180deg, rgba(212,175,55,.14), rgba(212,175,55,.05));
+      color:var(--gold-2);
+      box-shadow:0 8px 20px rgba(212,175,55,.08);
+    }
+
     .section{ display:none }
     .section.active{ display:block }
 
-    .card{ background:#121318; border:1px solid var(--stroke); border-radius:16px; padding:14px }
-    .card.gold{ background:var(--solid-gold); border-color:var(--solid-gold); color:#fff }
-    .card.blue{ background:var(--solid-blue); border-color:var(--solid-blue); color:#fff }
-    .card.rose{ background:var(--solid-rose); border-color:var(--solid-rose); color:#fff }
-    .card.emerald{ background:var(--solid-emerald); border-color:var(--solid-emerald); color:#fff }
-    .kpi{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px }
-    .kpi .card h4{ margin:0; font-size:13px; color:#fff }
-    .kpi .card .num{ font-size:22px; font-weight:900; margin-top:6px; color:#fff }
-
-    .pill{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid rgba(255,255,255,.4); border-radius:999px; color:#fff; font-size:12px }
-    .pill.light{ border-color:rgba(0,0,0,.15); background:rgba(255,255,255,.15) }
-
-    table{ width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:16px; margin-top:10px }
-    thead th{
-      background:#1a1b20; color:#f6f6f6; border-bottom:1px solid var(--stroke);
-      padding:12px; text-align:right; font-weight:900; font-size:14px
+    .card{
+      background:linear-gradient(180deg, var(--panel), var(--panel-2));
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow-soft);
     }
-    tbody td{ padding:12px; border-bottom:1px solid var(--stroke); font-size:15px; background:#0f1013; color:#e9e9e9 }
-    tbody tr:hover td{ background:#15161b }
-    .editable{ cursor:pointer; color:#ffd76a; font-weight:800; text-decoration:underline dotted rgba(212,175,55,.6); text-underline-offset:3px }
+    .card h3{ margin:0 0 8px; font-size:20px }
+    .card-header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;
+    }
 
-    .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:100 }
-    .modal{ width:100%; max-width:520px; background:#16171b; border:1px solid var(--stroke); border-radius:18px; padding:18px }
-    .title{ margin:0 0 10px; font-weight:900; font-size:22px }
+    .accent-blue{
+      background:linear-gradient(135deg, rgba(37,99,235,.95), rgba(29,78,216,.82));
+      color:#fff; border:none;
+    }
+    .accent-gold{
+      background:linear-gradient(135deg, rgba(180,138,24,.98), rgba(212,175,55,.86));
+      color:#fff; border:none;
+    }
+    .accent-rose{
+      background:linear-gradient(135deg, rgba(225,29,72,.96), rgba(190,18,60,.84));
+      color:#fff; border:none;
+    }
+    .accent-emerald{
+      background:linear-gradient(135deg, rgba(5,150,105,.96), rgba(4,120,87,.84));
+      color:#fff; border:none;
+    }
 
-    .assign-modal .modal{ max-width:680px }
-    .chips{ display:flex; flex-wrap:wrap; gap:8px; max-height:220px; overflow:auto; padding:8px; background:#0f1013; border:1px solid var(--stroke); border-radius:12px }
-    .chip{ padding:6px 10px; border-radius:999px; border:1px solid var(--stroke); background:#13141a; color:#e7e7e7; cursor:pointer; user-select:none }
-    .chip.selected{ background:#ffe8a3; color:#111; border-color:#d4af37; font-weight:900 }
+    .kpi{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:16px 0 }
+    .kpi .card h4{ margin:0; font-size:13px; color:#fff; opacity:.95 }
+    .kpi .card .num{ font-size:28px; font-weight:900; margin-top:8px; color:#fff }
 
-    textarea.btn{ padding:12px 14px }
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:7px 11px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      background:var(--badge-bg);
+      border:1px solid var(--stroke);
+    }
+
+    .hint{ color:var(--muted); font-size:13px; line-height:1.8 }
+    .small{ font-size:12px; color:var(--muted) }
+
+    code{
+      background:var(--badge-bg);
+      border:1px solid var(--stroke);
+      padding:2px 7px;
+      border-radius:8px;
+      font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+      direction:ltr;
+      display:inline-block;
+    }
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border-radius:16px;
+      margin-top:12px;
+    }
+    thead th{
+      background:var(--thead);
+      color:var(--txt);
+      border-bottom:1px solid var(--stroke);
+      padding:12px;
+      text-align:right;
+      font-weight:900;
+      font-size:14px;
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+    tbody td{
+      padding:12px;
+      border-bottom:1px solid var(--stroke);
+      font-size:14px;
+      background:var(--row);
+      color:var(--txt);
+      vertical-align:top;
+    }
+    tbody tr:hover td{ background:var(--row-hover) }
+
+    .editable{
+      cursor:pointer;
+      color:var(--gold-2);
+      font-weight:800;
+      text-decoration:underline dotted rgba(212,175,55,.5);
+      text-underline-offset:3px;
+    }
+
+    .status{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:999px;
+      font-size:12px; font-weight:800;
+      border:1px solid var(--stroke);
+    }
+    .status.new{ background:var(--badge-bg) }
+    .status.sending{ background:rgba(37,99,235,.15); border-color:rgba(37,99,235,.25) }
+    .status.sent{ background:rgba(34,197,94,.15); border-color:rgba(34,197,94,.28) }
+    .status.failed{ background:rgba(239,68,68,.14); border-color:rgba(239,68,68,.24) }
+
+    .overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.72);
+      display:flex; align-items:center; justify-content:center; z-index:100;
+      padding:16px;
+    }
+    .modal{
+      width:100%; max-width:560px;
+      background:linear-gradient(180deg, var(--panel), var(--panel-2));
+      border:1px solid var(--stroke);
+      border-radius:22px;
+      padding:20px;
+      box-shadow:var(--shadow);
+    }
+    .title{ margin:0 0 10px; font-weight:900; font-size:24px }
+
+    .assign-modal .modal{ max-width:760px }
+    .chips{
+      display:flex; flex-wrap:wrap; gap:8px;
+      max-height:260px; overflow:auto;
+      padding:10px; background:var(--input);
+      border:1px solid var(--stroke); border-radius:14px;
+    }
+    .chip{
+      padding:7px 11px; border-radius:999px; border:1px solid var(--stroke);
+      background:var(--panel); color:var(--txt); cursor:pointer; user-select:none; font-weight:700;
+    }
+    .chip.selected{
+      background:rgba(212,175,55,.18);
+      color:var(--gold-2);
+      border-color:rgba(212,175,55,.45);
+      font-weight:900;
+    }
+
+    .section-stack{ display:flex; flex-direction:column; gap:14px }
+    .table-wrap{ overflow:auto; border-radius:16px; border:1px solid var(--stroke) }
+
+    @media (max-width: 900px){
+      .grid-2,.grid-3,.grid-4,.kpi{ grid-template-columns:1fr 1fr }
+    }
 
     @media (max-width: 640px){
       .container{ padding:12px }
+      .topbar-inner{ padding:12px }
+      .grid-2,.grid-3,.grid-4,.kpi{ grid-template-columns:1fr }
       .tabs{ gap:8px }
-      .tab{ flex:1; text-align:center; padding:10px 8px; font-size:14px }
-      .kpi{ grid-template-columns:1fr 1fr }
-      .btn.block{ width:100% }
+      .tab{ flex:1; text-align:center; padding:11px 10px; font-size:14px }
+
       table thead{ display:none }
       table, tbody, tr, td{ display:block; width:100% }
-      tbody tr{ border:1px solid var(--stroke); border-radius:14px; margin-bottom:10px; overflow:hidden }
-      tbody td{ display:flex; justify-content:space-between; gap:12px }
+      tbody tr{
+        border:1px solid var(--stroke);
+        border-radius:16px;
+        margin-bottom:12px;
+        overflow:hidden;
+      }
+      tbody td{
+        display:flex; justify-content:space-between; gap:12px;
+      }
       tbody td::before{
         content:attr(data-label);
-        color:#bdbdbd; font-weight:700
+        color:var(--muted);
+        font-weight:800;
       }
       td.actions{ display:block }
       .actions .btn{ width:100%; margin-top:8px }
@@ -105,11 +346,11 @@
   <div id="authGate" class="overlay" style="display:none">
     <div class="modal">
       <h3 class="title">🔐 دخول الحدث</h3>
-      <div class="hint">أدخل <b>اسم الحدث</b> و<b>كلمة المرور</b> المطابقين لما في الكود فقط.</div>
-      <div class="row" style="margin-top:10px; flex-wrap:wrap">
+      <div class="hint">أدخل <b>اسم الحدث</b> و<b>كلمة المرور</b> المطابقين لما هو محدد داخل الصفحة.</div>
+      <div class="row" style="margin-top:12px">
         <input id="authEvent" class="btn" style="flex:1" placeholder="اسم الحدث" />
         <input id="authPass" type="password" class="btn" style="flex:1" placeholder="كلمة المرور" />
-        <button class="btn" style="width:100%" onclick="authLogin()">دخول</button>
+        <button class="btn gold block" onclick="authLogin()">دخول</button>
       </div>
       <div id="authErr" class="hint" style="color:#ffb3b3; margin-top:8px"></div>
     </div>
@@ -121,7 +362,7 @@
       <h3 class="title">🎯 اختيار أكواد الباركود</h3>
       <div class="hint" id="assignHint">اختر (0) كود.</div>
       <div id="chipsContainer" class="chips" dir="ltr"></div>
-      <div class="row" style="margin-top:10px; justify-content:flex-end">
+      <div class="row" style="margin-top:12px; justify-content:flex-end">
         <button class="btn" onclick="closeAssign()">إلغاء</button>
         <button class="btn ok" onclick="saveAssign()">حفظ</button>
       </div>
@@ -130,9 +371,17 @@
 
   <!-- الشريط العلوي -->
   <div class="topbar">
-    <div class="container" style="display:flex; align-items:center; justify-content:space-between; gap:12px">
-      <div class="brand"><span class="dot"></span><span>KRS INVITE — مركز الإرسال</span></div>
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <div class="brand-text">
+          KRS INVITE — مركز الإرسال
+          <small>دعوات + باركود + تذكير ذكي</small>
+        </div>
+      </div>
+
       <div class="row">
+        <button class="btn ghost" onclick="toggleTheme()">🌓 تبديل المظهر</button>
         <span id="currentEvent" class="event-name"></span>
         <button class="btn warn" onclick="logout()">خروج</button>
       </div>
@@ -141,22 +390,25 @@
 
   <main class="container">
     <!-- KPI -->
-    <section class="kpi" style="margin:12px 0 16px">
-      <div class="card blue">
-        <h4>إجمالي المدعويين</h4><div class="num" id="kpiTotal">0</div>
+    <section class="kpi">
+      <div class="card accent-blue">
+        <h4>إجمالي المدعوين</h4>
+        <div class="num" id="kpiTotal">0</div>
       </div>
-      <div class="card gold">
-        <h4>الدعوات المُرسلة</h4><div class="num" id="kpiSent">0</div>
+      <div class="card accent-gold">
+        <h4>الدعوات المُرسلة</h4>
+        <div class="num" id="kpiSent">0</div>
       </div>
-      <div class="card rose">
-        <h4>المتبقية</h4><div class="num" id="kpiRemain">0</div>
+      <div class="card accent-rose">
+        <h4>المتبقية</h4>
+        <div class="num" id="kpiRemain">0</div>
       </div>
-      <div class="card emerald">
+      <div class="card accent-emerald">
         <h4>رصيد الكروت</h4>
-        <div class="row" style="gap:8px; margin-top:8px; flex-wrap:wrap">
-          <span class="pill light">المجموع: <b id="kpiStock">0</b></span>
-          <span class="pill light">المستخدم: <b id="kpiUsedCards">0</b></span>
-          <span class="pill light">المتاح: <b id="kpiFreeCards">0</b></span>
+        <div class="row" style="gap:8px; margin-top:10px">
+          <span class="pill">المجموع: <b id="kpiStock">0</b></span>
+          <span class="pill">المستخدم: <b id="kpiUsedCards">0</b></span>
+          <span class="pill">المتاح: <b id="kpiFreeCards">0</b></span>
         </div>
       </div>
     </section>
@@ -168,87 +420,126 @@
       <button class="tab" data-section="#sec-guests">إضافة الضيوف</button>
       <button class="tab" data-section="#sec-stock">مخزون الدعوات</button>
       <button class="tab" data-section="#sec-list">قائمة المدعوين</button>
+      <button class="tab" data-section="#sec-reminder">التذكير</button>
     </nav>
 
     <section id="sec-home" class="section active">
-      <div class="card gold">
-        <h3 style="margin:0 0 8px">مرحبًا 👋</h3>
-        <div class="hint">
-          ✅ هذا الإصدار يرسل <b>ترحيب + صور كروت الدعوة</b> عبر Cloud API.<br/>
-          ✅ وأضاف زر <b>تذكير (نص + لوكيشن)</b> عبر Function جديدة.<br/><br/>
-          1) استورد الضيوف + صور الباركود<br/>
-          2) ارفع الباركود للسيرفر<br/>
-          3) ارسل (ترحيب + كروت)<br/>
-          4) استخدم التذكير (نص + لوكيشن) عند الحاجة
+      <div class="section-stack">
+        <div class="card accent-gold">
+          <h3>مرحبًا 👋</h3>
+          <div class="hint" style="color:#fff">
+            هذا الإصدار يحافظ على إرسال الدعوة الأساسي عبر:
+            <b>sendWelcomeAndCards</b>
+            ويضيف لك التذكير عبر:
+            <b>sendReminderText</b>
+            بدون التأثير على مسار الدعوة.
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>1) استيراد الضيوف</h3>
+            <div class="hint">CSV / Excel أو يدويًا أو من جهات الاتصال.</div>
+          </div>
+          <div class="card">
+            <h3>2) رفع صور الباركود</h3>
+            <div class="hint">استيراد صور الأكواد ثم رفعها إلى السيرفر قبل الإرسال.</div>
+          </div>
+          <div class="card">
+            <h3>3) إرسال / تذكير</h3>
+            <div class="hint">إرسال الدعوة أولاً ثم التذكير لاحقًا حسب نافذة 24 ساعة.</div>
+          </div>
         </div>
       </div>
     </section>
 
     <section id="sec-event" class="section">
-      <div class="card blue">
-        <h3 style="margin:0 0 8px">🏷️ بيانات الحدث</h3>
-        <div class="row" style="flex-wrap:wrap">
-          <input id="eventName" class="btn" placeholder="اسم الحدث (لـ JSON فقط)" style="flex:1" />
-          <button class="btn" onclick="exportJSON()">💾 تصدير JSON</button>
-          <input id="dataUpload" type="file" accept=".json" style="display:none" onchange="importJSONFile(this.files[0])" />
-          <button class="btn" onclick="document.getElementById('dataUpload').click()">↩️ استيراد JSON</button>
+      <div class="section-stack">
+        <div class="card accent-blue">
+          <h3>🏷️ بيانات الحدث</h3>
+          <div class="row">
+            <input id="eventName" class="btn" placeholder="اسم الحدث (للعرض/JSON)" style="flex:1" />
+            <button class="btn" onclick="exportJSON()">💾 تصدير JSON</button>
+            <input id="dataUpload" type="file" accept=".json" style="display:none" onchange="importJSONFile(this.files[0])" />
+            <button class="btn" onclick="document.getElementById('dataUpload').click()">↩️ استيراد JSON</button>
+          </div>
+          <div class="hint" style="margin-top:8px">
+            اسم الحدث هنا لأغراض العرض والتصدير، بينما الإرسال يستخدم
+            <code>CLOUD_EVENT_ID</code>
+            المحدد داخل الكود.
+          </div>
         </div>
-        <div class="hint" style="margin-top:8px">
-          الاسم هنا لأغراض التصدير فقط؛ الدخول يتحقق من القيم داخل الكود.
-        </div>
-      </div>
 
-      <div class="card" style="margin-top:12px">
-        <h3 style="margin:0 0 10px">⚙️ إعدادات Cloud API</h3>
-        <div class="hint">
-          ضع روابط Functions (a.run.app) الخاصة بك.
-        </div>
-        <div class="row" style="margin-top:10px; flex-wrap:wrap">
-          <input id="cfgUploadUrl" class="btn" style="flex:1" placeholder="Upload URL (uploadBarcodeCard)" />
-          <input id="cfgSendUrl" class="btn" style="flex:1" placeholder="Send URL (sendWelcomeAndCards)" />
-          <input id="cfgReminderUrl" class="btn" style="flex:1" placeholder="Reminder URL (sendReminderText)" />
-          <button class="btn ok" onclick="saveCloudCfg()">💾 حفظ</button>
-        </div>
-        <div class="hint" style="margin-top:10px; color:#ffe8a3">
-          - الإرسال: <b>ترحيب + كروت</b><br/>
-          - التذكير: <b>نص + لوكيشن</b> (بدون صور)
+        <div class="card">
+          <div class="card-header">
+            <h3>⚙️ إعدادات Cloud API</h3>
+            <span class="pill">يمكنك تعديلها وحفظها</span>
+          </div>
+
+          <div class="grid-3">
+            <input id="cfgUploadUrl" class="btn" placeholder="Upload URL" />
+            <input id="cfgSendUrl" class="btn" placeholder="Send URL" />
+            <input id="cfgReminderUrl" class="btn" placeholder="Reminder URL" />
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn ok" onclick="saveCloudCfg()">💾 حفظ الإعدادات</button>
+          </div>
+
+          <div class="hint" style="margin-top:10px">
+            الدعوة الأساسية تستخدم:
+            <code>sendWelcomeAndCards</code>
+            والتذكير يستخدم:
+            <code>sendReminderText</code>
+          </div>
         </div>
       </div>
     </section>
 
     <section id="sec-guests" class="section">
-      <div class="card emerald">
-        <h3 style="margin:0 0 8px">👥 إضافة الضيوف</h3>
-        <div class="row" style="margin-bottom:8px; flex-wrap:wrap">
-          <input id="guestListUpload" type="file" class="btn" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="flex:1" />
-          <button class="btn" onclick="handleFileUpload()">✅ استيراد الضيوف</button>
-          <button class="btn ok" onclick="importFromContacts()">📱 من سجل الهاتف</button>
+      <div class="section-stack">
+        <div class="card accent-emerald">
+          <h3>👥 إضافة الضيوف</h3>
+
+          <div class="row" style="margin-bottom:10px">
+            <input id="guestListUpload" type="file" class="btn" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="flex:1" />
+            <button class="btn" onclick="handleFileUpload()">✅ استيراد الضيوف</button>
+            <button class="btn ok" onclick="importFromContacts()">📱 من سجل الهاتف</button>
+          </div>
+
+          <div class="grid-3">
+            <input id="newGuestName" class="btn" placeholder="الاسم" />
+            <input id="newGuestPhone" class="btn" placeholder="الهاتف (مثال: 9715... أو 05...)" />
+            <input id="newGuestTotalNeeded" class="btn" type="number" min="1" value="1" placeholder="عدد الدعوات" />
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn gold" onclick="addGuestManually()">➕ إضافة الضيف</button>
+          </div>
+
+          <div class="hint" style="margin-top:10px">تم تحميل <b id="guestCount">0</b> ضيف.</div>
         </div>
-        <div class="row" style="flex-wrap:wrap">
-          <input id="newGuestName" class="btn" placeholder="الاسم" style="flex:1" />
-          <input id="newGuestPhone" class="btn" placeholder="الهاتف (مثال: 9715...)" style="flex:1" />
-          <input id="newGuestTotalNeeded" class="btn" type="number" min="1" value="1" placeholder="عدد الدعوات" style="flex:1" />
-          <button class="btn" onclick="addGuestManually()">➕ إضافة الضيف</button>
-        </div>
-        <div class="hint" style="margin-top:8px">تم تحميل <b id="guestCount">0</b> ضيف.</div>
       </div>
     </section>
 
     <section id="sec-stock" class="section">
-      <div class="card rose">
-        <h3 style="margin:0 0 8px">🎟️ مخزون الدعوات (صور الباركود)</h3>
-        <div class="row" style="flex-wrap:wrap">
+      <div class="card accent-rose">
+        <h3>🎟️ مخزون الدعوات (صور الباركود)</h3>
+
+        <div class="row">
           <input id="barcodeUpload" type="file" class="btn" accept="image/*" multiple style="flex:1" />
-          <button class="btn" onclick="loadBarcodes()">🗂️ استيراد صور الباركود</button>
-          <button class="btn ok" onclick="uploadAllCardsToCloud()">☁️ رفع صور الباركود للسيرفر</button>
+          <button class="btn" onclick="loadBarcodes()">🗂️ استيراد الصور</button>
+          <button class="btn ok" onclick="uploadAllCardsToCloud()">☁️ رفع للسيرفر</button>
         </div>
 
         <div class="hint" style="margin-top:10px">
-          المستوردة: <b id="barcodeCount">0</b> — الأكواد: <span id="importedQrCodes">—</span>
+          المستوردة: <b id="barcodeCount">0</b> —
+          الأكواد: <span id="importedQrCodes">—</span>
         </div>
+
         <div id="qrMismatchAlert" class="hint" style="margin-top:6px; color:#ffb3b3; display:none"></div>
 
-        <div class="hint" style="margin-top:10px; color:#b7ffc8">
+        <div class="hint" style="margin-top:12px; color:#b7ffc8">
           حالة رفع المخزون للسيرفر: <b id="cloudUploadStatus">غير مرفوع</b>
         </div>
         <div class="small" id="cloudUploadTime"></div>
@@ -257,75 +548,90 @@
 
     <section id="sec-list" class="section">
       <div class="card">
-        <div class="row" style="justify-content:space-between; align-items:center">
-          <h3 style="margin:0 0 8px">📋 قائمة المدعوين</h3>
+        <div class="card-header">
+          <h3>📋 قائمة المدعوين</h3>
 
-          <div class="row" style="gap:10px; flex-wrap:wrap">
-            <button class="btn ok" onclick="sendAllCloud()">📢 إرسال جماعي (ترحيب + كروت)</button>
-            <button class="btn ok" onclick="sendSelectedCloud()">🎯 إرسال المحدد (ترحيب + كروت)</button>
-
-            <button class="btn gold" onclick="remindSelected()">🔔 تذكير المحدد (نص + لوكيشن)</button>
-            <button class="btn gold" onclick="remindAll()">🔔 تذكير الكل (نص + لوكيشن)</button>
-
-            <button class="btn" onclick="sendAllWhatsApp()">📢 إرسال جماعي (فتح واتساب فقط)</button>
-
+          <div class="row">
+            <button class="btn ok" onclick="sendAllCloud()">📢 إرسال جماعي</button>
+            <button class="btn ok" onclick="sendSelectedCloud()">🎯 إرسال المحدد</button>
+            <button class="btn" onclick="sendAllWhatsApp()">💬 فتح واتساب</button>
             <button class="btn" onclick="selectAllGuests()">☑️ تحديد الكل</button>
             <button class="btn" onclick="clearSelection()">⬜ إلغاء التحديد</button>
-
             <button class="btn warn" onclick="deleteSelectedGuests()">🗑️ حذف المحدد</button>
             <button class="btn warn" onclick="deleteAllGuests()">🧹 حذف الكل</button>
           </div>
         </div>
 
-        <!-- Reminder Card -->
-        <div class="card" style="margin-top:12px; border-color:rgba(212,175,55,.35)">
-          <h3 style="margin:0 0 6px">🔔 إعدادات التذكير (نص + لوكيشن)</h3>
-          <div class="hint">
-            - ضع رابط اللوكيشن هنا قبل إرسال التذكير.<br/>
-            - المتغيرات المتاحة داخل النص: <code>#{{GUEST_NAME}}#</code> ، <code>#{{EVENT_ID}}#</code> ، <code>#{{LOCATION_URL}}#</code>
-          </div>
-
-          <div class="row" style="margin-top:10px; flex-wrap:wrap">
-            <input id="reminderLocation" class="btn" style="flex:1" placeholder="رابط اللوكيشن (Google Maps)" />
-          </div>
-
-          <textarea id="reminderTemplate" class="btn" rows="4" style="width:100%; resize:vertical; line-height:1.9; margin-top:10px">🔔 تذكير بموعد #{{EVENT_ID}}#
-
-مرحباً #{{GUEST_NAME}}#،
-📍 موقع الحفل:
-#{{LOCATION_URL}}#
-
-بانتظاركم 🌹</textarea>
-
-          <div class="hint" style="margin-top:8px; color:#ffe8a3">
-            ملاحظة: التذكير يُرسل عبر Cloud Function <b>sendReminderText</b> (نص فقط).
-          </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align:center">✓</th>
+                <th>اسم الضيف</th>
+                <th>عدد الدعوات</th>
+                <th>رقم الهاتف</th>
+                <th>الأكواد المخصصة</th>
+                <th>الحالة</th>
+                <th style="text-align:left">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="guestTableBody"></tbody>
+          </table>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th style="text-align:center">✓</th>
-              <th>اسم الضيف</th>
-              <th>عدد الدعوات</th>
-              <th>رقم الهاتف</th>
-              <th>الأكواد المخصصة</th>
-              <th>الحالة</th>
-              <th style="text-align:left">الإجراءات</th>
-            </tr>
-          </thead>
-          <tbody id="guestTableBody"></tbody>
-        </table>
-
-        <div class="card gold" style="margin-top:12px">
-          <h3 style="margin:0 0 6px">🖊️ نص رسالة الترحيب</h3>
-          <p class="hint">المتغيرات: <code>#{{GUEST_NAME}}#</code>، <code>#{{TOTAL_COUNT}}#</code></p>
-          <textarea id="messageTemplate" class="btn" rows="5" style="width:100%; resize:vertical; line-height:1.9">مرحباً #{{GUEST_NAME}}#،
+        <div class="card accent-gold" style="margin-top:14px">
+          <h3>🖊️ نص رسالة الترحيب</h3>
+          <p class="hint" style="color:#fff">
+            المتغيرات:
+            <code>#{{GUEST_NAME}}#</code>
+            و
+            <code>#{{TOTAL_COUNT}}#</code>
+          </p>
+          <textarea id="messageTemplate">مرحباً #{{GUEST_NAME}}#،
 نتشرف بدعوتكم لحضور فعاليتنا (إجمالي الدعوات: #{{TOTAL_COUNT}}#).
 الرجاء إحضار/إظهار أحد أكواد الباركود المرفقة للدخول.</textarea>
 
-          <div class="hint" style="margin-top:10px; color:#ffe8a3">
-            ✅ Cloud API: سيتم إرسال <b>هذا النص</b> + <b>صور الأكواد المخصصة للضيف</b>.
+          <div class="hint" style="margin-top:10px; color:#fff">
+            سيتم إرسال <b>هذا النص</b> مع <b>صور الأكواد المخصصة للضيف</b>.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-reminder" class="section">
+      <div class="section-stack">
+        <div class="card accent-emerald">
+          <h3>🔔 إعدادات التذكير</h3>
+          <div class="grid-2">
+            <input id="reminderLocation" class="btn" placeholder="رابط اللوكيشن (Google Maps)" />
+            <input id="reminderPlace" class="btn" placeholder="المكان / الوقت (اختياري)" />
+          </div>
+
+          <div class="row" style="margin-top:10px">
+            <button class="btn" onclick="pasteLocation()">📍 لصق اللوكيشن</button>
+          </div>
+
+          <div class="hint" style="margin-top:10px">
+            المتغيرات:
+            <code>#{{GUEST_NAME}}#</code>
+            <code>#{{EVENT_ID}}#</code>
+            <code>#{{LOCATION_URL}}#</code>
+            <code>#{{CODE}}#</code>
+          </div>
+
+          <textarea id="reminderText">🔔 تذكير بموعد #{{EVENT_ID}}#
+مرحباً #{{GUEST_NAME}}#
+📍 الموقع: #{{LOCATION_URL}}#
+🎟️ كود الدخول: #{{CODE}}#</textarea>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn ok" onclick="sendSelectedReminder()">🎯 تذكير المحدد</button>
+            <button class="btn ok" onclick="sendAllReminder()">📢 تذكير الكل</button>
+          </div>
+
+          <div class="hint" style="margin-top:10px">
+            التذكير الذكي:
+            يحاول إرسال <b>Text</b> أولاً، وإذا فشل بسبب نافذة 24 ساعة يرسل <b>Template</b> تلقائيًا.
           </div>
         </div>
       </div>
@@ -339,37 +645,52 @@
     const DEFAULT_EVENT = "افراح الحداد";
     const DEFAULT_PASS  = "12345";
     const DEFAULT_CARD_STOCK = 300;
-
-    // eventId للفنكشن (خلّه نفس EventId عندك)
     const CLOUD_EVENT_ID = "افراح الحداد";
 
     // =======================
     // Cloud Functions Endpoints
     // =======================
     const LS_CLOUD_CFG = "hormez_cloud_cfg_v2";
-
-    const DEFAULT_UPLOAD_URL   = "https://uploadbarcodecard-xxxxx-uc.a.run.app";
-    const DEFAULT_SEND_URL     = "https://sendwelcomeandcards-xxxxx-uc.a.run.app";
+    const DEFAULT_UPLOAD_URL = "https://uploadbarcodecard-veaqamnndq-uc.a.run.app";
+    const DEFAULT_SEND_URL   = "https://sendwelcomeandcards-veaqamnndq-uc.a.run.app";
     const DEFAULT_REMINDER_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendReminderText";
 
     function getCloudCfg(){
       try{
         const o = JSON.parse(localStorage.getItem(LS_CLOUD_CFG) || "null");
         return {
-          uploadUrl:   (o?.uploadUrl   || DEFAULT_UPLOAD_URL).trim(),
-          sendUrl:     (o?.sendUrl     || DEFAULT_SEND_URL).trim(),
+          uploadUrl: (o?.uploadUrl || DEFAULT_UPLOAD_URL).trim(),
+          sendUrl: (o?.sendUrl || DEFAULT_SEND_URL).trim(),
           reminderUrl: (o?.reminderUrl || DEFAULT_REMINDER_URL).trim()
         };
       }catch{
-        return { uploadUrl: DEFAULT_UPLOAD_URL, sendUrl: DEFAULT_SEND_URL, reminderUrl: DEFAULT_REMINDER_URL };
+        return {
+          uploadUrl: DEFAULT_UPLOAD_URL,
+          sendUrl: DEFAULT_SEND_URL,
+          reminderUrl: DEFAULT_REMINDER_URL
+        };
       }
     }
+
     function saveCloudCfg(){
-      const uploadUrl   = (document.getElementById("cfgUploadUrl").value || "").trim()   || DEFAULT_UPLOAD_URL;
-      const sendUrl     = (document.getElementById("cfgSendUrl").value || "").trim()     || DEFAULT_SEND_URL;
+      const uploadUrl = (document.getElementById("cfgUploadUrl").value || "").trim() || DEFAULT_UPLOAD_URL;
+      const sendUrl = (document.getElementById("cfgSendUrl").value || "").trim() || DEFAULT_SEND_URL;
       const reminderUrl = (document.getElementById("cfgReminderUrl").value || "").trim() || DEFAULT_REMINDER_URL;
       localStorage.setItem(LS_CLOUD_CFG, JSON.stringify({ uploadUrl, sendUrl, reminderUrl }));
       alert("تم حفظ روابط Cloud ✅");
+    }
+
+    // =======================
+    // Theme
+    // =======================
+    const LS_THEME = "krs_theme_mode";
+    function applyTheme(mode){
+      document.documentElement.setAttribute("data-theme", mode);
+      localStorage.setItem(LS_THEME, mode);
+    }
+    function toggleTheme(){
+      const cur = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(cur === "dark" ? "light" : "dark");
     }
 
     // =======================
@@ -381,21 +702,31 @@
     const LS_MSG='hormez_message_template';
     const LS_EVENT_NAME='hormez_event_name';
     const LS_CLOUD_UPLOAD_MARK='hormez_cloud_upload_mark';
-    const LS_REMINDER_TPL='hormez_reminder_template';
-    const LS_REMINDER_LOC='hormez_reminder_location';
+    const LS_REMINDER_TEXT='hormez_reminder_text';
+    const LS_REMINDER_LOC='hormez_reminder_loc';
+    const LS_REMINDER_PLACE='hormez_reminder_place';
 
     const getJSON=(k,fb)=>{ try{ return JSON.parse(localStorage.getItem(k)||JSON.stringify(fb)) }catch{return fb} };
     const setJSON=(k,v)=>{ try{ localStorage.setItem(k, JSON.stringify(v)) }catch{} };
 
     let guests = getJSON(LS_GUESTS, []);
-    let barcodeImages = {};               // code -> dataURL
+    let barcodeImages = {};
     let availableQrIds = getJSON(LS_QR, []);
     let internalGuestIdCounter = guests.reduce((m,g)=>Math.max(m,g.internalId||0), 0);
     const fixedStock = DEFAULT_CARD_STOCK;
 
-    // =======================
-    // Helpers (Errors / JSON)
-    // =======================
+    function safeStr(x){ return String(x ?? "").trim(); }
+    function normPhone(p){ return String(p||'').replace(/[^\d]/g,''); }
+
+    function normalizeUAEPhone(input){
+      let p = normPhone(input);
+      if (!p) return "";
+      if (p.startsWith("05") && p.length === 10) return "971" + p.slice(1);
+      if (p.startsWith("5") && p.length === 9) return "971" + p;
+      if (p.startsWith("971")) return p;
+      return p;
+    }
+
     function prettyErr(e){
       try{
         if(!e) return "Unknown error";
@@ -406,6 +737,22 @@
       }catch{
         return "Unknown error";
       }
+    }
+
+    async function postJsonStrict(url, payload){
+      const r = await fetch(url, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const raw = await r.text();
+      let j = null;
+      try { j = JSON.parse(raw); } catch(_) {}
+
+      if(!r.ok) throw new Error(`HTTP ${r.status} :: ${raw}`);
+      if(j && j.ok === false) throw new Error(`APP_ERROR :: ${raw}`);
+      return j || { raw };
     }
 
     // ✅ التحديد
@@ -441,6 +788,7 @@
       updateKPIs();
       refreshQrUI();
     }
+
     function deleteAllGuests(){
       if(!guests.length){
         alert('لا يوجد ضيوف للحذف.');
@@ -461,21 +809,31 @@
     // Auth
     function showAuth(){ document.getElementById('authGate').style.display='flex' }
     function hideAuth(){ document.getElementById('authGate').style.display='none' }
+
     function authLogin(){
       const name=document.getElementById('authEvent').value.trim();
       const pass=document.getElementById('authPass').value;
-      const err=document.getElementById('authErr'); err.textContent='';
-      if(name!==DEFAULT_EVENT || pass!==DEFAULT_PASS){ err.textContent='اسم الحدث أو كلمة المرور غير صحيحة'; return }
+      const err=document.getElementById('authErr');
+      err.textContent='';
+      if(name!==DEFAULT_EVENT || pass!==DEFAULT_PASS){
+        err.textContent='اسم الحدث أو كلمة المرور غير صحيحة';
+        return;
+      }
       localStorage.setItem(LS_AUTH, JSON.stringify({event:DEFAULT_EVENT}));
       localStorage.setItem(LS_EVENT_NAME, DEFAULT_EVENT);
       document.getElementById('currentEvent').textContent = DEFAULT_EVENT;
       document.getElementById('eventName').value = DEFAULT_EVENT;
       hideAuth();
     }
-    function logout(){ localStorage.removeItem(LS_AUTH); showAuth(); }
+
+    function logout(){
+      localStorage.removeItem(LS_AUTH);
+      showAuth();
+    }
 
     // Assign modal
     let assignGuestId = null;
+
     function openAssignModal(id){
       assignGuestId = id;
       const guest = guests.find(g=>g.internalId===id);
@@ -491,12 +849,14 @@
 
       const container = document.getElementById('chipsContainer');
       container.innerHTML = '';
+
       allowed.forEach(code=>{
         const chip = document.createElement('span');
         chip.className = 'chip';
         chip.textContent = code;
         const selected = (guest.assignedQrIds||[]).includes(code);
         if(selected) chip.classList.add('selected');
+
         chip.onclick = ()=>{
           if(chip.classList.contains('selected')){
             chip.classList.remove('selected');
@@ -516,9 +876,11 @@
         };
         container.appendChild(chip);
       });
+
       updateAssignHint();
       document.getElementById('assignGate').style.display='flex';
     }
+
     function updateAssignHint(){
       const guest = guests.find(g=>g.internalId===assignGuestId);
       if(!guest) return;
@@ -526,21 +888,39 @@
       const curSel = document.querySelectorAll('#chipsContainer .chip.selected').length;
       document.getElementById('assignHint').textContent = `اختر ${need} كود (المحدد حالياً: ${curSel})`;
     }
-    function closeAssign(){ assignGuestId=null; document.getElementById('assignGate').style.display='none'; }
+
+    function closeAssign(){
+      assignGuestId=null;
+      document.getElementById('assignGate').style.display='none';
+    }
+
     function saveAssign(){
       const guest = guests.find(g=>g.internalId===assignGuestId);
       if(!guest) return;
+
       const need = guest.totalNeeded;
       const sel = Array.from(document.querySelectorAll('#chipsContainer .chip.selected')).map(el=>el.textContent);
-      if(sel.length!==need){ alert(`يجب اختيار ${need} كود بالضبط.`); return }
+
+      if(sel.length!==need){
+        alert(`يجب اختيار ${need} كود بالضبط.`);
+        return;
+      }
+
       const others = guests
         .filter(g=>g.internalId!==guest.internalId)
         .flatMap(g=>g.assignedQrIds||[]);
-      if(sel.some(c=>others.includes(c))){ alert('أحد الأكواد المختارة مستخدم لضيف آخر.'); return }
+
+      if(sel.some(c=>others.includes(c))){
+        alert('أحد الأكواد المختارة مستخدم لضيف آخر.');
+        return;
+      }
+
       guest.assignedQrIds = sel;
       guest.isManuallyAssigned = true;
       persistAll();
-      renderGuestTable(); updateKPIs(); refreshQrUI();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
       closeAssign();
     }
 
@@ -558,16 +938,14 @@
     function persistAll(){
       setJSON(LS_GUESTS, guests);
       setJSON(LS_QR, availableQrIds);
+
       const msgEl=document.getElementById('messageTemplate');
       if(msgEl) localStorage.setItem(LS_MSG, msgEl.value||'');
-      const ev=document.getElementById('eventName')?.value||'';
-      if(ev) localStorage.setItem(LS_EVENT_NAME, ev);
 
-      // reminder
-      const rt=document.getElementById('reminderTemplate');
-      if(rt) localStorage.setItem(LS_REMINDER_TPL, rt.value||'');
-      const rl=document.getElementById('reminderLocation');
-      if(rl) localStorage.setItem(LS_REMINDER_LOC, rl.value||'');
+      localStorage.setItem(LS_EVENT_NAME, document.getElementById('eventName')?.value || '');
+      localStorage.setItem(LS_REMINDER_TEXT, document.getElementById('reminderText')?.value || '');
+      localStorage.setItem(LS_REMINDER_LOC, document.getElementById('reminderLocation')?.value || '');
+      localStorage.setItem(LS_REMINDER_PLACE, document.getElementById('reminderPlace')?.value || '');
     }
 
     // Export/Import JSON
@@ -575,17 +953,21 @@
       const payload = {
         version:6,
         eventName: document.getElementById('eventName').value || DEFAULT_EVENT,
-        guests, availableQrIds, internalGuestIdCounter,
+        guests,
+        availableQrIds,
+        internalGuestIdCounter,
         fixedStock,
         messageTemplate: document.getElementById('messageTemplate')?.value || '',
-        reminderTemplate: document.getElementById('reminderTemplate')?.value || '',
+        reminderText: document.getElementById('reminderText')?.value || '',
         reminderLocation: document.getElementById('reminderLocation')?.value || '',
+        reminderPlace: document.getElementById('reminderPlace')?.value || '',
         cloudCfg: getCloudCfg(),
         cloudUploadMark: localStorage.getItem(LS_CLOUD_UPLOAD_MARK) || ""
       };
       const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
       saveAs(blob, `sender_${payload.eventName||'event'}_${Date.now()}.json`);
     }
+
     function importJSONFile(file){
       if(!file) return;
       const r=new FileReader();
@@ -595,32 +977,32 @@
           guests = Array.isArray(data.guests)? data.guests: [];
           availableQrIds = Array.isArray(data.availableQrIds)? data.availableQrIds: [];
           internalGuestIdCounter = data.internalGuestIdCounter || guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
+
           document.getElementById('eventName').value = data.eventName || DEFAULT_EVENT;
           document.getElementById('currentEvent').textContent = data.eventName || DEFAULT_EVENT;
 
-          if (data.messageTemplate && document.getElementById('messageTemplate'))
-            document.getElementById('messageTemplate').value = data.messageTemplate;
-
-          if (data.reminderTemplate && document.getElementById('reminderTemplate'))
-            document.getElementById('reminderTemplate').value = data.reminderTemplate;
-
-          if (data.reminderLocation && document.getElementById('reminderLocation'))
-            document.getElementById('reminderLocation').value = data.reminderLocation;
+          if (data.messageTemplate) document.getElementById('messageTemplate').value = data.messageTemplate;
+          if (data.reminderText) document.getElementById('reminderText').value = data.reminderText;
+          if (data.reminderLocation) document.getElementById('reminderLocation').value = data.reminderLocation;
+          if (data.reminderPlace) document.getElementById('reminderPlace').value = data.reminderPlace;
 
           if (data.cloudCfg) localStorage.setItem(LS_CLOUD_CFG, JSON.stringify(data.cloudCfg));
           if (data.cloudUploadMark) localStorage.setItem(LS_CLOUD_UPLOAD_MARK, data.cloudUploadMark);
 
           selectedGuestIds.clear();
 
-          renderGuestTable(); updateKPIs(); refreshQrUI(); persistAll();
+          renderGuestTable();
+          updateKPIs();
+          refreshQrUI();
+          persistAll();
           refreshCloudUploadBadge();
 
           const cfg = getCloudCfg();
-          document.getElementById("cfgUploadUrl").value   = cfg.uploadUrl;
-          document.getElementById("cfgSendUrl").value     = cfg.sendUrl;
+          document.getElementById("cfgUploadUrl").value = cfg.uploadUrl;
+          document.getElementById("cfgSendUrl").value = cfg.sendUrl;
           document.getElementById("cfgReminderUrl").value = cfg.reminderUrl;
 
-          alert('تم الاستيراد بنجاح ✅\n(تذكير: يجب إعادة استيراد صور الباركود الفعلية على هذا الجهاز)');
+          alert('تم الاستيراد بنجاح ✅\n(تذكير: إذا لزم، أعد استيراد صور الباركود على هذا الجهاز)');
         }catch{
           alert('ملف JSON غير صالح');
         }
@@ -635,14 +1017,18 @@
       const ext=f.name.split('.').pop().toLowerCase();
       if(ext==='csv') readCSV(f);
       else if(['xlsx','xls'].includes(ext)) readExcel(f);
-      else alert('استخدم CSV أو XLSX')
+      else alert('استخدم CSV أو XLSX');
     }
+
     function readCSV(file){
-      Papa.parse(file,{ header:true, skipEmptyLines:true,
+      Papa.parse(file,{
+        header:true,
+        skipEmptyLines:true,
         complete:(res)=>processImportedData(res.data),
         error:(e)=>alert('CSV خطأ: '+e.message)
-      })
+      });
     }
+
     function readExcel(file){
       const r=new FileReader();
       r.onload=(e)=>{
@@ -650,9 +1036,9 @@
         const wb=XLSX.read(data,{type:'array'});
         const ws=wb.Sheets[wb.SheetNames[0]];
         const arr=XLSX.utils.sheet_to_json(ws);
-        processImportedData(arr)
+        processImportedData(arr);
       };
-      r.readAsArrayBuffer(file)
+      r.readAsArrayBuffer(file);
     }
 
     function processImportedData(data){
@@ -676,7 +1062,7 @@
       const kTotal = findKey('totalneeded');
 
       if(!kName || !kPhone || !kTotal){
-        alert('الأعمدة المطلوبة (مسموح عربي/إنجليزي): name/الاسم, phone/الهاتف, totalNeeded/عدد الدعوات');
+        alert('الأعمدة المطلوبة: name/الاسم + phone/الهاتف + totalNeeded/عدد الدعوات');
         return;
       }
 
@@ -685,11 +1071,11 @@
       const newOnes=[];
       data.forEach(row=>{
         const name  = String(row[kName]  ?? '').trim();
-        const phone = String(row[kPhone] ?? '').trim();
+        const phone = normalizeUAEPhone(String(row[kPhone] ?? '').trim());
         const total = Math.max(1, parseInt(row[kTotal] ?? 1) || 1);
 
         if(!name || !phone) return;
-        if(guests.some(x=>x.phone===phone)) return;
+        if(guests.some(x=>normPhone(x.phone)===normPhone(phone))) return;
 
         internalGuestIdCounter++;
         newOnes.push({
@@ -708,25 +1094,29 @@
 
       persistAll();
       autoDistribute();
-      renderGuestTable(); updateKPIs(); refreshQrUI();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
       document.getElementById('guestCount').textContent=guests.length;
-      alert(`تم إضافة ${newOnes.length} ضيف جديد ✅ (مع تجاهل المكرر).`);
+      alert(`تم إضافة ${newOnes.length} ضيف جديد ✅`);
     }
 
     async function importFromContacts(){
       try{
         if (!('contacts' in navigator) || !('select' in navigator.contacts)){
-          alert('ميزة استيراد جهات الاتصال غير مدعومة على هذا المتصفح.\nجرّب Chrome على أندرويد مع HTTPS.');
+          alert('ميزة استيراد جهات الاتصال غير مدعومة على هذا المتصفح.');
           return;
         }
         const picked = await navigator.contacts.select(['name','tel'], { multiple:true });
         if (!picked || !picked.length){ alert('لم يتم اختيار أي جهة اتصال'); return; }
+
         let added=0;
         picked.forEach(c=>{
           const name=(c.name && c.name[0])||'بدون اسم';
-          const phone=(c.tel && c.tel[0])||'';
+          const phone=normalizeUAEPhone((c.tel && c.tel[0])||'');
           if(!phone) return;
-          if(guests.some(x=>x.phone===phone)) return;
+          if(guests.some(x=>normPhone(x.phone)===normPhone(phone))) return;
+
           internalGuestIdCounter++;
           guests.push({
             internalId:internalGuestIdCounter,
@@ -740,21 +1130,26 @@
           });
           added++;
         });
+
         persistAll();
         autoDistribute();
-        renderGuestTable(); updateKPIs(); refreshQrUI();
+        renderGuestTable();
+        updateKPIs();
+        refreshQrUI();
         alert(`تم استيراد ${added} جهة اتصال ✅`);
       }catch(e){
         console.error(e);
-        alert('تعذر الوصول لجهات الاتصال (رفض إذن/عدم دعم).');
+        alert('تعذر الوصول لجهات الاتصال.');
       }
     }
 
     function addGuestManually(){
       const n=document.getElementById('newGuestName').value.trim();
-      const p=document.getElementById('newGuestPhone').value.trim();
+      const p=normalizeUAEPhone(document.getElementById('newGuestPhone').value.trim());
       const c=Math.max(1, parseInt(document.getElementById('newGuestTotalNeeded').value)||1);
+
       if(!n||!p){ alert('أدخل الاسم والهاتف'); return }
+
       internalGuestIdCounter++;
       guests.push({
         internalId:internalGuestIdCounter,
@@ -766,21 +1161,28 @@
         wamid:'',
         err:''
       });
+
       persistAll();
       autoDistribute();
-      renderGuestTable(); updateKPIs(); refreshQrUI();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+
       document.getElementById('newGuestName').value='';
       document.getElementById('newGuestPhone').value='';
       document.getElementById('newGuestTotalNeeded').value='1';
       document.getElementById('guestCount').textContent=guests.length;
     }
 
-    // Load barcodes (local dataURLs)
+    // Load barcodes
     function loadBarcodes(){
       const files=document.getElementById('barcodeUpload').files;
       if(!files.length){ alert('اختر ملفات'); return }
-      barcodeImages={}; availableQrIds=[];
-      let ok=0; const total=files.length;
+
+      barcodeImages={};
+      availableQrIds=[];
+      let ok=0;
+      const total=files.length;
 
       Array.from(files).forEach(file=>{
         const reader=new FileReader();
@@ -795,18 +1197,22 @@
             availableQrIds.sort((a,b)=>{
               const A=parseInt(a),B=parseInt(b);
               if(!isNaN(A)&&!isNaN(B)) return A-B;
-              return a.localeCompare(b)
+              return a.localeCompare(b);
             });
+
             localStorage.removeItem(LS_CLOUD_UPLOAD_MARK);
             refreshCloudUploadBadge();
 
             persistAll();
             autoDistribute();
-            renderGuestTable(); updateKPIs(); refreshQrUI();
-            alert(`تم استيراد ${ok} كود ✅ وتوزيعها تلقائيًا ضمن حد الرصيد.`);
+            renderGuestTable();
+            updateKPIs();
+            refreshQrUI();
+
+            alert(`تم استيراد ${ok} كود ✅ وتوزيعها تلقائيًا.`);
           }
         };
-        reader.readAsDataURL(file)
+        reader.readAsDataURL(file);
       });
     }
 
@@ -815,13 +1221,19 @@
       const allowed = availableQrIds.slice(0, cap);
       const usedByManual = guests.filter(g=>g.isManuallyAssigned).flatMap(g=>g.assignedQrIds);
       const free = allowed.filter(id=>!usedByManual.includes(id));
-      guests.forEach(g=>{ if(!g.isManuallyAssigned) g.assignedQrIds=[] });
+
+      guests.forEach(g=>{ if(!g.isManuallyAssigned) g.assignedQrIds=[]; });
+
       let i=0;
       guests.forEach(g=>{
         if(!g.isManuallyAssigned){
           const need=g.totalNeeded;
-          if(i+need<=free.length){ g.assignedQrIds=free.slice(i,i+need); i+=need }
-          else { g.assignedQrIds=[] }
+          if(i+need<=free.length){
+            g.assignedQrIds=free.slice(i,i+need);
+            i+=need;
+          } else {
+            g.assignedQrIds=[];
+          }
         }
       });
     }
@@ -830,6 +1242,7 @@
       const cap = Math.min(fixedStock, availableQrIds.length);
       const used = guests.reduce((s,g)=>s + (g.assignedQrIds?.length||0), 0);
       const free = Math.max(cap - used, 0);
+
       document.getElementById('kpiStock').textContent = fixedStock;
       document.getElementById('kpiUsedCards').textContent = used;
       document.getElementById('kpiFreeCards').textContent = free;
@@ -837,54 +1250,81 @@
       const need=guests.reduce((s,g)=>s+g.totalNeeded,0);
       const el=document.getElementById('qrMismatchAlert');
       if(!el) return;
-      if(cap<need){ el.style.display='block'; el.textContent=`تحذير: المتاح ضمن الرصيد (${cap}) أقل من المطلوب (${need}).` }
-      else if(cap>need){ el.style.display='block'; el.textContent=`ملاحظة: المتاح (${cap}) أكثر من المطلوب (${need}). المتبقي: ${cap-need}` }
-      else { el.style.display='none' }
+
+      if(cap<need){
+        el.style.display='block';
+        el.textContent=`تحذير: المتاح ضمن الرصيد (${cap}) أقل من المطلوب (${need}).`;
+      } else if(cap>need){
+        el.style.display='block';
+        el.textContent=`ملاحظة: المتاح (${cap}) أكثر من المطلوب (${need}). المتبقي: ${cap-need}`;
+      } else {
+        el.style.display='none';
+      }
     }
 
     function assignBarcode(id){ openAssignModal(id); }
 
     function editTotalNeeded(id){
-      const g=guests.find(x=>x.internalId===id); if(!g) return;
+      const g=guests.find(x=>x.internalId===id);
+      if(!g) return;
       const s=prompt(`عدد جديد لـ ${g.name}:`, g.totalNeeded);
       if(s===null||s.trim()==='') return;
-      const n=parseInt(s); if(isNaN(n)||n<1){ alert('عدد غير صالح'); return }
-      g.totalNeeded=n; g.isManuallyAssigned=false;
-      persistAll(); autoDistribute(); renderGuestTable(); updateKPIs(); refreshQrUI();
+      const n=parseInt(s);
+      if(isNaN(n)||n<1){ alert('عدد غير صالح'); return; }
+      g.totalNeeded=n;
+      g.isManuallyAssigned=false;
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
     }
 
     function editGuestDetails(id, field){
-      const g=guests.find(x=>x.internalId===id); if(!g) return;
-      const s=prompt(field==='name'?`اسم جديد لـ ${g.name}:`:`هاتف جديد لـ ${g.name}:`, g[field]);
+      const g=guests.find(x=>x.internalId===id);
+      if(!g) return;
+      const s=prompt(field==='name' ? `اسم جديد لـ ${g.name}:` : `هاتف جديد لـ ${g.name}:`, g[field]);
       if(s===null||s.trim()==='') return;
-      g[field]=s.trim();
-      persistAll(); renderGuestTable();
+      g[field] = field === "phone" ? normalizeUAEPhone(s.trim()) : s.trim();
+      persistAll();
+      renderGuestTable();
     }
 
     async function downloadBarcodeImage(guest){
       const ids=(guest.assignedQrIds||[]).map(x=>String(x).trim()).filter(Boolean);
       if(!ids.length){ alert('لا توجد كروت لهذا الضيف'); return }
+
       const present=ids.filter(id=>barcodeImages[id]);
-      if(!present.length){ alert('لا توجد صور متاحة لهذا الضيف — أعد استيراد صور الباركود على هذا الجهاز.'); return }
+      if(!present.length){
+        alert('لا توجد صور متاحة لهذا الضيف — أعد استيراد صور الباركود على هذا الجهاز.');
+        return;
+      }
+
       if(ids.length===1){
         const id=present[0];
         const a=document.createElement('a');
         a.href=barcodeImages[id];
         a.download=`${guest.name}_${id}.png`;
-        document.body.appendChild(a); a.click(); a.remove();
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
         return;
       }
-      const zip=new JSZip(); let added=0;
+
+      const zip=new JSZip();
+      let added=0;
       for(const id of present){
         const b64=barcodeImages[id].split(',')[1];
         zip.file(`${id}.png`, b64, {base64:true});
         added++;
       }
-      if(!added){ alert('لم يتم العثور على صور'); return }
+
+      if(!added){ alert('لم يتم العثور على صور'); return; }
       const blob=await zip.generateAsync({type:'blob'});
       saveAs(blob, `${guest.name}_${present.length}_Cards.zip`);
+
       if(present.length<ids.length){
-        alert(`تم تنزيل ${present.length} من أصل ${ids.length}. بعض الصور غير مستوردة على هذا الجهاز.`)
+        alert(`تم تنزيل ${present.length} من أصل ${ids.length}. بعض الصور غير مستوردة على هذا الجهاز.`);
       }
     }
 
@@ -892,20 +1332,23 @@
       if(!confirm('حذف الضيف؟')) return;
       guests = guests.filter(g=>g.internalId!==id);
       selectedGuestIds.delete(id);
-      persistAll(); autoDistribute(); renderGuestTable(); updateKPIs(); refreshQrUI();
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
     }
 
-    // =========================================================
-    // OLD: Open WhatsApp (fallback)
-    // =========================================================
+    // واتساب يدوي
     function sendWhatsAppMessage(guest){
       if(!guest.assignedQrIds.length){ alert('لا كروت للضيف'); return }
       const msgEl=document.getElementById('messageTemplate');
-      let txt= msgEl? msgEl.value : `مرحباً ${guest.name}`;
+      let txt= msgEl ? msgEl.value : `مرحباً ${guest.name}`;
       txt=txt.replace(/#\{\{GUEST_NAME\}\}#/g, guest.name).replace(/#\{\{TOTAL_COUNT\}\}#/g, guest.totalNeeded);
       const url=`https://wa.me/${normPhone(guest.phone)}?text=${encodeURIComponent(txt)}`;
       window.open(url,'_blank');
     }
+
     function sendAllWhatsApp(){
       if(!guests.length){ alert('لا يوجد ضيوف'); return }
       if(!confirm('سيتم فتح عدة نوافذ واتساب. هل تريد المتابعة؟')) return;
@@ -919,11 +1362,6 @@
       });
     }
 
-    // =========================================================
-    // Cloud Helpers
-    // =========================================================
-    function normPhone(p){ return String(p||'').replace(/[^\d]/g,''); }
-
     function getWelcomeText(guest){
       const tpl = document.getElementById("messageTemplate")?.value || "";
       return tpl
@@ -932,12 +1370,13 @@
         .trim();
     }
 
-    function getReminderText(guest, locationUrl){
-      const tpl = document.getElementById("reminderTemplate")?.value || "";
+    function getReminderText(guest){
+      const tpl = document.getElementById("reminderText")?.value || "";
       return tpl
         .replace(/#\{\{GUEST_NAME\}\}#/g, guest.name || "")
         .replace(/#\{\{EVENT_ID\}\}#/g, CLOUD_EVENT_ID)
-        .replace(/#\{\{LOCATION_URL\}\}#/g, locationUrl || "")
+        .replace(/#\{\{LOCATION_URL\}\}#/g, document.getElementById("reminderLocation")?.value || "")
+        .replace(/#\{\{CODE\}\}#/g, (guest.assignedQrIds||[])[0] || "")
         .trim();
     }
 
@@ -954,7 +1393,6 @@
       }
     }
 
-    // (1) رفع كل صور الباركود للسيرفر
     async function uploadAllCardsToCloud(){
       const cfg = getCloudCfg();
       const eventNameLocal = (localStorage.getItem(LS_EVENT_NAME) || DEFAULT_EVENT || "event").trim();
@@ -977,18 +1415,11 @@
         if(!dataUrl){ fail++; continue; }
 
         try{
-          const r = await fetch(cfg.uploadUrl, {
-            method:"POST",
-            headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify({
-              eventId: CLOUD_EVENT_ID,
-              code,
-              dataUrl
-            })
+          await postJsonStrict(cfg.uploadUrl, {
+            eventId: CLOUD_EVENT_ID,
+            code,
+            dataUrl
           });
-
-          const j = await r.json().catch(()=> ({}));
-          if(!r.ok || !j.ok) throw new Error(prettyErr(j.error || ("HTTP "+r.status)));
           ok++;
         }catch(e){
           fail++;
@@ -1003,10 +1434,9 @@
         localStorage.setItem(LS_CLOUD_UPLOAD_MARK, mark + ` (ok:${ok} fail:${fail})`);
       }
       refreshCloudUploadBadge();
-      alert(`رفع المخزون انتهى ✅\nنجح: ${ok}\nفشل: ${fail}\n\nالآن تقدر ترسل (ترحيب + كروت) عبر Cloud.`);
+      alert(`رفع المخزون انتهى ✅\nنجح: ${ok}\nفشل: ${fail}`);
     }
 
-    // (2) إرسال الترحيب + صور الأكواد (sendWelcomeAndCards)
     async function sendWelcomeAndCardsCloud(guest){
       const cfg = getCloudCfg();
 
@@ -1025,56 +1455,36 @@
         codes: guest.assignedQrIds
       };
 
-      const r = await fetch(cfg.sendUrl, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const j = await r.json().catch(()=> ({}));
-      if(!r.ok || !j.ok){
-        const errMsg = j?.error ? prettyErr(j.error) : ("HTTP " + r.status);
-        throw new Error(errMsg);
-      }
-      return j;
+      return await postJsonStrict(cfg.sendUrl, payload);
     }
 
-    // (3) تذكير (نص + لوكيشن) عبر sendReminderText
-    async function sendReminderTextCloud(guest, locationUrl, type="manual"){
+    async function sendReminderCloud(guest){
       const cfg = getCloudCfg();
 
-      if(!locationUrl) throw new Error("رابط اللوكيشن فارغ");
-      const text = getReminderText(guest, locationUrl);
-      if(!text) throw new Error("نص التذكير فارغ");
+      const locationUrl = (document.getElementById("reminderLocation").value || "").trim();
+      const place = (document.getElementById("reminderPlace").value || "").trim();
 
-      // نرسل code اختياري للتسجيل داخل invites (الأفضل: أول كود مخصص للضيف)
-      const codeForLog = (guest.assignedQrIds && guest.assignedQrIds.length) ? String(guest.assignedQrIds[0]) : "";
+      if(!locationUrl){
+        throw new Error("ضع رابط اللوكيشن أولاً");
+      }
+
+      if(!guest.assignedQrIds || !guest.assignedQrIds.length){
+        throw new Error("لا توجد أكواد مخصصة لهذا الضيف");
+      }
 
       const payload = {
         eventId: CLOUD_EVENT_ID,
         to: normPhone(guest.phone),
         name: guest.name,
-        code: codeForLog,        // اختياري
+        code: guest.assignedQrIds[0],
         locationUrl,
-        type,                    // manual / auto_24h / auto_3h...
-        text                      // (اختياري لو تبغى السيرفر يستخدمه) — لو Functionك ما تقراه ما يضر
+        place,
+        text: getReminderText(guest)
       };
 
-      const r = await fetch(cfg.reminderUrl, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const j = await r.json().catch(()=> ({}));
-      if(!r.ok || !j.ok){
-        const errMsg = j?.error ? prettyErr(j.error) : ("HTTP " + r.status);
-        throw new Error(errMsg);
-      }
-      return j;
+      return await postJsonStrict(cfg.reminderUrl, payload);
     }
 
-    // إرسال جماعي (ترحيب + كروت)
     async function sendAllCloud(){
       if(!guests.length){ alert("لا يوجد ضيوف"); return; }
 
@@ -1098,7 +1508,7 @@
           const out = await sendWelcomeAndCardsCloud(g);
 
           g.status = "sent";
-          g.wamid  = out.textWamid || "";
+          g.wamid  = out.templateWamid || out.textWamid || "";
           g.err = "";
           ok++;
         }catch(e){
@@ -1115,7 +1525,6 @@
       alert(`تم الإرسال ✅\nنجح: ${ok}\nفشل: ${fail}`);
     }
 
-    // إرسال المحدد (ترحيب + كروت)
     async function sendSelectedCloud(){
       const list = guests.filter(g => selectedGuestIds.has(g.internalId));
       if(!list.length){ alert("لم يتم تحديد أي ضيف"); return; }
@@ -1138,7 +1547,7 @@
           const out = await sendWelcomeAndCardsCloud(g);
 
           g.status = "sent";
-          g.wamid  = out.textWamid || "";
+          g.wamid  = out.templateWamid || out.textWamid || "";
           g.err = "";
           ok++;
         }catch(e){
@@ -1155,84 +1564,61 @@
       alert(`تم الإرسال ✅\nنجح: ${ok}\nفشل: ${fail}`);
     }
 
-    // 🔔 تذكير المحدد
-    async function remindSelected(){
+    async function sendSelectedReminder(){
       const list = guests.filter(g => selectedGuestIds.has(g.internalId));
       if(!list.length){ alert("لم يتم تحديد أي ضيف"); return; }
 
-      const locationUrl = (document.getElementById("reminderLocation")?.value || "").trim();
-      if(!locationUrl){ alert("ضع رابط اللوكيشن أولاً"); return; }
-
-      const cfg = getCloudCfg();
-      if(!cfg.reminderUrl || cfg.reminderUrl.includes("xxxxx")){
-        alert("ضع رابط Reminder URL الصحيح داخل (بيانات الحدث) ثم حفظ.");
-        return;
-      }
-
-      if(!confirm(`سيتم إرسال تذكير (نص + لوكيشن) لـ ${list.length} ضيف.\nمتابعة؟`)) return;
-
       let ok=0, fail=0;
+
       for(const g of list){
         try{
-          g.remStatus = "reminding";
-          renderGuestTable();
-
-          const out = await sendReminderTextCloud(g, locationUrl, "manual");
-          g.remStatus = "reminded";
-          g.remWamid = out.wamid || "";
+          await sendReminderCloud(g);
           ok++;
         }catch(e){
-          g.remStatus = "rem_failed";
-          g.remErr = prettyErr(e?.message || e);
           fail++;
+          console.error("Reminder failed", g.name, e);
         }
-        persistAll();
-        renderGuestTable();
-        await new Promise(r=>setTimeout(r, 350));
+        await new Promise(r=>setTimeout(r, 450));
       }
 
       alert(`تم التذكير ✅\nنجح: ${ok}\nفشل: ${fail}`);
     }
 
-    // 🔔 تذكير الكل
-    async function remindAll(){
+    async function sendAllReminder(){
       if(!guests.length){ alert("لا يوجد ضيوف"); return; }
 
-      const locationUrl = (document.getElementById("reminderLocation")?.value || "").trim();
-      if(!locationUrl){ alert("ضع رابط اللوكيشن أولاً"); return; }
-
-      const cfg = getCloudCfg();
-      if(!cfg.reminderUrl || cfg.reminderUrl.includes("xxxxx")){
-        alert("ضع رابط Reminder URL الصحيح داخل (بيانات الحدث) ثم حفظ.");
-        return;
-      }
-
-      if(!confirm(`سيتم إرسال تذكير (نص + لوكيشن) للجميع (${guests.length}).\nمتابعة؟`)) return;
-
       let ok=0, fail=0;
+
       for(const g of guests){
         try{
-          g.remStatus = "reminding";
-          renderGuestTable();
-
-          const out = await sendReminderTextCloud(g, locationUrl, "manual");
-          g.remStatus = "reminded";
-          g.remWamid = out.wamid || "";
+          await sendReminderCloud(g);
           ok++;
         }catch(e){
-          g.remStatus = "rem_failed";
-          g.remErr = prettyErr(e?.message || e);
           fail++;
+          console.error("Reminder failed", g.name, e);
         }
-        persistAll();
-        renderGuestTable();
-        await new Promise(r=>setTimeout(r, 350));
+        await new Promise(r=>setTimeout(r, 450));
       }
 
       alert(`تم التذكير ✅\nنجح: ${ok}\nفشل: ${fail}`);
     }
 
-    // KPI
+    async function pasteLocation(){
+      try{
+        const txt = await navigator.clipboard.readText();
+        if(txt && txt.trim()){
+          document.getElementById("reminderLocation").value = txt.trim();
+          persistAll();
+          return;
+        }
+      }catch(_){}
+      const v = prompt("الصق رابط اللوكيشن:");
+      if(v){
+        document.getElementById("reminderLocation").value = v.trim();
+        persistAll();
+      }
+    }
+
     function updateKPIs(){
       const total=guests.length;
       const sent=guests.filter(g=>g.status==='sent').length;
@@ -1242,9 +1628,9 @@
       document.getElementById('kpiRemain').textContent=remain;
     }
 
-    // Render table
     function renderGuestTable(){
-      const body=document.getElementById('guestTableBody'); if(!body) return;
+      const body=document.getElementById('guestTableBody');
+      if(!body) return;
       body.innerHTML='';
       document.getElementById('guestCount').textContent=guests.length;
 
@@ -1283,27 +1669,23 @@
         const tdQr=document.createElement('td');
         tdQr.setAttribute('data-label','الأكواد');
         tdQr.innerHTML=`<span class="editable" title="تعيين الأكواد" onclick="assignBarcode(${guest.internalId||0})">${(guest.assignedQrIds||[]).join(', ')||'لم يخصَّص'}</span>`;
-        tdQr.style.color = (guest.assignedQrIds||[]).length===guest.totalNeeded? '#b7ffc8' : '#ffb3b3';
+        tdQr.style.color = (guest.assignedQrIds||[]).length===guest.totalNeeded ? '#22c55e' : '#ef4444';
         tdQr.style.fontWeight='800';
         tr.appendChild(tdQr);
 
         const tdStatus=document.createElement('td');
         tdStatus.setAttribute('data-label','الحالة');
 
-        // status line (send)
-        let sLine = "";
-        if(guest.status === "sending") sLine = "جاري الإرسال...";
-        else if(guest.status === "failed") sLine = "فشل";
-        else if(guest.status === "sent") sLine = "مُرسلة";
-        else sLine = "جديدة";
+        if(guest.status === "sending"){
+          tdStatus.innerHTML = `<span class="status sending">جاري الإرسال...</span>`;
+        } else if(guest.status === "failed"){
+          tdStatus.innerHTML = `<span class="status failed">فشل</span>`;
+        } else if(guest.status === "sent"){
+          tdStatus.innerHTML = `<span class="status sent">مُرسلة</span>`;
+        } else {
+          tdStatus.innerHTML = `<span class="status new">جديدة</span>`;
+        }
 
-        // reminder line
-        let rLine = "";
-        if(guest.remStatus === "reminding") rLine = " | 🔔 جاري التذكير...";
-        else if(guest.remStatus === "rem_failed") rLine = " | 🔔 فشل";
-        else if(guest.remStatus === "reminded") rLine = " | 🔔 تم";
-
-        tdStatus.textContent = sLine + rLine;
         tr.appendChild(tdStatus);
 
         const tdAct=document.createElement('td');
@@ -1318,12 +1700,12 @@
 
         const b2=document.createElement('button');
         b2.className='btn block';
-        b2.textContent= guest.totalNeeded===1? '💾 PNG' : '💾 ZIP';
+        b2.textContent= guest.totalNeeded===1 ? '💾 PNG' : '💾 ZIP';
         b2.onclick=()=>downloadBarcodeImage(guest);
 
         const bCloud=document.createElement('button');
         bCloud.className='btn ok block';
-        bCloud.textContent='🚀 إرسال (ترحيب + كروت)';
+        bCloud.textContent='🚀 إرسال الدعوة';
         bCloud.onclick=async ()=>{
           try{
             guest.status="sending";
@@ -1333,7 +1715,7 @@
             const out = await sendWelcomeAndCardsCloud(guest);
 
             guest.status="sent";
-            guest.wamid = out.textWamid || "";
+            guest.wamid = out.templateWamid || out.textWamid || "";
             guest.err="";
           }catch(e){
             guest.status="failed";
@@ -1344,27 +1726,16 @@
           renderGuestTable();
         };
 
-        const bRem=document.createElement('button');
-        bRem.className='btn gold block';
-        bRem.textContent='🔔 تذكير (نص + لوكيشن)';
-        bRem.onclick=async ()=>{
-          const locationUrl = (document.getElementById("reminderLocation")?.value || "").trim();
-          if(!locationUrl){ alert("ضع رابط اللوكيشن أولاً"); return; }
+        const bReminder=document.createElement('button');
+        bReminder.className='btn gold block';
+        bReminder.textContent='🔔 تذكير';
+        bReminder.onclick=async ()=>{
           try{
-            guest.remStatus="reminding";
-            guest.remErr="";
-            renderGuestTable();
-
-            const out = await sendReminderTextCloud(guest, locationUrl, "manual");
-            guest.remStatus="reminded";
-            guest.remWamid = out.wamid || "";
+            await sendReminderCloud(guest);
+            alert("✅ تم إرسال التذكير");
           }catch(e){
-            guest.remStatus="rem_failed";
-            guest.remErr=prettyErr(e?.message || e);
-            alert("فشل التذكير:\n" + guest.remErr);
+            alert("❌ فشل التذكير:\n" + prettyErr(e?.message || e));
           }
-          persistAll();
-          renderGuestTable();
         };
 
         const b3=document.createElement('button');
@@ -1377,38 +1748,50 @@
         b4.textContent='🗑️ حذف';
         b4.onclick=()=>deleteGuest(guest.internalId);
 
-        [b1,b2,bCloud,bRem,b3,b4].forEach(b=>{ b.style.marginTop='8px'; tdAct.appendChild(b) });
-        tr.appendChild(tdAct);
+        [b1,b2,bCloud,bReminder,b3,b4].forEach(b=>{
+          b.style.marginTop='8px';
+          tdAct.appendChild(b);
+        });
 
+        tr.appendChild(tdAct);
         body.appendChild(tr);
       });
 
-      updateKPIs(); refreshQrUI(); persistAll();
+      updateKPIs();
+      refreshQrUI();
+      persistAll();
     }
 
     // Boot
     (function boot(){
-      // Fill Cloud URLs UI
+      applyTheme(localStorage.getItem(LS_THEME) || "dark");
+
       const cfg = getCloudCfg();
-      document.getElementById("cfgUploadUrl").value   = cfg.uploadUrl;
-      document.getElementById("cfgSendUrl").value     = cfg.sendUrl;
+      document.getElementById("cfgUploadUrl").value = cfg.uploadUrl;
+      document.getElementById("cfgSendUrl").value = cfg.sendUrl;
       document.getElementById("cfgReminderUrl").value = cfg.reminderUrl;
 
       try{
         const s=JSON.parse(localStorage.getItem(LS_AUTH)||'null');
-        if(!s?.event){ showAuth(); }
-        else { document.getElementById('currentEvent').textContent = s.event; }
+        if(!s?.event){
+          showAuth();
+        } else {
+          document.getElementById('currentEvent').textContent = s.event;
+        }
 
         document.getElementById('eventName').value = localStorage.getItem(LS_EVENT_NAME) || DEFAULT_EVENT;
 
         const savedMsg = localStorage.getItem(LS_MSG);
         if (savedMsg && document.getElementById('messageTemplate')) document.getElementById('messageTemplate').value = savedMsg;
 
-        const savedRT = localStorage.getItem(LS_REMINDER_TPL);
-        if (savedRT && document.getElementById('reminderTemplate')) document.getElementById('reminderTemplate').value = savedRT;
+        const rText = localStorage.getItem(LS_REMINDER_TEXT);
+        if (rText) document.getElementById('reminderText').value = rText;
 
-        const savedRL = localStorage.getItem(LS_REMINDER_LOC);
-        if (savedRL && document.getElementById('reminderLocation')) document.getElementById('reminderLocation').value = savedRL;
+        const rLoc = localStorage.getItem(LS_REMINDER_LOC);
+        if (rLoc) document.getElementById('reminderLocation').value = rLoc;
+
+        const rPlace = localStorage.getItem(LS_REMINDER_PLACE);
+        if (rPlace) document.getElementById('reminderPlace').value = rPlace;
 
         document.getElementById('kpiStock').textContent = fixedStock;
       }catch{
@@ -1416,18 +1799,23 @@
       }
 
       refreshCloudUploadBadge();
-      renderGuestTable(); updateKPIs(); refreshQrUI();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
     })();
 
     (function bindAutoSave(){
       const el=document.getElementById('messageTemplate');
-      if(el) el.addEventListener('input', ()=>{ localStorage.setItem(LS_MSG, el.value||''); });
+      if(el) el.addEventListener('input', ()=> localStorage.setItem(LS_MSG, el.value||''));
 
-      const rt=document.getElementById('reminderTemplate');
-      if(rt) rt.addEventListener('input', ()=>{ localStorage.setItem(LS_REMINDER_TPL, rt.value||''); });
+      const rt=document.getElementById('reminderText');
+      if(rt) rt.addEventListener('input', ()=> localStorage.setItem(LS_REMINDER_TEXT, rt.value||''));
 
       const rl=document.getElementById('reminderLocation');
-      if(rl) rl.addEventListener('input', ()=>{ localStorage.setItem(LS_REMINDER_LOC, rl.value||''); });
+      if(rl) rl.addEventListener('input', ()=> localStorage.setItem(LS_REMINDER_LOC, rl.value||''));
+
+      const rp=document.getElementById('reminderPlace');
+      if(rp) rp.addEventListener('input', ()=> localStorage.setItem(LS_REMINDER_PLACE, rp.value||''));
     })();
   </script>
 </body>
