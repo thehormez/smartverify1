@@ -12,14 +12,30 @@
       --shadow:0 18px 60px rgba(0,0,0,.45);
       --r:16px;
     }
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:radial-gradient(1200px 700px at 30% -10%, rgba(214,177,94,.18), transparent 60%), var(--bg); color:var(--ink)}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto;
+      background:radial-gradient(1200px 700px at 30% -10%, rgba(214,177,94,.18), transparent 60%), var(--bg);
+      color:var(--ink)
+    }
     .wrap{max-width:1200px;margin:0 auto;padding:18px}
-    .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--r);padding:14px;margin-top:12px;box-shadow:var(--shadow)}
+    .card{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:var(--r);
+      padding:14px;
+      margin-top:12px;
+      box-shadow:var(--shadow)
+    }
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .sp{flex:1}
     button{
-      cursor:pointer; border-radius:12px; padding:10px 12px; color:var(--ink);
-      border:1px solid rgba(214,177,94,.35); background:rgba(214,177,94,.14);
+      cursor:pointer;
+      border-radius:12px;
+      padding:10px 12px;
+      color:var(--ink);
+      border:1px solid rgba(214,177,94,.35);
+      background:rgba(214,177,94,.14);
       transition:.15s transform ease,.15s opacity ease;
     }
     button:hover{transform:translateY(-1px)}
@@ -28,27 +44,67 @@
     .btn-danger{border:1px solid rgba(251,113,133,.45); background:rgba(251,113,133,.12)}
     .btn-success{border:1px solid rgba(52,211,153,.45); background:rgba(52,211,153,.12)}
     input,select{
-      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
-      color:var(--ink);padding:10px 12px;border-radius:12px;outline:none;min-width:180px
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
+      color:var(--ink);
+      padding:10px 12px;
+      border-radius:12px;
+      outline:none;
+      min-width:180px
     }
     .muted{color:var(--muted)}
     .title{display:flex;justify-content:space-between;align-items:center;gap:10px}
     .title h2{margin:0;font-size:16px}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.20)}
-    .badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);font-size:12px}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.20)
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      font-size:12px
+    }
     .b-ok{border-color:rgba(52,211,153,.35); background:rgba(52,211,153,.10); color:var(--ok)}
     .b-bad{border-color:rgba(251,113,133,.35); background:rgba(251,113,133,.10); color:var(--bad)}
     .b-warn{border-color:rgba(251,191,36,.35); background:rgba(251,191,36,.10); color:var(--warn)}
     .b-info{border-color:rgba(96,165,250,.35); background:rgba(96,165,250,.10); color:var(--info)}
     table{width:100%;border-collapse:collapse;margin-top:10px}
-    th,td{border-bottom:1px solid rgba(255,255,255,.10);padding:10px;text-align:right;vertical-align:middle}
-    thead th{position:sticky;top:0;background:rgba(11,16,32,.92);backdrop-filter: blur(8px);z-index:1}
+    th,td{
+      border-bottom:1px solid rgba(255,255,255,.10);
+      padding:10px;
+      text-align:right;
+      vertical-align:middle
+    }
+    thead th{
+      position:sticky;
+      top:0;
+      background:rgba(11,16,32,.92);
+      backdrop-filter: blur(8px);
+      z-index:1
+    }
     .ltr{direction:ltr;text-align:left}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
     .small{font-size:12px}
     .grid2{display:grid;grid-template-columns:1fr;gap:12px}
     @media(min-width:900px){ .grid2{grid-template-columns:1fr 1fr} }
-    .note{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.35);padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.10);max-height:260px;overflow:auto}
+    .note{
+      white-space:pre-wrap;
+      word-break:break-word;
+      background:rgba(0,0,0,.35);
+      padding:10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      max-height:260px;
+      overflow:auto
+    }
     .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
     .leftTools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .rightTools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -73,6 +129,7 @@
     <div class="row" style="margin-top:10px">
       <input id="eventId" placeholder="eventId (اختياري) مثال: zafaf_khaled" style="flex:1;min-width:240px" />
       <input id="q" placeholder="بحث: اسم / رقم / كود" style="flex:1;min-width:220px" />
+
       <select id="statusFilter">
         <option value="">كل الحالات</option>
         <option value="read">read</option>
@@ -80,6 +137,16 @@
         <option value="sent">sent</option>
         <option value="failed">failed</option>
       </select>
+
+      <select id="kindFilter">
+        <option value="">كل الأنواع</option>
+        <option value="template">template</option>
+        <option value="image">image</option>
+        <option value="reminder">reminder</option>
+        <option value="text">text</option>
+        <option value="other">other</option>
+      </select>
+
       <select id="limitN">
         <option value="50">آخر 50</option>
         <option value="100" selected>آخر 100</option>
@@ -117,8 +184,9 @@
       </div>
 
       <div class="muted small" style="margin-top:10px;line-height:1.6">
-        ✅ يعرض آخر إرسال لكل ضيف فقط.<br>
-        ✅ إذا تكرر نفس الاسم، لن يتكرر في الجدول — فقط الوقت سيتحدث حسب آخر إرسال.<br>
+        ✅ نفس الشخص إذا أُرسل له أكثر من نوع مثل <b>template</b> و <b>reminder</b> سيظهران معًا.<br>
+        ✅ نفس الشخص + نفس النوع لن يتكرر، وسيظهر فقط آخر وقت لهذا النوع.<br>
+        ✅ الأحدث دائمًا يظهر بالأعلى.<br>
         ⚠️ الحذف يحتاج Rules تسمح لOwner UID.
       </div>
     </div>
@@ -136,7 +204,7 @@
   <div class="card">
     <div class="title">
       <h2>سجل الإرسال (wa_messages)</h2>
-      <span class="muted small">يعرض آخر سجل فقط لكل ضيف — الأحدث بالأعلى</span>
+      <span class="muted small">يعرض آخر سجل لكل شخص + نوع</span>
     </div>
 
     <div style="overflow:auto;margin-top:10px">
@@ -170,7 +238,6 @@
     doc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-  // ✅ config مشروع hormez-inv
   const firebaseConfig = {
     apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
     authDomain: "hormez-inv.firebaseapp.com",
@@ -180,7 +247,6 @@
     appId: "1:747519941805:web:468fada2492700e9da3a24"
   };
 
-  // ✅ ضع UID حقك هنا (Owner فقط)
   const OWNER_UIDS = new Set([
     "GhauBm6KHHgEMyZLwJvU3DflRhx1"
   ]);
@@ -197,17 +263,31 @@
   let selected = new Set();
 
   function badgeStatus(s){
-    const v = String(s||"-").toLowerCase();
-    if(v==="read") return `<span class="badge b-ok">read</span>`;
-    if(v==="delivered") return `<span class="badge b-info">delivered</span>`;
-    if(v==="sent") return `<span class="badge b-warn">sent</span>`;
-    if(v==="failed") return `<span class="badge b-bad">failed</span>`;
+    const v = String(s || "-").toLowerCase();
+    if(v === "read") return `<span class="badge b-ok">read</span>`;
+    if(v === "delivered") return `<span class="badge b-info">delivered</span>`;
+    if(v === "sent") return `<span class="badge b-warn">sent</span>`;
+    if(v === "failed") return `<span class="badge b-bad">failed</span>`;
     return `<span class="badge">-</span>`;
+  }
+
+  function badgeKind(kind){
+    const v = String(kind || "other").toLowerCase();
+    if(v === "template") return `<span class="badge b-info">template</span>`;
+    if(v === "image") return `<span class="badge b-warn">image</span>`;
+    if(v === "reminder") return `<span class="badge b-ok">reminder</span>`;
+    if(v === "text") return `<span class="badge">text</span>`;
+    return `<span class="badge">other</span>`;
   }
 
   function formatTS(ts){
     try{
-      const d = ts?.toDate ? ts.toDate() : (ts?.seconds ? new Date(ts.seconds*1000) : (ts ? new Date(ts) : null));
+      const d = ts?.toDate
+        ? ts.toDate()
+        : (ts?.seconds
+            ? new Date(ts.seconds * 1000)
+            : (ts ? new Date(ts) : null));
+
       if(!d || isNaN(d.getTime())) return "-";
       return d.toLocaleString("ar-AE", { hour12:true });
     }catch{
@@ -223,7 +303,7 @@
     const isOwner = currentUser && OWNER_UIDS.has(currentUser.uid);
     $("ownerBadge").className = "badge " + (isOwner ? "b-ok" : "b-bad");
     $("ownerBadge").textContent = "Owner: " + (isOwner ? "مفعّل" : "غير مفعّل");
-    $("btnDeleteSelected").disabled = !(isOwner && selected.size>0);
+    $("btnDeleteSelected").disabled = !(isOwner && selected.size > 0);
   }
 
   function updateSelUI(){
@@ -238,32 +318,74 @@
       if(!ts) return 0;
       if(typeof ts?.toDate === "function") return ts.toDate().getTime();
       if(typeof ts?.seconds === "number") return ts.seconds * 1000;
+
       if(typeof ts === "string" || typeof ts === "number"){
         const d = new Date(ts);
         return isNaN(d.getTime()) ? 0 : d.getTime();
       }
+
       return 0;
     }catch{
       return 0;
     }
   }
 
-  function getGuestUniqueKey(row){
-    // الأساس: الاسم
-    const guestName = String(row?.guestName || "").trim().toLowerCase();
-    if(guestName) return "name:" + guestName;
+  function normalizeMessageKind(row){
+    const rawKind =
+      row?.kind ||
+      row?.type ||
+      row?.messageType ||
+      row?.message_kind ||
+      row?.category ||
+      (row?.templateName ? "template" : (row?.code ? "image" : ""));
 
-    // fallback على الرقم لو الاسم غير موجود
-    const phone = String(
+    const kind = String(rawKind || "").toLowerCase().trim();
+
+    if(
+      kind.includes("reminder") ||
+      kind.includes("tazkeer") ||
+      kind.includes("remind") ||
+      kind.includes("تذكير")
+    ) return "reminder";
+
+    if(
+      kind.includes("template") ||
+      row?.templateName
+    ) return "template";
+
+    if(
+      kind.includes("image") ||
+      kind.includes("card") ||
+      kind.includes("barcode") ||
+      row?.code ||
+      (Array.isArray(row?.codes) && row.codes.length)
+    ) return "image";
+
+    if(kind.includes("text")) return "text";
+
+    return kind || "other";
+  }
+
+  function getPhone(row){
+    return String(
       row?.to ||
       row?.recipient_id ||
       row?.lastStatusRaw?.recipient_id ||
       ""
     ).trim();
+  }
 
-    if(phone) return "phone:" + phone;
+  function getGuestUniqueKey(row){
+    const guestName = String(row?.guestName || "").trim().toLowerCase();
+    const phone = getPhone(row);
 
-    return "doc:" + String(row?.docId || Math.random());
+    const personKey = guestName
+      ? `name:${guestName}`
+      : (phone ? `phone:${phone}` : `doc:${row?.docId || Math.random()}`);
+
+    const kindKey = normalizeMessageKind(row);
+
+    return `${personKey}__kind:${kindKey}`;
   }
 
   function getLatestUniqueRows(rows){
@@ -285,6 +407,7 @@
     const ev = $("eventId").value.trim();
     const qtxt = $("q").value.trim().toLowerCase();
     const stf = $("statusFilter").value.trim().toLowerCase();
+    const kindFilter = $("kindFilter").value.trim().toLowerCase();
 
     let rows = [...all];
 
@@ -294,6 +417,9 @@
       const status = String(x.lastStatus || x.status || x?.lastStatusRaw?.status || "").toLowerCase();
       if(stf && status !== stf) return false;
 
+      const kind = normalizeMessageKind(x);
+      if(kindFilter && kind !== kindFilter) return false;
+
       if(qtxt){
         const hay = [
           x.guestName,
@@ -302,8 +428,9 @@
           x.code,
           x.to,
           x.recipient_id,
-          x?.lastStatusRaw?.recipient_id
-        ].map(v=>String(v || "").toLowerCase()).join(" ");
+          x?.lastStatusRaw?.recipient_id,
+          kind
+        ].map(v => String(v || "").toLowerCase()).join(" ");
 
         if(!hay.includes(qtxt)) return false;
       }
@@ -311,10 +438,7 @@
       return true;
     });
 
-    // الاحتفاظ بآخر سجل فقط لكل ضيف
     rows = getLatestUniqueRows(rows);
-
-    // الأحدث أولاً
     rows.sort((a, b) => getRowDateMs(b) - getRowDateMs(a));
 
     return rows;
@@ -332,20 +456,21 @@
 
     for(const d of filtered){
       const status = d.lastStatus || d.status || d?.lastStatusRaw?.status || "-";
-      const to = d.to || d.recipient_id || d?.lastStatusRaw?.recipient_id || "-";
-      const kind = d.kind || d.type || d.messageType || (d.templateName ? "template" : (d.code ? "image" : "-"));
+      const to = getPhone(d) || "-";
+      const kind = normalizeMessageKind(d);
+      const codeValue = d.code || (Array.isArray(d.codes) ? d.codes.join(", ") : "-");
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td><input type="checkbox" data-id="${d.docId}"></td>
         <td>${d.guestName || "-"}</td>
         <td class="ltr mono">${to}</td>
-        <td class="ltr mono">${d.code || (Array.isArray(d.codes) ? d.codes.join(", ") : "-")}</td>
+        <td class="ltr mono">${codeValue}</td>
         <td class="mono">${d.eventId || "-"}</td>
-        <td class="mono">${kind || "-"}</td>
+        <td>${badgeKind(kind)}</td>
         <td>${badgeStatus(status)}</td>
         <td class="small">${formatTS(d.updatedAt || d.createdAt)}</td>
-        <td class="ltr mono small">${d.docId}</td>
+        <td class="ltr mono small">${d.wamid || d.docId}</td>
       `;
       tbody.appendChild(tr);
     }
@@ -372,10 +497,12 @@
       showDebug("...");
 
       const ev = $("eventId").value.trim();
-      const lim = parseInt($("limitN").value,10) || 100;
+      const lim = parseInt($("limitN").value, 10) || 100;
 
       const col = collection(db, "wa_messages");
-      const qq = ev ? query(col, where("eventId","==",ev), limit(lim)) : query(col, limit(lim));
+      const qq = ev
+        ? query(col, where("eventId", "==", ev), limit(lim))
+        : query(col, limit(lim));
 
       const snap = await getDocs(qq);
 
@@ -385,7 +512,6 @@
         rowsCache.push({ docId: docu.id, ...data });
       });
 
-      // ترتيب داخلي أولي
       rowsCache.sort((a, b) => getRowDateMs(b) - getRowDateMs(a));
 
       $("statusLine").innerHTML = `<span class="badge b-ok">تم</span> <span class="muted">docs: ${snap.size}</span>`;
@@ -393,7 +519,7 @@
         rowsCache[0]
           ? {
               sampleFirstDoc: rowsCache[0],
-              note: "يعرض الجدول آخر سجل فقط لكل ضيف، والأحدث يكون بالأعلى."
+              note: "يعرض الجدول آخر سجل لكل شخص + نوع. يعني template و reminder لنفس الشخص يظهران معًا، لكن template لن يتكرر مرتين."
             }
           : "لا توجد بيانات."
       );
@@ -417,10 +543,12 @@
       alert("غير مسموح بالحذف. Owner فقط.");
       return;
     }
-    if(selected.size===0){
+
+    if(selected.size === 0){
       alert("اختر سجلات للحذف أولاً.");
       return;
     }
+
     const ok = confirm(`تأكيد حذف ${selected.size} سجل من wa_messages؟\nلا يمكن التراجع.`);
     if(!ok) return;
 
@@ -445,25 +573,25 @@
     }
   }
 
-  // Auth
   $("btnLogin").onclick = async ()=> signInWithPopup(auth, new GoogleAuthProvider());
   $("btnLogout").onclick = async ()=> signOut(auth);
 
   onAuthStateChanged(auth, (user)=>{
     currentUser = user || null;
+
     if(user){
       $("who").innerHTML = `<span class="badge b-ok">مسجّل دخول</span> ${user.email} — <span class="mono">UID: ${user.uid}</span>`;
-      $("btnLogin").style.display="none";
-      $("btnLogout").style.display="inline-block";
+      $("btnLogin").style.display = "none";
+      $("btnLogout").style.display = "inline-block";
     }else{
       $("who").innerHTML = `غير مسجّل دخول`;
-      $("btnLogin").style.display="inline-block";
-      $("btnLogout").style.display="none";
+      $("btnLogin").style.display = "inline-block";
+      $("btnLogout").style.display = "none";
     }
+
     setOwnerUI();
   });
 
-  // Buttons
   $("btnLoad").onclick = loadMessages;
   $("btnTest").onclick = loadMessages;
 
@@ -476,7 +604,7 @@
   };
 
   $("btnClearSel").onclick = ()=>{
-    tbody.querySelectorAll('input[type="checkbox"][data-id]').forEach(chk=> chk.checked = false);
+    tbody.querySelectorAll('input[type="checkbox"][data-id]').forEach(chk => chk.checked = false);
     selected.clear();
     updateSelUI();
   };
@@ -494,9 +622,9 @@
     updateSelUI();
   });
 
-  // Live filter updates
   $("q").addEventListener("input", ()=> renderTable());
   $("statusFilter").addEventListener("change", ()=> renderTable());
+  $("kindFilter").addEventListener("change", ()=> renderTable());
   $("eventId").addEventListener("change", ()=> renderTable());
 
 </script>
