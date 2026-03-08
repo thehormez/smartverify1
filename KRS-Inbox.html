@@ -21,7 +21,8 @@
       --warn:#fbbf24;
       --info:#60a5fa;
       --shadow:0 18px 60px rgba(0,0,0,.45);
-      --radius:18px;
+      --radius:20px;
+      --radius-sm:14px;
     }
 
     *{box-sizing:border-box}
@@ -36,7 +37,7 @@
         linear-gradient(180deg, var(--bg), var(--bg2));
     }
 
-    .wrap{max-width:1450px; margin:0 auto; padding:18px}
+    .wrap{max-width:1480px; margin:0 auto; padding:18px}
     .glass{
       background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
       border:1px solid var(--stroke);
@@ -68,19 +69,20 @@
       align-items:center;
     }
     .logo{
-      width:52px;
-      height:52px;
-      border-radius:16px;
+      width:56px;
+      height:56px;
+      border-radius:18px;
       display:grid;
       place-items:center;
       font-weight:900;
       color:#211805;
       background:linear-gradient(135deg,#f6df98,#d6b15e 65%,#a77710);
       box-shadow:0 12px 30px rgba(214,177,94,.30);
+      flex:0 0 auto;
     }
     .brand h1{
       margin:0;
-      font-size:26px;
+      font-size:28px;
       line-height:1.15;
     }
     .sub{
@@ -106,6 +108,7 @@
       padding:7px 10px;
       border-radius:999px;
       font-size:12px;
+      white-space:nowrap;
     }
     .b-ok{border-color:rgba(52,211,153,.35); background:rgba(52,211,153,.10); color:var(--ok)}
     .b-bad{border-color:rgba(251,113,133,.35); background:rgba(251,113,133,.10); color:var(--bad)}
@@ -145,6 +148,11 @@
       border:1px solid rgba(96,165,250,.25);
       color:#dcecff;
     }
+    .btn-danger{
+      background:rgba(251,113,133,.12);
+      border:1px solid rgba(251,113,133,.25);
+      color:#ffd8de;
+    }
 
     .input,.select,.textarea{
       width:100%;
@@ -173,7 +181,7 @@
     }
     .filters-grid{
       display:grid;
-      grid-template-columns:1.1fr 1fr .8fr .8fr auto;
+      grid-template-columns:1fr 1fr .85fr .85fr auto;
       gap:12px;
       align-items:end;
     }
@@ -190,11 +198,7 @@
       display:grid;
       grid-template-columns:360px 1fr;
       gap:16px;
-      min-height:72vh;
-    }
-
-    .sidebar,.chat{
-      min-height:72vh;
+      min-height:74vh;
     }
 
     .panel-title{
@@ -213,7 +217,7 @@
       display:flex;
       flex-direction:column;
       gap:10px;
-      max-height:calc(72vh - 80px);
+      max-height:calc(74vh - 70px);
       overflow:auto;
       padding-right:2px;
     }
@@ -266,7 +270,7 @@
     .chat{
       display:grid;
       grid-template-rows:auto 1fr auto;
-      overflow:hidden;
+      min-height:74vh;
     }
 
     .chat-head{
@@ -274,12 +278,19 @@
       border-bottom:1px solid var(--stroke);
       margin-bottom:12px;
     }
-
     .chat-meta{
       display:flex;
       flex-wrap:wrap;
       gap:8px;
       margin-top:8px;
+    }
+
+    .chat-top-actions{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
     }
 
     .messages{
@@ -325,6 +336,28 @@
       color:var(--muted);
       font-size:11px;
     }
+    .msg-actions{
+      margin-top:10px;
+      display:flex;
+      gap:8px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .mini-btn{
+      cursor:pointer;
+      border:none;
+      border-radius:10px;
+      padding:6px 10px;
+      font-size:11px;
+      color:var(--ink);
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--stroke);
+    }
+    .mini-btn.danger{
+      color:#ffd9df;
+      background:rgba(251,113,133,.12);
+      border-color:rgba(251,113,133,.28);
+    }
 
     .reply-box{
       border-top:1px solid var(--stroke);
@@ -362,7 +395,6 @@
     @media (max-width: 1100px){
       .filters-grid{grid-template-columns:1fr 1fr 1fr}
       .main{grid-template-columns:1fr}
-      .sidebar,.chat{min-height:auto}
     }
 
     @media (max-width: 680px){
@@ -381,11 +413,9 @@
     <div class="brand">
       <div class="logo">KRS</div>
       <div>
-        <h1>KRS INVITE — Inbox</h1>
+        <h1>KRS INVITE — Inbox Pro</h1>
         <div class="sub">
-          قراءة الرسائل الواردة من الضيوف والرد عليهم من داخل الصفحة.
-          تعتمد على <span class="mono">wa_inbox</span> للوارد و
-          <span class="mono">wa_messages</span> أو <span class="mono">wa_outbox</span> للصادر.
+          محادثة واحدة فقط لكل شخص، مع عرض كامل الوارد والصادر، وإمكانية الرد والحذف.
         </div>
       </div>
     </div>
@@ -421,8 +451,8 @@
       <div class="field">
         <label>&nbsp;</label>
         <div class="row">
-          <button id="btnLoad" class="btn btn-success">تحميل</button>
-          <button id="btnRefresh" class="btn btn-info">تحديث</button>
+          <button id="btnLoad" class="btn btn-success">تشغيل مباشر</button>
+          <button id="btnRefresh" class="btn btn-info">إعادة تحميل</button>
         </div>
       </div>
     </div>
@@ -433,16 +463,17 @@
       <span class="badge" id="threadCountBadge">المحادثات: 0</span>
       <span class="badge" id="messageCountBadge">الرسائل: 0</span>
       <span class="badge" id="uidBadge">UID: —</span>
+      <span class="badge b-warn" id="liveBadge">Live: Off</span>
     </div>
 
     <div class="status-box" id="debugBox">—</div>
   </section>
 
   <section class="main">
-    <aside class="card sidebar">
+    <aside class="card">
       <div class="panel-title">
         <h2>المحادثات</h2>
-        <span class="muted small">آخر رسالة لكل ضيف</span>
+        <span class="muted small">تجميع حسب رقم الهاتف</span>
       </div>
       <div id="threads" class="threads"></div>
     </aside>
@@ -453,13 +484,22 @@
           <h2 id="chatTitle">اختر محادثة</h2>
           <span class="muted small" id="chatSubtitle">—</span>
         </div>
+
         <div class="chat-meta" id="chatMeta"></div>
+
+        <div class="chat-top-actions">
+          <div class="row">
+            <button id="btnCopyPhone" class="btn btn-ghost" disabled>نسخ الرقم</button>
+            <button id="btnOpenWa" class="btn btn-ghost" disabled>فتح واتساب</button>
+          </div>
+          <div class="row">
+            <button id="btnDeleteThread" class="btn btn-danger" disabled>حذف المحادثة كاملة</button>
+          </div>
+        </div>
       </div>
 
       <div id="messages" class="messages">
-        <div class="empty">
-          اختر محادثة من القائمة الجانبية لعرض الرسائل.
-        </div>
+        <div class="empty">اختر محادثة من القائمة الجانبية لعرض الرسائل.</div>
       </div>
 
       <div class="reply-box">
@@ -483,7 +523,15 @@
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
   import {
-    getFirestore, collection, getDocs, query, where, limit
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    where,
+    limit,
+    onSnapshot,
+    deleteDoc,
+    doc
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -495,11 +543,10 @@
     appId: "1:747519941805:web:468fada2492700e9da3a24"
   };
 
-  // عدّل رابط الفنكشن إذا عندك رابط مختلف
   const REPLY_API_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendInboxReply";
 
   const OWNER_UIDS = new Set([
-    "GhauBm6KHHgEMyZLwJvU3DflRhx1"
+    "4xk0P5KnOXb2Ut1IDBYf0ooUcWm2"
   ]);
 
   const app = initializeApp(firebaseConfig);
@@ -513,6 +560,8 @@
   let outboxRows = [];
   let threadsMap = new Map();
   let selectedThreadKey = "";
+  let unsubInbox = null;
+  let unsubOutbox = null;
 
   function showDebug(text){
     $("debugBox").textContent = typeof text === "string" ? text : JSON.stringify(text, null, 2);
@@ -525,6 +574,7 @@
       $("authStatus").className = "badge b-ok";
       $("authStatus").textContent = currentUser.email;
       $("uidBadge").textContent = `UID: ${currentUser.uid}`;
+      $("btnLogin").style.display = "inline-flex";
       $("btnLogin").style.display = "none";
       $("btnLogout").style.display = "inline-flex";
     }else{
@@ -539,12 +589,17 @@
     $("ownerBadge").textContent = "Owner: " + (isOwner ? "مفعّل" : "غير مفعّل");
   }
 
+  function isOwner(){
+    return !!(currentUser && OWNER_UIDS.has(currentUser.uid));
+  }
+
   function getRowDateMs(row){
     try{
       const ts =
         row?.timestamp ||
         row?.createdAt ||
         row?.updatedAt ||
+        row?.receivedAt ||
         row?.time ||
         row?.sentAt ||
         row?.date ||
@@ -553,7 +608,6 @@
       if(!ts) return 0;
       if(typeof ts?.toDate === "function") return ts.toDate().getTime();
       if(typeof ts?.seconds === "number") return ts.seconds * 1000;
-
       const d = new Date(ts);
       return isNaN(d.getTime()) ? 0 : d.getTime();
     }catch{
@@ -610,6 +664,7 @@
   function getBody(row){
     return String(
       row?.body ||
+      row?.messageBody ||
       row?.text?.body ||
       row?.text ||
       row?.message?.text ||
@@ -636,15 +691,8 @@
     const explicit = String(row?.direction || "").toLowerCase().trim();
     if(explicit === "in" || explicit === "incoming") return "in";
     if(explicit === "out" || explicit === "outgoing") return "out";
-
     if(sourceName === "inbox") return "in";
     return "out";
-  }
-
-  function makeThreadKey(row){
-    const phone = row.__phone || getPhone(row);
-    const eventId = row.__eventId || getEventId(row);
-    return `${phone}__${eventId || "no_event"}`;
   }
 
   function normalizeRow(row, sourceName){
@@ -656,9 +704,9 @@
       __body: getBody(row),
       __eventId: getEventId(row),
       __direction: getDirection(row, sourceName),
-      __timeMs: getRowDateMs(row)
+      __timeMs: getRowDateMs(row),
     };
-    normalized.__threadKey = makeThreadKey(normalized);
+    normalized.__threadKey = normalized.__phone || `unknown_${row.docId}`;
     return normalized;
   }
 
@@ -684,7 +732,7 @@
     });
   }
 
-  async function loadCollectionSafe(collectionName, eventId){
+  async function loadCollectionOnce(collectionName, eventId){
     const col = collection(db, collectionName);
     const qq = eventId
       ? query(col, where("eventId", "==", eventId), limit(500))
@@ -698,7 +746,16 @@
     return rows;
   }
 
-  async function loadAll(){
+  function stopLive(){
+    if(typeof unsubInbox === "function") unsubInbox();
+    if(typeof unsubOutbox === "function") unsubOutbox();
+    unsubInbox = null;
+    unsubOutbox = null;
+    $("liveBadge").className = "badge b-warn";
+    $("liveBadge").textContent = "Live: Off";
+  }
+
+  async function reloadOnce(){
     if(!currentUser){
       showDebug("❌ لازم تسجل دخول أولاً.");
       return;
@@ -709,33 +766,81 @@
       const inboxCol = $("inboxCollection").value.trim() || "wa_inbox";
       const outboxCol = $("outboxCollection").value.trim() || "wa_messages";
 
-      showDebug("جار التحميل...");
-
       const [inbox, outbox] = await Promise.all([
-        loadCollectionSafe(inboxCol, eventId),
-        loadCollectionSafe(outboxCol, eventId)
+        loadCollectionOnce(inboxCol, eventId),
+        loadCollectionOnce(outboxCol, eventId)
       ]);
 
       inboxRows = inbox.map(r => normalizeRow(r, "inbox"));
       outboxRows = outbox.map(r => normalizeRow(r, "outbox"));
 
-      buildThreads();
-      renderThreads();
-
-      $("messageCountBadge").textContent = `الرسائل: ${inboxRows.length + outboxRows.length}`;
+      rebuildUI();
 
       showDebug({
+        mode: "reloadOnce",
         inboxLoaded: inboxRows.length,
         outboxLoaded: outboxRows.length,
-        sampleInbox: inboxRows[0] || null,
-        sampleOutbox: outboxRows[0] || null,
         currentUid: currentUser?.uid || null
+      });
+    }catch(e){
+      showDebug({ reloadError: e?.message || String(e) });
+    }
+  }
+
+  function startLive(){
+    if(!currentUser){
+      showDebug("❌ لازم تسجل دخول أولاً.");
+      return;
+    }
+
+    stopLive();
+
+    try{
+      const eventId = $("eventId").value.trim();
+      const inboxCol = $("inboxCollection").value.trim() || "wa_inbox";
+      const outboxCol = $("outboxCollection").value.trim() || "wa_messages";
+
+      const inboxRef = collection(db, inboxCol);
+      const outboxRef = collection(db, outboxCol);
+
+      const inboxQuery = eventId
+        ? query(inboxRef, where("eventId", "==", eventId), limit(500))
+        : query(inboxRef, limit(500));
+
+      const outboxQuery = eventId
+        ? query(outboxRef, where("eventId", "==", eventId), limit(500))
+        : query(outboxRef, limit(500));
+
+      unsubInbox = onSnapshot(inboxQuery, (snap)=>{
+        const rows = [];
+        snap.forEach(docu=> rows.push({ docId: docu.id, ...docu.data() }));
+        inboxRows = rows.map(r => normalizeRow(r, "inbox"));
+        rebuildUI();
+      }, (err)=>{
+        showDebug({ inboxListenerError: err?.message || String(err) });
+      });
+
+      unsubOutbox = onSnapshot(outboxQuery, (snap)=>{
+        const rows = [];
+        snap.forEach(docu=> rows.push({ docId: docu.id, ...docu.data() }));
+        outboxRows = rows.map(r => normalizeRow(r, "outbox"));
+        rebuildUI();
+      }, (err)=>{
+        showDebug({ outboxListenerError: err?.message || String(err) });
+      });
+
+      $("liveBadge").className = "badge b-ok";
+      $("liveBadge").textContent = "Live: On";
+
+      showDebug({
+        mode: "live",
+        eventFilter: eventId || "none",
+        inboxCollection: inboxCol,
+        outboxCollection: outboxCol
       });
 
     }catch(e){
-      showDebug({
-        error: e?.message || String(e)
-      });
+      showDebug({ startLiveError: e?.message || String(e) });
     }
   }
 
@@ -754,8 +859,8 @@
         threadsMap.set(key, {
           key,
           phone: row.__phone,
-          guestName: row.__guestName,
-          eventId: row.__eventId,
+          guestName: row.__guestName || "بدون اسم",
+          eventIds: new Set(),
           latestText: row.__body || "—",
           latestTimeMs: row.__timeMs,
           latestTimeLabel: formatTS(row),
@@ -763,7 +868,9 @@
         });
       }
 
-      threadsMap.get(key).items.push(row);
+      const thread = threadsMap.get(key);
+      if(row.__eventId) thread.eventIds.add(row.__eventId);
+      thread.items.push(row);
     }
 
     for(const thread of threadsMap.values()){
@@ -771,6 +878,12 @@
     }
 
     $("threadCountBadge").textContent = `المحادثات: ${threadsMap.size}`;
+    $("messageCountBadge").textContent = `الرسائل: ${applyGlobalFilters([...inboxRows, ...outboxRows]).length}`;
+  }
+
+  function rebuildUI(){
+    buildThreads();
+    renderThreads();
   }
 
   function renderThreads(){
@@ -785,19 +898,26 @@
       return;
     }
 
+    if(selectedThreadKey && !threadsMap.has(selectedThreadKey)){
+      selectedThreadKey = "";
+    }
+
     for(const thread of threads){
       const div = document.createElement("div");
       div.className = "thread" + (thread.key === selectedThreadKey ? " active" : "");
+
+      const eventsText = [...thread.eventIds].slice(0,2).join(" | ") || "بدون eventId";
+
       div.innerHTML = `
         <div class="thread-top">
           <div>
-            <div class="thread-name">${thread.guestName}</div>
+            <div class="thread-name">${escapeHtml(thread.guestName)}</div>
             <div class="thread-phone mono">${thread.phone}</div>
           </div>
           <div class="small muted">${thread.latestTimeLabel}</div>
         </div>
         <div class="row" style="margin-top:8px">
-          <span class="badge">${thread.eventId || "بدون eventId"}</span>
+          <span class="badge">${escapeHtml(eventsText)}</span>
           <span class="badge b-info">${thread.items.length} رسالة</span>
         </div>
         <div class="thread-preview">${escapeHtml(thread.latestText || "—")}</div>
@@ -812,13 +932,9 @@
 
     if(!selectedThreadKey && threads.length){
       selectedThreadKey = threads[0].key;
-      renderThreads();
-      renderChat();
-    }else if(selectedThreadKey && !threadsMap.has(selectedThreadKey)){
-      selectedThreadKey = threads[0]?.key || "";
-      renderThreads();
-      renderChat();
     }
+
+    renderChat();
   }
 
   function renderEmptyChat(){
@@ -826,6 +942,9 @@
     $("chatSubtitle").textContent = "—";
     $("chatMeta").innerHTML = "";
     $("messages").innerHTML = `<div class="empty">اختر محادثة من القائمة الجانبية لعرض الرسائل.</div>`;
+    $("btnCopyPhone").disabled = true;
+    $("btnOpenWa").disabled = true;
+    $("btnDeleteThread").disabled = true;
   }
 
   function renderChat(){
@@ -838,10 +957,15 @@
     $("chatTitle").textContent = thread.guestName;
     $("chatSubtitle").textContent = thread.phone;
 
+    const eventsText = [...thread.eventIds].join(" | ") || "بدون eventId";
     $("chatMeta").innerHTML = `
-      <span class="badge">${thread.eventId || "بدون eventId"}</span>
+      <span class="badge">${escapeHtml(eventsText)}</span>
       <span class="badge b-info">عدد الرسائل: ${thread.items.length}</span>
     `;
+
+    $("btnCopyPhone").disabled = false;
+    $("btnOpenWa").disabled = false;
+    $("btnDeleteThread").disabled = !isOwner();
 
     const messagesBox = $("messages");
     messagesBox.innerHTML = "";
@@ -855,13 +979,25 @@
           <span class="badge ${msg.__direction === "in" ? "b-info" : "b-warn"}">
             ${msg.__direction === "in" ? "وارد" : "صادر"}
           </span>
-          <span class="badge">${msg.__source}</span>
+          <span class="badge">${escapeHtml(msg.__source)}</span>
+          ${msg.__eventId ? `<span class="badge">${escapeHtml(msg.__eventId)}</span>` : ""}
         </div>
         <div class="msg-text">${escapeHtml(text)}</div>
         <div class="msg-time">${formatTS(msg)}</div>
+        <div class="msg-actions">
+          ${isOwner() ? `<button class="mini-btn danger" data-del-msg="${msg.__source}|${msg.docId}">حذف الرسالة</button>` : ``}
+        </div>
       `;
       messagesBox.appendChild(el);
     }
+
+    messagesBox.querySelectorAll("[data-del-msg]").forEach(btn=>{
+      btn.addEventListener("click", async (e)=>{
+        const raw = e.currentTarget.getAttribute("data-del-msg") || "";
+        const [source, docId] = raw.split("|");
+        await deleteSingleMessage(source, docId);
+      });
+    });
 
     messagesBox.scrollTop = messagesBox.scrollHeight;
   }
@@ -891,7 +1027,7 @@
 
       const payload = {
         to: thread.phone,
-        eventId: thread.eventId || "",
+        eventId: [...thread.eventIds][0] || "",
         guestName: thread.guestName || "",
         text
       };
@@ -921,8 +1057,6 @@
         currentUid: currentUser?.uid || null
       });
 
-      await loadAll();
-
     }catch(e){
       $("sendStatus").textContent = "فشل الإرسال";
       showDebug({
@@ -934,8 +1068,80 @@
     }
   }
 
+  async function deleteSingleMessage(source, docId){
+    if(!isOwner()){
+      alert("الحذف للمالك فقط.");
+      return;
+    }
+    if(!docId) return;
+
+    const ok = confirm("هل تريد حذف هذه الرسالة؟");
+    if(!ok) return;
+
+    try{
+      const collectionName = source === "inbox"
+        ? ($("inboxCollection").value.trim() || "wa_inbox")
+        : ($("outboxCollection").value.trim() || "wa_messages");
+
+      await deleteDoc(doc(db, collectionName, docId));
+
+      showDebug({
+        deletedMessage: { source, docId, collectionName }
+      });
+    }catch(e){
+      alert("فشل حذف الرسالة: " + (e?.message || e));
+      showDebug({
+        deleteSingleMessageError: e?.message || String(e),
+        source,
+        docId
+      });
+    }
+  }
+
+  async function deleteCurrentThread(){
+    const thread = threadsMap.get(selectedThreadKey);
+    if(!thread){
+      alert("اختر محادثة أولاً.");
+      return;
+    }
+
+    if(!isOwner()){
+      alert("حذف المحادثة للمالك فقط.");
+      return;
+    }
+
+    const ok = confirm(`سيتم حذف كامل المحادثة مع ${thread.guestName} (${thread.items.length} رسالة).\nهل أنت متأكد؟`);
+    if(!ok) return;
+
+    try{
+      for(const item of thread.items){
+        const collectionName = item.__source === "inbox"
+          ? ($("inboxCollection").value.trim() || "wa_inbox")
+          : ($("outboxCollection").value.trim() || "wa_messages");
+
+        await deleteDoc(doc(db, collectionName, item.docId));
+      }
+
+      selectedThreadKey = "";
+      showDebug({
+        deletedThreadPhone: thread.phone,
+        deletedCount: thread.items.length
+      });
+
+    }catch(e){
+      alert("فشل حذف المحادثة: " + (e?.message || e));
+      showDebug({
+        deleteThreadError: e?.message || String(e),
+        threadKey: selectedThreadKey
+      });
+    }
+  }
+
   $("btnLogin").onclick = async ()=> signInWithPopup(auth, new GoogleAuthProvider());
-  $("btnLogout").onclick = async ()=> signOut(auth);
+  $("btnLogout").onclick = async ()=> {
+    stopLive();
+    await signOut(auth);
+  };
 
   onAuthStateChanged(auth, (user)=>{
     currentUser = user || null;
@@ -945,27 +1151,47 @@
       showDebug({
         email: user.email,
         uid: user.uid,
-        note: "تم تسجيل الدخول. إذا كان الوارد موجودًا في wa_inbox سيظهر بعد التحميل."
+        note: "تم تسجيل الدخول. اضغط تشغيل مباشر أو إعادة تحميل."
       });
+    }else{
+      inboxRows = [];
+      outboxRows = [];
+      threadsMap = new Map();
+      selectedThreadKey = "";
+      renderEmptyChat();
+      $("threads").innerHTML = `<div class="empty">سجّل الدخول أولاً.</div>`;
     }
   });
 
-  $("btnLoad").onclick = loadAll;
-  $("btnRefresh").onclick = loadAll;
+  $("btnLoad").onclick = startLive;
+  $("btnRefresh").onclick = reloadOnce;
   $("btnSendReply").onclick = sendReply;
-  $("btnClearReply").onclick = ()=> {
+  $("btnClearReply").onclick = ()=>{
     $("replyText").value = "";
     $("sendStatus").textContent = "جاهز";
   };
+  $("btnDeleteThread").onclick = deleteCurrentThread;
 
-  $("searchInput").addEventListener("input", ()=>{
-    buildThreads();
-    renderThreads();
-  });
+  $("btnCopyPhone").onclick = async ()=>{
+    const thread = threadsMap.get(selectedThreadKey);
+    if(!thread) return;
+    await navigator.clipboard.writeText(thread.phone);
+    $("sendStatus").textContent = "تم نسخ الرقم";
+  };
 
+  $("btnOpenWa").onclick = ()=>{
+    const thread = threadsMap.get(selectedThreadKey);
+    if(!thread) return;
+    window.open(`https://wa.me/${thread.phone}`, "_blank");
+  };
+
+  $("searchInput").addEventListener("input", rebuildUI);
   $("eventId").addEventListener("change", ()=>{
-    buildThreads();
-    renderThreads();
+    if(unsubInbox || unsubOutbox){
+      startLive();
+    }else{
+      rebuildUI();
+    }
   });
 </script>
 </body>
