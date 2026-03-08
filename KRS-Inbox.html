@@ -1,0 +1,931 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KRS INVITE — Inbox</title>
+  <style>
+    :root{
+      --bg:#070b14;
+      --bg2:#0d1322;
+      --panel:rgba(255,255,255,.06);
+      --panel2:rgba(255,255,255,.04);
+      --stroke:rgba(255,255,255,.10);
+      --stroke2:rgba(255,255,255,.16);
+      --ink:#eef3fb;
+      --muted:#97a5bf;
+      --gold:#d6b15e;
+      --gold2:#b98b1e;
+      --ok:#34d399;
+      --bad:#fb7185;
+      --warn:#fbbf24;
+      --info:#60a5fa;
+      --shadow:0 18px 60px rgba(0,0,0,.45);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(1000px 600px at 15% -10%, rgba(214,177,94,.16), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(96,165,250,.10), transparent 45%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+    }
+
+    .wrap{max-width:1450px; margin:0 auto; padding:18px}
+    .glass{
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+    }
+    .card{
+      background:linear-gradient(180deg, var(--panel), var(--panel2));
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+      padding:14px;
+    }
+
+    .hero{
+      padding:18px;
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .logo{
+      width:52px;
+      height:52px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      font-weight:900;
+      color:#211805;
+      background:linear-gradient(135deg,#f6df98,#d6b15e 65%,#a77710);
+      box-shadow:0 12px 30px rgba(214,177,94,.30);
+    }
+    .brand h1{
+      margin:0;
+      font-size:26px;
+      line-height:1.15;
+    }
+    .sub{
+      color:var(--muted);
+      margin-top:6px;
+      font-size:14px;
+      line-height:1.8;
+    }
+
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .sp{flex:1}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .ltr{direction:ltr; text-align:left}
+
+    .pill,.badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.05);
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+    }
+    .b-ok{border-color:rgba(52,211,153,.35); background:rgba(52,211,153,.10); color:var(--ok)}
+    .b-bad{border-color:rgba(251,113,133,.35); background:rgba(251,113,133,.10); color:var(--bad)}
+    .b-info{border-color:rgba(96,165,250,.35); background:rgba(96,165,250,.10); color:var(--info)}
+    .b-warn{border-color:rgba(251,191,36,.35); background:rgba(251,191,36,.10); color:var(--warn)}
+
+    .btn{
+      cursor:pointer;
+      border:none;
+      color:var(--ink);
+      border-radius:14px;
+      min-height:42px;
+      padding:10px 14px;
+      font-weight:700;
+      transition:.18s ease;
+      background:rgba(255,255,255,.07);
+      border:1px solid transparent;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn:disabled{opacity:.45; cursor:not-allowed; transform:none}
+    .btn-gold{
+      color:#1d1402;
+      background:linear-gradient(135deg,#f7e2a0,#d6b15e 65%,#b98b1e);
+      border-color:rgba(255,220,140,.35);
+    }
+    .btn-ghost{
+      background:rgba(255,255,255,.05);
+      border-color:var(--stroke);
+    }
+    .btn-success{
+      background:rgba(52,211,153,.14);
+      border:1px solid rgba(52,211,153,.25);
+      color:#d9fff0;
+    }
+    .btn-info{
+      background:rgba(96,165,250,.12);
+      border:1px solid rgba(96,165,250,.25);
+      color:#dcecff;
+    }
+
+    .input,.select,.textarea{
+      width:100%;
+      min-height:46px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.06);
+      color:var(--ink);
+      padding:12px 14px;
+      outline:none;
+    }
+    .textarea{
+      min-height:110px;
+      resize:vertical;
+      line-height:1.8;
+      font-family:inherit;
+    }
+    .input:focus,.select:focus,.textarea:focus{
+      border-color:rgba(214,177,94,.55);
+      box-shadow:0 0 0 4px rgba(214,177,94,.10);
+    }
+
+    .filters{
+      margin-top:16px;
+      padding:14px;
+    }
+    .filters-grid{
+      display:grid;
+      grid-template-columns:1.1fr 1fr .8fr .7fr auto;
+      gap:12px;
+      align-items:end;
+    }
+    .field label{
+      display:block;
+      margin-bottom:7px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .main{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns:360px 1fr;
+      gap:16px;
+      min-height:72vh;
+    }
+
+    .sidebar,.chat{
+      min-height:72vh;
+    }
+
+    .panel-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .panel-title h2{
+      margin:0;
+      font-size:17px;
+    }
+
+    .threads{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      max-height:calc(72vh - 80px);
+      overflow:auto;
+      padding-right:2px;
+    }
+
+    .thread{
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      border-radius:16px;
+      padding:12px;
+      cursor:pointer;
+      transition:.18s ease;
+    }
+    .thread:hover{
+      background:rgba(255,255,255,.06);
+      transform:translateY(-1px);
+    }
+    .thread.active{
+      border-color:rgba(214,177,94,.42);
+      box-shadow:0 0 0 1px rgba(214,177,94,.14) inset;
+      background:linear-gradient(180deg, rgba(214,177,94,.12), rgba(255,255,255,.04));
+    }
+    .thread-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .thread-name{
+      font-weight:800;
+      font-size:14px;
+    }
+    .thread-phone{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:4px;
+      direction:ltr;
+      text-align:left;
+    }
+    .thread-preview{
+      margin-top:10px;
+      color:#d9e2f3;
+      font-size:13px;
+      line-height:1.7;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .chat{
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+      overflow:hidden;
+    }
+
+    .chat-head{
+      padding-bottom:12px;
+      border-bottom:1px solid var(--stroke);
+      margin-bottom:12px;
+    }
+
+    .chat-meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:8px;
+    }
+
+    .messages{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      overflow:auto;
+      padding:6px 2px 10px;
+      min-height:260px;
+    }
+
+    .msg{
+      max-width:78%;
+      border-radius:18px;
+      padding:12px 14px;
+      line-height:1.8;
+      border:1px solid var(--stroke);
+      position:relative;
+      word-break:break-word;
+    }
+    .msg.in{
+      align-self:flex-start;
+      background:rgba(255,255,255,.06);
+    }
+    .msg.out{
+      align-self:flex-end;
+      background:linear-gradient(135deg, rgba(214,177,94,.20), rgba(214,177,94,.08));
+      border-color:rgba(214,177,94,.25);
+    }
+    .msg-top{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-bottom:6px;
+      flex-wrap:wrap;
+    }
+    .msg-text{
+      font-size:14px;
+      white-space:pre-wrap;
+    }
+    .msg-time{
+      margin-top:8px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .reply-box{
+      border-top:1px solid var(--stroke);
+      padding-top:12px;
+      margin-top:12px;
+    }
+
+    .reply-actions{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .empty{
+      display:grid;
+      place-items:center;
+      text-align:center;
+      color:var(--muted);
+      min-height:300px;
+      padding:20px;
+    }
+
+    .status-box{
+      margin-top:10px;
+      font-size:13px;
+      line-height:1.7;
+      color:var(--muted);
+    }
+
+    @media (max-width: 1100px){
+      .filters-grid{grid-template-columns:1fr 1fr 1fr}
+      .main{grid-template-columns:1fr}
+      .sidebar,.chat{min-height:auto}
+    }
+
+    @media (max-width: 680px){
+      .wrap{padding:12px}
+      .hero{padding:14px}
+      .brand h1{font-size:22px}
+      .filters-grid{grid-template-columns:1fr}
+      .msg{max-width:92%}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="glass hero">
+    <div class="brand">
+      <div class="logo">KRS</div>
+      <div>
+        <h1>KRS INVITE — Inbox</h1>
+        <div class="sub">
+          قراءة الرسائل الواردة من الضيوف والرد عليهم من داخل الصفحة.
+          تعتمد على <span class="mono">wa_inbox</span> للرسائل الواردة و
+          <span class="mono">wa_messages</span> أو <span class="mono">wa_outbox</span> للصادرة.
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="btnLogin" class="btn btn-gold">تسجيل الدخول</button>
+      <button id="btnLogout" class="btn btn-ghost" style="display:none">تسجيل الخروج</button>
+    </div>
+  </section>
+
+  <section class="card filters">
+    <div class="filters-grid">
+      <div class="field">
+        <label for="eventId">Event ID</label>
+        <input id="eventId" class="input" placeholder="مثال: zafaf_khaled" />
+      </div>
+
+      <div class="field">
+        <label for="searchInput">بحث</label>
+        <input id="searchInput" class="input" placeholder="اسم / رقم / نص الرسالة" />
+      </div>
+
+      <div class="field">
+        <label for="inboxCollection">Collection الوارد</label>
+        <input id="inboxCollection" class="input" value="wa_inbox" />
+      </div>
+
+      <div class="field">
+        <label for="outboxCollection">Collection الصادر</label>
+        <input id="outboxCollection" class="input" value="wa_messages" />
+      </div>
+
+      <div class="field">
+        <label>&nbsp;</label>
+        <div class="row">
+          <button id="btnLoad" class="btn btn-success">تحميل</button>
+          <button id="btnRefresh" class="btn btn-info">تحديث</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <span class="badge" id="authStatus">غير مسجّل دخول</span>
+      <span class="badge b-info" id="ownerBadge">Owner: غير مفعّل</span>
+      <span class="badge" id="threadCountBadge">المحادثات: 0</span>
+      <span class="badge" id="messageCountBadge">الرسائل: 0</span>
+    </div>
+
+    <div class="status-box" id="debugBox">—</div>
+  </section>
+
+  <section class="main">
+    <aside class="card sidebar">
+      <div class="panel-title">
+        <h2>المحادثات</h2>
+        <span class="muted small">آخر رسالة لكل ضيف</span>
+      </div>
+      <div id="threads" class="threads"></div>
+    </aside>
+
+    <section class="card chat">
+      <div class="chat-head">
+        <div class="panel-title">
+          <h2 id="chatTitle">اختر محادثة</h2>
+          <span class="muted small" id="chatSubtitle">—</span>
+        </div>
+        <div class="chat-meta" id="chatMeta"></div>
+      </div>
+
+      <div id="messages" class="messages">
+        <div class="empty">
+          اختر محادثة من القائمة الجانبية لعرض الرسائل.
+        </div>
+      </div>
+
+      <div class="reply-box">
+        <label for="replyText" class="muted small" style="display:block;margin-bottom:8px;">نص الرد</label>
+        <textarea id="replyText" class="textarea" placeholder="اكتب الرد هنا..."></textarea>
+
+        <div class="reply-actions">
+          <div class="row">
+            <button id="btnSendReply" class="btn btn-gold">إرسال الرد</button>
+            <button id="btnClearReply" class="btn btn-ghost">مسح</button>
+          </div>
+          <div class="muted small" id="sendStatus">جاهز</div>
+        </div>
+      </div>
+    </section>
+  </section>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import {
+    getFirestore, collection, getDocs, query, where, limit
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+    authDomain: "hormez-inv.firebaseapp.com",
+    projectId: "hormez-inv",
+    storageBucket: "hormez-inv.firebasestorage.app",
+    messagingSenderId: "747519941805",
+    appId: "1:747519941805:web:468fada2492700e9da3a24"
+  };
+
+  // عدل هذا إذا كان عندك endpoint مختلف للرد
+  const REPLY_API_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendInboxReply";
+
+  const OWNER_UIDS = new Set([
+    "GhauBm6KHHgEMyZLwJvU3DflRhx1"
+  ]);
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const $ = (id)=>document.getElementById(id);
+
+  let currentUser = null;
+  let inboxRows = [];
+  let outboxRows = [];
+  let threadsMap = new Map();
+  let selectedThreadKey = "";
+
+  function showDebug(text){
+    $("debugBox").textContent = typeof text === "string" ? text : JSON.stringify(text, null, 2);
+  }
+
+  function setAuthUI(){
+    const isOwner = currentUser && OWNER_UIDS.has(currentUser.uid);
+
+    $("ownerBadge").className = "badge " + (isOwner ? "b-info" : "");
+    $("ownerBadge").textContent = "Owner: " + (isOwner ? "مفعّل" : "غير مفعّل");
+
+    if(currentUser){
+      $("authStatus").className = "badge b-ok";
+      $("authStatus").textContent = currentUser.email;
+      $("btnLogin").style.display = "none";
+      $("btnLogout").style.display = "inline-flex";
+    }else{
+      $("authStatus").className = "badge";
+      $("authStatus").textContent = "غير مسجّل دخول";
+      $("btnLogin").style.display = "inline-flex";
+      $("btnLogout").style.display = "none";
+    }
+  }
+
+  function getRowDateMs(row){
+    try{
+      const ts = row?.timestamp || row?.updatedAt || row?.createdAt || row?.time || null;
+      if(!ts) return 0;
+      if(typeof ts?.toDate === "function") return ts.toDate().getTime();
+      if(typeof ts?.seconds === "number") return ts.seconds * 1000;
+      const d = new Date(ts);
+      return isNaN(d.getTime()) ? 0 : d.getTime();
+    }catch{
+      return 0;
+    }
+  }
+
+  function formatTS(row){
+    try{
+      const ms = getRowDateMs(row);
+      if(!ms) return "-";
+      return new Date(ms).toLocaleString("ar-AE", {
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit",
+        hour:"numeric",
+        minute:"2-digit",
+        second:"2-digit",
+        hour12:true
+      });
+    }catch{
+      return "-";
+    }
+  }
+
+  function getPhone(row){
+    return String(
+      row?.from ||
+      row?.to ||
+      row?.phone ||
+      row?.recipient_id ||
+      row?.lastStatusRaw?.recipient_id ||
+      ""
+    ).trim();
+  }
+
+  function getGuestName(row){
+    return String(
+      row?.guestName ||
+      row?.name ||
+      row?.profileName ||
+      row?.fromName ||
+      "بدون اسم"
+    ).trim();
+  }
+
+  function getBody(row){
+    return String(
+      row?.body ||
+      row?.text ||
+      row?.message ||
+      row?.caption ||
+      ""
+    ).trim();
+  }
+
+  function getEventId(row){
+    return String(row?.eventId || "").trim();
+  }
+
+  function getDirection(row){
+    const explicit = String(row?.direction || "").toLowerCase().trim();
+    if(explicit === "in" || explicit === "incoming") return "in";
+    if(explicit === "out" || explicit === "outgoing") return "out";
+
+    if(row.__source === "inbox") return "in";
+    return "out";
+  }
+
+  function makeThreadKey(row){
+    const phone = getPhone(row);
+    const eventId = getEventId(row);
+    return `${phone}__${eventId || "no_event"}`;
+  }
+
+  function normalizeRow(row, sourceName){
+    return {
+      ...row,
+      __source: sourceName,
+      __phone: getPhone(row),
+      __guestName: getGuestName(row),
+      __body: getBody(row),
+      __eventId: getEventId(row),
+      __direction: getDirection(row),
+      __timeMs: getRowDateMs(row),
+      __threadKey: makeThreadKey(row)
+    };
+  }
+
+  function applyGlobalFilters(rows){
+    const eventId = $("eventId").value.trim();
+    const q = $("searchInput").value.trim().toLowerCase();
+
+    return rows.filter(row=>{
+      if(eventId && row.__eventId !== eventId) return false;
+
+      if(q){
+        const hay = [
+          row.__guestName,
+          row.__phone,
+          row.__body,
+          row.__eventId
+        ].join(" ").toLowerCase();
+
+        if(!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  async function loadCollectionSafe(collectionName, eventId){
+    const col = collection(db, collectionName);
+    const qq = eventId
+      ? query(col, where("eventId", "==", eventId), limit(300))
+      : query(col, limit(300));
+
+    const snap = await getDocs(qq);
+    const rows = [];
+    snap.forEach(docu=>{
+      rows.push({ docId: docu.id, ...docu.data() });
+    });
+    return rows;
+  }
+
+  async function loadAll(){
+    if(!currentUser){
+      showDebug("❌ لازم تسجل دخول أولاً.");
+      return;
+    }
+
+    try{
+      const eventId = $("eventId").value.trim();
+      const inboxCol = $("inboxCollection").value.trim() || "wa_inbox";
+      const outboxCol = $("outboxCollection").value.trim() || "wa_messages";
+
+      showDebug("جار التحميل...");
+
+      const [inbox, outbox] = await Promise.all([
+        loadCollectionSafe(inboxCol, eventId),
+        loadCollectionSafe(outboxCol, eventId)
+      ]);
+
+      inboxRows = inbox.map(r => normalizeRow(r, "inbox"));
+      outboxRows = outbox.map(r => normalizeRow(r, "outbox"));
+
+      buildThreads();
+      renderThreads();
+
+      $("messageCountBadge").textContent = `الرسائل: ${inboxRows.length + outboxRows.length}`;
+
+      showDebug({
+        inboxLoaded: inboxRows.length,
+        outboxLoaded: outboxRows.length,
+        note: "إذا كان اسم collection مختلف عندك، غيّره من أعلى الصفحة."
+      });
+
+    }catch(e){
+      showDebug({
+        error: e?.message || String(e)
+      });
+    }
+  }
+
+  function buildThreads(){
+    threadsMap = new Map();
+
+    const combined = applyGlobalFilters([...inboxRows, ...outboxRows]);
+    combined.sort((a,b)=> b.__timeMs - a.__timeMs);
+
+    for(const row of combined){
+      if(!row.__phone) continue;
+
+      const key = row.__threadKey;
+
+      if(!threadsMap.has(key)){
+        threadsMap.set(key, {
+          key,
+          phone: row.__phone,
+          guestName: row.__guestName,
+          eventId: row.__eventId,
+          latestText: row.__body || "—",
+          latestTimeMs: row.__timeMs,
+          latestTimeLabel: formatTS(row),
+          items: []
+        });
+      }
+
+      threadsMap.get(key).items.push(row);
+    }
+
+    for(const thread of threadsMap.values()){
+      thread.items.sort((a,b)=> a.__timeMs - b.__timeMs);
+    }
+
+    $("threadCountBadge").textContent = `المحادثات: ${threadsMap.size}`;
+  }
+
+  function renderThreads(){
+    const container = $("threads");
+    container.innerHTML = "";
+
+    const threads = [...threadsMap.values()].sort((a,b)=> b.latestTimeMs - a.latestTimeMs);
+
+    if(!threads.length){
+      container.innerHTML = `<div class="empty">لا توجد محادثات حالياً.</div>`;
+      renderEmptyChat();
+      return;
+    }
+
+    for(const thread of threads){
+      const div = document.createElement("div");
+      div.className = "thread" + (thread.key === selectedThreadKey ? " active" : "");
+      div.innerHTML = `
+        <div class="thread-top">
+          <div>
+            <div class="thread-name">${thread.guestName}</div>
+            <div class="thread-phone mono">${thread.phone}</div>
+          </div>
+          <div class="small muted">${thread.latestTimeLabel}</div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <span class="badge">${thread.eventId || "بدون eventId"}</span>
+          <span class="badge b-info">${thread.items.length} رسالة</span>
+        </div>
+        <div class="thread-preview">${thread.latestText || "—"}</div>
+      `;
+      div.onclick = ()=>{
+        selectedThreadKey = thread.key;
+        renderThreads();
+        renderChat();
+      };
+      container.appendChild(div);
+    }
+
+    if(!selectedThreadKey && threads.length){
+      selectedThreadKey = threads[0].key;
+      renderThreads();
+      renderChat();
+    }else if(selectedThreadKey && !threadsMap.has(selectedThreadKey)){
+      selectedThreadKey = threads[0]?.key || "";
+      renderThreads();
+      renderChat();
+    }
+  }
+
+  function renderEmptyChat(){
+    $("chatTitle").textContent = "اختر محادثة";
+    $("chatSubtitle").textContent = "—";
+    $("chatMeta").innerHTML = "";
+    $("messages").innerHTML = `<div class="empty">اختر محادثة من القائمة الجانبية لعرض الرسائل.</div>`;
+  }
+
+  function renderChat(){
+    const thread = threadsMap.get(selectedThreadKey);
+    if(!thread){
+      renderEmptyChat();
+      return;
+    }
+
+    $("chatTitle").textContent = thread.guestName;
+    $("chatSubtitle").textContent = thread.phone;
+
+    $("chatMeta").innerHTML = `
+      <span class="badge">${thread.eventId || "بدون eventId"}</span>
+      <span class="badge b-info">عدد الرسائل: ${thread.items.length}</span>
+    `;
+
+    const messagesBox = $("messages");
+    messagesBox.innerHTML = "";
+
+    for(const msg of thread.items){
+      const el = document.createElement("div");
+      el.className = "msg " + (msg.__direction === "in" ? "in" : "out");
+      el.innerHTML = `
+        <div class="msg-top">
+          <span class="badge ${msg.__direction === "in" ? "b-info" : "b-warn"}">
+            ${msg.__direction === "in" ? "وارد" : "صادر"}
+          </span>
+          <span class="badge">${msg.__source}</span>
+        </div>
+        <div class="msg-text">${escapeHtml(msg.__body || "—")}</div>
+        <div class="msg-time">${formatTS(msg)}</div>
+      `;
+      messagesBox.appendChild(el);
+    }
+
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }
+
+  function escapeHtml(text){
+    return String(text || "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;");
+  }
+
+  async function sendReply(){
+    const thread = threadsMap.get(selectedThreadKey);
+    if(!thread){
+      alert("اختر محادثة أولاً.");
+      return;
+    }
+
+    const text = $("replyText").value.trim();
+    if(!text){
+      alert("اكتب نص الرد أولاً.");
+      return;
+    }
+
+    const isOwner = currentUser && OWNER_UIDS.has(currentUser.uid);
+    if(!isOwner){
+      alert("الرد مسموح فقط للمالك حالياً.");
+      return;
+    }
+
+    try{
+      $("sendStatus").textContent = "جار الإرسال...";
+
+      const payload = {
+        to: thread.phone,
+        eventId: thread.eventId || "",
+        guestName: thread.guestName || "",
+        text
+      };
+
+      const res = await fetch(REPLY_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const raw = await res.text();
+      let json = null;
+      try{ json = JSON.parse(raw); }catch{}
+
+      if(!res.ok){
+        throw new Error(raw || `HTTP ${res.status}`);
+      }
+
+      $("replyText").value = "";
+      $("sendStatus").textContent = "تم الإرسال ✅";
+
+      showDebug({
+        sendReplyPayload: payload,
+        sendReplyResponse: json || raw
+      });
+
+      await loadAll();
+
+    }catch(e){
+      $("sendStatus").textContent = "فشل الإرسال";
+      showDebug({
+        sendReplyError: e?.message || String(e),
+        replyApiUrl: REPLY_API_URL
+      });
+      alert("فشل الإرسال: " + (e?.message || e));
+    }
+  }
+
+  $("btnLogin").onclick = async ()=> signInWithPopup(auth, new GoogleAuthProvider());
+  $("btnLogout").onclick = async ()=> signOut(auth);
+
+  onAuthStateChanged(auth, (user)=>{
+    currentUser = user || null;
+    setAuthUI();
+  });
+
+  $("btnLoad").onclick = loadAll;
+  $("btnRefresh").onclick = loadAll;
+  $("btnSendReply").onclick = sendReply;
+  $("btnClearReply").onclick = ()=> {
+    $("replyText").value = "";
+    $("sendStatus").textContent = "جاهز";
+  };
+
+  $("searchInput").addEventListener("input", ()=>{
+    buildThreads();
+    renderThreads();
+  });
+
+  $("eventId").addEventListener("change", ()=>{
+    buildThreads();
+    renderThreads();
+  });
+</script>
+</body>
+</html>
