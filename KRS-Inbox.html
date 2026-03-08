@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>KRS INVITE — Inbox</title>
+  <title>KRS INVITE — Inbox Pro</title>
   <style>
     :root{
       --bg:#070b14;
@@ -173,7 +173,7 @@
     }
     .filters-grid{
       display:grid;
-      grid-template-columns:1.1fr 1fr .8fr .7fr auto;
+      grid-template-columns:1.1fr 1fr .8fr .8fr auto;
       gap:12px;
       align-items:end;
     }
@@ -355,6 +355,8 @@
       font-size:13px;
       line-height:1.7;
       color:var(--muted);
+      white-space:pre-wrap;
+      word-break:break-word;
     }
 
     @media (max-width: 1100px){
@@ -382,8 +384,8 @@
         <h1>KRS INVITE — Inbox</h1>
         <div class="sub">
           قراءة الرسائل الواردة من الضيوف والرد عليهم من داخل الصفحة.
-          تعتمد على <span class="mono">wa_inbox</span> للرسائل الواردة و
-          <span class="mono">wa_messages</span> أو <span class="mono">wa_outbox</span> للصادرة.
+          تعتمد على <span class="mono">wa_inbox</span> للوارد و
+          <span class="mono">wa_messages</span> أو <span class="mono">wa_outbox</span> للصادر.
         </div>
       </div>
     </div>
@@ -398,7 +400,7 @@
     <div class="filters-grid">
       <div class="field">
         <label for="eventId">Event ID</label>
-        <input id="eventId" class="input" placeholder="مثال: zafaf_khaled" />
+        <input id="eventId" class="input" placeholder="مثال: افراح الحداد" />
       </div>
 
       <div class="field">
@@ -430,6 +432,7 @@
       <span class="badge b-info" id="ownerBadge">Owner: غير مفعّل</span>
       <span class="badge" id="threadCountBadge">المحادثات: 0</span>
       <span class="badge" id="messageCountBadge">الرسائل: 0</span>
+      <span class="badge" id="uidBadge">UID: —</span>
     </div>
 
     <div class="status-box" id="debugBox">—</div>
@@ -492,7 +495,7 @@
     appId: "1:747519941805:web:468fada2492700e9da3a24"
   };
 
-  // عدل هذا إذا كان عندك endpoint مختلف للرد
+  // عدّل رابط الفنكشن إذا عندك رابط مختلف
   const REPLY_API_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendInboxReply";
 
   const OWNER_UIDS = new Set([
@@ -518,28 +521,39 @@
   function setAuthUI(){
     const isOwner = currentUser && OWNER_UIDS.has(currentUser.uid);
 
-    $("ownerBadge").className = "badge " + (isOwner ? "b-info" : "");
-    $("ownerBadge").textContent = "Owner: " + (isOwner ? "مفعّل" : "غير مفعّل");
-
     if(currentUser){
       $("authStatus").className = "badge b-ok";
       $("authStatus").textContent = currentUser.email;
+      $("uidBadge").textContent = `UID: ${currentUser.uid}`;
       $("btnLogin").style.display = "none";
       $("btnLogout").style.display = "inline-flex";
     }else{
       $("authStatus").className = "badge";
       $("authStatus").textContent = "غير مسجّل دخول";
+      $("uidBadge").textContent = "UID: —";
       $("btnLogin").style.display = "inline-flex";
       $("btnLogout").style.display = "none";
     }
+
+    $("ownerBadge").className = "badge " + (isOwner ? "b-info" : "b-bad");
+    $("ownerBadge").textContent = "Owner: " + (isOwner ? "مفعّل" : "غير مفعّل");
   }
 
   function getRowDateMs(row){
     try{
-      const ts = row?.timestamp || row?.updatedAt || row?.createdAt || row?.time || null;
+      const ts =
+        row?.timestamp ||
+        row?.createdAt ||
+        row?.updatedAt ||
+        row?.time ||
+        row?.sentAt ||
+        row?.date ||
+        null;
+
       if(!ts) return 0;
       if(typeof ts?.toDate === "function") return ts.toDate().getTime();
       if(typeof ts?.seconds === "number") return ts.seconds * 1000;
+
       const d = new Date(ts);
       return isNaN(d.getTime()) ? 0 : d.getTime();
     }catch{
@@ -570,8 +584,12 @@
       row?.from ||
       row?.to ||
       row?.phone ||
+      row?.waId ||
+      row?.wa_id ||
+      row?.from_phone ||
       row?.recipient_id ||
       row?.lastStatusRaw?.recipient_id ||
+      row?.contacts?.[0]?.wa_id ||
       ""
     ).trim();
   }
@@ -582,6 +600,9 @@
       row?.name ||
       row?.profileName ||
       row?.fromName ||
+      row?.contactName ||
+      row?.profile?.name ||
+      row?.contacts?.[0]?.profile?.name ||
       "بدون اسم"
     ).trim();
   }
@@ -589,44 +610,56 @@
   function getBody(row){
     return String(
       row?.body ||
+      row?.text?.body ||
       row?.text ||
+      row?.message?.text ||
       row?.message ||
       row?.caption ||
+      row?.content ||
+      row?.replyText ||
+      row?.messages?.[0]?.text?.body ||
+      row?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body ||
       ""
     ).trim();
   }
 
   function getEventId(row){
-    return String(row?.eventId || "").trim();
+    return String(
+      row?.eventId ||
+      row?.eventName ||
+      row?.event ||
+      ""
+    ).trim();
   }
 
-  function getDirection(row){
+  function getDirection(row, sourceName){
     const explicit = String(row?.direction || "").toLowerCase().trim();
     if(explicit === "in" || explicit === "incoming") return "in";
     if(explicit === "out" || explicit === "outgoing") return "out";
 
-    if(row.__source === "inbox") return "in";
+    if(sourceName === "inbox") return "in";
     return "out";
   }
 
   function makeThreadKey(row){
-    const phone = getPhone(row);
-    const eventId = getEventId(row);
+    const phone = row.__phone || getPhone(row);
+    const eventId = row.__eventId || getEventId(row);
     return `${phone}__${eventId || "no_event"}`;
   }
 
   function normalizeRow(row, sourceName){
-    return {
+    const normalized = {
       ...row,
       __source: sourceName,
       __phone: getPhone(row),
       __guestName: getGuestName(row),
       __body: getBody(row),
       __eventId: getEventId(row),
-      __direction: getDirection(row),
-      __timeMs: getRowDateMs(row),
-      __threadKey: makeThreadKey(row)
+      __direction: getDirection(row, sourceName),
+      __timeMs: getRowDateMs(row)
     };
+    normalized.__threadKey = makeThreadKey(normalized);
+    return normalized;
   }
 
   function applyGlobalFilters(rows){
@@ -641,7 +674,8 @@
           row.__guestName,
           row.__phone,
           row.__body,
-          row.__eventId
+          row.__eventId,
+          row.__source
         ].join(" ").toLowerCase();
 
         if(!hay.includes(q)) return false;
@@ -653,8 +687,8 @@
   async function loadCollectionSafe(collectionName, eventId){
     const col = collection(db, collectionName);
     const qq = eventId
-      ? query(col, where("eventId", "==", eventId), limit(300))
-      : query(col, limit(300));
+      ? query(col, where("eventId", "==", eventId), limit(500))
+      : query(col, limit(500));
 
     const snap = await getDocs(qq);
     const rows = [];
@@ -693,7 +727,9 @@
       showDebug({
         inboxLoaded: inboxRows.length,
         outboxLoaded: outboxRows.length,
-        note: "إذا كان اسم collection مختلف عندك، غيّره من أعلى الصفحة."
+        sampleInbox: inboxRows[0] || null,
+        sampleOutbox: outboxRows[0] || null,
+        currentUid: currentUser?.uid || null
       });
 
     }catch(e){
@@ -764,7 +800,7 @@
           <span class="badge">${thread.eventId || "بدون eventId"}</span>
           <span class="badge b-info">${thread.items.length} رسالة</span>
         </div>
-        <div class="thread-preview">${thread.latestText || "—"}</div>
+        <div class="thread-preview">${escapeHtml(thread.latestText || "—")}</div>
       `;
       div.onclick = ()=>{
         selectedThreadKey = thread.key;
@@ -811,6 +847,7 @@
     messagesBox.innerHTML = "";
 
     for(const msg of thread.items){
+      const text = msg.__body || "—";
       const el = document.createElement("div");
       el.className = "msg " + (msg.__direction === "in" ? "in" : "out");
       el.innerHTML = `
@@ -820,7 +857,7 @@
           </span>
           <span class="badge">${msg.__source}</span>
         </div>
-        <div class="msg-text">${escapeHtml(msg.__body || "—")}</div>
+        <div class="msg-text">${escapeHtml(text)}</div>
         <div class="msg-time">${formatTS(msg)}</div>
       `;
       messagesBox.appendChild(el);
@@ -846,12 +883,6 @@
     const text = $("replyText").value.trim();
     if(!text){
       alert("اكتب نص الرد أولاً.");
-      return;
-    }
-
-    const isOwner = currentUser && OWNER_UIDS.has(currentUser.uid);
-    if(!isOwner){
-      alert("الرد مسموح فقط للمالك حالياً.");
       return;
     }
 
@@ -886,7 +917,8 @@
 
       showDebug({
         sendReplyPayload: payload,
-        sendReplyResponse: json || raw
+        sendReplyResponse: json || raw,
+        currentUid: currentUser?.uid || null
       });
 
       await loadAll();
@@ -895,7 +927,8 @@
       $("sendStatus").textContent = "فشل الإرسال";
       showDebug({
         sendReplyError: e?.message || String(e),
-        replyApiUrl: REPLY_API_URL
+        replyApiUrl: REPLY_API_URL,
+        currentUid: currentUser?.uid || null
       });
       alert("فشل الإرسال: " + (e?.message || e));
     }
@@ -907,6 +940,14 @@
   onAuthStateChanged(auth, (user)=>{
     currentUser = user || null;
     setAuthUI();
+
+    if(user){
+      showDebug({
+        email: user.email,
+        uid: user.uid,
+        note: "تم تسجيل الدخول. إذا كان الوارد موجودًا في wa_inbox سيظهر بعد التحميل."
+      });
+    }
   });
 
   $("btnLoad").onclick = loadAll;
