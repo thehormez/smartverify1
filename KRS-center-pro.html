@@ -6,10 +6,14 @@
   <title>مركز الإرسال — KRS INVITE</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet" />
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <style>
     :root{
@@ -89,8 +93,7 @@
     }
     .topbar-inner{
       display:flex; align-items:center; justify-content:space-between; gap:12px;
-      max-width:1320px; margin:0 auto; padding:14px 18px;
-      flex-wrap:wrap;
+      max-width:1320px; margin:0 auto; padding:14px 18px; flex-wrap:wrap;
     }
 
     .brand{
@@ -336,7 +339,7 @@
       padding:16px;
     }
     .modal{
-      width:100%; max-width:580px;
+      width:100%; max-width:760px;
       background:linear-gradient(180deg, var(--panel), var(--panel-2));
       border:1px solid var(--stroke);
       border-radius:22px;
@@ -345,7 +348,6 @@
     }
     .title{ margin:0 0 10px; font-weight:900; font-size:24px }
 
-    .assign-modal .modal{ max-width:760px }
     .chips{
       display:flex; flex-wrap:wrap; gap:8px;
       max-height:260px; overflow:auto;
@@ -402,7 +404,7 @@
 </head>
 
 <body>
-  <div id="assignGate" class="overlay assign-modal" style="display:none">
+  <div id="assignGate" class="overlay" style="display:none">
     <div class="modal">
       <h3 class="title">🎯 اختيار أكواد الباركود</h3>
       <div class="hint" id="assignHint">اختر (0) كود.</div>
@@ -425,8 +427,11 @@
       </div>
 
       <div class="row">
-        <select id="eventSelector" class="btn" onchange="handleEventChange()" style="min-width:220px"></select>
-        <span id="currentEvent" class="event-name"></span>
+        <select id="eventSelector" class="btn" onchange="handleEventChange()" style="min-width:240px">
+          <option value="">جارٍ تحميل الأحداث...</option>
+        </select>
+        <button class="btn" onclick="refreshEventsFromFirebase(true)">🔄 تحديث الأحداث</button>
+        <span id="currentEvent" class="event-name">—</span>
         <button class="btn ghost" onclick="toggleTheme()">🌓 تبديل المظهر</button>
       </div>
     </div>
@@ -449,7 +454,7 @@
       <div class="card accent-emerald">
         <h4>رصيد الكروت</h4>
         <div class="row" style="gap:8px; margin-top:10px">
-          <span class="pill">المجموع: <b id="kpiStock">0</b></span>
+          <span class="pill">الرصيد: <b id="kpiStock">0</b></span>
           <span class="pill">المستخدم: <b id="kpiUsedCards">0</b></span>
           <span class="pill">المتاح: <b id="kpiFreeCards">0</b></span>
         </div>
@@ -470,23 +475,23 @@
         <div class="card accent-gold">
           <h3>مرحبًا 👋</h3>
           <div class="hint" style="color:#fff">
-            هذا الإصدار يستخدم <b>Dropdown</b> لاختيار الحدث،
-            وكل عمليات الرفع والإرسال والتذكير تعتمد على الحدث المختار حاليًا.
+            هذه النسخة تسحب أسماء الأحداث تلقائيًا من Firebase / invites،
+            ولكل حدث بيانات مستقلة ورصيد كروت مستقل.
           </div>
         </div>
 
         <div class="grid-3">
           <div class="card">
-            <h3>1) اختر الحدث</h3>
-            <div class="hint">من أعلى الصفحة عبر القائمة المنسدلة.</div>
+            <h3>1) اختيار الحدث</h3>
+            <div class="hint">يتم تحميل الأحداث تلقائيًا من Firebase.</div>
           </div>
           <div class="card">
-            <h3>2) أضف الضيوف والباركود</h3>
-            <div class="hint">CSV / Excel / يدوي + صور الأكواد.</div>
+            <h3>2) رصيد مستقل لكل حدث</h3>
+            <div class="hint">يمكن تعديل رصيد الكروت وحفظه لكل فعالية بشكل منفصل.</div>
           </div>
           <div class="card">
-            <h3>3) إرسال / إعادة إرسال / تذكير</h3>
-            <div class="hint">كل العمليات سترتبط مباشرة بالحدث المختار.</div>
+            <h3>3) بيانات مستقلة</h3>
+            <div class="hint">كل حدث يملك ضيوفه، أكواده، رسائله، وتذكيراته الخاصة.</div>
           </div>
         </div>
       </div>
@@ -495,20 +500,26 @@
     <section id="sec-event" class="section">
       <div class="section-stack">
         <div class="card accent-blue">
-          <h3>🏷️ إدارة الأحداث</h3>
+          <h3>🏷️ الحدث الحالي</h3>
 
-          <div class="grid-2">
-            <input id="newEventName" class="btn" placeholder="اكتب اسم حدث جديد" />
-            <div class="row">
-              <button class="btn ok" onclick="addEventOption()">➕ إضافة الحدث</button>
-              <button class="btn warn" onclick="deleteCurrentEvent()">🗑️ حذف الحدث المحدد</button>
-            </div>
+          <div class="row">
+            <select id="eventSelectorMirror" class="btn" onchange="syncEventSelectorMirror(this.value)" style="min-width:240px">
+              <option value="">جارٍ تحميل الأحداث...</option>
+            </select>
+
+            <input id="eventCardStock" class="btn" type="number" min="1" placeholder="رصيد الكروت لهذا الحدث" style="max-width:220px" />
+
+            <button class="btn ok" onclick="saveEventCardStock()">💾 حفظ الرصيد</button>
+            <button class="btn" onclick="refreshEventsFromFirebase(true)">🔄 تحديث من Firebase</button>
           </div>
 
-          <div class="hint" style="margin-top:8px">
-            الحدث المختار من القائمة المنسدلة هو الذي سيُستخدم فعليًا في:
-            <code>upload</code> و <code>send</code> و <code>reminder</code>
+          <div class="hint" style="margin-top:10px">
+            يتم سحب الأحداث تلقائيًا من <code>invites</code> باستخدام
+            <code>eventName</code> أو <code>eventId</code> أو <code>event</code>.
+            لكل حدث رصيد كروت مستقل وبيانات مستقلة.
           </div>
+
+          <div class="small" id="eventLoadStatus" style="margin-top:8px"></div>
         </div>
 
         <div class="card">
@@ -716,37 +727,58 @@
   </main>
 
   <script>
+    // =========================
+    // Firebase
+    // =========================
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.firebasestorage.app",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }
+    const db = firebase.firestore();
+
+    // =========================
+    // Constants
+    // =========================
     const DEFAULT_CARD_STOCK = 300;
 
-    const LS_CLOUD_CFG = "hormez_cloud_cfg_v2";
     const LS_THEME = "krs_theme_mode";
-    const LS_GUESTS = "hormez_guests";
-    const LS_QR = "hormez_qrcards";
-    const LS_MSG = "hormez_message_template";
-    const LS_CLOUD_UPLOAD_MARK = "hormez_cloud_upload_mark";
-    const LS_REMINDER_TEXT = "hormez_reminder_text";
-    const LS_REMINDER_LOC = "hormez_reminder_loc";
-    const LS_REMINDER_PLACE = "hormez_reminder_place";
-    const LS_EVENT_OPTIONS = "hormez_event_options";
     const LS_ACTIVE_EVENT = "hormez_active_event";
+    const LS_EVENT_STOCKS = "hormez_event_stocks_map";
+    const LS_EVENT_CACHE = "hormez_event_cache";
 
+    const LS_CLOUD_CFG = "hormez_cloud_cfg_v2";
     const DEFAULT_UPLOAD_URL = "https://uploadbarcodecard-veaqamnndq-uc.a.run.app";
     const DEFAULT_SEND_URL = "https://sendwelcomeandcards-veaqamnndq-uc.a.run.app";
     const DEFAULT_REMINDER_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendReminderText";
 
-    const DEFAULT_EVENTS = [
-      "افراح المنصوري",
-      "زفاف خالد"
-    ];
+    const KEY_GUESTS = "hormez_guests";
+    const KEY_QR = "hormez_qrcards";
+    const KEY_MSG = "hormez_message_template";
+    const KEY_REMINDER_TEXT = "hormez_reminder_text";
+    const KEY_REMINDER_LOC = "hormez_reminder_loc";
+    const KEY_REMINDER_PLACE = "hormez_reminder_place";
+    const KEY_CLOUD_UPLOAD_MARK = "hormez_cloud_upload_mark";
+    const KEY_COUNTER = "hormez_guest_counter";
 
-    function getJSON(k, fb){
-      try{ return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); }
-      catch{ return fb; }
-    }
+    // =========================
+    // Helpers
+    // =========================
+    const getJSON = (k, fb) => {
+      try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); }
+      catch { return fb; }
+    };
 
-    function setJSON(k, v){
-      try{ localStorage.setItem(k, JSON.stringify(v)); }catch{}
-    }
+    const setJSON = (k, v) => {
+      try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+    };
 
     function safeStr(x){ return String(x ?? "").trim(); }
     function normPhone(p){ return String(p || "").replace(/[^\d]/g,''); }
@@ -770,6 +802,24 @@
       }catch{
         return "Unknown error";
       }
+    }
+
+    function eventKey(base, eventName){
+      return `${base}::${encodeURIComponent(eventName || "default")}`;
+    }
+
+    function getCurrentEventId(){
+      return safeStr(localStorage.getItem(LS_ACTIVE_EVENT));
+    }
+
+    function setCurrentEventId(name){
+      const v = safeStr(name);
+      localStorage.setItem(LS_ACTIVE_EVENT, v);
+      document.getElementById("currentEvent").textContent = v || "—";
+      const sel1 = document.getElementById("eventSelector");
+      const sel2 = document.getElementById("eventSelectorMirror");
+      if (sel1 && sel1.value !== v) sel1.value = v;
+      if (sel2 && sel2.value !== v) sel2.value = v;
     }
 
     function getCloudCfg(){
@@ -807,105 +857,6 @@
       applyTheme(cur === "dark" ? "light" : "dark");
     }
 
-    function getEventOptions(){
-      const arr = getJSON(LS_EVENT_OPTIONS, DEFAULT_EVENTS);
-      const clean = arr.map(s => safeStr(s)).filter(Boolean);
-      return clean.length ? clean : [...DEFAULT_EVENTS];
-    }
-
-    function saveEventOptions(arr){
-      const clean = [...new Set(arr.map(s => safeStr(s)).filter(Boolean))];
-      setJSON(LS_EVENT_OPTIONS, clean);
-    }
-
-    function getCurrentEventId(){
-      const selected = safeStr(localStorage.getItem(LS_ACTIVE_EVENT));
-      const events = getEventOptions();
-      if(selected && events.includes(selected)) return selected;
-      return events[0] || "حدث بدون اسم";
-    }
-
-    function setCurrentEventId(name){
-      const val = safeStr(name);
-      localStorage.setItem(LS_ACTIVE_EVENT, val);
-      const currentEl = document.getElementById("currentEvent");
-      if(currentEl) currentEl.textContent = val || "—";
-      const sel = document.getElementById("eventSelector");
-      if(sel && sel.value !== val) sel.value = val;
-    }
-
-    function renderEventDropdown(){
-      const sel = document.getElementById("eventSelector");
-      if(!sel) return;
-
-      const events = getEventOptions();
-      const current = getCurrentEventId();
-
-      sel.innerHTML = "";
-      events.forEach(ev=>{
-        const op = document.createElement("option");
-        op.value = ev;
-        op.textContent = ev;
-        sel.appendChild(op);
-      });
-
-      if(events.includes(current)) sel.value = current;
-      else if(events[0]) sel.value = events[0];
-
-      setCurrentEventId(sel.value || events[0] || "حدث بدون اسم");
-    }
-
-    function handleEventChange(){
-      const sel = document.getElementById("eventSelector");
-      const val = safeStr(sel?.value);
-      setCurrentEventId(val);
-      persistAll();
-      renderGuestTable();
-    }
-
-    function addEventOption(){
-      const input = document.getElementById("newEventName");
-      const name = safeStr(input?.value);
-      if(!name){
-        alert("اكتب اسم الحدث أولاً");
-        return;
-      }
-
-      const events = getEventOptions();
-      if(events.includes(name)){
-        setCurrentEventId(name);
-        renderEventDropdown();
-        input.value = "";
-        alert("الحدث موجود مسبقًا وتم تحديده ✅");
-        return;
-      }
-
-      events.push(name);
-      saveEventOptions(events);
-      renderEventDropdown();
-      setCurrentEventId(name);
-      input.value = "";
-      alert("تمت إضافة الحدث ✅");
-    }
-
-    function deleteCurrentEvent(){
-      const current = getCurrentEventId();
-      let events = getEventOptions();
-
-      if(events.length <= 1){
-        alert("لا يمكن حذف آخر حدث من القائمة");
-        return;
-      }
-
-      if(!confirm(`هل تريد حذف الحدث "${current}" من القائمة؟`)) return;
-
-      events = events.filter(ev => ev !== current);
-      saveEventOptions(events);
-      renderEventDropdown();
-      setCurrentEventId(events[0] || "");
-      alert("تم حذف الحدث من القائمة ✅");
-    }
-
     async function postJsonStrict(url, payload){
       const r = await fetch(url, {
         method:"POST",
@@ -922,13 +873,16 @@
       return j || { raw };
     }
 
-    let guests = getJSON(LS_GUESTS, []);
+    // =========================
+    // Event-scoped State
+    // =========================
+    let guests = [];
     let barcodeImages = {};
-    let availableQrIds = getJSON(LS_QR, []);
-    let internalGuestIdCounter = guests.reduce((m,g)=>Math.max(m,g.internalId||0), 0);
-    const fixedStock = DEFAULT_CARD_STOCK;
+    let availableQrIds = [];
+    let internalGuestIdCounter = 0;
     let selectedGuestIds = new Set();
     let assignGuestId = null;
+    let eventsUnsub = null;
 
     function normalizeGuestShape(g){
       return {
@@ -948,40 +902,271 @@
       };
     }
 
-    guests = guests.map(normalizeGuestShape);
+    function getCurrentStock(){
+      const map = getJSON(LS_EVENT_STOCKS, {});
+      const ev = getCurrentEventId();
+      const n = parseInt(map[ev]);
+      return (Number.isFinite(n) && n > 0) ? n : DEFAULT_CARD_STOCK;
+    }
 
+    function saveEventCardStock(){
+      const ev = getCurrentEventId();
+      if(!ev){
+        alert("اختر الحدث أولاً");
+        return;
+      }
+      const val = parseInt(document.getElementById("eventCardStock").value || "");
+      if(!Number.isFinite(val) || val < 1){
+        alert("أدخل رصيدًا صحيحًا");
+        return;
+      }
+      const map = getJSON(LS_EVENT_STOCKS, {});
+      map[ev] = val;
+      setJSON(LS_EVENT_STOCKS, map);
+      refreshQrUI();
+      updateKPIs();
+      alert(`تم حفظ رصيد الكروت للحدث "${ev}" ✅`);
+    }
+
+    function loadEventStockUI(){
+      document.getElementById("eventCardStock").value = getCurrentStock();
+      document.getElementById("kpiStock").textContent = getCurrentStock();
+    }
+
+    function saveCurrentEventState(){
+      const ev = getCurrentEventId();
+      if(!ev) return;
+
+      setJSON(eventKey(KEY_GUESTS, ev), guests);
+      setJSON(eventKey(KEY_QR, ev), availableQrIds);
+      localStorage.setItem(eventKey(KEY_COUNTER, ev), String(internalGuestIdCounter || 0));
+
+      localStorage.setItem(eventKey(KEY_MSG, ev), document.getElementById("messageTemplate")?.value || "");
+      localStorage.setItem(eventKey(KEY_REMINDER_TEXT, ev), document.getElementById("reminderText")?.value || "");
+      localStorage.setItem(eventKey(KEY_REMINDER_LOC, ev), document.getElementById("reminderLocation")?.value || "");
+      localStorage.setItem(eventKey(KEY_REMINDER_PLACE, ev), document.getElementById("reminderPlace")?.value || "");
+    }
+
+    function loadStateForEvent(ev){
+      guests = getJSON(eventKey(KEY_GUESTS, ev), []).map(normalizeGuestShape);
+      availableQrIds = getJSON(eventKey(KEY_QR, ev), []);
+      barcodeImages = {};
+      selectedGuestIds = new Set();
+      internalGuestIdCounter = parseInt(localStorage.getItem(eventKey(KEY_COUNTER, ev)) || "0") || guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
+
+      document.getElementById("messageTemplate").value =
+        localStorage.getItem(eventKey(KEY_MSG, ev)) ||
+`مرحباً #{{GUEST_NAME}}#،
+نتشرف بدعوتكم لحضور فعالية #{{EVENT_ID}}# (إجمالي الدعوات: #{{TOTAL_COUNT}}#).
+الرجاء إحضار/إظهار أحد أكواد الباركود المرفقة للدخول.`;
+
+      document.getElementById("reminderText").value =
+        localStorage.getItem(eventKey(KEY_REMINDER_TEXT, ev)) ||
+`🔔 تذكير بموعد #{{EVENT_ID}}#
+مرحباً #{{GUEST_NAME}}#
+📍 الموقع: #{{LOCATION_URL}}#
+🎟️ كود الدخول: #{{CODE}}#`;
+
+      document.getElementById("reminderLocation").value = localStorage.getItem(eventKey(KEY_REMINDER_LOC, ev)) || "";
+      document.getElementById("reminderPlace").value = localStorage.getItem(eventKey(KEY_REMINDER_PLACE, ev)) || "";
+
+      document.getElementById("barcodeCount").textContent = "0";
+      document.getElementById("importedQrCodes").textContent = availableQrIds.length ? availableQrIds.join(", ") : "—";
+
+      loadEventStockUI();
+      refreshCloudUploadBadge();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+    }
+
+    // =========================
+    // Firebase Events
+    // =========================
+    function extractEventName(data){
+      return safeStr(data?.eventName || data?.eventId || data?.event);
+    }
+
+    function syncDropdowns(list, selected){
+      const main = document.getElementById("eventSelector");
+      const mirror = document.getElementById("eventSelectorMirror");
+
+      [main, mirror].forEach(sel=>{
+        if(!sel) return;
+        sel.innerHTML = "";
+        if(!list.length){
+          const op = document.createElement("option");
+          op.value = "";
+          op.textContent = "لا توجد أحداث";
+          sel.appendChild(op);
+          return;
+        }
+        list.forEach(ev=>{
+          const op = document.createElement("option");
+          op.value = ev;
+          op.textContent = ev;
+          sel.appendChild(op);
+        });
+        sel.value = selected || list[0];
+      });
+    }
+
+    async function refreshEventsFromFirebase(preserveSelection = true){
+      const statusEl = document.getElementById("eventLoadStatus");
+      try{
+        if(statusEl) statusEl.textContent = "جارٍ تحميل الأحداث من Firebase...";
+        const snap = await db.collection("invites").get();
+
+        const set = new Set();
+        snap.forEach(doc=>{
+          const ev = extractEventName(doc.data());
+          if(ev) set.add(ev);
+        });
+
+        let events = Array.from(set).sort((a,b)=>a.localeCompare(b, "ar"));
+        if(!events.length){
+          const cached = getJSON(LS_EVENT_CACHE, []);
+          events = cached.length ? cached : [];
+        } else {
+          setJSON(LS_EVENT_CACHE, events);
+        }
+
+        let nextSelected = preserveSelection ? getCurrentEventId() : "";
+        if(!events.includes(nextSelected)){
+          nextSelected = events[0] || "";
+        }
+
+        syncDropdowns(events, nextSelected);
+
+        if(nextSelected){
+          const prev = getCurrentEventId();
+          if(prev !== nextSelected){
+            saveCurrentEventState();
+            setCurrentEventId(nextSelected);
+            loadStateForEvent(nextSelected);
+          }else{
+            setCurrentEventId(nextSelected);
+          }
+        }
+
+        if(statusEl){
+          statusEl.textContent = events.length
+            ? `تم تحميل ${events.length} حدث من Firebase`
+            : "لم يتم العثور على أحداث داخل invites";
+        }
+      }catch(e){
+        console.error(e);
+        const cached = getJSON(LS_EVENT_CACHE, []);
+        const selected = getCurrentEventId() || cached[0] || "";
+        syncDropdowns(cached, selected);
+        if(selected){
+          setCurrentEventId(selected);
+          loadStateForEvent(selected);
+        }
+        if(statusEl) statusEl.textContent = "تعذر تحميل الأحداث من Firebase — تم استخدام آخر قائمة محفوظة";
+      }
+    }
+
+    function subscribeEventsRealtime(){
+      try{
+        if(eventsUnsub) eventsUnsub();
+
+        eventsUnsub = db.collection("invites").onSnapshot((snap)=>{
+          const set = new Set();
+          snap.forEach(doc=>{
+            const ev = extractEventName(doc.data());
+            if(ev) set.add(ev);
+          });
+
+          const events = Array.from(set).sort((a,b)=>a.localeCompare(b, "ar"));
+          if(events.length){
+            setJSON(LS_EVENT_CACHE, events);
+            const current = getCurrentEventId();
+            const selected = events.includes(current) ? current : events[0];
+
+            syncDropdowns(events, selected);
+
+            if(!current){
+              setCurrentEventId(selected);
+              loadStateForEvent(selected);
+            }else{
+              document.getElementById("eventSelector").value = selected;
+              document.getElementById("eventSelectorMirror").value = selected;
+              document.getElementById("currentEvent").textContent = selected;
+            }
+
+            const statusEl = document.getElementById("eventLoadStatus");
+            if(statusEl) statusEl.textContent = `تحديث تلقائي: ${events.length} حدث`;
+          }
+        }, (err)=>{
+          console.error("onSnapshot error", err);
+        });
+      }catch(e){
+        console.error(e);
+      }
+    }
+
+    function handleEventChange(){
+      const sel = document.getElementById("eventSelector");
+      const newEvent = safeStr(sel?.value);
+      if(!newEvent) return;
+
+      const prev = getCurrentEventId();
+      if(prev === newEvent){
+        document.getElementById("eventSelectorMirror").value = newEvent;
+        return;
+      }
+
+      saveCurrentEventState();
+      setCurrentEventId(newEvent);
+      document.getElementById("eventSelectorMirror").value = newEvent;
+      loadStateForEvent(newEvent);
+    }
+
+    function syncEventSelectorMirror(value){
+      document.getElementById("eventSelector").value = value;
+      handleEventChange();
+    }
+
+    // =========================
+    // Tabs
+    // =========================
+    document.querySelectorAll('#tabs .tab').forEach(tab=>{
+      tab.addEventListener('click',()=>{
+        document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        const id = tab.dataset.section;
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+        document.querySelector(id).classList.add('active');
+      });
+    });
+
+    // =========================
+    // Persist / Import / Export
+    // =========================
     function persistAll(){
-      setJSON(LS_GUESTS, guests);
-      setJSON(LS_QR, availableQrIds);
-
-      const msgEl = document.getElementById('messageTemplate');
-      if(msgEl) localStorage.setItem(LS_MSG, msgEl.value || '');
-
-      localStorage.setItem(LS_REMINDER_TEXT, document.getElementById('reminderText')?.value || '');
-      localStorage.setItem(LS_REMINDER_LOC, document.getElementById('reminderLocation')?.value || '');
-      localStorage.setItem(LS_REMINDER_PLACE, document.getElementById('reminderPlace')?.value || '');
-      localStorage.setItem(LS_ACTIVE_EVENT, getCurrentEventId());
+      saveCurrentEventState();
     }
 
     function exportJSON(){
+      const ev = getCurrentEventId();
       const payload = {
-        version: 9,
-        activeEvent: getCurrentEventId(),
-        eventOptions: getEventOptions(),
+        version: 10,
+        activeEvent: ev,
         guests,
         availableQrIds,
         internalGuestIdCounter,
-        fixedStock,
+        cardStock: getCurrentStock(),
         messageTemplate: document.getElementById('messageTemplate')?.value || '',
         reminderText: document.getElementById('reminderText')?.value || '',
         reminderLocation: document.getElementById('reminderLocation')?.value || '',
         reminderPlace: document.getElementById('reminderPlace')?.value || '',
         cloudCfg: getCloudCfg(),
-        cloudUploadMark: localStorage.getItem(LS_CLOUD_UPLOAD_MARK) || ""
+        cloudUploadMark: localStorage.getItem(eventKey(KEY_CLOUD_UPLOAD_MARK, ev)) || ""
       };
-
       const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-      saveAs(blob, `sender_${payload.activeEvent || 'event'}_${Date.now()}.json`);
+      saveAs(blob, `sender_${ev || 'event'}_${Date.now()}.json`);
     }
 
     function importJSONFile(file){
@@ -995,35 +1180,37 @@
           availableQrIds = Array.isArray(data.availableQrIds) ? data.availableQrIds : [];
           internalGuestIdCounter = data.internalGuestIdCounter || guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
 
-          if(Array.isArray(data.eventOptions) && data.eventOptions.length){
-            saveEventOptions(data.eventOptions);
-          }
-
-          renderEventDropdown();
-          if(data.activeEvent){
-            setCurrentEventId(data.activeEvent);
-          }
-
           if (data.messageTemplate) document.getElementById('messageTemplate').value = data.messageTemplate;
           if (data.reminderText) document.getElementById('reminderText').value = data.reminderText;
           if (data.reminderLocation) document.getElementById('reminderLocation').value = data.reminderLocation;
           if (data.reminderPlace) document.getElementById('reminderPlace').value = data.reminderPlace;
 
           if (data.cloudCfg) localStorage.setItem(LS_CLOUD_CFG, JSON.stringify(data.cloudCfg));
-          if (data.cloudUploadMark) localStorage.setItem(LS_CLOUD_UPLOAD_MARK, data.cloudUploadMark);
+
+          const ev = getCurrentEventId();
+          if (data.cloudUploadMark) localStorage.setItem(eventKey(KEY_CLOUD_UPLOAD_MARK, ev), data.cloudUploadMark);
+
+          if (data.cardStock) {
+            const map = getJSON(LS_EVENT_STOCKS, {});
+            map[ev] = parseInt(data.cardStock) || DEFAULT_CARD_STOCK;
+            setJSON(LS_EVENT_STOCKS, map);
+          }
 
           selectedGuestIds.clear();
 
-          renderGuestTable();
-          updateKPIs();
-          refreshQrUI();
           persistAll();
           refreshCloudUploadBadge();
+          loadEventStockUI();
 
           const cfg = getCloudCfg();
           document.getElementById("cfgUploadUrl").value = cfg.uploadUrl;
           document.getElementById("cfgSendUrl").value = cfg.sendUrl;
           document.getElementById("cfgReminderUrl").value = cfg.reminderUrl;
+
+          autoDistribute();
+          renderGuestTable();
+          updateKPIs();
+          refreshQrUI();
 
           alert('تم الاستيراد بنجاح ✅');
         }catch{
@@ -1033,158 +1220,9 @@
       r.readAsText(file);
     }
 
-    function toggleSelectGuest(id, checked){
-      if(checked) selectedGuestIds.add(id);
-      else selectedGuestIds.delete(id);
-      const selectedCountEl = document.getElementById("selectedCount");
-      if(selectedCountEl) selectedCountEl.textContent = selectedGuestIds.size;
-    }
-
-    function selectAllGuests(){
-      if(!guests.length){ alert('لا يوجد ضيوف لتحديدهم.'); return; }
-      guests.forEach(g=> selectedGuestIds.add(g.internalId));
-      renderGuestTable();
-    }
-
-    function clearSelection(){
-      selectedGuestIds.clear();
-      renderGuestTable();
-    }
-
-    function deleteSelectedGuests(){
-      if(selectedGuestIds.size === 0){
-        alert('لم يتم تحديد أي ضيف.');
-        return;
-      }
-      if(!confirm(`حذف ${selectedGuestIds.size} ضيف؟`)) return;
-
-      guests = guests.filter(g => !selectedGuestIds.has(g.internalId));
-      selectedGuestIds.clear();
-
-      persistAll();
-      autoDistribute();
-      renderGuestTable();
-      updateKPIs();
-      refreshQrUI();
-    }
-
-    function deleteAllGuests(){
-      if(!guests.length){
-        alert('لا يوجد ضيوف للحذف.');
-        return;
-      }
-      if(!confirm(`سيتم حذف كل الضيوف (${guests.length}). هل أنت متأكد؟`)) return;
-
-      guests = [];
-      selectedGuestIds.clear();
-
-      persistAll();
-      autoDistribute();
-      renderGuestTable();
-      updateKPIs();
-      refreshQrUI();
-    }
-
-    function openAssignModal(id){
-      assignGuestId = id;
-      const guest = guests.find(g=>g.internalId===id);
-      if(!guest) return;
-
-      const need = guest.totalNeeded;
-      const cap = Math.min(fixedStock, availableQrIds.length);
-      const allowed = availableQrIds.slice(0, cap);
-
-      const usedByOthers = guests
-        .filter(g=>g.internalId!==id)
-        .flatMap(g=>g.assignedQrIds||[]);
-
-      const container = document.getElementById('chipsContainer');
-      container.innerHTML = '';
-
-      allowed.forEach(code=>{
-        const chip = document.createElement('span');
-        chip.className = 'chip';
-        chip.textContent = code;
-        const selected = (guest.assignedQrIds||[]).includes(code);
-        if(selected) chip.classList.add('selected');
-
-        chip.onclick = ()=>{
-          if(chip.classList.contains('selected')){
-            chip.classList.remove('selected');
-          }else{
-            if(usedByOthers.includes(code)){
-              alert(`الكود "${code}" مستخدم حالياً لضيف آخر.`);
-              return;
-            }
-            const curSel = container.querySelectorAll('.chip.selected').length;
-            if(curSel>=need){
-              alert(`لا يمكنك اختيار أكثر من ${need} كود لهذا الضيف.`);
-              return;
-            }
-            chip.classList.add('selected');
-          }
-          updateAssignHint();
-        };
-        container.appendChild(chip);
-      });
-
-      updateAssignHint();
-      document.getElementById('assignGate').style.display='flex';
-    }
-
-    function updateAssignHint(){
-      const guest = guests.find(g=>g.internalId===assignGuestId);
-      if(!guest) return;
-      const need = guest.totalNeeded;
-      const curSel = document.querySelectorAll('#chipsContainer .chip.selected').length;
-      document.getElementById('assignHint').textContent = `اختر ${need} كود (المحدد حالياً: ${curSel})`;
-    }
-
-    function closeAssign(){
-      assignGuestId = null;
-      document.getElementById('assignGate').style.display='none';
-    }
-
-    function saveAssign(){
-      const guest = guests.find(g=>g.internalId===assignGuestId);
-      if(!guest) return;
-
-      const need = guest.totalNeeded;
-      const sel = Array.from(document.querySelectorAll('#chipsContainer .chip.selected')).map(el=>el.textContent);
-
-      if(sel.length !== need){
-        alert(`يجب اختيار ${need} كود بالضبط.`);
-        return;
-      }
-
-      const others = guests
-        .filter(g=>g.internalId!==guest.internalId)
-        .flatMap(g=>g.assignedQrIds||[]);
-
-      if(sel.some(c=>others.includes(c))){
-        alert('أحد الأكواد المختارة مستخدم لضيف آخر.');
-        return;
-      }
-
-      guest.assignedQrIds = sel;
-      guest.isManuallyAssigned = true;
-      persistAll();
-      renderGuestTable();
-      updateKPIs();
-      refreshQrUI();
-      closeAssign();
-    }
-
-    document.querySelectorAll('#tabs .tab').forEach(tab=>{
-      tab.addEventListener('click',()=>{
-        document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('active'));
-        tab.classList.add('active');
-        const id = tab.dataset.section;
-        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-        document.querySelector(id).classList.add('active');
-      });
-    });
-
+    // =========================
+    // Guests
+    // =========================
     function handleFileUpload(){
       const f = document.getElementById('guestListUpload').files[0];
       if(!f){ alert('اختر ملفًا'); return; }
@@ -1206,10 +1244,10 @@
     function readExcel(file){
       const r = new FileReader();
       r.onload=(e)=>{
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data,{type:'array'});
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const arr = XLSX.utils.sheet_to_json(ws);
+        const data=new Uint8Array(e.target.result);
+        const wb=XLSX.read(data,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const arr=XLSX.utils.sheet_to_json(ws);
         processImportedData(arr);
       };
       r.readAsArrayBuffer(file);
@@ -1335,17 +1373,17 @@
       internalGuestIdCounter++;
       guests.push(normalizeGuestShape({
         internalId: internalGuestIdCounter,
-        name: n, phone: p,
-        totalNeeded: c,
-        assignedQrIds: [],
-        isManuallyAssigned: false,
-        inviteStatus: 'new',
-        reminderStatus: '',
-        wamid: '',
-        reminderWamid: '',
-        err: '',
-        reminderErr: '',
-        inviteAlreadySent: false
+        name:n, phone:p,
+        totalNeeded:c,
+        assignedQrIds:[],
+        isManuallyAssigned:false,
+        inviteStatus:'new',
+        reminderStatus:'',
+        wamid:'',
+        reminderWamid:'',
+        err:'',
+        reminderErr:'',
+        inviteAlreadySent:false
       }));
 
       persistAll();
@@ -1354,38 +1392,41 @@
       updateKPIs();
       refreshQrUI();
 
-      document.getElementById('newGuestName').value = '';
-      document.getElementById('newGuestPhone').value = '';
-      document.getElementById('newGuestTotalNeeded').value = '1';
-      document.getElementById('guestCount').textContent = guests.length;
+      document.getElementById('newGuestName').value='';
+      document.getElementById('newGuestPhone').value='';
+      document.getElementById('newGuestTotalNeeded').value='1';
+      document.getElementById('guestCount').textContent=guests.length;
     }
 
+    // =========================
+    // Barcode / Cards
+    // =========================
     function loadBarcodes(){
-      const files = document.getElementById('barcodeUpload').files;
+      const files=document.getElementById('barcodeUpload').files;
       if(!files.length){ alert('اختر ملفات'); return; }
 
-      barcodeImages = {};
-      availableQrIds = [];
-      let ok = 0;
-      const total = files.length;
+      barcodeImages={};
+      availableQrIds=[];
+      let ok=0;
+      const total=files.length;
 
       Array.from(files).forEach(file=>{
-        const reader = new FileReader();
-        reader.onload = (e)=>{
-          const id = file.name.replace(/\.[^.]+$/,'').trim();
-          barcodeImages[id] = e.target.result;
+        const reader=new FileReader();
+        reader.onload=(e)=>{
+          const id=file.name.replace(/\.[^.]+$/,'').trim();
+          barcodeImages[id]=e.target.result;
           if(!availableQrIds.includes(id)) availableQrIds.push(id);
           ok++;
-          document.getElementById('barcodeCount').textContent = ok;
-          document.getElementById('importedQrCodes').textContent = availableQrIds.join(', ');
-          if(ok === total){
+          document.getElementById('barcodeCount').textContent=ok;
+          document.getElementById('importedQrCodes').textContent=availableQrIds.join(', ');
+          if(ok===total){
             availableQrIds.sort((a,b)=>{
-              const A = parseInt(a), B = parseInt(b);
+              const A=parseInt(a),B=parseInt(b);
               if(!isNaN(A)&&!isNaN(B)) return A-B;
               return a.localeCompare(b);
             });
 
-            localStorage.removeItem(LS_CLOUD_UPLOAD_MARK);
+            localStorage.removeItem(eventKey(KEY_CLOUD_UPLOAD_MARK, getCurrentEventId()));
             refreshCloudUploadBadge();
 
             persistAll();
@@ -1402,44 +1443,45 @@
     }
 
     function autoDistribute(){
-      const cap = Math.min(fixedStock, availableQrIds.length);
+      const cap = Math.min(getCurrentStock(), availableQrIds.length);
       const allowed = availableQrIds.slice(0, cap);
       const usedByManual = guests.filter(g=>g.isManuallyAssigned).flatMap(g=>g.assignedQrIds);
       const free = allowed.filter(id=>!usedByManual.includes(id));
 
       guests.forEach(g=>{ if(!g.isManuallyAssigned) g.assignedQrIds=[]; });
 
-      let i = 0;
+      let i=0;
       guests.forEach(g=>{
         if(!g.isManuallyAssigned){
-          const need = g.totalNeeded;
-          if(i + need <= free.length){
-            g.assignedQrIds = free.slice(i, i + need);
-            i += need;
+          const need=g.totalNeeded;
+          if(i+need<=free.length){
+            g.assignedQrIds=free.slice(i,i+need);
+            i+=need;
           } else {
-            g.assignedQrIds = [];
+            g.assignedQrIds=[];
           }
         }
       });
     }
 
     function refreshQrUI(){
-      const cap = Math.min(fixedStock, availableQrIds.length);
+      const stock = getCurrentStock();
+      const cap = Math.min(stock, availableQrIds.length);
       const used = guests.reduce((s,g)=>s + (g.assignedQrIds?.length||0), 0);
       const free = Math.max(cap - used, 0);
 
-      document.getElementById('kpiStock').textContent = fixedStock;
+      document.getElementById('kpiStock').textContent = stock;
       document.getElementById('kpiUsedCards').textContent = used;
       document.getElementById('kpiFreeCards').textContent = free;
 
-      const need = guests.reduce((s,g)=>s+g.totalNeeded,0);
-      const el = document.getElementById('qrMismatchAlert');
+      const need=guests.reduce((s,g)=>s+g.totalNeeded,0);
+      const el=document.getElementById('qrMismatchAlert');
       if(!el) return;
 
-      if(cap < need){
+      if(cap<need){
         el.style.display='block';
         el.textContent=`تحذير: المتاح ضمن الرصيد (${cap}) أقل من المطلوب (${need}).`;
-      } else if(cap > need){
+      } else if(cap>need){
         el.style.display='block';
         el.textContent=`ملاحظة: المتاح (${cap}) أكثر من المطلوب (${need}). المتبقي: ${cap-need}`;
       } else {
@@ -1447,111 +1489,145 @@
       }
     }
 
-    function assignBarcode(id){ openAssignModal(id); }
+    function openAssignModal(id){
+      assignGuestId = id;
+      const guest = guests.find(g=>g.internalId===id);
+      if(!guest) return;
 
-    function editTotalNeeded(id){
-      const g = guests.find(x=>x.internalId===id);
-      if(!g) return;
-      const s = prompt(`عدد جديد لـ ${g.name}:`, g.totalNeeded);
-      if(s===null || s.trim()==='') return;
-      const n = parseInt(s);
-      if(isNaN(n) || n<1){ alert('عدد غير صالح'); return; }
-      g.totalNeeded = n;
-      g.isManuallyAssigned = false;
+      const need = guest.totalNeeded;
+      const cap = Math.min(getCurrentStock(), availableQrIds.length);
+      const allowed = availableQrIds.slice(0, cap);
+
+      const usedByOthers = guests
+        .filter(g=>g.internalId!==id)
+        .flatMap(g=>g.assignedQrIds||[]);
+
+      const container = document.getElementById('chipsContainer');
+      container.innerHTML = '';
+
+      allowed.forEach(code=>{
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = code;
+        const selected = (guest.assignedQrIds||[]).includes(code);
+        if(selected) chip.classList.add('selected');
+
+        chip.onclick = ()=>{
+          if(chip.classList.contains('selected')){
+            chip.classList.remove('selected');
+          }else{
+            if(usedByOthers.includes(code)){
+              alert(`الكود "${code}" مستخدم حالياً لضيف آخر.`);
+              return;
+            }
+            const curSel = container.querySelectorAll('.chip.selected').length;
+            if(curSel>=need){
+              alert(`لا يمكنك اختيار أكثر من ${need} كود لهذا الضيف.`);
+              return;
+            }
+            chip.classList.add('selected');
+          }
+          updateAssignHint();
+        };
+        container.appendChild(chip);
+      });
+
+      updateAssignHint();
+      document.getElementById('assignGate').style.display='flex';
+    }
+
+    function updateAssignHint(){
+      const guest = guests.find(g=>g.internalId===assignGuestId);
+      if(!guest) return;
+      const need = guest.totalNeeded;
+      const curSel = document.querySelectorAll('#chipsContainer .chip.selected').length;
+      document.getElementById('assignHint').textContent = `اختر ${need} كود (المحدد حالياً: ${curSel})`;
+    }
+
+    function closeAssign(){
+      assignGuestId=null;
+      document.getElementById('assignGate').style.display='none';
+    }
+
+    function saveAssign(){
+      const guest = guests.find(g=>g.internalId===assignGuestId);
+      if(!guest) return;
+
+      const need = guest.totalNeeded;
+      const sel = Array.from(document.querySelectorAll('#chipsContainer .chip.selected')).map(el=>el.textContent);
+
+      if(sel.length!==need){
+        alert(`يجب اختيار ${need} كود بالضبط.`);
+        return;
+      }
+
+      const others = guests
+        .filter(g=>g.internalId!==guest.internalId)
+        .flatMap(g=>g.assignedQrIds||[]);
+
+      if(sel.some(c=>others.includes(c))){
+        alert('أحد الأكواد المختارة مستخدم لضيف آخر.');
+        return;
+      }
+
+      guest.assignedQrIds = sel;
+      guest.isManuallyAssigned = true;
       persistAll();
-      autoDistribute();
       renderGuestTable();
       updateKPIs();
       refreshQrUI();
+      closeAssign();
     }
 
-    function editGuestDetails(id, field){
-      const g = guests.find(x=>x.internalId===id);
-      if(!g) return;
-      const s = prompt(field==='name' ? `اسم جديد لـ ${g.name}:` : `هاتف جديد لـ ${g.name}:`, g[field]);
-      if(s===null || s.trim()==='') return;
-      g[field] = field === "phone" ? normalizeUAEPhone(s.trim()) : s.trim();
-      persistAll();
-      renderGuestTable();
-    }
+    function assignBarcode(id){ openAssignModal(id); }
 
     async function downloadBarcodeImage(guest){
-      const ids = (guest.assignedQrIds||[]).map(x=>String(x).trim()).filter(Boolean);
-      if(!ids.length){ alert('لا توجد كروت لهذا الضيف'); return; }
+      const ids=(guest.assignedQrIds||[]).map(x=>String(x).trim()).filter(Boolean);
+      if(!ids.length){ alert('لا توجد كروت لهذا الضيف'); return }
 
-      const present = ids.filter(id=>barcodeImages[id]);
+      const present=ids.filter(id=>barcodeImages[id]);
       if(!present.length){
         alert('لا توجد صور متاحة لهذا الضيف — أعد استيراد صور الباركود على هذا الجهاز.');
         return;
       }
 
       if(ids.length===1){
-        const id = present[0];
-        const a = document.createElement('a');
-        a.href = barcodeImages[id];
-        a.download = `${guest.name}_${id}.png`;
+        const id=present[0];
+        const a=document.createElement('a');
+        a.href=barcodeImages[id];
+        a.download=`${guest.name}_${id}.png`;
         document.body.appendChild(a);
         a.click();
         a.remove();
         return;
       }
 
-      const zip = new JSZip();
-      let added = 0;
+      const zip=new JSZip();
+      let added=0;
       for(const id of present){
-        const b64 = barcodeImages[id].split(',')[1];
+        const b64=barcodeImages[id].split(',')[1];
         zip.file(`${id}.png`, b64, {base64:true});
         added++;
       }
 
       if(!added){ alert('لم يتم العثور على صور'); return; }
-      const blob = await zip.generateAsync({type:'blob'});
+      const blob=await zip.generateAsync({type:'blob'});
       saveAs(blob, `${guest.name}_${present.length}_Cards.zip`);
 
-      if(present.length < ids.length){
+      if(present.length<ids.length){
         alert(`تم تنزيل ${present.length} من أصل ${ids.length}. بعض الصور غير مستوردة على هذا الجهاز.`);
       }
     }
 
-    function deleteGuest(id){
-      if(!confirm('حذف الضيف؟')) return;
-      guests = guests.filter(g=>g.internalId!==id);
-      selectedGuestIds.delete(id);
-      persistAll();
-      autoDistribute();
-      renderGuestTable();
-      updateKPIs();
-      refreshQrUI();
+    function downloadBarcodeImageById(id){
+      const guest = getGuestById(id);
+      if(!guest) return;
+      downloadBarcodeImage(guest);
     }
 
-    function sendWhatsAppMessage(guest){
-      if(!guest.assignedQrIds.length){ alert('لا كروت للضيف'); return; }
-      const msgEl = document.getElementById('messageTemplate');
-      let txt = msgEl ? msgEl.value : `مرحباً ${guest.name}`;
-      txt = txt
-        .replace(/#\{\{GUEST_NAME\}\}#/g, guest.name)
-        .replace(/#\{\{TOTAL_COUNT\}\}#/g, guest.totalNeeded)
-        .replace(/#\{\{EVENT_ID\}\}#/g, getCurrentEventId());
-      const url = `https://wa.me/${normPhone(guest.phone)}?text=${encodeURIComponent(txt)}`;
-      window.open(url,'_blank');
-    }
-
-    function sendAllWhatsApp(){
-      if(!guests.length){ alert('لا يوجد ضيوف'); return; }
-      if(!confirm('سيتم فتح عدة نوافذ واتساب. هل تريد المتابعة؟')) return;
-      const template = document.getElementById('messageTemplate')?.value || '';
-      let delay = 0;
-      guests.forEach((guest)=>{
-        const txt = template
-          .replace(/#\{\{GUEST_NAME\}\}#/g, guest.name)
-          .replace(/#\{\{TOTAL_COUNT\}\}#/g, guest.totalNeeded)
-          .replace(/#\{\{EVENT_ID\}\}#/g, getCurrentEventId());
-        const url = `https://wa.me/${normPhone(guest.phone)}?text=${encodeURIComponent(txt)}`;
-        setTimeout(()=>{ window.open(url,'_blank'); }, delay);
-        delay += 1400;
-      });
-    }
-
+    // =========================
+    // Messaging
+    // =========================
     function getWelcomeText(guest){
       const tpl = document.getElementById("messageTemplate")?.value || "";
       return tpl
@@ -1571,8 +1647,35 @@
         .trim();
     }
 
+    function sendWhatsAppMessage(guest){
+      if(!guest.assignedQrIds.length){ alert('لا كروت للضيف'); return }
+      let txt = document.getElementById('messageTemplate')?.value || `مرحباً ${guest.name}`;
+      txt = txt
+        .replace(/#\{\{GUEST_NAME\}\}#/g, guest.name)
+        .replace(/#\{\{TOTAL_COUNT\}\}#/g, guest.totalNeeded)
+        .replace(/#\{\{EVENT_ID\}\}#/g, getCurrentEventId());
+      const url=`https://wa.me/${normPhone(guest.phone)}?text=${encodeURIComponent(txt)}`;
+      window.open(url,'_blank');
+    }
+
+    function sendAllWhatsApp(){
+      if(!guests.length){ alert('لا يوجد ضيوف'); return }
+      if(!confirm('سيتم فتح عدة نوافذ واتساب. هل تريد المتابعة؟')) return;
+      const template=document.getElementById('messageTemplate')?.value||'';
+      let delay=0;
+      guests.forEach((guest)=>{
+        const txt=template
+          .replace(/#\{\{GUEST_NAME\}\}#/g,guest.name)
+          .replace(/#\{\{TOTAL_COUNT\}\}#/g,guest.totalNeeded)
+          .replace(/#\{\{EVENT_ID\}\}#/g,getCurrentEventId());
+        const url=`https://wa.me/${normPhone(guest.phone)}?text=${encodeURIComponent(txt)}`;
+        setTimeout(()=>{ window.open(url,'_blank'); }, delay);
+        delay+=1400;
+      });
+    }
+
     function refreshCloudUploadBadge(){
-      const mark = localStorage.getItem(LS_CLOUD_UPLOAD_MARK);
+      const mark = localStorage.getItem(eventKey(KEY_CLOUD_UPLOAD_MARK, getCurrentEventId()));
       const st = document.getElementById("cloudUploadStatus");
       const tm = document.getElementById("cloudUploadTime");
       if(mark){
@@ -1604,7 +1707,7 @@
 
       if(!confirm(`سيتم رفع ${availableQrIds.length} صورة للسيرفر.\nالحدث: ${currentEvent}\nمتابعة؟`)) return;
 
-      let ok = 0, fail = 0;
+      let ok=0, fail=0;
 
       for(const code of availableQrIds){
         const dataUrl = barcodeImages[code];
@@ -1627,7 +1730,7 @@
 
       const mark = new Date().toLocaleString("en-GB", { hour12:false });
       if(ok>0){
-        localStorage.setItem(LS_CLOUD_UPLOAD_MARK, mark + ` (event:${currentEvent}) (ok:${ok} fail:${fail})`);
+        localStorage.setItem(eventKey(KEY_CLOUD_UPLOAD_MARK, currentEvent), mark + ` (ok:${ok} fail:${fail})`);
       }
       refreshCloudUploadBadge();
       alert(`رفع المخزون انتهى ✅\nالحدث: ${currentEvent}\nنجح: ${ok}\nفشل: ${fail}`);
@@ -1694,7 +1797,7 @@
       if(!guests.length){ alert("لا يوجد ضيوف"); return; }
 
       const currentEvent = getCurrentEventId();
-      const mark = localStorage.getItem(LS_CLOUD_UPLOAD_MARK);
+      const mark = localStorage.getItem(eventKey(KEY_CLOUD_UPLOAD_MARK, currentEvent));
 
       if(!mark){
         if(!confirm(`تنبيه: لم يتم رفع صور الباركود للسيرفر بعد.\nالحدث: ${currentEvent}\nقد يفشل الإرسال.\nمتابعة؟`)) return;
@@ -1747,7 +1850,7 @@
       if(!list.length){ alert("لم يتم تحديد أي ضيف"); return; }
 
       const currentEvent = getCurrentEventId();
-      const mark = localStorage.getItem(LS_CLOUD_UPLOAD_MARK);
+      const mark = localStorage.getItem(eventKey(KEY_CLOUD_UPLOAD_MARK, currentEvent));
 
       if(!mark){
         if(!confirm(`تنبيه: لم يتم رفع صور الباركود للسيرفر بعد.\nالحدث: ${currentEvent}\nقد يفشل الإرسال.\nمتابعة؟`)) return;
@@ -1850,6 +1953,68 @@
       alert(`تم التذكير ✅\nالحدث: ${currentEvent}\nنجح: ${ok}\nفشل: ${fail}`);
     }
 
+    async function sendInviteById(id){
+      const guest = getGuestById(id);
+      if(!guest) return;
+
+      try{
+        guest.inviteStatus = "sending";
+        guest.err = "";
+        renderGuestTable();
+
+        const out = await sendWelcomeAndCardsCloud(guest);
+
+        guest.inviteStatus = "sent";
+        guest.inviteAlreadySent = false;
+        guest.wamid = out.templateWamid || out.textWamid || "";
+        guest.err = "";
+        alert("✅ تم إرسال الدعوة");
+      }catch(e){
+        const msg = prettyErr(e?.message || e);
+
+        if (msg.includes("تم إرسالها مسبقًا")) {
+          guest.inviteStatus = "sent";
+          guest.inviteAlreadySent = false;
+          guest.err = "تم الإرسال سابقًا من السيرفر، لكن يمكنك إعادة الإرسال من اللوحة";
+          alert("ℹ️ هذه الدعوة كانت مرسلة سابقًا من جهة السيرفر");
+        } else {
+          guest.inviteStatus = "failed";
+          guest.err = msg;
+          alert("❌ فشل الإرسال:\n" + guest.err);
+        }
+      }
+
+      persistAll();
+      renderGuestTable();
+    }
+
+    async function sendReminderById(id){
+      const guest = getGuestById(id);
+      if(!guest) return;
+
+      try{
+        const out = await sendReminderCloud(guest);
+        guest.reminderStatus = "sent";
+        guest.reminderWamid = out?.wamid || "";
+        guest.reminderErr = "";
+        persistAll();
+        renderGuestTable();
+        alert("✅ تم إرسال التذكير");
+      }catch(e){
+        guest.reminderStatus = "failed";
+        guest.reminderErr = prettyErr(e?.message || e);
+        persistAll();
+        renderGuestTable();
+        alert("❌ فشل التذكير:\n" + guest.reminderErr);
+      }
+    }
+
+    function sendWhatsAppById(id){
+      const guest = getGuestById(id);
+      if(!guest) return;
+      sendWhatsAppMessage(guest);
+    }
+
     async function pasteLocation(){
       try{
         const txt = await navigator.clipboard.readText();
@@ -1866,13 +2031,17 @@
       }
     }
 
+    // =========================
+    // Table / UI
+    // =========================
     function updateKPIs(){
-      const total = guests.length;
-      const sent = guests.filter(g=>g.inviteStatus==='sent').length;
-      const remain = Math.max(total - sent, 0);
-      document.getElementById('kpiTotal').textContent = total;
-      document.getElementById('kpiSent').textContent = sent;
-      document.getElementById('kpiRemain').textContent = remain;
+      const total=guests.length;
+      const sent=guests.filter(g=>g.inviteStatus==='sent').length;
+      const remain=Math.max(total - sent, 0);
+      document.getElementById('kpiTotal').textContent=total;
+      document.getElementById('kpiSent').textContent=sent;
+      document.getElementById('kpiRemain').textContent=remain;
+      document.getElementById('kpiStock').textContent=getCurrentStock();
     }
 
     function getFilteredGuests(){
@@ -2071,125 +2240,163 @@
       persistAll();
     }
 
+    function toggleSelectGuest(id, checked){
+      if(checked) selectedGuestIds.add(id);
+      else selectedGuestIds.delete(id);
+      const selectedCountEl = document.getElementById("selectedCount");
+      if(selectedCountEl) selectedCountEl.textContent = selectedGuestIds.size;
+    }
+
+    function selectAllGuests(){
+      if(!guests.length){ alert('لا يوجد ضيوف لتحديدهم.'); return; }
+      guests.forEach(g=> selectedGuestIds.add(g.internalId));
+      renderGuestTable();
+    }
+
+    function clearSelection(){
+      selectedGuestIds.clear();
+      renderGuestTable();
+    }
+
+    function deleteSelectedGuests(){
+      if(selectedGuestIds.size === 0){
+        alert('لم يتم تحديد أي ضيف.');
+        return;
+      }
+      if(!confirm(`حذف ${selectedGuestIds.size} ضيف؟`)) return;
+
+      guests = guests.filter(g => !selectedGuestIds.has(g.internalId));
+      selectedGuestIds.clear();
+
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+    }
+
+    function deleteAllGuests(){
+      if(!guests.length){
+        alert('لا يوجد ضيوف للحذف.');
+        return;
+      }
+      if(!confirm(`سيتم حذف كل الضيوف (${guests.length}). هل أنت متأكد؟`)) return;
+
+      guests = [];
+      selectedGuestIds.clear();
+
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+    }
+
     function getGuestById(id){
       return guests.find(g => g.internalId === id);
     }
 
-    async function sendInviteById(id){
-      const guest = getGuestById(id);
-      if(!guest) return;
+    function editTotalNeeded(id){
+      const g=guests.find(x=>x.internalId===id);
+      if(!g) return;
+      const s=prompt(`عدد جديد لـ ${g.name}:`, g.totalNeeded);
+      if(s===null||s.trim()==='') return;
+      const n=parseInt(s);
+      if(isNaN(n)||n<1){ alert('عدد غير صالح'); return; }
+      g.totalNeeded=n;
+      g.isManuallyAssigned=false;
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
+    }
 
-      try{
-        guest.inviteStatus = "sending";
-        guest.err = "";
-        renderGuestTable();
-
-        const out = await sendWelcomeAndCardsCloud(guest);
-
-        guest.inviteStatus = "sent";
-        guest.inviteAlreadySent = false;
-        guest.wamid = out.templateWamid || out.textWamid || "";
-        guest.err = "";
-        alert("✅ تم إرسال الدعوة");
-      }catch(e){
-        const msg = prettyErr(e?.message || e);
-
-        if (msg.includes("تم إرسالها مسبقًا")) {
-          guest.inviteStatus = "sent";
-          guest.inviteAlreadySent = false;
-          guest.err = "تم الإرسال سابقًا من السيرفر، لكن يمكنك إعادة الإرسال من اللوحة";
-          alert("ℹ️ هذه الدعوة كانت مرسلة سابقًا من جهة السيرفر");
-        } else {
-          guest.inviteStatus = "failed";
-          guest.err = msg;
-          alert("❌ فشل الإرسال:\n" + guest.err);
-        }
-      }
-
+    function editGuestDetails(id, field){
+      const g=guests.find(x=>x.internalId===id);
+      if(!g) return;
+      const s=prompt(field==='name' ? `اسم جديد لـ ${g.name}:` : `هاتف جديد لـ ${g.name}:`, g[field]);
+      if(s===null||s.trim()==='') return;
+      g[field] = field === "phone" ? normalizeUAEPhone(s.trim()) : s.trim();
       persistAll();
       renderGuestTable();
     }
 
-    async function sendReminderById(id){
-      const guest = getGuestById(id);
-      if(!guest) return;
-
-      try{
-        const out = await sendReminderCloud(guest);
-        guest.reminderStatus = "sent";
-        guest.reminderWamid = out?.wamid || "";
-        guest.reminderErr = "";
-        persistAll();
-        renderGuestTable();
-        alert("✅ تم إرسال التذكير");
-      }catch(e){
-        guest.reminderStatus = "failed";
-        guest.reminderErr = prettyErr(e?.message || e);
-        persistAll();
-        renderGuestTable();
-        alert("❌ فشل التذكير:\n" + guest.reminderErr);
-      }
+    function deleteGuest(id){
+      if(!confirm('حذف الضيف؟')) return;
+      guests = guests.filter(g=>g.internalId!==id);
+      selectedGuestIds.delete(id);
+      persistAll();
+      autoDistribute();
+      renderGuestTable();
+      updateKPIs();
+      refreshQrUI();
     }
 
-    function sendWhatsAppById(id){
-      const guest = getGuestById(id);
-      if(!guest) return;
-      sendWhatsAppMessage(guest);
+    // =========================
+    // Boot
+    // =========================
+    function bindAutoSave(){
+      const el=document.getElementById('messageTemplate');
+      if(el) el.addEventListener('input', ()=> {
+        const ev = getCurrentEventId();
+        if(ev) localStorage.setItem(eventKey(KEY_MSG, ev), el.value||'');
+      });
+
+      const rt=document.getElementById('reminderText');
+      if(rt) rt.addEventListener('input', ()=> {
+        const ev = getCurrentEventId();
+        if(ev) localStorage.setItem(eventKey(KEY_REMINDER_TEXT, ev), rt.value||'');
+      });
+
+      const rl=document.getElementById('reminderLocation');
+      if(rl) rl.addEventListener('input', ()=> {
+        const ev = getCurrentEventId();
+        if(ev) localStorage.setItem(eventKey(KEY_REMINDER_LOC, ev), rl.value||'');
+      });
+
+      const rp=document.getElementById('reminderPlace');
+      if(rp) rp.addEventListener('input', ()=> {
+        const ev = getCurrentEventId();
+        if(ev) localStorage.setItem(eventKey(KEY_REMINDER_PLACE, ev), rp.value||'');
+      });
     }
 
-    function downloadBarcodeImageById(id){
-      const guest = getGuestById(id);
-      if(!guest) return;
-      downloadBarcodeImage(guest);
-    }
-
-    function bootMessageAndCfg(){
+    function loadCloudCfgUI(){
       const cfg = getCloudCfg();
       document.getElementById("cfgUploadUrl").value = cfg.uploadUrl;
       document.getElementById("cfgSendUrl").value = cfg.sendUrl;
       document.getElementById("cfgReminderUrl").value = cfg.reminderUrl;
-
-      const savedMsg = localStorage.getItem(LS_MSG);
-      if (savedMsg && document.getElementById('messageTemplate')) {
-        document.getElementById('messageTemplate').value = savedMsg;
-      }
-
-      const rText = localStorage.getItem(LS_REMINDER_TEXT);
-      if (rText) document.getElementById('reminderText').value = rText;
-
-      const rLoc = localStorage.getItem(LS_REMINDER_LOC);
-      if (rLoc) document.getElementById('reminderLocation').value = rLoc;
-
-      const rPlace = localStorage.getItem(LS_REMINDER_PLACE);
-      if (rPlace) document.getElementById('reminderPlace').value = rPlace;
     }
 
-    (function boot(){
+    async function boot(){
       applyTheme(localStorage.getItem(LS_THEME) || "dark");
-      renderEventDropdown();
-      bootMessageAndCfg();
+      loadCloudCfgUI();
+      bindAutoSave();
 
-      document.getElementById('kpiStock').textContent = fixedStock;
+      await refreshEventsFromFirebase(true);
+
+      if(!getCurrentEventId()){
+        const cached = getJSON(LS_EVENT_CACHE, []);
+        if(cached.length){
+          setCurrentEventId(cached[0]);
+          loadStateForEvent(cached[0]);
+        }
+      }
+
+      subscribeEventsRealtime();
+
+      if(getCurrentEventId()){
+        loadStateForEvent(getCurrentEventId());
+      }
 
       refreshCloudUploadBadge();
       renderGuestTable();
       updateKPIs();
       refreshQrUI();
-    })();
+    }
 
-    (function bindAutoSave(){
-      const el = document.getElementById('messageTemplate');
-      if(el) el.addEventListener('input', ()=> localStorage.setItem(LS_MSG, el.value||''));
-
-      const rt = document.getElementById('reminderText');
-      if(rt) rt.addEventListener('input', ()=> localStorage.setItem(LS_REMINDER_TEXT, rt.value||''));
-
-      const rl = document.getElementById('reminderLocation');
-      if(rl) rl.addEventListener('input', ()=> localStorage.setItem(LS_REMINDER_LOC, rl.value||''));
-
-      const rp = document.getElementById('reminderPlace');
-      if(rp) rp.addEventListener('input', ()=> localStorage.setItem(LS_REMINDER_PLACE, rp.value||''));
-    })();
+    boot();
   </script>
 </body>
 </html>
