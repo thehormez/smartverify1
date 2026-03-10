@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>مركز الإرسال — KRS INVITE (Dynamic Events + Per-Event Stock)</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <style>
+    :root{--radius:20px;--shadow:0 14px 40px rgba(0,0,0,.18);--shadow-soft:0 8px 22px rgba(0,0,0,.10);--transition:.22s ease}
+    html[data-theme="dark"]{
+      --bg:#0a0b0f;--bg-2:#11131a;--panel:#151821;--panel-2:#1a1e28;--stroke:#2b3140;--txt:#f5f7fb;--muted:#aeb6c8;
+      --gold:#d4af37;--gold-2:#f0d889;--ok:#22c55e;--danger:#ef4444;--blue:#2563eb;--rose:#e11d48;--emerald:#059669;
+      --input:#0f1219;--thead:#1d2230;--row:#11151d;--row-hover:#171c27;--topbar:#0b0d12cc;--badge-bg:rgba(255,255,255,.07)
+    }
+    html[data-theme="light"]{
+      --bg:#f5f7fb;--bg-2:#edf2f8;--panel:#ffffff;--panel-2:#fbfcff;--stroke:#d8dfeb;--txt:#101827;--muted:#667085;
+      --gold:#b8860b;--gold-2:#c99614;--ok:#16a34a;--danger:#dc2626;--blue:#2563eb;--rose:#e11d48;--emerald:#059669;
+      --input:#ffffff;--thead:#f3f6fb;--row:#ffffff;--row-hover:#f8fbff;--topbar:#ffffffd9;--badge-bg:rgba(17,24,39,.04)
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:'Noto Sans Arabic',system-ui,-apple-system,Segoe UI,Arial;
+      background:radial-gradient(circle at top right, rgba(212,175,55,.08), transparent 25%), radial-gradient(circle at bottom left, rgba(37,99,235,.06), transparent 22%), var(--bg);
+      color:var(--txt);transition:background var(--transition), color var(--transition)
+    }
+    .container{max-width:1320px;margin:0 auto;padding:18px}
+    .topbar{position:sticky;top:0;z-index:70;backdrop-filter:blur(14px);background:var(--topbar);border-bottom:1px solid var(--stroke)}
+    .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1320px;margin:0 auto;padding:14px 18px}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:900}
+    .brand-mark{width:15px;height:15px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #fff4c5, var(--gold));box-shadow:0 0 0 6px rgba(212,175,55,.12)}
+    .brand-text small{display:block;font-size:12px;color:var(--muted);font-weight:700}
+    .event-name{font-weight:900;color:var(--gold-2);padding:9px 14px;border-radius:999px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.22);min-width:140px;text-align:center}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .btn,input,textarea,select{border:1px solid var(--stroke);background:var(--input);color:var(--txt);padding:12px 14px;border-radius:16px;font-size:15px;min-height:46px;transition:all var(--transition);outline:none;width:auto}
+    .btn{cursor:pointer;font-weight:800;box-shadow:var(--shadow-soft)}
+    .btn:hover{transform:translateY(-1px)} .btn:active{transform:scale(.99)}
+    .btn.ok{border-color:rgba(34,197,94,.34)} .btn.warn{border-color:rgba(239,68,68,.32)} .btn.gold{border-color:rgba(212,175,55,.34)} .btn.ghost{background:transparent}
+    input:focus,textarea:focus,select:focus,.btn:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(212,175,55,.10)}
+    textarea{width:100%;resize:vertical;min-height:110px;line-height:1.9}
+    .tabs{display:flex;gap:10px;padding:14px 0;flex-wrap:wrap}
+    .tab{border:1px solid var(--stroke);background:var(--panel);color:var(--txt);padding:12px 16px;border-radius:16px;cursor:pointer;font-weight:800;min-height:46px;transition:all var(--transition)}
+    .tab.active{border-color:rgba(212,175,55,.42);color:var(--gold-2);background:linear-gradient(180deg, rgba(212,175,55,.12), rgba(212,175,55,.04));box-shadow:0 8px 24px rgba(212,175,55,.08)}
+    .section{display:none}.section.active{display:block}
+    .card{background:linear-gradient(180deg, var(--panel), var(--panel-2));border:1px solid var(--stroke);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-soft)}
+    .card h3{margin:0 0 8px;font-size:20px}
+    .card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .accent-blue{background:linear-gradient(135deg, rgba(37,99,235,.96), rgba(29,78,216,.82));color:#fff;border:none}
+    .accent-gold{background:linear-gradient(135deg, rgba(180,138,24,.98), rgba(212,175,55,.86));color:#fff;border:none}
+    .accent-rose{background:linear-gradient(135deg, rgba(225,29,72,.95), rgba(190,18,60,.82));color:#fff;border:none}
+    .accent-emerald{background:linear-gradient(135deg, rgba(5,150,105,.96), rgba(4,120,87,.82));color:#fff;border:none}
+    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:16px 0}
+    .kpi .card h4{margin:0;font-size:13px;color:#fff;opacity:.95}
+    .kpi .card .num{font-size:28px;font-weight:900;margin-top:8px;color:#fff}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;font-size:12px;font-weight:800;background:var(--badge-bg);border:1px solid var(--stroke)}
+    .hint{color:var(--muted);font-size:13px;line-height:1.8}.small{font-size:12px;color:var(--muted)}
+    code{background:var(--badge-bg);border:1px solid var(--stroke);padding:2px 7px;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;display:inline-block}
+    .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+    .toolbar-group{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .table-wrap{overflow:auto;border:1px solid var(--stroke);border-radius:18px}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{background:var(--thead);color:var(--txt);border-bottom:1px solid var(--stroke);padding:14px 12px;text-align:right;font-weight:900;font-size:13px;position:sticky;top:0;z-index:1}
+    tbody td{padding:14px 12px;border-bottom:1px solid var(--stroke);font-size:14px;background:var(--row);color:var(--txt);vertical-align:top}
+    tbody tr:hover td{background:var(--row-hover)}
+    .guest-cell{display:flex;flex-direction:column;gap:4px}
+    .guest-name{font-weight:900;font-size:15px}.guest-meta{color:var(--muted);font-size:12px}
+    .codes-wrap{display:flex;flex-wrap:wrap;gap:6px}
+    .code-badge{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:999px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.26);color:var(--gold-2);font-size:12px;font-weight:800;direction:ltr}
+    .editable{cursor:pointer;color:var(--gold-2);font-weight:800;text-decoration:underline dotted rgba(212,175,55,.48);text-underline-offset:3px}
+    .status{display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid var(--stroke);width:max-content}
+    .status.new{background:var(--badge-bg)} .status.sending{background:rgba(37,99,235,.14);border-color:rgba(37,99,235,.24)} .status.sent{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.24)} .status.failed{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.24)}
+    .actions-stack{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+    .modal{width:100%;max-width:580px;background:linear-gradient(180deg, var(--panel), var(--panel-2));border:1px solid var(--stroke);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+    .title{margin:0 0 10px;font-weight:900;font-size:24px}.assign-modal .modal{max-width:760px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;max-height:260px;overflow:auto;padding:10px;background:var(--input);border:1px solid var(--stroke);border-radius:16px}
+    .chip{padding:7px 11px;border-radius:999px;border:1px solid var(--stroke);background:var(--panel);color:var(--txt);cursor:pointer;user-select:none;font-weight:700}
+    .chip.selected{background:rgba(212,175,55,.18);color:var(--gold-2);border-color:rgba(212,175,55,.45);font-weight:900}
+    .section-stack{display:flex;flex-direction:column;gap:14px}
+    @media (max-width:980px){.grid-2,.grid-3,.grid-4,.kpi{grid-template-columns:1fr 1fr}.actions-stack{grid-template-columns:1fr}}
+    @media (max-width:640px){
+      .container{padding:12px}.topbar-inner{padding:12px}.grid-2,.grid-3,.grid-4,.kpi{grid-template-columns:1fr}.tabs{gap:8px}.tab{flex:1;text-align:center;padding:11px 10px;font-size:14px}
+      table thead{display:none} table,tbody,tr,td{display:block;width:100%}
+      tbody tr{border:1px solid var(--stroke);border-radius:18px;margin-bottom:12px;overflow:hidden}
+      tbody td{display:flex;justify-content:space-between;gap:12px}
+      tbody td::before{content:attr(data-label);color:var(--muted);font-weight:900}
+      td.actions{display:block}.actions-stack .btn{width:100%}
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain: "hormez-inv.firebaseapp.com",
+      projectId: "hormez-inv",
+      storageBucket: "hormez-inv.firebasestorage.app",
+      messagingSenderId: "747519941805",
+      appId: "1:747519941805:web:468fada2492700e9da3a24"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.firebaseDb = db;
+    window.firebaseTools = { collection, getDocs };
+    window.firebaseReady = true;
+    window.dispatchEvent(new CustomEvent("firebase-ready"));
+  </script>
+</head>
+<body>
+  <div id="authGate" class="overlay" style="display:none">
+    <div class="modal">
+      <h3 class="title">📅 اختيار الحدث</h3>
+      <div class="hint">يتم سحب الأحداث تلقائيًا من مجموعة <b>invites</b> في Firebase. اختر الحدث من القائمة المنسدلة.</div>
+      <div class="row" style="margin-top:12px">
+        <select id="authEvent" class="btn" style="flex:1"><option value="">جاري تحميل الأحداث...</option></select>
+        <button class="btn gold" onclick="authLogin()">دخول</button>
+      </div>
+      <div id="authErr" class="hint" style="color:#ffb3b3; margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div id="assignGate" class="overlay assign-modal" style="display:none">
+    <div class="modal">
+      <h3 class="title">🎯 اختيار أكواد الباركود</h3>
+      <div class="hint" id="assignHint">اختر (0) كود.</div>
+      <div id="chipsContainer" class="chips" dir="ltr"></div>
+      <div class="row" style="margin-top:12px; justify-content:flex-end">
+        <button class="btn" onclick="closeAssign()">إلغاء</button>
+        <button class="btn ok" onclick="saveAssign()">حفظ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <div class="brand-text">
+          KRS INVITE — مركز الإرسال
+          <small>اختيار الحدث من Dropdown + رصيد منفصل لكل حدث</small>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" onclick="toggleTheme()">🌓 تبديل المظهر</button>
+        <span id="currentEvent" class="event-name">بدون حدث</span>
+        <button class="btn warn" onclick="logout()">تبديل الحدث</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <section class="kpi">
+      <div class="card accent-blue"><h4>إجمالي المدعوين</h4><div class="num" id="kpiTotal">0</div></div>
+      <div class="card accent-gold"><h4>الدعوات المُرسلة</h4><div class="num" id="kpiSent">0</div></div>
+      <div class="card accent-rose"><h4>المتبقية</h4><div class="num" id="kpiRemain">0</div></div>
+      <div class="card accent-emerald">
+        <h4>رصيد الكروت</h4>
+        <div class="row" style="gap:8px; margin-top:10px">
+          <span class="pill">المجموع: <b id="kpiStock">0</b></span>
+          <span class="pill">المستخدم: <b id="kpiUsedCards">0</b></span>
+          <span class="pill">المتاح: <b id="kpiFreeCards">0</b></span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-section="#sec-home">الرئيسية</button>
+      <button class="tab" data-section="#sec-event">بيانات الحدث</button>
+      <button class="tab" data-section="#sec-guests">إضافة الضيوف</button>
+      <button class="tab" data-section="#sec-stock">مخزون الدعوات</button>
+      <button class="tab" data-section="#sec-list">قائمة المدعوين</button>
+      <button class="tab" data-section="#sec-reminder">التذكير</button>
+    </nav>
+
+    <section id="sec-home" class="section active">
+      <div class="card accent-gold">
+        <h3>مرحبًا 👋</h3>
+        <div class="hint" style="color:#fff">في هذه النسخة كل حدث له رصيد كروت مستقل ويمكنك تغييره يدويًا من داخل الصفحة.</div>
+      </div>
+    </section>
+
+    <section id="sec-event" class="section">
+      <div class="section-stack">
+        <div class="card accent-blue">
+          <h3>🏷️ بيانات الحدث</h3>
+          <div class="row" style="margin-bottom:12px">
+            <select id="eventSwitcher" class="btn" style="flex:1" onchange="switchEventFromPanel(this.value)">
+              <option value="">اختر الحدث</option>
+            </select>
+            <button class="btn gold" onclick="reloadEventsList()">🔄 تحديث الأحداث</button>
+          </div>
+          <div class="row">
+            <input id="eventName" class="btn" placeholder="اسم الحدث" style="flex:1" readonly />
+            <button class="btn" onclick="exportJSON()">💾 تصدير JSON</button>
+            <input id="dataUpload" type="file" accept=".json" style="display:none" onchange="importJSONFile(this.files[0])" />
+            <button class="btn" onclick="document.getElementById('dataUpload').click()">↩️ استيراد JSON</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>🎟️ رصيد الكروت للحدث الحالي</h3>
+            <span class="pill">منفصل لكل حدث</span>
+          </div>
+          <div class="row">
+            <input id="eventCardStock" class="btn" type="number" min="1" step="1" placeholder="مثال: 300" style="flex:1" />
+            <button class="btn ok" onclick="saveEventCardStock()">💾 حفظ الرصيد</button>
+            <button class="btn" onclick="resetEventCardStock()">↺ إعادة الافتراضي</button>
+          </div>
+          <div class="hint" style="margin-top:8px">مثال: حدث أول 300 كرت، حدث ثاني 120 كرت، حدث ثالث 500 كرت.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>⚙️ إعدادات Cloud API</h3></div>
+          <div class="grid-3">
+            <input id="cfgUploadUrl" class="btn" placeholder="Upload URL" />
+            <input id="cfgSendUrl" class="btn" placeholder="Send URL" />
+            <input id="cfgReminderUrl" class="btn" placeholder="Reminder URL" />
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn ok" onclick="saveCloudCfg()">💾 حفظ الإعدادات</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-guests" class="section">
+      <div class="card accent-emerald">
+        <h3>👥 إضافة الضيوف</h3>
+        <div class="row" style="margin-bottom:10px">
+          <input id="guestListUpload" type="file" class="btn" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="flex:1" />
+          <button class="btn" onclick="handleFileUpload()">✅ استيراد الضيوف</button>
+          <button class="btn ok" onclick="importFromContacts()">📱 من سجل الهاتف</button>
+        </div>
+        <div class="grid-3">
+          <input id="newGuestName" class="btn" placeholder="الاسم" />
+          <input id="newGuestPhone" class="btn" placeholder="الهاتف (مثال: 9715... أو 05...)" />
+          <input id="newGuestTotalNeeded" class="btn" type="number" min="1" value="1" placeholder="عدد الدعوات" />
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn gold" onclick="addGuestManually()">➕ إضافة الضيف</button>
+        </div>
+        <div class="hint" style="margin-top:10px">تم تحميل <b id="guestCount">0</b> ضيف.</div>
+      </div>
+    </section>
+
+    <section id="sec-stock" class="section">
+      <div class="card accent-rose">
+        <h3>🎟️ مخزون الدعوات (صور الباركود)</h3>
+        <div class="row">
+          <input id="barcodeUpload" type="file" class="btn" accept="image/*" multiple style="flex:1" />
+          <button class="btn" onclick="loadBarcodes()">🗂️ استيراد الصور</button>
+          <button class="btn ok" onclick="uploadAllCardsToCloud()">☁️ رفع للسيرفر</button>
+        </div>
+        <div class="hint" style="margin-top:10px">المستوردة: <b id="barcodeCount">0</b> — الأكواد: <span id="importedQrCodes">—</span></div>
+        <div id="qrMismatchAlert" class="hint" style="margin-top:6px; color:#ffb3b3; display:none"></div>
+        <div class="hint" style="margin-top:12px; color:#b7ffc8">حالة رفع المخزون للسيرفر: <b id="cloudUploadStatus">غير مرفوع</b></div>
+        <div class="small" id="cloudUploadTime"></div>
+      </div>
+    </section>
+
+    <section id="sec-list" class="section">
+      <div class="card">
+        <div class="card-header">
+          <h3>📋 قائمة المدعوين</h3>
+          <div class="row">
+            <button class="btn ok" onclick="sendAllCloud()">📢 إرسال جماعي</button>
+            <button class="btn ok" onclick="sendSelectedCloud()">🎯 إرسال المحدد</button>
+            <button class="btn" onclick="sendAllWhatsApp()">💬 فتح واتساب</button>
+            <button class="btn" onclick="selectAllGuests()">☑️ تحديد الكل</button>
+            <button class="btn" onclick="clearSelection()">⬜ إلغاء التحديد</button>
+            <button class="btn warn" onclick="deleteSelectedGuests()">🗑️ حذف المحدد</button>
+            <button class="btn warn" onclick="deleteAllGuests()">🧹 حذف الكل</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <input id="guestSearch" class="btn" placeholder="بحث بالاسم أو الرقم..." oninput="renderGuestTable()" />
+            <select id="guestStatusFilter" class="btn" onchange="renderGuestTable()">
+              <option value="all">كل الحالات</option>
+              <option value="new">جديدة</option>
+              <option value="sending">جاري الإرسال</option>
+              <option value="sent">مرسل</option>
+              <option value="failed">فشل الإرسال</option>
+            </select>
+            <select id="guestSortBy" class="btn" onchange="renderGuestTable()">
+              <option value="default">الترتيب الافتراضي</option>
+              <option value="name">الاسم</option>
+              <option value="count_desc">عدد الدعوات (الأكثر)</option>
+              <option value="count_asc">عدد الدعوات (الأقل)</option>
+              <option value="sent_first">المرسل أولاً</option>
+            </select>
+          </div>
+          <div class="toolbar-group">
+            <span class="pill">المحدد: <b id="selectedCount">0</b></span>
+            <span class="pill">عدد الصفوف: <b id="filteredCount">0</b></span>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align:center">✓</th>
+                <th>الضيف</th>
+                <th>عدد الدعوات</th>
+                <th>رقم الهاتف</th>
+                <th>الأكواد المخصصة</th>
+                <th>الحالة</th>
+                <th style="text-align:left">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="guestTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="card accent-gold" style="margin-top:14px">
+          <h3>🖊️ نص رسالة الترحيب</h3>
+          <p class="hint" style="color:#fff">المتغيرات: <code>#{{GUEST_NAME}}#</code> و <code>#{{TOTAL_COUNT}}#</code></p>
+          <textarea id="messageTemplate">مرحباً #{{GUEST_NAME}}#،
+نتشرف بدعوتكم لحضور فعاليتنا (إجمالي الدعوات: #{{TOTAL_COUNT}}#).
+الرجاء إحضار/إظهار أحد أكواد الباركود المرفقة للدخول.</textarea>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-reminder" class="section">
+      <div class="card accent-emerald">
+        <h3>🔔 إعدادات التذكير</h3>
+        <div class="grid-2">
+          <input id="reminderLocation" class="btn" placeholder="رابط اللوكيشن (Google Maps)" />
+          <input id="reminderPlace" class="btn" placeholder="المكان / الوقت (اختياري)" />
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" onclick="pasteLocation()">📍 لصق اللوكيشن</button>
+        </div>
+        <div class="hint" style="margin-top:10px">المتغيرات: <code>#{{GUEST_NAME}}#</code> <code>#{{EVENT_ID}}#</code> <code>#{{LOCATION_URL}}#</code> <code>#{{CODE}}#</code></div>
+        <textarea id="reminderText">🔔 تذكير بموعد #{{EVENT_ID}}#
+مرحباً #{{GUEST_NAME}}#
+📍 الموقع: #{{LOCATION_URL}}#
+🎟️ كود الدخول: #{{CODE}}#</textarea>
+        <div class="row" style="margin-top:12px">
+          <button class="btn ok" onclick="sendSelectedReminder()">🎯 تذكير المحدد</button>
+          <button class="btn ok" onclick="sendAllReminder()">📢 تذكير الكل</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const DEFAULT_CARD_STOCK = 300;
+    const LS_THEME = "krs_theme_mode";
+    const LS_AUTH = "hormez_auth_event";
+    const LS_ACTIVE_EVENT = "hormez_active_event_v5";
+    const LS_CLOUD_CFG = "hormez_cloud_cfg_v2";
+    const LS_EVENT_CARD_STOCK = "hormez_event_card_stock";
+    const DEFAULT_UPLOAD_URL = "https://uploadbarcodecard-veaqamnndq-uc.a.run.app";
+    const DEFAULT_SEND_URL = "https://sendwelcomeandcards-veaqamnndq-uc.a.run.app";
+    const DEFAULT_REMINDER_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendReminderText";
+
+    let eventsMaster = [], ACTIVE_EVENT = null, guests = [], barcodeImages = {}, availableQrIds = [];
+    let internalGuestIdCounter = 0, selectedGuestIds = new Set(), assignGuestId = null;
+
+    function applyTheme(mode){ document.documentElement.setAttribute("data-theme", mode); localStorage.setItem(LS_THEME, mode); }
+    function toggleTheme(){ const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); }
+    function waitForFirebaseReady(timeout=8000){ return new Promise((resolve,reject)=>{ if(window.firebaseReady&&window.firebaseDb&&window.firebaseTools){ resolve(true); return; } const timer=setTimeout(()=>{ window.removeEventListener("firebase-ready",onReady); reject(new Error("Firebase init timeout")); },timeout); function onReady(){ clearTimeout(timer); resolve(true); } window.addEventListener("firebase-ready",onReady,{once:true}); }); }
+    function getCloudCfg(){ try{ const o=JSON.parse(localStorage.getItem(LS_CLOUD_CFG)||"null"); return { uploadUrl:(o?.uploadUrl||DEFAULT_UPLOAD_URL).trim(), sendUrl:(o?.sendUrl||DEFAULT_SEND_URL).trim(), reminderUrl:(o?.reminderUrl||DEFAULT_REMINDER_URL).trim() }; }catch{ return { uploadUrl:DEFAULT_UPLOAD_URL, sendUrl:DEFAULT_SEND_URL, reminderUrl:DEFAULT_REMINDER_URL }; } }
+    function saveCloudCfg(){ localStorage.setItem(LS_CLOUD_CFG, JSON.stringify({ uploadUrl:(document.getElementById("cfgUploadUrl").value||"").trim()||DEFAULT_UPLOAD_URL, sendUrl:(document.getElementById("cfgSendUrl").value||"").trim()||DEFAULT_SEND_URL, reminderUrl:(document.getElementById("cfgReminderUrl").value||"").trim()||DEFAULT_REMINDER_URL })); alert("تم حفظ روابط Cloud ✅"); }
+    function getActiveEventId(){ return ACTIVE_EVENT?.eventId || ""; }
+    function getActiveEventName(){ return ACTIVE_EVENT?.eventName || ""; }
+    function normalizeEventName(v){ return String(v ?? "").trim().replace(/\s+/g," "); }
+    function keyForEvent(base){ const eid=getActiveEventId() || "no_event"; return `${base}_${eid}`; }
+    function saveActiveEventLocally(evt){ ACTIVE_EVENT = evt || null; localStorage.setItem(LS_ACTIVE_EVENT, JSON.stringify(evt || null)); }
+    function loadSavedActiveEvent(){ try{ const s=JSON.parse(localStorage.getItem(LS_ACTIVE_EVENT)||"null"); if(s?.eventId) ACTIVE_EVENT=s; }catch{} }
+    function ensureActiveEvent(){ if(!ACTIVE_EVENT?.eventId){ alert("اختر الحدث أولاً."); return false; } return true; }
+    function getJSON(k, fb){ try{ return JSON.parse(localStorage.getItem(k)||JSON.stringify(fb)); }catch{ return fb; } }
+    function setJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+
+    function getEventCardStock(){
+      if(!getActiveEventId()) return DEFAULT_CARD_STOCK;
+      const saved = parseInt(localStorage.getItem(keyForEvent(LS_EVENT_CARD_STOCK)), 10);
+      return (!isNaN(saved) && saved > 0) ? saved : DEFAULT_CARD_STOCK;
+    }
+    function syncEventStockUI(){ const el=document.getElementById("eventCardStock"); if(el) el.value = getEventCardStock(); }
+    function saveEventCardStock(){
+      if(!ensureActiveEvent()) return;
+      const n=Math.max(1, parseInt(document.getElementById("eventCardStock").value,10)||DEFAULT_CARD_STOCK);
+      localStorage.setItem(keyForEvent(LS_EVENT_CARD_STOCK), String(n));
+      autoDistribute(); persistAll(); renderGuestTable(); refreshQrUI(); syncEventStockUI();
+      alert("تم حفظ رصيد الكروت لهذا الحدث ✅");
+    }
+    function resetEventCardStock(){
+      if(!ensureActiveEvent()) return;
+      localStorage.removeItem(keyForEvent(LS_EVENT_CARD_STOCK));
+      autoDistribute(); persistAll(); renderGuestTable(); refreshQrUI(); syncEventStockUI();
+      alert("تمت إعادة الرصيد الافتراضي لهذا الحدث ✅");
+    }
+
+    async function loadEventsFromInvites(){
+      const authErr=document.getElementById("authErr"); if(authErr) authErr.textContent="";
+      try{
+        await waitForFirebaseReady();
+        const db=window.firebaseDb; const { collection, getDocs } = window.firebaseTools || {};
+        if(!db || !collection || !getDocs) throw new Error("Firebase غير جاهز");
+        const snap = await getDocs(collection(db, "invites"));
+        const map = new Map();
+        snap.forEach(doc=>{
+          const d=doc.data()||{};
+          const eventName=normalizeEventName(d.eventName || d.EventName || d.event || d.event_id || "");
+          if(!eventName) return;
+          const eventId=String(d.eventId || d.event_id || eventName).trim();
+          const key=eventId || eventName;
+          if(!map.has(key)) map.set(key, { eventId:eventId || eventName, eventName });
+        });
+        eventsMaster = Array.from(map.values()).sort((a,b)=>a.eventName.localeCompare(b.eventName, "ar"));
+        populateEventDropdown(); fillEventSwitcher();
+        if(!eventsMaster.length && authErr) authErr.textContent="لم يتم العثور على أحداث داخل invites";
+      }catch(err){
+        console.error("loadEventsFromInvites error:", err);
+        eventsMaster=[]; populateEventDropdown(); fillEventSwitcher();
+        if(authErr) authErr.textContent="تعذر تحميل الأحداث: " + (err?.message || err);
+      }
+    }
+
+    function populateEventDropdown(){
+      const sel=document.getElementById("authEvent");
+      sel.innerHTML = eventsMaster.length ? `<option value="">اختر الحدث</option>` : `<option value="">لا توجد أحداث متاحة</option>`;
+      eventsMaster.forEach(evt=>{ const op=document.createElement("option"); op.value=evt.eventId; op.textContent=evt.eventName; sel.appendChild(op); });
+      if(ACTIVE_EVENT?.eventId) sel.value = ACTIVE_EVENT.eventId;
+    }
+    function fillEventSwitcher(){
+      const sel=document.getElementById("eventSwitcher");
+      sel.innerHTML = eventsMaster.length ? `<option value="">اختر الحدث</option>` : `<option value="">لا توجد أحداث</option>`;
+      eventsMaster.forEach(evt=>{ const op=document.createElement("option"); op.value=evt.eventId; op.textContent=evt.eventName; sel.appendChild(op); });
+      if(ACTIVE_EVENT?.eventId) sel.value = ACTIVE_EVENT.eventId;
+    }
+    function syncEventUI(){
+      document.getElementById("currentEvent").textContent = getActiveEventName() || "بدون حدث";
+      document.getElementById("eventName").value = getActiveEventName() || "";
+      if(ACTIVE_EVENT?.eventId){
+        document.getElementById("authEvent").value = ACTIVE_EVENT.eventId;
+        document.getElementById("eventSwitcher").value = ACTIVE_EVENT.eventId;
+      }
+    }
+
+    function normalizeGuestShape(g){
+      return {
+        internalId:g.internalId||0, name:g.name||"", phone:g.phone||"", totalNeeded:g.totalNeeded||1,
+        assignedQrIds:Array.isArray(g.assignedQrIds)?g.assignedQrIds:[], isManuallyAssigned:!!g.isManuallyAssigned,
+        inviteStatus:g.inviteStatus||"new", reminderStatus:g.reminderStatus||"", inviteAlreadySent:!!g.inviteAlreadySent,
+        wamid:g.wamid||"", reminderWamid:g.reminderWamid||"", err:g.err||"", reminderErr:g.reminderErr||""
+      };
+    }
+
+    function loadEventScopedData(){
+      if(!getActiveEventId()){ guests=[]; availableQrIds=[]; barcodeImages={}; internalGuestIdCounter=0; syncEventStockUI(); return; }
+      guests = getJSON(keyForEvent("hormez_guests"), []).map(normalizeGuestShape);
+      availableQrIds = getJSON(keyForEvent("hormez_qrcards"), []);
+      barcodeImages = {};
+      internalGuestIdCounter = guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
+      document.getElementById("messageTemplate").value = localStorage.getItem(keyForEvent("hormez_message_template")) || `مرحباً #{{GUEST_NAME}}#،
+نتشرف بدعوتكم لحضور فعاليتنا (إجمالي الدعوات: #{{TOTAL_COUNT}}#).
+الرجاء إحضار/إظهار أحد أكواد الباركود المرفقة للدخول.`;
+      document.getElementById("reminderText").value = localStorage.getItem(keyForEvent("hormez_reminder_text")) || `🔔 تذكير بموعد #{{EVENT_ID}}#
+مرحباً #{{GUEST_NAME}}#
+📍 الموقع: #{{LOCATION_URL}}#
+🎟️ كود الدخول: #{{CODE}}#`;
+      document.getElementById("reminderLocation").value = localStorage.getItem(keyForEvent("hormez_reminder_loc")) || "";
+      document.getElementById("reminderPlace").value = localStorage.getItem(keyForEvent("hormez_reminder_place")) || "";
+      syncEventStockUI();
+    }
+
+    function persistAll(){
+      if(!getActiveEventId()) return;
+      setJSON(keyForEvent("hormez_guests"), guests);
+      setJSON(keyForEvent("hormez_qrcards"), availableQrIds);
+      localStorage.setItem(keyForEvent("hormez_message_template"), document.getElementById("messageTemplate").value || "");
+      localStorage.setItem(keyForEvent("hormez_reminder_text"), document.getElementById("reminderText").value || "");
+      localStorage.setItem(keyForEvent("hormez_reminder_loc"), document.getElementById("reminderLocation").value || "");
+      localStorage.setItem(keyForEvent("hormez_reminder_place"), document.getElementById("reminderPlace").value || "");
+    }
+
+    function refreshCloudUploadBadge(){
+      const st=document.getElementById("cloudUploadStatus"), tm=document.getElementById("cloudUploadTime");
+      if(!getActiveEventId()){ st.textContent="غير مرفوع"; tm.textContent=""; return; }
+      const mark=localStorage.getItem(keyForEvent("hormez_cloud_upload_mark"));
+      st.textContent = mark ? "مرفوع ✅" : "غير مرفوع";
+      tm.textContent = mark ? "آخر رفع: " + mark : "";
+    }
+
+    function reloadCurrentEventData(){ loadEventScopedData(); selectedGuestIds.clear(); syncEventUI(); renderGuestTable(); updateKPIs(); refreshQrUI(); refreshCloudUploadBadge(); }
+
+    function showAuth(){ document.getElementById("authGate").style.display="flex"; }
+    function hideAuth(){ document.getElementById("authGate").style.display="none"; }
+    function authLogin(){
+      const eventId=document.getElementById("authEvent").value.trim(), err=document.getElementById("authErr");
+      err.textContent="";
+      if(!eventId){ err.textContent="اختر الحدث أولاً"; return; }
+      const evt=eventsMaster.find(x=>x.eventId===eventId);
+      if(!evt){ err.textContent="الحدث غير موجود"; return; }
+      saveActiveEventLocally(evt);
+      localStorage.setItem(LS_AUTH, JSON.stringify({ eventId:evt.eventId, eventName:evt.eventName }));
+      reloadCurrentEventData();
+      hideAuth();
+    }
+    function logout(){
+      localStorage.removeItem(LS_AUTH); localStorage.removeItem(LS_ACTIVE_EVENT);
+      ACTIVE_EVENT=null; guests=[]; availableQrIds=[]; barcodeImages={}; selectedGuestIds.clear();
+      syncEventUI(); syncEventStockUI(); renderGuestTable(); updateKPIs(); refreshQrUI(); refreshCloudUploadBadge(); showAuth();
+    }
+    async function reloadEventsList(){ await loadEventsFromInvites(); syncEventUI(); alert("تم تحديث قائمة الأحداث ✅"); }
+    function switchEventFromPanel(eventId){
+      if(!eventId) return;
+      const evt=eventsMaster.find(x=>x.eventId===eventId); if(!evt) return;
+      saveActiveEventLocally(evt);
+      localStorage.setItem(LS_AUTH, JSON.stringify({ eventId:evt.eventId, eventName:evt.eventName }));
+      reloadCurrentEventData();
+      alert(`تم اختيار الحدث: ${evt.eventName}`);
+    }
+
+    function normPhone(p){ return String(p||"").replace(/[^\d]/g,""); }
+    function normalizeUAEPhone(input){ let p=normPhone(input); if(!p) return ""; if(p.startsWith("05")&&p.length===10) return "971"+p.slice(1); if(p.startsWith("5")&&p.length===9) return "971"+p; if(p.startsWith("971")) return p; return p; }
+    function prettyErr(e){ try{ if(!e) return "Unknown error"; if(typeof e==="string") return e; if(e instanceof Error) return e.message||String(e); if(typeof e==="object") return JSON.stringify(e,null,2); return String(e);}catch{return "Unknown error";} }
+    async function postJsonStrict(url,payload){ const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const raw=await r.text(); let j=null; try{ j=JSON.parse(raw);}catch{} if(!r.ok) throw new Error(`HTTP ${r.status} :: ${raw}`); if(j&&j.ok===false) throw new Error(`APP_ERROR :: ${raw}`); return j||{raw}; }
+
+    function toggleSelectGuest(id,checked){ if(checked) selectedGuestIds.add(id); else selectedGuestIds.delete(id); document.getElementById("selectedCount").textContent=selectedGuestIds.size; }
+    function selectAllGuests(){ if(!guests.length){ alert("لا يوجد ضيوف لتحديدهم."); return; } guests.forEach(g=>selectedGuestIds.add(g.internalId)); renderGuestTable(); }
+    function clearSelection(){ selectedGuestIds.clear(); renderGuestTable(); }
+    function deleteSelectedGuests(){ if(selectedGuestIds.size===0){ alert("لم يتم تحديد أي ضيف."); return; } if(!confirm(`حذف ${selectedGuestIds.size} ضيف؟`)) return; guests=guests.filter(g=>!selectedGuestIds.has(g.internalId)); selectedGuestIds.clear(); persistAll(); autoDistribute(); renderGuestTable(); updateKPIs(); refreshQrUI(); }
+    function deleteAllGuests(){ if(!guests.length){ alert("لا يوجد ضيوف للحذف."); return; } if(!confirm(`سيتم حذف كل الضيوف (${guests.length}). هل أنت متأكد؟`)) return; guests=[]; selectedGuestIds.clear(); persistAll(); autoDistribute(); renderGuestTable(); updateKPIs(); refreshQrUI(); }
+
+    function openAssignModal(id){
+      assignGuestId=id;
+      const guest=guests.find(g=>g.internalId===id); if(!guest) return;
+      const allowed=availableQrIds.slice(0, Math.min(getEventCardStock(), availableQrIds.length));
+      const usedByOthers=guests.filter(g=>g.internalId!==id).flatMap(g=>g.assignedQrIds||[]);
+      const container=document.getElementById("chipsContainer");
+      container.innerHTML="";
+      allowed.forEach(code=>{
+        const chip=document.createElement("span");
+        chip.className="chip"; chip.textContent=code;
+        if((guest.assignedQrIds||[]).includes(code)) chip.classList.add("selected");
+        chip.onclick=()=>{
+          if(chip.classList.contains("selected")) chip.classList.remove("selected");
+          else{
+            if(usedByOthers.includes(code)){ alert(`الكود "${code}" مستخدم حالياً لضيف آخر.`); return; }
+            if(container.querySelectorAll(".chip.selected").length>=guest.totalNeeded){ alert(`لا يمكنك اختيار أكثر من ${guest.totalNeeded} كود لهذا الضيف.`); return; }
+            chip.classList.add("selected");
+          }
+          updateAssignHint();
+        };
+        container.appendChild(chip);
+      });
+      updateAssignHint();
+      document.getElementById("assignGate").style.display="flex";
+    }
+    function updateAssignHint(){ const guest=guests.find(g=>g.internalId===assignGuestId); if(!guest) return; document.getElementById("assignHint").textContent=`اختر ${guest.totalNeeded} كود (المحدد حالياً: ${document.querySelectorAll("#chipsContainer .chip.selected").length})`; }
+    function closeAssign(){ assignGuestId=null; document.getElementById("assignGate").style.display="none"; }
+    function saveAssign(){
+      const guest=guests.find(g=>g.internalId===assignGuestId); if(!guest) return;
+      const sel=Array.from(document.querySelectorAll("#chipsContainer .chip.selected")).map(el=>el.textContent);
+      if(sel.length!==guest.totalNeeded){ alert(`يجب اختيار ${guest.totalNeeded} كود بالضبط.`); return; }
+      const others=guests.filter(g=>g.internalId!==guest.internalId).flatMap(g=>g.assignedQrIds||[]);
+      if(sel.some(c=>others.includes(c))){ alert("أحد الأكواد المختارة مستخدم لضيف آخر."); return; }
+      guest.assignedQrIds=sel; guest.isManuallyAssigned=true;
+      persistAll(); renderGuestTable(); refreshQrUI(); closeAssign();
+    }
+
+    document.querySelectorAll("#tabs .tab").forEach(tab=>{
+      tab.addEventListener("click", ()=>{
+        document.querySelectorAll("#tabs .tab").forEach(t=>t.classList.remove("active"));
+        tab.classList.add("active");
+        document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+        document.querySelector(tab.dataset.section).classList.add("active");
+      });
+    });
+
+    function exportJSON(){
+      if(!ensureActiveEvent()) return;
+      const payload={ version:11, eventId:getActiveEventId(), eventName:getActiveEventName(), eventCardStock:getEventCardStock(), guests, availableQrIds, internalGuestIdCounter, messageTemplate:document.getElementById("messageTemplate").value||"", reminderText:document.getElementById("reminderText").value||"", reminderLocation:document.getElementById("reminderLocation").value||"", reminderPlace:document.getElementById("reminderPlace").value||"", cloudCfg:getCloudCfg(), cloudUploadMark:localStorage.getItem(keyForEvent("hormez_cloud_upload_mark"))||"" };
+      saveAs(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}), `sender_${payload.eventName||"event"}_${Date.now()}.json`);
+    }
+
+    function importJSONFile(file){
+      if(!file || !ensureActiveEvent()) return;
+      const r=new FileReader();
+      r.onload=(e)=>{
+        try{
+          const data=JSON.parse(e.target.result);
+          guests=Array.isArray(data.guests)?data.guests.map(normalizeGuestShape):[];
+          availableQrIds=Array.isArray(data.availableQrIds)?data.availableQrIds:[];
+          internalGuestIdCounter=data.internalGuestIdCounter || guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
+          if(data.eventCardStock) localStorage.setItem(keyForEvent(LS_EVENT_CARD_STOCK), String(Math.max(1, parseInt(data.eventCardStock,10)||DEFAULT_CARD_STOCK)));
+          if(data.messageTemplate) document.getElementById("messageTemplate").value=data.messageTemplate;
+          if(data.reminderText) document.getElementById("reminderText").value=data.reminderText;
+          if(data.reminderLocation) document.getElementById("reminderLocation").value=data.reminderLocation;
+          if(data.reminderPlace) document.getElementById("reminderPlace").value=data.reminderPlace;
+          if(data.cloudCfg) localStorage.setItem(LS_CLOUD_CFG, JSON.stringify(data.cloudCfg));
+          if(data.cloudUploadMark) localStorage.setItem(keyForEvent("hormez_cloud_upload_mark"), data.cloudUploadMark);
+          selectedGuestIds.clear(); persistAll(); renderGuestTable(); updateKPIs(); refreshQrUI(); refreshCloudUploadBadge(); syncEventStockUI();
+          const cfg=getCloudCfg(); document.getElementById("cfgUploadUrl").value=cfg.uploadUrl; document.getElementById("cfgSendUrl").value=cfg.sendUrl; document.getElementById("cfgReminderUrl").value=cfg.reminderUrl;
+          alert("تم الاستيراد بنجاح ✅");
+        }catch{ alert("ملف JSON غير صالح"); }
+      };
+      r.readAsText(file);
+    }
+
+    function handleFileUpload(){
+      if(!ensureActiveEvent()) return;
+      const f=document.getElementById("guestListUpload").files[0];
+      if(!f){ alert("اختر ملفًا"); return; }
+      const ext=f.name.split(".").pop().toLowerCase();
+      if(ext==="csv"){
+        Papa.parse(f,{header:true,skipEmptyLines:true,complete:(res)=>processImportedData(res.data),error:(e)=>alert("CSV خطأ: "+e.message)});
+      }else if(["xlsx","xls"].includes(ext)){
+        const r=new FileReader();
+        r.onload=(e)=>{ const data=new Uint8Array(e.target.result); const wb=XLSX.read(data,{type:"array"}); const ws=wb.Sheets[wb.SheetNames[0]]; processImportedData(XLSX.utils.sheet_to_json(ws)); };
+        r.readAsArrayBuffer(f);
+      }else alert("استخدم CSV أو XLSX");
+    }
+
+    function processImportedData(data){
+      if(!Array.isArray(data)||!data.length){ alert("الملف فارغ"); return; }
+      const alias={ name:["name","full name","guest","guest name","الاسم","اسم","اسم الضيف"], phone:["phone","mobile","tel","number","الجوال","الهاتف","رقم","رقم الهاتف","رقم الجوال"], totalneeded:["totalneeded","total needed","total_needed","count","qty","tickets","invites","total","total cards","عدد","عدد الدعوات","عدد البطاقات","العدد"] };
+      const keys=Object.keys(data[0]||{}), norm=(s)=>String(s??"").toLowerCase().trim();
+      const findKey=(wanted)=>keys.find(k=>alias[wanted].map(norm).includes(norm(k)))||null;
+      const kName=findKey("name"), kPhone=findKey("phone"), kTotal=findKey("totalneeded");
+      if(!kName||!kPhone||!kTotal){ alert("الأعمدة المطلوبة: name/الاسم + phone/الهاتف + totalNeeded/عدد الدعوات"); return; }
+      internalGuestIdCounter=guests.reduce((m,g)=>Math.max(m,g.internalId||0),0);
+      const newOnes=[];
+      data.forEach(row=>{
+        const name=String(row[kName]??"").trim(), phone=normalizeUAEPhone(String(row[kPhone]??"").trim()), total=Math.max(1, parseInt(row[kTotal]??1)||1);
+        if(!name||!phone) return;
+        if(guests.some(x=>normPhone(x.phone)===normPhone(phone))) return;
+        internalGuestIdCounter++;
+        newOnes.push(normalizeGuestShape({ internalId:internalGuestIdCounter, name, phone, totalNeeded:total, assignedQrIds:[], isManuallyAssigned:false, inviteStatus:"new", reminderStatus:"", wamid:"", reminderWamid:"", err:"", reminderErr:"", inviteAlreadySent:false }));
+      });
+      guests=guests.concat(newOnes); persistAll(); autoDistribute(); renderGuestTable(); updateKPIs(); refreshQrUI(); document.getElementById("guestCount").textContent=guests.length; alert(`تم إضافة ${newOnes.length} ضيف جديد ✅`);
+    }
+
+    async function importFromContacts(){
+      if(!ensureActiveEvent()) return;
+      try{
+        if(!("contacts" in navigator)||!("select" in navigator.contacts)){ alert("ميزة استيراد جهات الاتصال غير مدعومة على هذا المتصفح."); return; }
+        const picked=await navigator.contacts.select(["name","tel"], { multiple:true });
+        if(!picked||!picked.length){ alert("لم يتم اختيار أي جهة اتصال"); return; }
+        let added=0;
+        picked.forEach(c=>{
+          const name=(c.name&&c.name[0])||"بدون اسم", phone=normalizeUAEPhone((c.tel&&c.tel[0])||"");
+          if(!phone||guests.some(x=>normPhone(x.phone)===normPhone(phone))) return;
+          internalGuestIdCounter++;
+          guests.push(normalizeGuestShape({ internalId:internalGuestIdCounter, name, phone, totalNeeded:1, assignedQrIds:[], isManuallyAssigned:false, inviteStatus:"new", reminderStatus:"", wamid:"", reminderWamid:"", err:"", reminderErr:"", inviteAlreadySent:false }));
+          added++;
+        });
+        persistAll(); autoDistribute(); renderGuestTable(); updateKPIs(); refreshQrUI(); alert(`تم استيراد ${added} جهة اتصال ✅`);
+      }catch(e){ console.error(e); alert("تعذر الوصول لجهات الاتصال."); }
+    }
+
+    function addGuestManually(){
+      if(!ensureActiveEvent()) return;
+      const n=document.getElementById("newGuestName").value.trim(), p=normalizeUAEPhone(document.getElementById("newGuestPhone").value.trim()), c=Math.max(1, parseInt(document.getElementById("newGuestTotalNeeded").value)||1);
+      if(!n||!p){ alert("أدخل الاسم والهاتف"); return; }
+      internalGuestIdCounter++;
+      guests.push(normalizeGuestShape({ internalId:internalGuestIdCounter, name:n, phone:p, totalNeeded:c, assignedQrIds:[], isManuallyAssigned:false, inviteStatus:"new", reminderStatus:"", wamid:"", reminderWamid:"", err:"", reminderErr:"", inviteAlreadySent:false }));
+      persistAll(); autoDistribute(); renderGuestTable(); updateKPIs(); refreshQrUI();
+      document.getElementById("newGuestName").value=""; document.getElementById("newGuestPhone").value=""; document.getElementById("newGuestTotalNeeded").value="1"; document.getElementById("guestCount").textContent=guests.length;
+    }
+
+    function loadBarcodes(){
+      if(!ensureActiveEvent()) return;
+      const files=document.getElementById("barcodeUpload").files;
+      if(!files.length){ alert("اختر ملفات"); return; }
+      barcodeImages={}; availableQrIds=[];
+      let ok=0, total=files.length;
+      Array.from(files).forEach(file=>{
+        const reader=new FileReader();
+        reader.onload=(e)=>{
+          const id=file.name.replace(/\.[^.]+$/,"").trim();
+          barcodeImages[id]=e.target.result;
+          if(!availableQrIds.includes(id)) availableQrIds.push(id);
+          ok++;
+          document.getElementById("barcodeCount").textContent=ok;
+          document.getElementById("importedQrCodes").textContent=availableQrIds.join(", ");
+          if(ok===total){
+            availableQrIds.sort((a,b)=>{ const A=parseInt(a), B=parseInt(b); if(!isNaN(A)&&!isNaN(B)) return A-B; return a.localeCompare(b); });
+            localStorage.removeItem(keyForEvent("hormez_cloud_upload_mark"));
+            refreshCloudUploadBadge(); persistAll(); autoDistribute(); renderGuestTable(); updateKPIs(); refreshQrUI();
+            alert(`تم استيراد ${ok} كود ✅ وتوزيعها تلقائيًا.`);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function uploadAllCardsToCloud(){
+      if(!ensureActiveEvent()) return;
+      const cfg=getCloudCfg();
+      if(!availableQrIds.length){ alert("لا توجد أكواد. استورد صور الباركود أولاً."); return; }
+      if(!Object.keys(barcodeImages||{}).length){ alert("لا توجد صور في الذاكرة. استورد صور الباركود أولاً."); return; }
+      if(!confirm(`سيتم رفع ${availableQrIds.length} صورة للسيرفر.\nالحدث: ${getActiveEventName()}\nCloud eventId: ${getActiveEventId()}\nمتابعة؟`)) return;
+      let ok=0, fail=0;
+      for(const code of availableQrIds){
+        const dataUrl=barcodeImages[code]; if(!dataUrl){ fail++; continue; }
+        try{ await postJsonStrict(cfg.uploadUrl, { eventId:getActiveEventId(), code, dataUrl }); ok++; }catch(e){ fail++; console.error("Upload failed", code, e); }
+        await new Promise(r=>setTimeout(r,120));
+      }
+      if(ok>0) localStorage.setItem(keyForEvent("hormez_cloud_upload_mark"), new Date().toLocaleString("en-GB",{hour12:false}) + ` (ok:${ok} fail:${fail})`);
+      refreshCloudUploadBadge(); alert(`رفع المخزون انتهى ✅\nنجح: ${ok}\nفشل: ${fail}`);
+    }
+
+    function getWelcomeText(guest){ return (document.getElementById("messageTemplate").value||"").replace(/#\{\{GUEST_NAME\}\}#/g, guest.name||"").replace(/#\{\{TOTAL_COUNT\}\}#/g, String(guest.totalNeeded||1)).trim(); }
+    function getReminderText(guest){ return (document.getElementById("reminderText").value||"").replace(/#\{\{GUEST_NAME\}\}#/g, guest.name||"").replace(/#\{\{EVENT_ID\}\}#/g, getActiveEventId()).replace(/#\{\{LOCATION_URL\}\}#/g, document.getElementById("reminderLocation").value||"").replace(/#\{\{CODE\}\}#/g, (guest.assignedQrIds||[])[0]||"").trim(); }
+
+    async function sendWelcomeAndCardsCloud(guest){
+      if(!ensureActiveEvent()) throw new Error("لا يوجد حدث مختار");
+      const cfg=getCloudCfg();
+      if(!guest.assignedQrIds?.length) throw new Error("لا توجد أكواد مخصصة لهذا الضيف");
+      const welcomeText=getWelcomeText(guest); if(!welcomeText) throw new Error("نص الترحيب فارغ");
+      return await postJsonStrict(cfg.sendUrl, { eventId:getActiveEventId(), to:normPhone(guest.phone), name:guest.name, welcomeText, codes:guest.assignedQrIds });
+    }
+    async function sendReminderCloud(guest){
+      if(!ensureActiveEvent()) throw new Error("لا يوجد حدث مختار");
+      const cfg=getCloudCfg(), locationUrl=(document.getElementById("reminderLocation").value||"").trim(), place=(document.getElementById("reminderPlace").value||"").trim();
+      if(!locationUrl) throw new Error("ضع رابط اللوكيشن أولاً");
+      if(!guest.assignedQrIds?.length) throw new Error("لا توجد أكواد مخصصة لهذا الضيف");
+      return await postJsonStrict(cfg.reminderUrl, { eventId:getActiveEventId(), to:normPhone(guest.phone), name:guest.name, code:guest.assignedQrIds[0], locationUrl, place, text:getReminderText(guest) });
+    }
+
+    async function sendAllCloud(){
+      if(!ensureActiveEvent()) return;
+      if(!guests.length){ alert("لا يوجد ضيوف"); return; }
+      const mark=localStorage.getItem(keyForEvent("hormez_cloud_upload_mark"));
+      if(!mark){ if(!confirm("تنبيه: لم يتم رفع صور الباركود للسيرفر بعد.\nقد يفشل الإرسال.\nمتابعة؟")) return; }
+      else{ if(!confirm(`سيتم إرسال (ترحيب + كروت) للجميع لحدث: ${getActiveEventName()}\nمتابعة؟`)) return; }
+      let ok=0, fail=0, previouslySent=0;
+      for(const g of guests){
+        try{
+          g.inviteStatus="sending"; g.err=""; renderGuestTable();
+          const out=await sendWelcomeAndCardsCloud(g);
+          g.inviteStatus="sent"; g.inviteAlreadySent=false; g.wamid=out.templateWamid || out.textWamid || ""; g.err=""; ok++;
+        }catch(e){
+          const msg=prettyErr(e?.message||e);
+          if(msg.includes("تم إرسالها مسبقًا")){ g.inviteStatus="sent"; g.inviteAlreadySent=false; g.err="تم الإرسال سابقًا من السيرفر، لكن إعادة الإرسال مسموحة من اللوحة"; previouslySent++; }
+          else{ g.inviteStatus="failed"; g.err=msg; fail++; }
+        }
+        persistAll(); renderGuestTable(); await new Promise(r=>setTimeout(r,450));
+      }
+      alert(`تمت العملية ✅\nنجح: ${ok}\nمرسلة سابقًا من السيرفر: ${previouslySent}\nفشل: ${fail}`);
+    }
+
+    async function sendSelectedCloud(){
+      if(!ensureActiveEvent()) return;
+      const list=guests.filter(g=>selectedGuestIds.has(g.internalId));
+      if(!list.length){ alert("لم يتم تحديد أي ضيف"); return; }
+      let ok=0, fail=0, previouslySent=0;
+      for(const g of list){
+        try{
+          g.inviteStatus="sending"; g.err=""; renderGuestTable();
+          const out=await sendWelcomeAndCardsCloud(g);
+          g.inviteStatus="sent"; g.inviteAlreadySent=false; g.wamid=out.templateWamid || out.textWamid || ""; g.err=""; ok++;
+        }catch(e){
+          const msg=prettyErr(e?.message||e);
+          if(msg.includes("تم إرسالها مسبقًا")){ g.inviteStatus="sent"; g.inviteAlreadySent=false; g.err="تم الإرسال سابقًا من السيرفر، لكن إعادة الإرسال مسموحة من اللوحة"; previouslySent++; }
+          else{ g.inviteStatus="failed"; g.err=msg; fail++; }
+        }
+        persistAll(); renderGuestTable(); await new Promise(r=>setTimeout(r,450));
+      }
+      alert(`تمت العملية ✅\nنجح: ${ok}\nمرسلة سابقًا من السيرفر: ${previouslySent}\nفشل: ${fail}`);
+    }
+
+    async function sendSelectedReminder(){
+      if(!ensureActiveEvent()) return;
+      const list=guests.filter(g=>selectedGuestIds.has(g.internalId));
+      if(!list.length){ alert("لم يتم تحديد أي ضيف"); return; }
+      let ok=0, fail=0;
+      for(const g of list){
+        try{ const out=await sendReminderCloud(g); g.reminderStatus="sent"; g.reminderWamid=out?.wamid||""; g.reminderErr=""; ok++; }
+        catch(e){ g.reminderStatus="failed"; g.reminderErr=prettyErr(e?.message||e); fail++; }
+        persistAll(); renderGuestTable(); await new Promise(r=>setTimeout(r,450));
+      }
+      alert(`تم التذكير ✅\nنجح: ${ok}\nفشل: ${fail}`);
+    }
+
+    async function sendAllReminder(){
+      if(!ensureActiveEvent()) return;
+      if(!guests.length){ alert("لا يوجد ضيوف"); return; }
+      let ok=0, fail=0;
+      for(const g of guests){
+        try{ const out=await sendReminderCloud(g); g.reminderStatus="sent"; g.reminderWamid=out?.wamid||""; g.reminderErr=""; ok++; }
+        catch(e){ g.reminderStatus="failed"; g.reminderErr=prettyErr(e?.message||e); fail++; }
+        persistAll(); renderGuestTable(); await new Promise(r=>setTimeout(r,450));
+      }
+      alert(`تم التذكير ✅\nنجح: ${ok}\nفشل: ${fail}`);
+    }
+
+    async function pasteLocation(){
+      try{ const txt=await navigator.clipboard.readText(); if(txt&&txt.trim()){ document.getElementById("reminderLocation").value=txt.trim(); persistAll(); return; } }catch(_){}
+      const v=prompt("الصق رابط اللوكيشن:"); if(v){ document.getElementById("reminderLocation").value=v.trim(); persistAll(); }
+    }
+
+    function updateKPIs(){
+      document.getElementById("kpiTotal").textContent=guests.length;
+      document.getElementById("kpiSent").textContent=guests.filter(g=>g.inviteStatus==="sent").length;
+      document.getElementById("kpiRemain").textContent=Math.max(guests.length - guests.filter(g=>g.inviteStatus==="sent").length,0);
+    }
+
+    function getFilteredGuests(){
+      const q=(document.getElementById("guestSearch").value||"").trim().toLowerCase();
+      const statusFilter=document.getElementById("guestStatusFilter").value||"all";
+      const sortBy=document.getElementById("guestSortBy").value||"default";
+      let list=[...guests];
+      if(q){ list=list.filter(g=>String(g.name||"").toLowerCase().includes(q)||String(g.phone||"").toLowerCase().includes(q)||((g.assignedQrIds||[]).join(" ").toLowerCase().includes(q))); }
+      if(statusFilter!=="all"){ list=list.filter(g=>(g.inviteStatus||"new")===statusFilter); }
+      if(sortBy==="name") list.sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"ar"));
+      else if(sortBy==="count_desc") list.sort((a,b)=>(b.totalNeeded||0)-(a.totalNeeded||0));
+      else if(sortBy==="count_asc") list.sort((a,b)=>(a.totalNeeded||0)-(b.totalNeeded||0));
+      else if(sortBy==="sent_first"){ const rank=s=>s==="sent"?0:s==="sending"?1:s==="new"?2:s==="failed"?3:4; list.sort((a,b)=>rank(a.inviteStatus)-rank(b.inviteStatus)); }
+      return list;
+    }
+
+    function renderGuestTable(){
+      const body=document.getElementById("guestTableBody");
+      body.innerHTML="";
+      document.getElementById("guestCount").textContent=guests.length;
+      const idsNow=new Set(guests.map(g=>g.internalId));
+      selectedGuestIds.forEach(id=>{ if(!idsNow.has(id)) selectedGuestIds.delete(id); });
+      const list=getFilteredGuests();
+      document.getElementById("selectedCount").textContent=selectedGuestIds.size;
+      document.getElementById("filteredCount").textContent=list.length;
+
+      list.forEach(guest=>{
+        const tr=document.createElement("tr");
+
+        const tdSel=document.createElement("td");
+        tdSel.setAttribute("data-label","تحديد");
+        tdSel.style.textAlign="center";
+        const cb=document.createElement("input");
+        cb.type="checkbox"; cb.checked=selectedGuestIds.has(guest.internalId); cb.style.transform="scale(1.15)";
+        cb.onchange=(e)=>toggleSelectGuest(guest.internalId, e.target.checked);
+        tdSel.appendChild(cb); tr.appendChild(tdSel);
+
+        const tdName=document.createElement("td");
+        tdName.setAttribute("data-label","الضيف");
+        tdName.innerHTML=`<div class="guest-cell"><div class="guest-name editable" onclick="editGuestDetails(${guest.internalId}, 'name')">${guest.name||""}</div><div class="guest-meta">ID: ${guest.internalId||"—"}</div></div>`;
+        tr.appendChild(tdName);
+
+        const tdCount=document.createElement("td");
+        tdCount.setAttribute("data-label","عدد الدعوات");
+        tdCount.innerHTML=`<div class="guest-cell"><div class="editable" onclick="editTotalNeeded(${guest.internalId})">${guest.totalNeeded||0}</div><div class="guest-meta">قابل للتعديل</div></div>`;
+        tr.appendChild(tdCount);
+
+        const tdPhone=document.createElement("td");
+        tdPhone.setAttribute("data-label","رقم الهاتف");
+        tdPhone.innerHTML=`<div class="guest-cell"><div class="editable" onclick="editGuestDetails(${guest.internalId}, 'phone')">${guest.phone||""}</div><div class="guest-meta">اضغط للتعديل</div></div>`;
+        tr.appendChild(tdPhone);
+
+        const tdQr=document.createElement("td");
+        tdQr.setAttribute("data-label","الأكواد");
+        if((guest.assignedQrIds||[]).length){
+          tdQr.innerHTML=`<div class="codes-wrap">${guest.assignedQrIds.map(code=>`<span class="code-badge">${code}</span>`).join("")}</div><div class="small" style="margin-top:8px"><span class="editable" onclick="assignBarcode(${guest.internalId})">تعيين / تعديل</span></div>`;
+        }else{
+          tdQr.innerHTML=`<div class="guest-cell"><div style="color:var(--danger); font-weight:900">لم يخصَّص</div><div class="small"><span class="editable" onclick="assignBarcode(${guest.internalId})">اختيار الأكواد</span></div></div>`;
+        }
+        tr.appendChild(tdQr);
+
+        const tdStatus=document.createElement("td");
+        tdStatus.setAttribute("data-label","الحالة");
+        if(guest.inviteStatus==="sending") tdStatus.innerHTML=`<span class="status sending">جاري إرسال الدعوة...</span>`;
+        else if(guest.inviteStatus==="failed") tdStatus.innerHTML=`<div class="guest-cell"><span class="status failed">فشل الإرسال</span><div class="small">${guest.err||""}</div></div>`;
+        else if(guest.inviteStatus==="sent"){
+          let extra=`<span class="status sent">مرسل</span>`;
+          if(guest.reminderStatus==="sent") extra += `<br><br><span class="status sending">تم إرسال التذكير</span>`;
+          else if(guest.reminderStatus==="failed") extra += `<br><br><span class="status failed">فشل التذكير</span>`;
+          tdStatus.innerHTML=`<div class="guest-cell">${extra}<div class="small">${guest.err||""}</div></div>`;
+        }else{
+          tdStatus.innerHTML = guest.reminderStatus==="sent" ? `<span class="status sending">تم إرسال التذكير</span>` : `<span class="status new">جديدة</span>`;
+        }
+        tr.appendChild(tdStatus);
+
+        const tdAct=document.createElement("td");
+        tdAct.className="actions"; tdAct.style.textAlign="left"; tdAct.setAttribute("data-label","الإجراءات");
+        tdAct.innerHTML=`
+          <div class="actions-stack">
+            <button class="btn" onclick="assignBarcode(${guest.internalId})">تعيين</button>
+            <button class="btn" onclick="downloadBarcodeImageById(${guest.internalId})">${guest.totalNeeded===1?"PNG":"ZIP"}</button>
+            <button class="btn ok" onclick="sendInviteById(${guest.internalId})">${guest.inviteStatus==="sent"?"إعادة الإرسال":"إرسال الدعوة"}</button>
+            <button class="btn gold" onclick="sendReminderById(${guest.internalId})">التذكير</button>
+            <button class="btn" onclick="sendWhatsAppById(${guest.internalId})">فتح واتساب</button>
+            <button class="btn warn" onclick="deleteGuest(${guest.internalId})">حذف</button>
+          </div>`;
+        tr.appendChild(tdAct);
+
+        body.appendChild(tr);
+      });
+
+      updateKPIs(); refreshQrUI(); persistAll();
+    }
+
+    function getGuestById(id){ return guests.find(g=>g.internalId===id); }
+    async function sendInviteById(id){
+      const guest=getGuestById(id); if(!guest) return;
+      try{
+        guest.inviteStatus="sending"; guest.err=""; renderGuestTable();
+        const out=await sendWelcomeAndCardsCloud(guest);
+        guest.inviteStatus="sent"; guest.inviteAlreadySent=false; guest.wamid=out.templateWamid || out.textWamid || ""; guest.err="";
+        alert("✅ تم إرسال الدعوة");
+      }catch(e){
+        const msg=prettyErr(e?.message||e);
+        if(msg.includes("تم إرسالها مسبقًا")){ guest.inviteStatus="sent"; guest.err="تم الإرسال سابقًا من السيرفر، لكن يمكنك إعادة الإرسال من اللوحة"; alert("ℹ️ هذه الدعوة كانت مرسلة سابقًا من جهة السيرفر"); }
+        else{ guest.inviteStatus="failed"; guest.err=msg; alert("❌ فشل الإرسال:\n"+guest.err); }
+      }
+      persistAll(); renderGuestTable();
+    }
+    async function sendReminderById(id){
+      const guest=getGuestById(id); if(!guest) return;
+      try{ const out=await sendReminderCloud(guest); guest.reminderStatus="sent"; guest.reminderWamid=out?.wamid||""; guest.reminderErr=""; persistAll(); renderGuestTable(); alert("✅ تم إرسال التذكير"); }
+      catch(e){ guest.reminderStatus="failed"; guest.reminderErr=prettyErr(e?.message||e); persistAll(); renderGuestTable(); alert("❌ فشل التذكير:\n"+guest.reminderErr); }
+    }
+    function sendWhatsAppById(id){ const guest=getGuestById(id); if(guest) sendWhatsAppMessage(guest); }
+    function downloadBarcodeImageById(id){ const guest=getGuestById(id); if(guest) downloadBarcodeImage(guest); }
+
+    (async function boot(){
+      applyTheme(localStorage.getItem(LS_THEME) || "dark");
+      const cfg=getCloudCfg();
+      document.getElementById("cfgUploadUrl").value=cfg.uploadUrl;
+      document.getElementById("cfgSendUrl").value=cfg.sendUrl;
+      document.getElementById("cfgReminderUrl").value=cfg.reminderUrl;
+
+      loadSavedActiveEvent();
+      try{ await loadEventsFromInvites(); }catch(e){ console.error(e); }
+
+      try{
+        const s=JSON.parse(localStorage.getItem(LS_AUTH)||"null");
+        if(s?.eventId){
+          const matched=eventsMaster.find(x=>x.eventId===s.eventId) || ACTIVE_EVENT;
+          if(matched){ saveActiveEventLocally(matched); hideAuth(); }
+          else showAuth();
+        }else showAuth();
+      }catch{ showAuth(); }
+
+      if(ACTIVE_EVENT?.eventId) reloadCurrentEventData();
+      else{ renderGuestTable(); updateKPIs(); refreshQrUI(); refreshCloudUploadBadge(); syncEventUI(); syncEventStockUI(); }
+    })();
+
+    (function bindAutoSave(){
+      document.getElementById("messageTemplate").addEventListener("input", ()=>{ if(getActiveEventId()) localStorage.setItem(keyForEvent("hormez_message_template"), document.getElementById("messageTemplate").value||""); });
+      document.getElementById("reminderText").addEventListener("input", ()=>{ if(getActiveEventId()) localStorage.setItem(keyForEvent("hormez_reminder_text"), document.getElementById("reminderText").value||""); });
+      document.getElementById("reminderLocation").addEventListener("input", ()=>{ if(getActiveEventId()) localStorage.setItem(keyForEvent("hormez_reminder_loc"), document.getElementById("reminderLocation").value||""); });
+      document.getElementById("reminderPlace").addEventListener("input", ()=>{ if(getActiveEventId()) localStorage.setItem(keyForEvent("hormez_reminder_place"), document.getElementById("reminderPlace").value||""); });
+    })();
+  </script>
+</body>
+</html>
