@@ -984,150 +984,263 @@
     // =========================
     // Firebase Events
     // =========================
-    function extractEventName(data){
-      return safeStr(data?.eventName || data?.eventId || data?.event);
+   function extractEventName(data){
+  if (!data || typeof data !== "object") return "";
+
+  const candidates = [
+    data.eventName,
+    data.eventId,
+    data.event,
+    data.EventName,
+    data.EventID,
+    data.Event,
+    data.event_name,
+    data.event_id,
+    data.name,
+    data.title
+  ];
+
+  for (const v of candidates) {
+    const s = safeStr(v);
+    if (s) return s;
+  }
+
+  return "";
+}
+
+function extractAllPossibleFields(data){
+  if (!data || typeof data !== "object") return {};
+  const out = {};
+  Object.keys(data).forEach(k=>{
+    out[k] = data[k];
+  });
+  return out;
+}
+
+function syncDropdowns(list, selected){
+  const main = document.getElementById("eventSelector");
+  const mirror = document.getElementById("eventSelectorMirror");
+
+  [main, mirror].forEach(sel=>{
+    if(!sel) return;
+    sel.innerHTML = "";
+
+    if(!list.length){
+      const op = document.createElement("option");
+      op.value = "";
+      op.textContent = "لا توجد أحداث";
+      sel.appendChild(op);
+      return;
     }
 
-    function syncDropdowns(list, selected){
-      const main = document.getElementById("eventSelector");
-      const mirror = document.getElementById("eventSelectorMirror");
+    list.forEach(ev=>{
+      const op = document.createElement("option");
+      op.value = ev;
+      op.textContent = ev;
+      sel.appendChild(op);
+    });
 
-      [main, mirror].forEach(sel=>{
-        if(!sel) return;
-        sel.innerHTML = "";
-        if(!list.length){
-          const op = document.createElement("option");
-          op.value = "";
-          op.textContent = "لا توجد أحداث";
-          sel.appendChild(op);
-          return;
-        }
-        list.forEach(ev=>{
-          const op = document.createElement("option");
-          op.value = ev;
-          op.textContent = ev;
-          sel.appendChild(op);
+    sel.value = selected || list[0];
+  });
+}
+
+function addManualFallbackEvent(){
+  const manualName = prompt("لم يتم العثور على أحداث من Firebase.\nاكتب اسم الحدث يدويًا:");
+  const name = safeStr(manualName);
+  if(!name) return;
+
+  let cached = getJSON(LS_EVENT_CACHE, []);
+  if(!cached.includes(name)){
+    cached.push(name);
+    cached.sort((a,b)=>a.localeCompare(b, "ar"));
+    setJSON(LS_EVENT_CACHE, cached);
+  }
+
+  syncDropdowns(cached, name);
+  saveCurrentEventState();
+  setCurrentEventId(name);
+  loadStateForEvent(name);
+
+  const statusEl = document.getElementById("eventLoadStatus");
+  if(statusEl) statusEl.textContent = `تمت إضافة الحدث يدويًا: ${name}`;
+}
+
+async function refreshEventsFromFirebase(preserveSelection = true){
+  const statusEl = document.getElementById("eventLoadStatus");
+
+  try{
+    if(statusEl) statusEl.textContent = "جارٍ تحميل الأحداث من Firebase...";
+
+    const snap = await db.collection("invites").get();
+
+    console.log("invites docs count =", snap.size);
+
+    if (snap.empty) {
+      const cached = getJSON(LS_EVENT_CACHE, []);
+      syncDropdowns(cached, cached[0] || "");
+
+      if (cached.length) {
+        const selected = preserveSelection && cached.includes(getCurrentEventId())
+          ? getCurrentEventId()
+          : cached[0];
+        setCurrentEventId(selected);
+        loadStateForEvent(selected);
+        if(statusEl) statusEl.textContent = "مجموعة invites فارغة في Firebase — تم استخدام آخر قائمة محفوظة";
+      } else {
+        if(statusEl) statusEl.textContent = "مجموعة invites فارغة في Firebase";
+      }
+      return;
+    }
+
+    const set = new Set();
+    const docsWithoutEvent = [];
+
+    snap.forEach(doc=>{
+      const data = doc.data() || {};
+      const ev = extractEventName(data);
+
+      if(ev){
+        set.add(ev);
+      } else {
+        docsWithoutEvent.push({
+          id: doc.id,
+          data: extractAllPossibleFields(data)
         });
-        sel.value = selected || list[0];
+      }
+    });
+
+    let events = Array.from(set).sort((a,b)=>a.localeCompare(b, "ar"));
+
+    console.log("events extracted =", events);
+    console.log("docs without event field =", docsWithoutEvent);
+
+    if(!events.length){
+      const cached = getJSON(LS_EVENT_CACHE, []);
+      if(cached.length){
+        events = cached;
+      }
+    } else {
+      setJSON(LS_EVENT_CACHE, events);
+    }
+
+    if(!events.length){
+      syncDropdowns([], "");
+      if(statusEl){
+        statusEl.textContent =
+          "تمت قراءة invites لكن لم أجد حقول eventName / eventId / event داخل المستندات. افتح Console لمعرفة أسماء الحقول.";
+      }
+      return;
+    }
+
+    let nextSelected = preserveSelection ? getCurrentEventId() : "";
+    if(!events.includes(nextSelected)){
+      nextSelected = events[0] || "";
+    }
+
+    syncDropdowns(events, nextSelected);
+
+    if(nextSelected){
+      const prev = getCurrentEventId();
+      if(prev !== nextSelected){
+        saveCurrentEventState();
+        setCurrentEventId(nextSelected);
+        loadStateForEvent(nextSelected);
+      }else{
+        setCurrentEventId(nextSelected);
+      }
+    }
+
+    if(statusEl){
+      statusEl.textContent = `تم تحميل ${events.length} حدث من Firebase`;
+    }
+
+  }catch(e){
+    console.error("refreshEventsFromFirebase error:", e);
+
+    const cached = getJSON(LS_EVENT_CACHE, []);
+    const selected = getCurrentEventId() || cached[0] || "";
+    syncDropdowns(cached, selected);
+
+    if(selected){
+      setCurrentEventId(selected);
+      loadStateForEvent(selected);
+    }
+
+    const msg = prettyErr(e?.message || e);
+
+    if(statusEl){
+      statusEl.textContent = `تعذر تحميل الأحداث من Firebase: ${msg}`;
+    }
+  }
+}
+
+function subscribeEventsRealtime(){
+  try{
+    if(eventsUnsub) eventsUnsub();
+
+    eventsUnsub = db.collection("invites").onSnapshot((snap)=>{
+      const set = new Set();
+
+      snap.forEach(doc=>{
+        const ev = extractEventName(doc.data() || {});
+        if(ev) set.add(ev);
       });
-    }
 
-    async function refreshEventsFromFirebase(preserveSelection = true){
-      const statusEl = document.getElementById("eventLoadStatus");
-      try{
-        if(statusEl) statusEl.textContent = "جارٍ تحميل الأحداث من Firebase...";
-        const snap = await db.collection("invites").get();
+      const events = Array.from(set).sort((a,b)=>a.localeCompare(b, "ar"));
 
-        const set = new Set();
-        snap.forEach(doc=>{
-          const ev = extractEventName(doc.data());
-          if(ev) set.add(ev);
-        });
+      console.log("Realtime events =", events);
 
-        let events = Array.from(set).sort((a,b)=>a.localeCompare(b, "ar"));
-        if(!events.length){
-          const cached = getJSON(LS_EVENT_CACHE, []);
-          events = cached.length ? cached : [];
-        } else {
-          setJSON(LS_EVENT_CACHE, events);
-        }
+      if(events.length){
+        setJSON(LS_EVENT_CACHE, events);
 
-        let nextSelected = preserveSelection ? getCurrentEventId() : "";
-        if(!events.includes(nextSelected)){
-          nextSelected = events[0] || "";
-        }
+        const current = getCurrentEventId();
+        const selected = events.includes(current) ? current : events[0];
 
-        syncDropdowns(events, nextSelected);
+        syncDropdowns(events, selected);
 
-        if(nextSelected){
-          const prev = getCurrentEventId();
-          if(prev !== nextSelected){
-            saveCurrentEventState();
-            setCurrentEventId(nextSelected);
-            loadStateForEvent(nextSelected);
-          }else{
-            setCurrentEventId(nextSelected);
-          }
-        }
-
-        if(statusEl){
-          statusEl.textContent = events.length
-            ? `تم تحميل ${events.length} حدث من Firebase`
-            : "لم يتم العثور على أحداث داخل invites";
-        }
-      }catch(e){
-        console.error(e);
-        const cached = getJSON(LS_EVENT_CACHE, []);
-        const selected = getCurrentEventId() || cached[0] || "";
-        syncDropdowns(cached, selected);
-        if(selected){
+        if(!current){
           setCurrentEventId(selected);
           loadStateForEvent(selected);
+        }else{
+          document.getElementById("eventSelector").value = selected;
+          document.getElementById("eventSelectorMirror").value = selected;
+          document.getElementById("currentEvent").textContent = selected;
         }
-        if(statusEl) statusEl.textContent = "تعذر تحميل الأحداث من Firebase — تم استخدام آخر قائمة محفوظة";
+
+        const statusEl = document.getElementById("eventLoadStatus");
+        if(statusEl) statusEl.textContent = `تحديث تلقائي: ${events.length} حدث`;
       }
-    }
+    }, (err)=>{
+      console.error("onSnapshot error", err);
+      const statusEl = document.getElementById("eventLoadStatus");
+      if(statusEl) statusEl.textContent = `فشل التحديث اللحظي: ${prettyErr(err?.message || err)}`;
+    });
+  }catch(e){
+    console.error(e);
+  }
+}
 
-    function subscribeEventsRealtime(){
-      try{
-        if(eventsUnsub) eventsUnsub();
+function handleEventChange(){
+  const sel = document.getElementById("eventSelector");
+  const newEvent = safeStr(sel?.value);
+  if(!newEvent) return;
 
-        eventsUnsub = db.collection("invites").onSnapshot((snap)=>{
-          const set = new Set();
-          snap.forEach(doc=>{
-            const ev = extractEventName(doc.data());
-            if(ev) set.add(ev);
-          });
+  const prev = getCurrentEventId();
+  if(prev === newEvent){
+    document.getElementById("eventSelectorMirror").value = newEvent;
+    return;
+  }
 
-          const events = Array.from(set).sort((a,b)=>a.localeCompare(b, "ar"));
-          if(events.length){
-            setJSON(LS_EVENT_CACHE, events);
-            const current = getCurrentEventId();
-            const selected = events.includes(current) ? current : events[0];
+  saveCurrentEventState();
+  setCurrentEventId(newEvent);
+  document.getElementById("eventSelectorMirror").value = newEvent;
+  loadStateForEvent(newEvent);
+}
 
-            syncDropdowns(events, selected);
-
-            if(!current){
-              setCurrentEventId(selected);
-              loadStateForEvent(selected);
-            }else{
-              document.getElementById("eventSelector").value = selected;
-              document.getElementById("eventSelectorMirror").value = selected;
-              document.getElementById("currentEvent").textContent = selected;
-            }
-
-            const statusEl = document.getElementById("eventLoadStatus");
-            if(statusEl) statusEl.textContent = `تحديث تلقائي: ${events.length} حدث`;
-          }
-        }, (err)=>{
-          console.error("onSnapshot error", err);
-        });
-      }catch(e){
-        console.error(e);
-      }
-    }
-
-    function handleEventChange(){
-      const sel = document.getElementById("eventSelector");
-      const newEvent = safeStr(sel?.value);
-      if(!newEvent) return;
-
-      const prev = getCurrentEventId();
-      if(prev === newEvent){
-        document.getElementById("eventSelectorMirror").value = newEvent;
-        return;
-      }
-
-      saveCurrentEventState();
-      setCurrentEventId(newEvent);
-      document.getElementById("eventSelectorMirror").value = newEvent;
-      loadStateForEvent(newEvent);
-    }
-
-    function syncEventSelectorMirror(value){
-      document.getElementById("eventSelector").value = value;
-      handleEventChange();
-    }
+function syncEventSelectorMirror(value){
+  document.getElementById("eventSelector").value = value;
+  handleEventChange();
+}
 
     // =========================
     // Tabs
