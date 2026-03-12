@@ -10,126 +10,302 @@
 
   <style>
     :root{
-      --bg:#0b0b0c; --panel:#121318; --panel2:#0f1013; --stroke:#2a2b32;
-      --gold:#d4af37; --txt:#e7e7e7; --muted:#a7a7a7; --ok:#25d366; --danger:#ef4444;
-      --chip:#15161b; --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+      --bg:#0b0b0c;
+      --panel:#121318;
+      --panel2:#0f1013;
+      --stroke:#2a2b32;
+      --gold:#d4af37;
+      --txt:#e7e7e7;
+      --muted:#a7a7a7;
+      --ok:#25d366;
+      --danger:#ef4444;
+      --chip:#15161b;
+      --safe-top:env(safe-area-inset-top,0px);
+      --safe-bottom:env(safe-area-inset-bottom,0px);
       --shadow:0 18px 38px rgba(0,0,0,.28);
     }
+
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font-family:"Noto Sans Arabic",system-ui,-apple-system,sans-serif}
+    html,body{
+      margin:0;
+      padding:0;
+      background:var(--bg);
+      color:var(--txt);
+      font-family:"Noto Sans Arabic",system-ui,-apple-system,sans-serif;
+    }
     body{min-height:100vh}
     button,input{font:inherit}
+    a{text-decoration:none;color:inherit}
 
     .topbar{
-      position:sticky; top:0; z-index:999;
+      position:sticky;
+      top:0;
+      z-index:999;
       background:rgba(10,10,12,.92);
-      backdrop-filter: blur(10px);
+      backdrop-filter:blur(10px);
       border-bottom:1px solid var(--stroke);
     }
-    .wrap{max-width:1400px;margin:0 auto;padding:calc(14px + var(--safe-top)) 14px 14px}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.2px}
+
+    .wrap{
+      max-width:1400px;
+      margin:0 auto;
+      padding:calc(14px + var(--safe-top)) 14px 14px;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+
     .logo{
-      width:42px;height:42px;border-radius:12px;
-      display:grid;place-items:center;background:#0f1013;border:1px solid var(--stroke);
-      color:var(--gold); font-weight:900;
-      box-shadow:var(--shadow)
+      width:42px;
+      height:42px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      background:#0f1013;
+      border:1px solid var(--stroke);
+      color:var(--gold);
+      font-weight:900;
+      box-shadow:var(--shadow);
     }
+
     .pill{
-      padding:7px 10px;border-radius:999px;border:1px solid var(--stroke);
-      background:rgba(255,255,255,.04); color:#fff; font-size:12px;
-      display:inline-flex;align-items:center;gap:6px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      color:#fff;
+      font-size:12px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
     }
+
     .pill b{color:#ffe8a3}
+
     .btn{
-      border:1px solid var(--stroke); background:#121318; color:#fff;
-      padding:10px 12px;border-radius:12px; cursor:pointer; font-weight:800;
+      border:1px solid var(--stroke);
+      background:#121318;
+      color:#fff;
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
       min-height:42px;
+      transition:.18s ease;
     }
+
     .btn:hover{border-color:rgba(212,175,55,.6)}
     .btn.gold{border-color:rgba(212,175,55,.5)}
     .btn.danger{border-color:rgba(239,68,68,.5)}
-    .hint{color:var(--muted);font-size:12px}
-    .grid{
-      display:grid; gap:12px; padding:14px;
-      max-width:1400px; margin:0 auto;
-      grid-template-columns: 340px 1fr;
+
+    .hint{
+      color:var(--muted);
+      font-size:12px;
     }
-    @media (max-width: 980px){ .grid{grid-template-columns:1fr;padding:12px;padding-bottom:96px} }
+
+    .grid{
+      display:grid;
+      gap:12px;
+      padding:14px;
+      max-width:1400px;
+      margin:0 auto;
+      grid-template-columns:340px 1fr;
+    }
+
+    @media (max-width:980px){
+      .grid{
+        grid-template-columns:1fr;
+        padding:12px;
+        padding-bottom:96px;
+      }
+    }
 
     .side,.main{
-      background:var(--panel); border:1px solid var(--stroke); border-radius:18px;
-      box-shadow:var(--shadow)
+      background:var(--panel);
+      border:1px solid var(--stroke);
+      border-radius:18px;
+      box-shadow:var(--shadow);
     }
+
     .side{padding:12px}
-    .main{overflow:hidden; min-height:78vh; display:flex; flex-direction:column}
+
+    .main{
+      overflow:hidden;
+      min-height:78vh;
+      display:flex;
+      flex-direction:column;
+    }
 
     .hero{
-      border:1px solid rgba(212,175,55,.25); background:linear-gradient(180deg, rgba(212,175,55,.08), rgba(255,255,255,.02));
-      border-radius:16px; padding:12px; margin-bottom:12px;
+      border:1px solid rgba(212,175,55,.25);
+      background:linear-gradient(180deg, rgba(212,175,55,.08), rgba(255,255,255,.02));
+      border-radius:16px;
+      padding:12px;
+      margin-bottom:12px;
     }
-    .hero-title{font-size:14px;font-weight:900;margin-bottom:4px}
-    .hero .mini{font-size:11px;color:var(--muted);line-height:1.7}
 
-    .nav{display:flex; flex-direction:column; gap:10px}
-    .nav .item{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:10px 12px; border-radius:14px;
-      border:1px solid var(--stroke); background:var(--panel2);
-      cursor:pointer; user-select:none; transition:.18s ease;
+    .hero-title{
+      font-size:14px;
+      font-weight:900;
+      margin-bottom:4px;
     }
+
+    .mini{
+      font-size:11px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .nav .item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background:var(--panel2);
+      cursor:pointer;
+      user-select:none;
+      transition:.18s ease;
+    }
+
     .nav .item.active{
       border-color:rgba(212,175,55,.8);
       box-shadow:0 0 0 2px rgba(212,175,55,.12) inset;
-      transform:translateY(-1px)
+      transform:translateY(-1px);
     }
+
     .nav .item .title{font-weight:900}
+
     .nav .item .tag{
-      font-size:11px; padding:4px 8px; border-radius:999px;
-      background:rgba(255,255,255,.06); border:1px solid var(--stroke); color:#ddd;
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--stroke);
+      color:#ddd;
       white-space:nowrap;
     }
 
     .toolbar{
-      border-bottom:1px solid var(--stroke); padding:10px 12px;
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      border-bottom:1px solid var(--stroke);
+      padding:10px 12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
       background:rgba(255,255,255,.02);
     }
+
     .toolbar .spacer{flex:1}
+
     .input{
-      min-height:42px; border:1px solid var(--stroke); background:#0f1013; color:#fff;
-      padding:10px 12px; border-radius:12px; width:220px;
+      min-height:42px;
+      border:1px solid var(--stroke);
+      background:#0f1013;
+      color:#fff;
+      padding:10px 12px;
+      border-radius:12px;
+      width:220px;
     }
-    .frame{width:100%; border:0; flex:1; background:#0b0b0c; min-height:72vh}
-    .mini{font-size:11px; color:var(--muted); line-height:1.6}
+
+    .frame{
+      width:100%;
+      border:0;
+      flex:1;
+      background:#0b0b0c;
+      min-height:72vh;
+    }
+
     .dangerBox{
-      border:1px solid rgba(239,68,68,.35); background: rgba(239,68,68,.08);
-      padding:10px; border-radius:14px;
+      border:1px solid rgba(239,68,68,.35);
+      background:rgba(239,68,68,.08);
+      padding:10px;
+      border-radius:14px;
+      margin-top:14px;
     }
+
     .installBox{
-      border:1px solid rgba(37,211,102,.25); background:rgba(37,211,102,.08);
-      padding:10px; border-radius:14px; margin-top:12px; display:none;
+      border:1px solid rgba(37,211,102,.25);
+      background:rgba(37,211,102,.08);
+      padding:10px;
+      border-radius:14px;
+      margin-top:12px;
+      display:none;
     }
+
     .installBox.show{display:block}
 
     .mobileTabs{
-      display:none; position:fixed; left:0; right:0; bottom:0; z-index:999;
-      background:rgba(10,10,12,.95); backdrop-filter:blur(10px); border-top:1px solid var(--stroke);
+      display:none;
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:999;
+      background:rgba(10,10,12,.95);
+      backdrop-filter:blur(10px);
+      border-top:1px solid var(--stroke);
       padding:8px 10px calc(8px + var(--safe-bottom));
-      grid-template-columns:repeat(5,1fr); gap:8px;
+      grid-template-columns:repeat(5,1fr);
+      gap:8px;
     }
+
     .mTab{
-      border:1px solid var(--stroke); background:#121318; color:#ddd; border-radius:14px; min-height:52px;
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; font-size:11px; font-weight:800;
+      border:1px solid var(--stroke);
+      background:#121318;
+      color:#ddd;
+      border-radius:14px;
+      min-height:52px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      cursor:pointer;
+      font-size:11px;
+      font-weight:800;
     }
-    .mTab.active{border-color:rgba(212,175,55,.8); color:#ffe8a3; background:#16171d}
-    .mTab span{font-size:16px; line-height:1}
+
+    .mTab.active{
+      border-color:rgba(212,175,55,.8);
+      color:#ffe8a3;
+      background:#16171d;
+    }
+
+    .mTab span{
+      font-size:16px;
+      line-height:1;
+    }
 
     @media (max-width:980px){
       .mobileTabs{display:grid}
       .wrap{padding-bottom:12px}
-      .topbar .brand div:last-child .hint{max-width:210px}
-      .toolbar{position:sticky;top:72px;z-index:20}
+      .toolbar{
+        position:sticky;
+        top:72px;
+        z-index:20;
+      }
       .input{width:100%}
       .hide-mobile{display:none !important}
     }
@@ -161,7 +337,9 @@
     <aside class="side">
       <div class="hero">
         <div class="hero-title">صفحاتك المعتمدة</div>
-        <div class="mini">تم ضبط القائمة على الصفحات الصحيحة التي أرسلتها من <b>KRS-control-panel.html</b> حتى لا يحصل أي خلط.</div>
+        <div class="mini">
+          تم ضبط القائمة على الصفحات الصحيحة من كودك الأصلي، بدون أي تخمين أو استبدال أسماء ملفات.
+        </div>
       </div>
 
       <div class="row" style="justify-content:space-between">
@@ -173,18 +351,25 @@
         <input id="eventInput" class="input" placeholder="eventName مثال: zafaf_khaled" />
         <button class="btn" onclick="saveEvent()">حفظ</button>
       </div>
-      <div class="mini" style="margin-top:6px">سيتم حفظ اسم الحدث محليًا لمساعدتك داخل اللوحة وبين الصفحات.</div>
+
+      <div class="mini" style="margin-top:6px">
+        سيتم حفظ اسم الحدث محليًا للمساعدة في توحيد العمل بين الصفحات وتمريره في الرابط.
+      </div>
 
       <div class="installBox" id="installBox">
         <div style="font-weight:900;margin-bottom:6px">جاهز للتثبيت</div>
-        <div class="mini">بعد رفع <b>manifest.webmanifest</b> و <b>sw.js</b> سيظهر زر التثبيت ويعمل كتطبيق على الجوال.</div>
+        <div class="mini">
+          بعد رفع ملفات <b>manifest.webmanifest</b> و <b>sw.js</b> سيعمل كتطبيق على الجوال.
+        </div>
       </div>
 
-      <div style="margin-top:12px" class="nav" id="nav"></div>
+      <div class="nav" id="nav"></div>
 
-      <div style="margin-top:14px" class="dangerBox">
+      <div class="dangerBox">
         <div style="font-weight:900;color:#ffb3b3">تنبيه</div>
-        <div class="mini">صفحة الحذف خطيرة. اجعلها لاحقًا بصلاحية أدمن فقط أو بكلمة مرور داخلية.</div>
+        <div class="mini">
+          صفحة الحذف خطيرة. اجعلها لاحقًا للأدمن فقط أو أضف حماية إضافية قبل الاستخدام الفعلي.
+        </div>
       </div>
     </aside>
 
@@ -192,10 +377,13 @@
       <div class="toolbar">
         <span class="pill">Section: <b id="sectionLbl">—</b></span>
         <span class="pill">File: <b id="fileLbl">—</b></span>
+
         <div class="spacer"></div>
+
         <button class="btn" onclick="reloadFrame()">تحديث الصفحة</button>
         <button class="btn" onclick="toggleFullscreen()">ملء الشاشة</button>
       </div>
+
       <iframe id="frame" class="frame" src=""></iframe>
     </section>
   </div>
@@ -208,154 +396,201 @@
     <button class="mTab" data-group="SCANNER"><span>📷</span>ماسح</button>
   </nav>
 
-<script>
-  const PAGES = [
-    { id:"gen", title:"توليد الأكواد + الحدث", tag:"Generate", file:"KRS-upload-RSVP.html" },
-    { id:"merge", title:"دمج QR مع الكرت", tag:"Merge", file:"KRS-merge-qr.html" },
-    { id:"send", title:"مركز الإرسال", tag:"Send", file:"KRS-center-pro.html" },
-    { id:"wa", title:"حالة الرسائل", tag:"WA", file:"wa-dashboard-pro.html" },
-    { id:"dash", title:"Dashboard", tag:"Stats", file:"KRS-CLIENT-DASH.html" },
-    { id:"rsvp", title:"RSVP Page", tag:"RSVP", file:"KRSinvites-RSVP.html" },
-    { id:"inbox", title:"استقبال الرسائل", tag:"Inbox", file:"KRS-Inbox.html" },
-    { id:"SCANNER", title:"قارئ الدعوات", tag:"SCANNER", file:"KRSINVITE-SCANNER.html" },
-    { id:"del", title:"حذف حدث", tag:"Delete", file:"KRS-delete.html", danger:true },
-  ];
+  <script>
+    // الصفحات الصحيحة المعتمدة من ملفك الأصلي
+    const PAGES = [
+      { id:"gen",     title:"توليد الأكواد + الحدث", tag:"Generate", file:"KRS-upload-RSVP.html" },
+      { id:"merge",   title:"دمج QR مع الكرت",      tag:"Merge",    file:"KRS-merge-qr.html" },
+      { id:"send",    title:"مركز الإرسال",          tag:"Send",     file:"KRS-center-pro.html" },
+      { id:"wa",      title:"حالة الرسائل",         tag:"WA",       file:"wa-dashboard-pro.html" },
+      { id:"dash",    title:"Dashboard",            tag:"Stats",    file:"KRS-CLIENT-DASH.html" },
+      { id:"rsvp",    title:"RSVP Page",            tag:"RSVP",     file:"KRSinvites-RSVP.html" },
+      { id:"inbox",   title:"استقبال الرسائل",      tag:"Inbox",    file:"KRS-Inbox.html" },
+      { id:"SCANNER", title:"قارئ الدعوات",         tag:"SCANNER",  file:"KRSINVITE-SCANNER.html" },
+      { id:"del",     title:"حذف حدث",              tag:"Delete",   file:"KRS-delete.html", danger:true }
+    ];
 
-  const LS_KEY = "krs_control_panel_pwa_v2";
-  const eventLbl = document.getElementById("eventLbl");
-  const eventInput = document.getElementById("eventInput");
-  const nav = document.getElementById("nav");
-  const frame = document.getElementById("frame");
-  const fileLbl = document.getElementById("fileLbl");
-  const sectionLbl = document.getElementById("sectionLbl");
-  const installBtn = document.getElementById("installBtn");
-  const installBox = document.getElementById("installBox");
-  const mobileTabs = document.querySelectorAll('.mTab');
+    const LS_KEY = "krs_control_panel_pwa_v2";
 
-  const state = loadState();
-  const BASE = getBasePath();
+    const eventLbl = document.getElementById("eventLbl");
+    const eventInput = document.getElementById("eventInput");
+    const nav = document.getElementById("nav");
+    const frame = document.getElementById("frame");
+    const fileLbl = document.getElementById("fileLbl");
+    const sectionLbl = document.getElementById("sectionLbl");
+    const installBtn = document.getElementById("installBtn");
+    const installBox = document.getElementById("installBox");
+    const mobileTabs = document.querySelectorAll(".mTab");
 
-  function getBasePath(){
-    const href = window.location.href;
-    return href.substring(0, href.lastIndexOf('/') + 1);
-  }
+    const state = loadState();
+    const BASE = getBasePath();
 
-  function loadState(){
-    try{
-      return JSON.parse(localStorage.getItem(LS_KEY) || 'null') || { activeId:'gen', eventName:'zafaf_khaled' };
-    }catch{
-      return { activeId:'gen', eventName:'zafaf_khaled' };
+    function getBasePath(){
+      const href = window.location.href;
+      return href.substring(0, href.lastIndexOf("/") + 1);
     }
-  }
-  function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
-  function refreshEventUI(){
-    eventLbl.textContent = state.eventName || '—';
-    eventInput.value = state.eventName || '';
-  }
-
-  function renderNav(){
-    nav.innerHTML = '';
-    for(const p of PAGES){
-      const el = document.createElement('div');
-      el.className = 'item' + (p.id === state.activeId ? ' active' : '');
-      el.onclick = ()=> openPage(p.id);
-
-      const left = document.createElement('div');
-      left.innerHTML = `<div class="title">${p.title}</div><div class="hint">${p.file}</div>`;
-      const right = document.createElement('div');
-      right.className = 'tag';
-      right.textContent = p.tag;
-      if(p.danger){
-        right.style.borderColor = 'rgba(239,68,68,.5)';
-        right.style.background = 'rgba(239,68,68,.10)';
-        right.style.color = '#ffb3b3';
+    function loadState(){
+      try{
+        return JSON.parse(localStorage.getItem(LS_KEY) || "null") || {
+          activeId:"gen",
+          eventName:"zafaf_khaled"
+        };
+      }catch{
+        return {
+          activeId:"gen",
+          eventName:"zafaf_khaled"
+        };
       }
-      el.appendChild(left);
-      el.appendChild(right);
-      nav.appendChild(el);
     }
-    mobileTabs.forEach(btn => btn.classList.toggle('active', btn.dataset.group === state.activeId));
-  }
 
-  function buildPageUrl(p){
-    const url = new URL(BASE + p.file, window.location.origin);
-    if(state.eventName) url.searchParams.set('eventName', state.eventName);
-    return url.toString();
-  }
-
-  function openPage(id){
-    const p = PAGES.find(x=>x.id===id) || PAGES[0];
-    state.activeId = p.id;
-    saveState();
-    renderNav();
-    sectionLbl.textContent = p.title;
-    fileLbl.textContent = p.file;
-    frame.src = buildPageUrl(p);
-  }
-
-  function openCurrentInNewTab(){
-    const p = PAGES.find(x=>x.id===state.activeId) || PAGES[0];
-    window.open(buildPageUrl(p), '_blank');
-  }
-  window.openCurrentInNewTab = openCurrentInNewTab;
-
-  function reloadFrame(){
-    try{ frame.contentWindow.location.reload(); }
-    catch{ frame.src = frame.src; }
-  }
-  window.reloadFrame = reloadFrame;
-
-  function toggleFullscreen(){
-    const main = document.querySelector('.main');
-    if(!document.fullscreenElement){ main.requestFullscreen?.(); }
-    else{ document.exitFullscreen?.(); }
-  }
-  window.toggleFullscreen = toggleFullscreen;
-
-  function saveEvent(){
-    const v = (eventInput.value || '').trim();
-    if(!v){ alert('اكتب eventName'); return; }
-    state.eventName = v;
-    saveState();
-    refreshEventUI();
-    openPage(state.activeId);
-    alert('تم حفظ الحدث ✅');
-  }
-  window.saveEvent = saveEvent;
-
-  mobileTabs.forEach(btn => btn.addEventListener('click', ()=> openPage(btn.dataset.group)));
-
-  let deferredPrompt = null;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    installBox.classList.add('show');
-  });
-
-  async function runInstall(){
-    if(!deferredPrompt){
-      alert('لإكمال التثبيت ارفع ملفات manifest.webmanifest و sw.js في نفس المجلد أولاً.');
-      return;
+    function saveState(){
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
     }
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-  }
-  installBtn.addEventListener('click', runInstall);
 
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    function refreshEventUI(){
+      eventLbl.textContent = state.eventName || "—";
+      eventInput.value = state.eventName || "";
+    }
+
+    function renderNav(){
+      nav.innerHTML = "";
+
+      for(const p of PAGES){
+        const el = document.createElement("div");
+        el.className = "item" + (p.id === state.activeId ? " active" : "");
+        el.onclick = () => openPage(p.id);
+
+        const left = document.createElement("div");
+        left.innerHTML = `
+          <div class="title">${p.title}</div>
+          <div class="hint">${p.file}</div>
+        `;
+
+        const right = document.createElement("div");
+        right.className = "tag";
+        right.textContent = p.tag;
+
+        if(p.danger){
+          right.style.borderColor = "rgba(239,68,68,.5)";
+          right.style.background = "rgba(239,68,68,.10)";
+          right.style.color = "#ffb3b3";
+        }
+
+        el.appendChild(left);
+        el.appendChild(right);
+        nav.appendChild(el);
+      }
+
+      mobileTabs.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.group === state.activeId);
+      });
+    }
+
+    function buildPageUrl(p){
+      const url = new URL(BASE + p.file, window.location.origin);
+
+      if(state.eventName){
+        url.searchParams.set("eventName", state.eventName);
+      }
+
+      return url.toString();
+    }
+
+    function openPage(id){
+      const p = PAGES.find(x => x.id === id) || PAGES[0];
+
+      state.activeId = p.id;
+      saveState();
+      renderNav();
+
+      sectionLbl.textContent = p.title;
+      fileLbl.textContent = p.file;
+      frame.src = buildPageUrl(p);
+    }
+
+    function openCurrentInNewTab(){
+      const p = PAGES.find(x => x.id === state.activeId) || PAGES[0];
+      window.open(buildPageUrl(p), "_blank");
+    }
+    window.openCurrentInNewTab = openCurrentInNewTab;
+
+    function reloadFrame(){
+      try{
+        frame.contentWindow.location.reload();
+      }catch{
+        frame.src = frame.src;
+      }
+    }
+    window.reloadFrame = reloadFrame;
+
+    function toggleFullscreen(){
+      const main = document.querySelector(".main");
+
+      if(!document.fullscreenElement){
+        main.requestFullscreen?.();
+      }else{
+        document.exitFullscreen?.();
+      }
+    }
+    window.toggleFullscreen = toggleFullscreen;
+
+    function saveEvent(){
+      const v = (eventInput.value || "").trim();
+
+      if(!v){
+        alert("اكتب eventName");
+        return;
+      }
+
+      state.eventName = v;
+      saveState();
+      refreshEventUI();
+      openPage(state.activeId);
+      alert("تم حفظ الحدث ✅");
+    }
+    window.saveEvent = saveEvent;
+
+    mobileTabs.forEach(btn => {
+      btn.addEventListener("click", () => openPage(btn.dataset.group));
     });
-  }
 
-  (function boot(){
-    document.getElementById('modeTxt').textContent = 'Embed';
-    refreshEventUI();
-    renderNav();
-    openPage(state.activeId || 'gen');
-  })();
-</script>
+    // PWA install
+    let deferredPrompt = null;
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBox.classList.add("show");
+    });
+
+    async function runInstall(){
+      if(!deferredPrompt){
+        alert("لإكمال التثبيت ارفع ملفات manifest.webmanifest و sw.js في نفس المجلد أولاً.");
+        return;
+      }
+
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    }
+
+    installBtn.addEventListener("click", runInstall);
+
+    // Service worker
+    if("serviceWorker" in navigator){
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+
+    // Boot
+    (function boot(){
+      document.getElementById("modeTxt").textContent = "Embed";
+      refreshEventUI();
+      renderNav();
+      openPage(state.activeId || "gen");
+    })();
+  </script>
 </body>
 </html>
