@@ -7,26 +7,19 @@
   <style>
     :root{
       --bg:#f7f0e7;
-      --bg-soft:#fbf6ef;
       --surface:#fffaf4;
       --surface-2:#f4eadf;
-      --surface-3:#efe2d2;
       --stroke:rgba(113,88,58,.14);
       --stroke-strong:rgba(140,103,55,.24);
       --text:#3f3124;
       --muted:#8d765e;
       --gold:#caa36a;
-      --gold-deep:#af8244;
-      --sand:#dcc2a0;
       --green:#7f9f79;
       --red:#c7867d;
-      --amber:#d5a15d;
       --blue:#90abc4;
       --shadow:0 20px 50px rgba(109,79,42,.12);
       --radius:22px;
-      --radius-lg:28px;
       --safe-top:env(safe-area-inset-top, 0px);
-      --safe-bottom:env(safe-area-inset-bottom, 0px);
       --max:1180px;
     }
 
@@ -48,7 +41,7 @@
       position:sticky;
       top:0;
       z-index:50;
-      background:rgba(250,245,238,.92);
+      background:rgba(250,245,238,.94);
       backdrop-filter:blur(14px);
       border-bottom:1px solid var(--stroke);
     }
@@ -57,11 +50,20 @@
       margin:0 auto;
       padding:calc(12px + var(--safe-top)) 14px 12px;
     }
-    .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .top-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
-    .spacer{flex:1}
 
-    .brand{display:flex;align-items:center;gap:12px}
+    .top-row{
+      display:grid;
+      grid-template-columns:auto 1fr auto auto;
+      align-items:center;
+      gap:12px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
     .logo{
       width:46px;height:46px;border-radius:16px;
       display:grid;place-items:center;
@@ -75,11 +77,37 @@
     .brand h1{margin:0;font-size:16px;font-weight:1000}
     .brand p{margin:3px 0 0;font-size:12px;color:var(--muted)}
 
+    .tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
+    }
+    .tabBtn{
+      min-height:42px;
+      padding:10px 16px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.82);
+      color:var(--text);
+      cursor:pointer;
+      font-weight:1000;
+      font-size:15px;
+      box-shadow:var(--shadow);
+    }
+    .tabBtn.active{
+      background:linear-gradient(180deg,#ead0a5,#cfaa71);
+      color:#644925;
+      border:none;
+    }
+
     .meta-pills{
       display:flex;
       align-items:center;
       gap:8px;
       flex-wrap:wrap;
+      justify-content:center;
     }
 
     .pill{
@@ -99,6 +127,7 @@
       align-items:center;
       gap:8px;
       flex-wrap:wrap;
+      justify-content:flex-end;
     }
 
     .btn{
@@ -116,7 +145,6 @@
     .btn:hover{transform:translateY(-1px);border-color:var(--stroke-strong)}
     .btn.gold{background:linear-gradient(180deg,#e9d2ac,#caa36a);color:#5d421f;border:none}
     .btn.red{background:rgba(199,134,125,.12);border-color:rgba(199,134,125,.25)}
-    .btn.icon{min-width:42px;padding:10px 12px}
     .btn.block{width:100%}
 
     .container{max-width:var(--max);margin:0 auto;padding:14px}
@@ -165,93 +193,33 @@
     }
 
     .content{display:none;margin-top:14px}
-
-    .hero2{
-      padding:18px 20px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:14px;
-      flex-wrap:wrap;
-      background:linear-gradient(180deg, rgba(255,255,255,.76), rgba(244,234,223,.84));
-      border-radius:24px;
-    }
-    .hero2 h3{
-      margin:0;
-      font-size:30px;
-      line-height:1.2;
-      font-weight:1000;
-    }
-    .hero2 .sub{
-      margin-top:8px;
-      color:var(--muted);
-      font-size:15px;
-      line-height:1.8;
-    }
-
-    .tabs{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:14px;
-      position:sticky;
-      top:86px;
-      z-index:35;
-      padding:8px 0 2px;
-      background:linear-gradient(180deg, rgba(244,235,223,.92), rgba(244,235,223,0));
-    }
-    .tabBtn{
-      min-height:48px;
-      padding:11px 20px;
-      border-radius:16px;
-      border:1px solid var(--stroke);
-      background:rgba(255,255,255,.85);
-      color:var(--text);
-      cursor:pointer;
-      font-weight:1000;
-      font-size:18px;
-      box-shadow:var(--shadow);
-    }
-    .tabBtn.active{
-      background:linear-gradient(180deg,#ead0a5,#cfaa71);
-      color:#644925;
-      border:none;
-    }
-
     .tabPane{display:none}
     .tabPane.active{display:block}
 
     .stats{
       display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
+      grid-template-columns:repeat(2,minmax(0,1fr));
       gap:14px;
       margin-top:14px;
     }
-    @media (max-width:900px){
-      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
-    }
-    @media (max-width:560px){
-      .stats{grid-template-columns:1fr}
-    }
-
     .stat{
-      min-height:126px;
-      padding:18px;
-      border-radius:22px;
+      min-height:150px;
+      padding:20px;
+      border-radius:24px;
       box-shadow:var(--shadow);
       display:flex;
       flex-direction:column;
       justify-content:space-between;
     }
     .stat .t{
-      font-size:15px;
+      font-size:16px;
       font-weight:1000;
       opacity:.98;
     }
     .stat .n{
-      font-size:40px;
+      font-size:46px;
       font-weight:1000;
-      line-height:1.05;
+      line-height:1.02;
       margin-top:8px;
     }
     .stat .s{
@@ -267,58 +235,43 @@
 
     .inviteStats{
       display:grid;
-      grid-template-columns:repeat(5,minmax(0,1fr));
-      gap:12px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
       margin-top:14px;
     }
-    @media (max-width:1100px){
-      .inviteStats{grid-template-columns:repeat(3,minmax(0,1fr))}
-    }
-    @media (max-width:760px){
-      .inviteStats{grid-template-columns:repeat(2,minmax(0,1fr))}
-    }
-    @media (max-width:520px){
-      .inviteStats{grid-template-columns:1fr}
-    }
-
     .miniStat{
-      min-height:108px;
-      padding:16px;
-      border-radius:18px;
+      min-height:132px;
+      padding:18px;
+      border-radius:22px;
       background:rgba(255,255,255,.82);
       border:1px solid var(--stroke);
-      box-shadow:var(--shadow);
+      box-shadow:var(--shadow)
     }
     .miniStat .t{
-      font-size:13px;
+      font-size:14px;
       font-weight:1000;
       color:var(--muted);
-      margin-bottom:10px;
+      margin-bottom:10px
     }
     .miniStat .n{
-      font-size:32px;
+      font-size:40px;
       font-weight:1000;
-      line-height:1.05;
-      margin-bottom:8px;
+      line-height:1.02;
+      margin-bottom:8px
     }
     .miniStat .s{
       font-size:13px;
       color:var(--muted);
-      line-height:1.5;
+      line-height:1.6
     }
 
-    .tools{
-      display:block;
-      margin-top:14px;
-    }
-
+    .tools{display:block;margin-top:14px}
     .toolCard{padding:18px}
     .toolCard h4{
       margin:0 0 12px;
       font-size:20px;
       font-weight:1000;
     }
-
     .searchWrap{
       display:flex;
       gap:10px;
@@ -416,105 +369,6 @@
 
     .mobileList{display:none;margin-top:10px}
 
-    @media (max-width:760px){
-      .container{
-        padding:12px;
-      }
-      .topbar .wrap{
-        padding:calc(10px + var(--safe-top)) 12px 10px;
-      }
-      .top-row{
-        display:grid;
-        grid-template-columns:1fr;
-        gap:10px;
-      }
-      .brand{
-        justify-content:flex-start;
-      }
-      .brand h1{font-size:15px}
-      .brand p{font-size:11px}
-      .meta-pills{
-        display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:8px;
-      }
-      .meta-pills .pill{
-        justify-content:center;
-        min-width:0;
-      }
-      .top-actions{
-        display:grid;
-        grid-template-columns:repeat(4,minmax(0,1fr));
-        gap:8px;
-      }
-      .top-actions .btn{
-        min-width:0;
-        padding:10px 8px;
-        font-size:13px;
-      }
-
-      .hero2{
-        padding:16px;
-        border-radius:20px;
-      }
-      .hero2 h3{
-        font-size:24px;
-      }
-      .hero2 .sub{
-        font-size:14px;
-      }
-
-      .tabs{
-        top:136px;
-        gap:8px;
-        padding-top:6px;
-      }
-      .tabBtn{
-        flex:1 1 calc(50% - 8px);
-        min-width:0;
-        padding:12px 10px;
-        font-size:16px;
-        text-align:center;
-      }
-
-      .stats{
-        gap:10px;
-      }
-      .stat{
-        min-height:110px;
-        padding:16px;
-      }
-      .stat .t{font-size:14px}
-      .stat .n{font-size:34px}
-      .stat .s{font-size:13px}
-
-      .miniStat{
-        min-height:96px;
-        padding:14px;
-      }
-      .miniStat .t{font-size:13px}
-      .miniStat .n{font-size:28px}
-      .miniStat .s{font-size:12px}
-
-      .toolCard{
-        padding:14px;
-      }
-      .toolCard h4{
-        font-size:18px;
-      }
-
-      .tableWrap{display:none}
-      .mobileList{display:block}
-
-      .sectionTitle{
-        margin-top:16px;
-        margin-bottom:8px;
-      }
-      .sectionTitle h4{
-        font-size:18px;
-      }
-    }
-
     .scanCard{
       border:1px solid var(--stroke);
       background:rgba(255,255,255,.86);
@@ -546,8 +400,95 @@
     }
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
 
+    @media (max-width:900px){
+      .top-row{
+        grid-template-columns:1fr;
+      }
+      .tabs{
+        justify-content:flex-start;
+      }
+    }
+
+    @media (max-width:760px){
+      .container{padding:12px}
+      .topbar .wrap{padding:calc(10px + var(--safe-top)) 12px 10px}
+      .brand h1{font-size:15px}
+      .brand p{font-size:11px}
+
+      .tabs{
+        width:100%;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:8px;
+        order:2;
+      }
+      .tabBtn{
+        min-width:0;
+        padding:11px 10px;
+        font-size:15px;
+        text-align:center;
+      }
+
+      .meta-pills{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:8px;
+        order:3;
+      }
+      .meta-pills .pill{
+        justify-content:center;
+        min-width:0;
+      }
+
+      .top-actions{
+        display:grid;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        gap:8px;
+        order:4;
+      }
+      .top-actions .btn{
+        min-width:0;
+        padding:10px 8px;
+        font-size:13px;
+      }
+
+      .stats{gap:10px}
+      .stat{
+        min-height:128px;
+        padding:16px;
+        border-radius:20px;
+      }
+      .stat .t{font-size:14px}
+      .stat .n{font-size:34px}
+      .stat .s{font-size:12px}
+
+      .inviteStats{gap:10px}
+      .miniStat{
+        min-height:118px;
+        padding:15px;
+        border-radius:20px;
+      }
+      .miniStat .t{font-size:13px}
+      .miniStat .n{font-size:30px}
+      .miniStat .s{font-size:12px}
+
+      .toolCard{padding:14px}
+      .toolCard h4{font-size:18px}
+
+      .tableWrap{display:none}
+      .mobileList{display:block}
+
+      .sectionTitle{
+        margin-top:16px;
+        margin-bottom:8px;
+      }
+      .sectionTitle h4{
+        font-size:18px;
+      }
+    }
+
     @media print{
-      .topbar,.gateWrap,.tabs,#logoutBtn,#printBtn,#refreshBtn,#exportBtn{display:none!important}
+      .topbar,.gateWrap,#logoutBtn,#printBtn,#refreshBtn,#exportBtn{display:none!important}
       body{background:#fff;color:#111}
       .card,.tableWrap{box-shadow:none;background:#fff;border:1px solid #ddd}
       th{background:#f5f5f5;color:#111}
@@ -567,6 +508,11 @@
           </div>
         </div>
 
+        <div class="tabs">
+          <button class="tabBtn active" data-tab="attendance">الحضور</button>
+          <button class="tabBtn" data-tab="invites">الدعوات والردود</button>
+        </div>
+
         <div class="meta-pills">
           <span class="pill">الحدث: <b id="pillEvent">—</b></span>
           <span class="pill">آخر تحديث: <b id="lastUpdate">—</b></span>
@@ -583,7 +529,7 @@
   </div>
 
   <div class="container">
-    <div id="gateWrap" class="gateWrap" style="max-width:520px;grid-template-columns:1fr">
+    <div id="gateWrap" class="gateWrap">
       <div class="gate card" style="padding:26px">
         <div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:18px">
           <div class="logo" style="width:64px;height:64px;border-radius:20px;font-size:28px;margin-bottom:14px">KRS</div>
@@ -592,7 +538,7 @@
         </div>
 
         <label class="label">اسم الحدث</label>
-        <input id="eventInput" class="input" placeholder="مثال: افراح الحداد" />
+        <input id="eventInput" class="input" placeholder="مثال: زفاف خالد محمد" />
 
         <div style="height:12px"></div>
 
@@ -607,18 +553,6 @@
     </div>
 
     <div id="content" class="content">
-      <div class="hero2 card">
-        <div>
-          <h3 id="eventTitle">—</h3>
-          <div class="sub">متابعة مباشرة للحضور والدعوات والردود الخاصة بالفعالية الحالية.</div>
-        </div>
-      </div>
-
-      <div class="tabs">
-        <button class="tabBtn active" data-tab="attendance">الحضور</button>
-        <button class="tabBtn" data-tab="invites">الدعوات والردود</button>
-      </div>
-
       <div id="tab-attendance" class="tabPane active">
         <div class="stats">
           <div class="stat blue">
@@ -740,7 +674,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    const PAGE_EVENT = "افراح الحداد";
+    const PAGE_EVENT = "زفاف خالد محمد";
     const PAGE_PASSWORD = "9900";
 
     const firebaseConfig = {
@@ -801,7 +735,6 @@
       $("#content").style.display = "block";
       $("#logoutBtn").style.display = "inline-flex";
       $("#pillEvent").textContent = PAGE_EVENT;
-      $("#eventTitle").textContent = PAGE_EVENT;
       startStream();
     }
 
