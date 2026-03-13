@@ -7,25 +7,31 @@
 
   <style>
     :root{
-      --bg:#0a0b0f;
-      --bg2:#10131a;
-      --card:#121722;
-      --card2:#171d2a;
-      --stroke:rgba(255,255,255,.08);
-      --text:#eef2f7;
-      --muted:#98a3b6;
-      --gold:#d4af37;
-      --gold2:#b48821;
-      --green:#16a34a;
-      --red:#ef4444;
-      --blue:#2563eb;
-      --orange:#f59e0b;
-      --shadow:0 18px 44px rgba(0,0,0,.30);
+      --bg:#f8f3eb;
+      --bg2:#f2e9dc;
+      --card:#fffaf3;
+      --card2:#f8efe2;
+      --stroke:rgba(120,94,60,.14);
+      --text:#3f3226;
+      --muted:#8b7660;
+      --gold:#c9a46a;
+      --gold2:#b98a45;
+      --green:#7aa37a;
+      --red:#c97a72;
+      --blue:#8ba8c7;
+      --orange:#d8a15d;
+      --shadow:0 14px 32px rgba(94,72,43,.10);
       --radius:20px;
     }
 
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:linear-gradient(180deg,#07080b,#0f141d);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",Tahoma,sans-serif}
+    html,body{
+      margin:0;
+      padding:0;
+      background:linear-gradient(180deg,#fcf8f2,#f4ebdf);
+      color:var(--text);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",Tahoma,sans-serif;
+    }
     body{min-height:100vh}
     button,input{font:inherit}
     a{text-decoration:none;color:inherit}
@@ -33,7 +39,7 @@
     .topbar{
       position:sticky;top:0;z-index:20;
       backdrop-filter:blur(10px);
-      background:rgba(8,10,14,.86);
+      background:rgba(252,248,242,.88);
       border-bottom:1px solid var(--stroke);
     }
     .wrap{max-width:1180px;margin:0 auto;padding:14px}
@@ -44,9 +50,9 @@
     .logo{
       width:42px;height:42px;border-radius:14px;
       display:grid;place-items:center;
-      background:linear-gradient(180deg,#171208,#0f1015);
-      border:1px solid rgba(212,175,55,.35);
-      color:var(--gold);
+      background:linear-gradient(180deg,#f3e4cf,#ead2ac);
+      border:1px solid rgba(185,138,69,.26);
+      color:#6e4e27;
       font-weight:900;
       box-shadow:var(--shadow);
     }
@@ -57,27 +63,28 @@
       padding:8px 12px;
       border-radius:999px;
       border:1px solid var(--stroke);
-      background:rgba(255,255,255,.04);
+      background:rgba(255,255,255,.62);
       color:var(--text);
       font-size:12px;
       display:inline-flex;align-items:center;gap:6px;
     }
-    .pill b{color:#ffe7a0}
+    .pill b{color:#8b6330}
 
     .btn{
       min-height:40px;
       padding:10px 14px;
       border-radius:14px;
       border:1px solid var(--stroke);
-      background:rgba(255,255,255,.05);
+      background:rgba(255,255,255,.72);
       color:var(--text);
       cursor:pointer;
       font-weight:800;
       transition:.15s ease;
+      box-shadow:var(--shadow);
     }
-    .btn:hover{border-color:rgba(212,175,55,.35);transform:translateY(-1px)}
-    .btn.gold{background:linear-gradient(180deg,#e2c46c,#b48821);color:#171205;border:none}
-    .btn.red{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.30)}
+    .btn:hover{border-color:rgba(185,138,69,.35);transform:translateY(-1px)}
+    .btn.gold{background:linear-gradient(180deg,#e5c998,#caa15f);color:#5a3d1a;border:none}
+    .btn.red{background:rgba(201,122,114,.12);border-color:rgba(201,122,114,.25)}
     .btn.block{width:100%}
 
     .container{max-width:1180px;margin:0 auto;padding:14px}
@@ -102,18 +109,16 @@
     .hero{
       padding:20px;
       border-radius:24px;
-      border:1px solid rgba(212,175,55,.20);
+      border:1px solid rgba(185,138,69,.16);
       background:
-        radial-gradient(800px 280px at 20% 0%, rgba(212,175,55,.12), transparent 60%),
-        radial-gradient(700px 280px at 100% 100%, rgba(37,99,235,.10), transparent 60%),
-        rgba(255,255,255,.03);
+        radial-gradient(800px 280px at 20% 0%, rgba(201,164,106,.12), transparent 60%),
+        radial-gradient(700px 280px at 100% 100%, rgba(216,161,93,.08), transparent 60%),
+        rgba(255,255,255,.55);
     }
     .hero h2{margin:0 0 8px;font-size:22px}
     .hero p{margin:0;color:var(--muted);line-height:1.8;font-size:14px}
 
-    .gate{
-      padding:18px;
-    }
+    .gate{padding:18px}
     .label{
       font-size:12px;
       color:var(--muted);
@@ -126,30 +131,29 @@
       padding:12px 14px;
       border-radius:14px;
       border:1px solid var(--stroke);
-      background:var(--bg2);
+      background:#fffdf9;
       color:var(--text);
       outline:none;
     }
-    .input:focus{border-color:rgba(212,175,55,.40)}
-    .error{color:#ffb3b3;font-size:12px;margin-top:10px}
+    .input:focus{border-color:rgba(185,138,69,.40)}
+    .error{color:#b25e57;font-size:12px;margin-top:10px}
 
     .content{display:none;margin-top:14px}
 
     .hero2{
       padding:18px;
-      display:grid;
-      grid-template-columns:1fr auto;
-      gap:14px;
+      display:flex;
       align-items:center;
+      justify-content:space-between;
+      gap:14px;
       background:
-        radial-gradient(700px 240px at 18% 0%, rgba(212,175,55,.10), transparent 60%),
-        rgba(255,255,255,.03);
+        radial-gradient(700px 240px at 18% 0%, rgba(201,164,106,.10), transparent 60%),
+        rgba(255,255,255,.55);
     }
+    .hero2 h3{margin:0;font-size:22px}
     @media (max-width:760px){
-      .hero2{grid-template-columns:1fr}
+      .hero2{flex-direction:column;align-items:flex-start}
     }
-    .hero2 h3{margin:0 0 6px;font-size:22px}
-    .hero2 p{margin:0;color:var(--muted);font-size:13px;line-height:1.8}
 
     .tabs{
       display:flex;
@@ -162,15 +166,16 @@
       padding:10px 16px;
       border-radius:14px;
       border:1px solid var(--stroke);
-      background:rgba(255,255,255,.04);
+      background:rgba(255,255,255,.62);
       color:var(--text);
       cursor:pointer;
       font-weight:900;
+      box-shadow:var(--shadow);
     }
     .tabBtn.active{
-      background:rgba(212,175,55,.12);
-      border-color:rgba(212,175,55,.35);
-      color:#ffe7a0;
+      background:rgba(201,164,106,.16);
+      border-color:rgba(185,138,69,.35);
+      color:#8b6330;
     }
 
     .tabPane{display:none}
@@ -189,21 +194,62 @@
       .stats{grid-template-columns:1fr}
     }
 
+    /* بطاقات الحضور */
     .stat{
       padding:16px;
-      border-radius:20px;
-      position:relative;
-      overflow:hidden;
+      border-radius:18px;
       min-height:100px;
+      box-shadow:var(--shadow);
     }
     .stat .t{font-size:12px;font-weight:800;opacity:.95}
-    .stat .n{font-size:30px;font-weight:1000;margin-top:8px}
+    .stat .n{font-size:28px;font-weight:1000;margin-top:8px}
     .stat .s{font-size:12px;margin-top:8px;opacity:.9}
-    .stat.blue{background:linear-gradient(135deg,rgba(37,99,235,.95),rgba(37,99,235,.45));color:#fff}
-    .stat.gold{background:linear-gradient(135deg,rgba(212,175,55,.95),rgba(180,136,33,.45));color:#171205}
-    .stat.green{background:linear-gradient(135deg,rgba(22,163,74,.95),rgba(22,163,74,.45));color:#fff}
-    .stat.red{background:linear-gradient(135deg,rgba(239,68,68,.95),rgba(239,68,68,.40));color:#fff}
-    .stat.orange{background:linear-gradient(135deg,rgba(245,158,11,.95),rgba(245,158,11,.40));color:#fff}
+    .stat.blue{background:#dce8f6;color:#294969}
+    .stat.gold{background:#efe2c8;color:#6f5326}
+    .stat.green{background:#ddebdc;color:#3f6340}
+    .stat.red{background:#f3dedd;color:#7a423e}
+    .stat.orange{background:#f6e2c8;color:#81531f}
+
+    /* بطاقات الدعوات أصغر ومرتبة */
+    .inviteStats{
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:12px;
+      margin-top:14px;
+    }
+    @media (max-width:1100px){
+      .inviteStats{grid-template-columns:repeat(3,minmax(0,1fr))}
+    }
+    @media (max-width:760px){
+      .inviteStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:500px){
+      .inviteStats{grid-template-columns:1fr}
+    }
+
+    .miniStat{
+      background:var(--card2);
+      border:1px solid var(--stroke);
+      border-radius:18px;
+      padding:14px;
+      min-height:96px;
+      box-shadow:var(--shadow);
+    }
+    .miniStat .t{
+      font-size:12px;
+      font-weight:800;
+      color:var(--muted);
+      margin-bottom:10px;
+    }
+    .miniStat .n{
+      font-size:26px;
+      font-weight:1000;
+      margin-bottom:8px;
+    }
+    .miniStat .s{
+      font-size:12px;
+      color:var(--muted);
+    }
 
     .tools{
       margin-top:14px;
@@ -232,7 +278,7 @@
     }
     .chip{
       border:1px solid var(--stroke);
-      background:rgba(255,255,255,.04);
+      background:rgba(255,255,255,.62);
       color:var(--text);
       padding:9px 12px;
       border-radius:999px;
@@ -241,9 +287,9 @@
       min-height:38px;
     }
     .chip.active{
-      border-color:rgba(212,175,55,.35);
-      background:rgba(212,175,55,.10);
-      color:#ffe7a0;
+      border-color:rgba(185,138,69,.35);
+      background:rgba(201,164,106,.14);
+      color:#8b6330;
     }
 
     .sectionTitle{
@@ -262,7 +308,7 @@
       overflow:auto;
       border:1px solid var(--stroke);
       border-radius:20px;
-      background:rgba(255,255,255,.03);
+      background:rgba(255,255,255,.5);
     }
     table{
       width:100%;
@@ -277,11 +323,11 @@
       vertical-align:middle;
     }
     th{
-      background:rgba(255,255,255,.05);
-      color:#ffe7a0;
+      background:#f4eadb;
+      color:#8b6330;
       font-weight:900;
     }
-    tbody tr:hover td{background:rgba(255,255,255,.03)}
+    tbody tr:hover td{background:rgba(255,255,255,.55)}
 
     .badge{
       display:inline-flex;
@@ -293,9 +339,9 @@
       font-weight:900;
       border:1px solid var(--stroke);
     }
-    .badge.ok{background:rgba(22,163,74,.10);border-color:rgba(22,163,74,.25);color:#aff0c4}
-    .badge.no{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.25);color:#ffc7c7}
-    .badge.wait{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.25);color:#ffd78f}
+    .badge.ok{background:#e3f0e2;border-color:#cfe2cd;color:#4f744f}
+    .badge.no{background:#f4e0de;border-color:#e6c8c5;color:#9a5c56}
+    .badge.wait{background:#f7ead9;border-color:#edd4b7;color:#9a6a31}
 
     .mobileList{display:none}
     @media (max-width:760px){
@@ -305,10 +351,11 @@
 
     .scanCard{
       border:1px solid var(--stroke);
-      background:rgba(255,255,255,.04);
+      background:rgba(255,255,255,.62);
       border-radius:18px;
       padding:14px;
       margin-bottom:10px;
+      box-shadow:var(--shadow);
     }
     .scanHead{
       display:flex;
@@ -316,7 +363,7 @@
       align-items:center;
       gap:10px;
       padding-bottom:10px;
-      border-bottom:1px dashed rgba(255,255,255,.10);
+      border-bottom:1px dashed rgba(120,94,60,.16);
       margin-bottom:10px;
     }
     .scanCode{font-weight:1000}
@@ -390,10 +437,7 @@
 
     <div id="content" class="content">
       <div class="hero2 card">
-        <div>
-          <h3 id="eventTitle">—</h3>
-          <p>متابعة مباشرة للحضور والدعوات والردود الخاصة بالفعالية الحالية.</p>
-        </div>
+        <h3 id="eventTitle">—</h3>
         <div class="pill">عرض مباشر للعميل</div>
       </div>
 
@@ -479,43 +523,35 @@
 
       <!-- تبويب الدعوات والردود -->
       <div id="tab-invites" class="tabPane">
-        <div class="stats">
-          <div class="stat blue">
+        <div class="inviteStats">
+          <div class="miniStat">
             <div class="t">إجمالي الدعوات</div>
             <div id="inviteTotal" class="n">0</div>
-            <div class="s">كل المدعوين المرتبطين بالحدث</div>
+            <div class="s">كل المدعوين</div>
           </div>
 
-          <div class="stat gold">
+          <div class="miniStat">
             <div class="t">تم الإرسال</div>
             <div id="inviteSent" class="n">0</div>
             <div class="s">الدعوات المرسلة</div>
           </div>
 
-          <div class="stat green">
+          <div class="miniStat">
             <div class="t">أكد الحضور</div>
             <div id="inviteConfirmed" class="n">0</div>
             <div class="s">RSVP موافق</div>
           </div>
 
-          <div class="stat red">
+          <div class="miniStat">
             <div class="t">اعتذر</div>
             <div id="inviteDeclined" class="n">0</div>
             <div class="s">RSVP اعتذار</div>
           </div>
-        </div>
 
-        <div class="stats" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-          <div class="stat orange">
-            <div class="t">بانتظار الرد</div>
+          <div class="miniStat">
+            <div class="t">في الانتظار</div>
             <div id="invitePending" class="n">0</div>
-            <div class="s">لم يردوا حتى الآن</div>
-          </div>
-
-          <div class="stat blue">
-            <div class="t">نسبة التأكيد</div>
-            <div id="inviteConfirmRate" class="n">0%</div>
-            <div class="s">من إجمالي الدعوات</div>
+            <div class="s">لم يرد حتى الآن</div>
           </div>
         </div>
 
@@ -530,8 +566,9 @@
               <tr>
                 <th>الاسم</th>
                 <th>الهاتف</th>
-                <th>حالة الإرسال</th>
-                <th>الرد</th>
+                <th>أكد الحضور</th>
+                <th>اعتذر</th>
+                <th>في الانتظار</th>
                 <th>عدد الكروت</th>
               </tr>
             </thead>
@@ -759,14 +796,12 @@
       const confirmed = allDocs.filter(r => r.rsvp === "confirmed").length;
       const declined = allDocs.filter(r => r.rsvp === "declined").length;
       const pending = allDocs.filter(r => r.rsvp === "pending").length;
-      const confirmRate = total > 0 ? Math.round((confirmed / total) * 100) : 0;
 
       $("#inviteTotal").textContent = total;
       $("#inviteSent").textContent = sent;
       $("#inviteConfirmed").textContent = confirmed;
       $("#inviteDeclined").textContent = declined;
       $("#invitePending").textContent = pending;
-      $("#inviteConfirmRate").textContent = confirmRate + "%";
     }
 
     function applyFilters(){
@@ -848,12 +883,6 @@
       }
     }
 
-    function rsvpLabel(val){
-      if(val === "confirmed") return `<span class="badge ok">أكد الحضور</span>`;
-      if(val === "declined") return `<span class="badge no">اعتذر</span>`;
-      return `<span class="badge wait">بانتظار الرد</span>`;
-    }
-
     function renderInviteRows(){
       const body = $("#inviteRowsBody");
       const mobile = $("#inviteMobileList");
@@ -865,7 +894,7 @@
       if(rows.length === 0){
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 5;
+        td.colSpan = 6;
         td.textContent = "لا توجد بيانات";
         td.className = "muted";
         td.style.textAlign = "center";
@@ -876,12 +905,17 @@
       }
 
       for(const r of rows){
+        const confirmed = r.rsvp === "confirmed" ? "نعم" : "—";
+        const declined = r.rsvp === "declined" ? "نعم" : "—";
+        const pending = r.rsvp === "pending" ? "نعم" : "—";
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${r.name || "—"}</td>
           <td class="mono">${r.phone || "—"}</td>
-          <td><span class="badge ${r.sent ? "ok" : "wait"}">${r.sent ? "تم الإرسال" : "لم يرسل"}</span></td>
-          <td>${rsvpLabel(r.rsvp)}</td>
+          <td>${confirmed}</td>
+          <td>${declined}</td>
+          <td>${pending}</td>
           <td>${r.inviteCount}</td>
         `;
         body.appendChild(tr);
@@ -891,10 +925,14 @@
         card.innerHTML = `
           <div class="scanHead">
             <div class="scanCode">${r.name || "—"}</div>
-            ${rsvpLabel(r.rsvp)}
+            <span class="badge ${r.rsvp === "confirmed" ? "ok" : r.rsvp === "declined" ? "no" : "wait"}">
+              ${r.rsvp === "confirmed" ? "أكد الحضور" : r.rsvp === "declined" ? "اعتذر" : "في الانتظار"}
+            </span>
           </div>
           <div class="scanLine"><span class="scanLabel">الهاتف</span><span class="mono">${r.phone || "—"}</span></div>
-          <div class="scanLine"><span class="scanLabel">حالة الإرسال</span><span>${r.sent ? "تم الإرسال" : "لم يرسل"}</span></div>
+          <div class="scanLine"><span class="scanLabel">أكد الحضور</span><span>${confirmed}</span></div>
+          <div class="scanLine"><span class="scanLabel">اعتذر</span><span>${declined}</span></div>
+          <div class="scanLine"><span class="scanLabel">في الانتظار</span><span>${pending}</span></div>
           <div class="scanLine"><span class="scanLabel">عدد الكروت</span><span>${r.inviteCount}</span></div>
         `;
         mobile.appendChild(card);
@@ -918,12 +956,13 @@
           csv(PAGE_EVENT)
         ].join(","));
       } else {
-        header = ["الاسم","الهاتف","حالة الإرسال","الرد","عدد الكروت","الحدث"];
+        header = ["الاسم","الهاتف","أكد الحضور","اعتذر","في الانتظار","عدد الكروت","الحدث"];
         lines = allDocs.map(r => [
           csv(r.name || ""),
           csv(r.phone || ""),
-          csv(r.sent ? "تم الإرسال" : "لم يرسل"),
-          csv(r.rsvp === "confirmed" ? "أكد الحضور" : r.rsvp === "declined" ? "اعتذر" : "بانتظار الرد"),
+          csv(r.rsvp === "confirmed" ? "نعم" : ""),
+          csv(r.rsvp === "declined" ? "نعم" : ""),
+          csv(r.rsvp === "pending" ? "نعم" : ""),
           csv(r.inviteCount),
           csv(PAGE_EVENT)
         ].join(","));
@@ -940,7 +979,7 @@
 
     function csv(v){
       const s = String(v ?? "");
-      if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+      if(/[",\n]/.test(s)) return `\"${s.replace(/"/g,'""')}\"`;
       return s;
     }
 
