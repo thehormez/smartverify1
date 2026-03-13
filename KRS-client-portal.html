@@ -229,8 +229,16 @@
 
       <nav class="nav" style="margin-top:14px">
         <button class="nav-btn active" data-tab="overview">
-          <div class="left"><div class="icon">⌂</div><div><div class="nav-title">الرئيسية</div><div class="nav-sub">ملخص سريع للفعالية</div></div></div>
+          <div class="left"><div class="icon">⌂</div><div><div class="nav-title">الرئيسية</div><div class="nav-sub">واجهة مبسطة للعميل</div></div></div>
           <span class="pill">Home</span>
+        </button>
+        <button class="nav-btn" data-tab="live">
+          <div class="left"><div class="icon">🟢</div><div><div class="nav-title">الحضور اللحظي</div><div class="nav-sub">الاسم + الوقت + العدد المباشر</div></div></div>
+          <span class="pill">Live</span>
+        </button>
+        <button class="nav-btn" data-tab="stats">
+          <div class="left"><div class="icon">✉️</div><div><div class="nav-title">الدعوات والردود</div><div class="nav-sub">مرسل / اعتذر / أكد الحضور</div></div></div>
+          <span class="pill">RSVP</span>
         </button>
         <button class="nav-btn" data-tab="guests">
           <div class="left"><div class="icon">👥</div><div><div class="nav-title">الضيوف</div><div class="nav-sub">إضافة وتعديل ومراجعة</div></div></div>
@@ -239,14 +247,6 @@
         <button class="nav-btn" data-tab="upload">
           <div class="left"><div class="icon">⤴</div><div><div class="nav-title">رفع ملف</div><div class="nav-sub">Excel أو CSV</div></div></div>
           <span class="pill">Upload</span>
-        </button>
-        <button class="nav-btn" data-tab="cards">
-          <div class="left"><div class="icon">🎫</div><div><div class="nav-title">الكروت</div><div class="nav-sub">عدد الدعوات والمخزون</div></div></div>
-          <span class="pill">Cards</span>
-        </button>
-        <button class="nav-btn" data-tab="reports">
-          <div class="left"><div class="icon">📊</div><div><div class="nav-title">لوحة التحكم</div><div class="nav-sub">الحضور والردود والإرسال</div></div></div>
-          <span class="pill">Reports</span>
         </button>
         <button class="nav-btn" data-tab="settings">
           <div class="left"><div class="icon">⚙️</div><div><div class="nav-title">الإعدادات</div><div class="nav-sub">بيانات المناسبة</div></div></div>
@@ -268,6 +268,22 @@
 
       <div class="content">
         <section class="tab active" id="tab-overview">
+          <div class="card" style="margin-bottom:14px">
+            <h3>لوحة العميل</h3>
+            <div class="actions">
+              <div class="action-box">
+                <strong>الحضور اللحظي</strong>
+                <p>عرض مباشر للحضور الحالي، مع الأسماء ووقت الدخول والعدد الكلي.</p>
+                <button class="btn gold small" data-go="live">فتح لوحة الحضور</button>
+              </div>
+              <div class="action-box">
+                <strong>الدعوات والردود</strong>
+                <p>عرض عدد الدعوات المرسلة، وعدد المؤكدين، والمعتذرين، ومن بانتظار الرد.</p>
+                <button class="btn small" data-go="stats">فتح لوحة الدعوات</button>
+              </div>
+            </div>
+          </div>
+
           <div class="stats">
             <div class="stat"><div class="label">إجمالي الضيوف</div><div class="value">248</div><div class="foot">آخر تحديث قبل دقيقة</div></div>
             <div class="stat"><div class="label">إجمالي الكروت</div><div class="value">392</div><div class="foot">حسب Invite Count</div></div>
@@ -277,12 +293,10 @@
 
           <div class="section-grid">
             <div class="card">
-              <h3>إجراءات سريعة</h3>
+              <h3>اختصارات سريعة</h3>
               <div class="actions">
                 <div class="action-box"><strong>إضافة ضيف جديد</strong><p>أدخل الاسم والرقم وعدد الكروت بشكل يدوي وسريع.</p><button class="btn gold small" data-go="guests">إضافة الآن</button></div>
                 <div class="action-box"><strong>رفع ملف Excel</strong><p>ارفع قائمة الضيوف دفعة واحدة مع الأرقام وعدد الدعوات.</p><button class="btn small" data-go="upload">فتح الرفع</button></div>
-                <div class="action-box"><strong>مراجعة الكروت</strong><p>راجع عدد الكروت المطلوبة والمستخدمة والمتبقية.</p><button class="btn small" data-go="cards">عرض الكروت</button></div>
-                <div class="action-box"><strong>فتح لوحة التحكم</strong><p>تابع الردود والحضور وحالة الإرسال للفعالية الحالية.</p><button class="btn small" data-go="reports">فتح اللوحة</button></div>
               </div>
             </div>
 
@@ -297,6 +311,89 @@
               <div class="inline-actions">
                 <button class="btn green">نسخ رابط العميل</button>
                 <button class="btn">مشاركة الرابط</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab" id="tab-live">
+          <div class="stats">
+            <div class="stat"><div class="label">الحضور الحالي</div><div class="value">87</div><div class="foot">تم الدخول بنجاح</div></div>
+            <div class="stat"><div class="label">آخر ساعة</div><div class="value">19</div><div class="foot">دخول حديث</div></div>
+            <div class="stat"><div class="label">إجمالي الدعوات</div><div class="value">248</div><div class="foot">كل الضيوف</div></div>
+            <div class="stat"><div class="label">نسبة الحضور</div><div class="value">35%</div><div class="foot">مباشر</div></div>
+          </div>
+
+          <div class="card">
+            <h3>الحضور اللحظي</h3>
+            <div class="searchbar">
+              <input type="text" placeholder="بحث بالاسم أو الرقم أو الكود" />
+              <select>
+                <option>كل الحضور</option>
+                <option>آخر ساعة</option>
+                <option>اليوم</option>
+              </select>
+              <button class="btn small">تحديث</button>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>الاسم</th>
+                    <th>رقم الهاتف</th>
+                    <th>الكود</th>
+                    <th>وقت الدخول</th>
+                    <th>الحالة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>أحمد المنصوري</td>
+                    <td>+97150XXXXXXX</td>
+                    <td>INV-001</td>
+                    <td>08:21 PM</td>
+                    <td><span class="badge attended">تم الدخول</span></td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>فاطمة</td>
+                    <td>+97154XXXXXXX</td>
+                    <td>INV-002</td>
+                    <td>08:24 PM</td>
+                    <td><span class="badge attended">تم الدخول</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab" id="tab-stats">
+          <div class="stats">
+            <div class="stat"><div class="label">الدعوات المرسلة</div><div class="value">214</div><div class="foot">تم إرسالها بنجاح</div></div>
+            <div class="stat"><div class="label">أكد الحضور</div><div class="value">126</div><div class="foot">RSVP موافق</div></div>
+            <div class="stat"><div class="label">اعتذر</div><div class="value">14</div><div class="foot">غير قادرين على الحضور</div></div>
+            <div class="stat"><div class="label">بانتظار الرد</div><div class="value">74</div><div class="foot">لم يردوا بعد</div></div>
+          </div>
+
+          <div class="section-grid">
+            <div class="card">
+              <h3>ملخص الدعوات</h3>
+              <div class="actions">
+                <div class="action-box"><strong>تم الإرسال</strong><p>عدد المدعوين الذين وصلت لهم الدعوة أو تم تجهيز إرسالها.</p></div>
+                <div class="action-box"><strong>أكد الحضور</strong><p>كل من رد بالموافقة على الدعوة.</p></div>
+                <div class="action-box"><strong>اعتذر</strong><p>المدعوون الذين ردوا بعدم الحضور.</p></div>
+                <div class="action-box"><strong>بانتظار الرد</strong><p>من لم يردوا حتى الآن على الدعوة.</p></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>نمط العرض المطلوب</h3>
+              <div class="event-meta">
+                هذه اللوحة تشبه الفكرة التي أرسلتها في الصورة: تبويب خاص بالدعوات والردود، مع أرقام واضحة وسهلة للعميل بدون تعقيد تقني.
               </div>
             </div>
           </div>
@@ -587,7 +684,9 @@
 
   <script>
     const tabInfo = {
-      overview:{title:'الرئيسية', sub:'ملخص احترافي مبسط للعميل'},
+      overview:{title:'الرئيسية', sub:'واجهة مبسطة وسريعة للعميل'},
+      live:{title:'الحضور اللحظي', sub:'عدد الحضور الحالي مع الأسماء ووقت الدخول'},
+      stats:{title:'الدعوات والردود', sub:'مرسل / أكد الحضور / اعتذر / بانتظار الرد'},
       guests:{title:'الضيوف', sub:'إضافة الضيوف وتعديل الأسماء والأرقام وعدد الكروت'},
       upload:{title:'رفع ملف', sub:'استيراد الضيوف من Excel أو CSV'},
       cards:{title:'الكروت', sub:'إدارة عدد الدعوات والقالب والمخزون'},
