@@ -2,94 +2,105 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>KRS INVITE — Client Dashboard Lite</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>KRS INVITE — Client Dashboard Luxe</title>
   <style>
     :root{
-      --bg:#f8f3eb;
-      --bg2:#f2e9dc;
-      --card:#fffaf3;
-      --card2:#f8efe2;
-      --stroke:rgba(120,94,60,.14);
-      --text:#3f3226;
-      --muted:#8b7660;
-      --gold:#c9a46a;
-      --gold2:#b98a45;
-      --green:#7aa37a;
-      --red:#c97a72;
-      --blue:#8ba8c7;
-      --orange:#d8a15d;
-      --shadow:0 14px 32px rgba(94,72,43,.10);
-      --radius:20px;
+      --bg:#f7f0e7;
+      --bg-soft:#fbf6ef;
+      --surface:#fffaf4;
+      --surface-2:#f4eadf;
+      --surface-3:#efe2d2;
+      --stroke:rgba(113,88,58,.14);
+      --stroke-strong:rgba(140,103,55,.24);
+      --text:#3f3124;
+      --muted:#8d765e;
+      --gold:#caa36a;
+      --gold-deep:#af8244;
+      --sand:#dcc2a0;
+      --green:#7f9f79;
+      --red:#c7867d;
+      --amber:#d5a15d;
+      --blue:#90abc4;
+      --shadow:0 20px 50px rgba(109,79,42,.12);
+      --radius:22px;
+      --radius-lg:28px;
+      --safe-top:env(safe-area-inset-top, 0px);
+      --safe-bottom:env(safe-area-inset-bottom, 0px);
+      --max:1180px;
     }
 
     *{box-sizing:border-box}
-    html,body{
-      margin:0;
-      padding:0;
-      background:linear-gradient(180deg,#fcf8f2,#f4ebdf);
+    html,body{margin:0;padding:0}
+    body{
+      min-height:100vh;
+      background:
+        radial-gradient(900px 360px at 0% 0%, rgba(202,163,106,.18), transparent 60%),
+        radial-gradient(900px 360px at 100% 100%, rgba(173,130,68,.08), transparent 65%),
+        linear-gradient(180deg,#f9f3eb 0%, #f4ebdf 100%);
       color:var(--text);
       font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",Tahoma,sans-serif;
+      overflow-x:hidden;
     }
-    body{min-height:100vh}
     button,input{font:inherit}
-    a{text-decoration:none;color:inherit}
 
     .topbar{
-      position:sticky;top:0;z-index:20;
-      backdrop-filter:blur(10px);
-      background:rgba(252,248,242,.88);
+      position:sticky;
+      top:0;
+      z-index:40;
+      background:rgba(250,245,238,.82);
+      backdrop-filter:blur(14px);
       border-bottom:1px solid var(--stroke);
     }
-    .wrap{max-width:1180px;margin:0 auto;padding:14px}
-    .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .wrap{max-width:var(--max);margin:0 auto;padding:calc(14px + var(--safe-top)) 14px 14px}
+    .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .spacer{flex:1}
 
     .brand{display:flex;align-items:center;gap:12px}
     .logo{
-      width:42px;height:42px;border-radius:14px;
+      width:46px;height:46px;border-radius:16px;
       display:grid;place-items:center;
-      background:linear-gradient(180deg,#f3e4cf,#ead2ac);
-      border:1px solid rgba(185,138,69,.26);
-      color:#6e4e27;
+      background:linear-gradient(180deg,#f2dfbf,#e4c28c);
+      border:1px solid rgba(175,130,68,.24);
+      color:#6d502b;
       font-weight:900;
       box-shadow:var(--shadow);
     }
-    .brand h1{margin:0;font-size:15px}
+    .brand h1{margin:0;font-size:15px;font-weight:900}
     .brand p{margin:3px 0 0;font-size:12px;color:var(--muted)}
 
     .pill{
+      min-height:38px;
       padding:8px 12px;
       border-radius:999px;
       border:1px solid var(--stroke);
-      background:rgba(255,255,255,.62);
-      color:var(--text);
-      font-size:12px;
+      background:rgba(255,255,255,.58);
       display:inline-flex;align-items:center;gap:6px;
+      font-size:12px;color:var(--text);
+      white-space:nowrap;
     }
-    .pill b{color:#8b6330}
+    .pill b{color:#8a6430}
 
     .btn{
       min-height:40px;
       padding:10px 14px;
       border-radius:14px;
       border:1px solid var(--stroke);
-      background:rgba(255,255,255,.72);
+      background:rgba(255,255,255,.68);
       color:var(--text);
       cursor:pointer;
       font-weight:800;
-      transition:.15s ease;
       box-shadow:var(--shadow);
+      transition:.18s ease;
     }
-    .btn:hover{border-color:rgba(185,138,69,.35);transform:translateY(-1px)}
-    .btn.gold{background:linear-gradient(180deg,#e5c998,#caa15f);color:#5a3d1a;border:none}
-    .btn.red{background:rgba(201,122,114,.12);border-color:rgba(201,122,114,.25)}
+    .btn:hover{transform:translateY(-1px);border-color:var(--stroke-strong)}
+    .btn.gold{background:linear-gradient(180deg,#e9d2ac,#caa36a);color:#5d421f;border:none}
+    .btn.red{background:rgba(199,134,125,.12);border-color:rgba(199,134,125,.25)}
     .btn.block{width:100%}
 
-    .container{max-width:1180px;margin:0 auto;padding:14px}
+    .container{max-width:var(--max);margin:0 auto;padding:14px}
     .card{
-      background:var(--card);
+      background:rgba(255,250,244,.84);
       border:1px solid var(--stroke);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
@@ -97,288 +108,150 @@
 
     .gateWrap{
       max-width:900px;
-      margin:18px auto 0;
+      margin:20px auto 0;
       display:grid;
-      grid-template-columns:1.1fr .9fr;
+      grid-template-columns:1.05fr .95fr;
       gap:14px;
     }
-    @media (max-width:900px){
-      .gateWrap{grid-template-columns:1fr}
-    }
+    @media (max-width:900px){.gateWrap{grid-template-columns:1fr}}
 
     .hero{
-      padding:20px;
-      border-radius:24px;
-      border:1px solid rgba(185,138,69,.16);
+      padding:24px;
+      border-radius:var(--radius-lg);
       background:
-        radial-gradient(800px 280px at 20% 0%, rgba(201,164,106,.12), transparent 60%),
-        radial-gradient(700px 280px at 100% 100%, rgba(216,161,93,.08), transparent 60%),
-        rgba(255,255,255,.55);
+        radial-gradient(720px 240px at 0% 0%, rgba(202,163,106,.18), transparent 55%),
+        linear-gradient(180deg, rgba(255,255,255,.78), rgba(244,234,223,.86));
+      border:1px solid rgba(175,130,68,.18);
     }
-    .hero h2{margin:0 0 8px;font-size:22px}
-    .hero p{margin:0;color:var(--muted);line-height:1.8;font-size:14px}
+    .hero h2{margin:0 0 10px;font-size:26px;line-height:1.35}
+    .hero p{margin:0;color:var(--muted);line-height:1.9;font-size:14px}
+    .hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 
-    .gate{padding:18px}
-    .label{
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:6px;
-      display:block;
-    }
+    .gate{padding:20px}
+    .label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block;font-weight:700}
     .input{
-      width:100%;
-      min-height:44px;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid var(--stroke);
-      background:#fffdf9;
-      color:var(--text);
-      outline:none;
+      width:100%;min-height:48px;padding:12px 14px;border-radius:15px;
+      border:1px solid var(--stroke);background:#fffdf9;color:var(--text);outline:none;
     }
-    .input:focus{border-color:rgba(185,138,69,.40)}
-    .error{color:#b25e57;font-size:12px;margin-top:10px}
+    .input:focus{border-color:rgba(175,130,68,.4);box-shadow:0 0 0 4px rgba(202,163,106,.12)}
+    .error{color:#a35d56;font-size:12px;margin-top:10px}
 
     .content{display:none;margin-top:14px}
 
     .hero2{
-      padding:18px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-      background:
-        radial-gradient(700px 240px at 18% 0%, rgba(201,164,106,.10), transparent 60%),
-        rgba(255,255,255,.55);
+      padding:20px;
+      display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+      background:linear-gradient(180deg, rgba(255,255,255,.76), rgba(244,234,223,.84));
+      border-radius:28px;
     }
-    .hero2 h3{margin:0;font-size:22px}
-    @media (max-width:760px){
-      .hero2{flex-direction:column;align-items:flex-start}
-    }
+    .hero2 h3{margin:0;font-size:28px;line-height:1.3}
+    .hero2 .sub{margin-top:6px;color:var(--muted);font-size:13px}
 
     .tabs{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:14px;
+      display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;
+      position:sticky;top:86px;z-index:18;padding:2px 0;
     }
     .tabBtn{
-      min-height:42px;
-      padding:10px 16px;
-      border-radius:14px;
-      border:1px solid var(--stroke);
-      background:rgba(255,255,255,.62);
-      color:var(--text);
-      cursor:pointer;
-      font-weight:900;
-      box-shadow:var(--shadow);
+      min-height:44px;padding:10px 18px;border-radius:16px;border:1px solid var(--stroke);
+      background:rgba(255,255,255,.76);color:var(--text);cursor:pointer;font-weight:900;
+      box-shadow:var(--shadow)
     }
-    .tabBtn.active{
-      background:rgba(201,164,106,.16);
-      border-color:rgba(185,138,69,.35);
-      color:#8b6330;
-    }
+    .tabBtn.active{background:linear-gradient(180deg,#ead0a5,#cfaa71);color:#644925;border:none}
 
     .tabPane{display:none}
     .tabPane.active{display:block}
 
     .stats{
-      display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:12px;
-      margin-top:14px;
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px;
     }
-    @media (max-width:900px){
-      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
-    }
-    @media (max-width:560px){
-      .stats{grid-template-columns:1fr}
-    }
+    @media (max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:560px){.stats{grid-template-columns:1fr}}
 
-    /* بطاقات الحضور */
     .stat{
-      padding:16px;
-      border-radius:18px;
-      min-height:100px;
-      box-shadow:var(--shadow);
+      min-height:110px;padding:16px;border-radius:20px;box-shadow:var(--shadow);
+      display:flex;flex-direction:column;justify-content:space-between;
     }
     .stat .t{font-size:12px;font-weight:800;opacity:.95}
-    .stat .n{font-size:28px;font-weight:1000;margin-top:8px}
-    .stat .s{font-size:12px;margin-top:8px;opacity:.9}
-    .stat.blue{background:#dce8f6;color:#294969}
-    .stat.gold{background:#efe2c8;color:#6f5326}
-    .stat.green{background:#ddebdc;color:#3f6340}
-    .stat.red{background:#f3dedd;color:#7a423e}
-    .stat.orange{background:#f6e2c8;color:#81531f}
+    .stat .n{font-size:32px;font-weight:1000;line-height:1.1;margin-top:8px}
+    .stat .s{font-size:12px;margin-top:10px;opacity:.9}
+    .stat.blue{background:#dce7f4;color:#2f4c6c}
+    .stat.gold{background:#f1e3c8;color:#765727}
+    .stat.green{background:#e0ecde;color:#496a49}
+    .stat.red{background:#f3e0de;color:#8a514a}
 
-    /* بطاقات الدعوات أصغر ومرتبة */
     .inviteStats{
-      display:grid;
-      grid-template-columns:repeat(5,minmax(0,1fr));
-      gap:12px;
-      margin-top:14px;
+      display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:14px;
     }
-    @media (max-width:1100px){
-      .inviteStats{grid-template-columns:repeat(3,minmax(0,1fr))}
-    }
-    @media (max-width:760px){
-      .inviteStats{grid-template-columns:repeat(2,minmax(0,1fr))}
-    }
-    @media (max-width:500px){
-      .inviteStats{grid-template-columns:1fr}
-    }
+    @media (max-width:1100px){.inviteStats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media (max-width:760px){.inviteStats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:520px){.inviteStats{grid-template-columns:1fr}}
 
     .miniStat{
-      background:var(--card2);
-      border:1px solid var(--stroke);
-      border-radius:18px;
-      padding:14px;
-      min-height:96px;
-      box-shadow:var(--shadow);
+      min-height:98px;padding:14px;border-radius:18px;background:rgba(255,255,255,.78);
+      border:1px solid var(--stroke);box-shadow:var(--shadow)
     }
-    .miniStat .t{
-      font-size:12px;
-      font-weight:800;
-      color:var(--muted);
-      margin-bottom:10px;
-    }
-    .miniStat .n{
-      font-size:26px;
-      font-weight:1000;
-      margin-bottom:8px;
-    }
-    .miniStat .s{
-      font-size:12px;
-      color:var(--muted);
-    }
+    .miniStat .t{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:10px}
+    .miniStat .n{font-size:28px;font-weight:1000;line-height:1.1;margin-bottom:8px}
+    .miniStat .s{font-size:12px;color:var(--muted)}
 
-    .tools{
-      margin-top:14px;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-    }
-    @media (max-width:900px){
-      .tools{grid-template-columns:1fr}
-    }
+    .tools{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    @media (max-width:900px){.tools{grid-template-columns:1fr}}
 
     .toolCard{padding:16px}
     .toolCard h4{margin:0 0 12px;font-size:16px}
-    .searchWrap{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
+    .searchWrap{display:flex;gap:10px;flex-wrap:wrap}
     .searchWrap input{flex:1;min-width:180px}
-
-    .filters{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-top:12px;
-    }
+    .filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     .chip{
-      border:1px solid var(--stroke);
-      background:rgba(255,255,255,.62);
-      color:var(--text);
-      padding:9px 12px;
-      border-radius:999px;
-      cursor:pointer;
-      font-size:13px;
-      min-height:38px;
+      min-height:38px;padding:9px 12px;border-radius:999px;border:1px solid var(--stroke);
+      background:rgba(255,255,255,.7);color:var(--text);cursor:pointer;font-size:13px
     }
-    .chip.active{
-      border-color:rgba(185,138,69,.35);
-      background:rgba(201,164,106,.14);
-      color:#8b6330;
-    }
+    .chip.active{background:rgba(202,163,106,.16);border-color:rgba(175,130,68,.3);color:#865f2c}
 
-    .sectionTitle{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-top:18px;
-      margin-bottom:10px;
-    }
-    .sectionTitle h4{margin:0;font-size:16px}
+    .sectionTitle{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;margin-bottom:10px}
+    .sectionTitle h4{margin:0;font-size:17px}
     .muted{color:var(--muted);font-size:12px}
 
     .tableWrap{
-      overflow:auto;
-      border:1px solid var(--stroke);
-      border-radius:20px;
-      background:rgba(255,255,255,.5);
+      overflow:auto;border:1px solid var(--stroke);border-radius:22px;background:rgba(255,255,255,.72);
+      box-shadow:var(--shadow)
     }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:840px;
-    }
-    th,td{
-      padding:12px 12px;
-      text-align:right;
-      border-bottom:1px solid var(--stroke);
-      font-size:13px;
-      vertical-align:middle;
-    }
-    th{
-      background:#f4eadb;
-      color:#8b6330;
-      font-weight:900;
-    }
-    tbody tr:hover td{background:rgba(255,255,255,.55)}
+    table{width:100%;border-collapse:collapse;min-width:860px}
+    th,td{padding:13px 12px;text-align:right;border-bottom:1px solid var(--stroke);font-size:13px;vertical-align:middle}
+    th{background:#f4eadb;color:#8b6330;font-weight:900;position:sticky;top:0}
+    tbody tr:hover td{background:rgba(255,255,255,.52)}
 
     .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:900;
-      border:1px solid var(--stroke);
+      display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;
+      font-size:11px;font-weight:900;border:1px solid var(--stroke)
     }
-    .badge.ok{background:#e3f0e2;border-color:#cfe2cd;color:#4f744f}
-    .badge.no{background:#f4e0de;border-color:#e6c8c5;color:#9a5c56}
-    .badge.wait{background:#f7ead9;border-color:#edd4b7;color:#9a6a31}
+    .badge.ok{background:#e4f0e1;border-color:#cfdfcb;color:#567b54}
+    .badge.no{background:#f4e3e0;border-color:#e6ccc7;color:#9b5c56}
+    .badge.wait{background:#f8eddc;border-color:#ecd7b8;color:#9d6b30}
 
-    .mobileList{display:none}
+    .mobileList{display:none;margin-top:10px}
     @media (max-width:760px){
       .tableWrap{display:none}
       .mobileList{display:block}
+      .container{padding-bottom:calc(22px + var(--safe-bottom))}
+      .hero2 h3{font-size:23px}
+      .tabs{top:78px}
     }
 
     .scanCard{
-      border:1px solid var(--stroke);
-      background:rgba(255,255,255,.62);
-      border-radius:18px;
-      padding:14px;
-      margin-bottom:10px;
-      box-shadow:var(--shadow);
+      border:1px solid var(--stroke);background:rgba(255,255,255,.78);border-radius:18px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow)
     }
     .scanHead{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      padding-bottom:10px;
-      border-bottom:1px dashed rgba(120,94,60,.16);
-      margin-bottom:10px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:10px;
+      border-bottom:1px dashed rgba(120,94,60,.16);margin-bottom:10px
     }
     .scanCode{font-weight:1000}
-    .scanLine{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      margin:8px 0;
-      font-size:13px;
-    }
+    .scanLine{display:flex;justify-content:space-between;gap:10px;margin:8px 0;font-size:13px}
     .scanLabel{color:var(--muted);font-weight:800}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
 
     @media print{
-      .topbar,.gateWrap,.tools,.tabs,#logoutBtn,#printBtn,#refreshBtn,#exportBtn{display:none !important}
+      .topbar,.gateWrap,.tools,.tabs,#logoutBtn,#printBtn,#refreshBtn,#exportBtn{display:none!important}
       body{background:#fff;color:#111}
       .card,.tableWrap{box-shadow:none;background:#fff;border:1px solid #ddd}
       th{background:#f5f5f5;color:#111}
@@ -386,7 +259,6 @@
     }
   </style>
 </head>
-
 <body>
   <div class="topbar">
     <div class="wrap row">
@@ -394,7 +266,7 @@
         <div class="logo">KRS</div>
         <div>
           <h1>KRS INVITE</h1>
-          <p id="topSub">لوحة العميل المبسطة</p>
+          <p id="topSub">عرض مبسط وأنيق للعميل</p>
         </div>
       </div>
 
@@ -412,11 +284,13 @@
   <div class="container">
     <div id="gateWrap" class="gateWrap">
       <div class="hero card">
-        <h2>لوحة زبون أنيقة وبسيطة</h2>
-        <p>
-          هذه الصفحة تعرض للزبون أهم ما يحتاجه:
-          الحضور المباشر، وعدد الدعوات المرسلة، والمؤكدين، والمعتذرين، ومن بانتظار الرد.
-        </p>
+        <h2>لوحة زبون فاخرة وسهلة</h2>
+        <p>واجهة مريحة للهواتف تعرض الحضور المباشر، والدعوات، والردود، بشكل واضح ومناسب للزبون.</p>
+        <div class="hero-badges">
+          <span class="pill">مناسب للهاتف</span>
+          <span class="pill">سهل الاستخدام</span>
+          <span class="pill">تحديث مباشر</span>
+        </div>
       </div>
 
       <div class="gate card">
@@ -437,7 +311,10 @@
 
     <div id="content" class="content">
       <div class="hero2 card">
-        <h3 id="eventTitle">—</h3>
+        <div>
+          <h3 id="eventTitle">—</h3>
+          <div class="sub">متابعة مباشرة للحضور والدعوات والردود الخاصة بالفعالية الحالية.</div>
+        </div>
         <div class="pill">عرض مباشر للعميل</div>
       </div>
 
@@ -446,7 +323,6 @@
         <button class="tabBtn" data-tab="invites">الدعوات والردود</button>
       </div>
 
-      <!-- تبويب الحضور -->
       <div id="tab-attendance" class="tabPane active">
         <div class="stats">
           <div class="stat blue">
@@ -454,19 +330,16 @@
             <div id="kpiTotal" class="n">0</div>
             <div class="s">كل السجلات المرتبطة بالحدث</div>
           </div>
-
           <div class="stat gold">
             <div class="t">الحضور</div>
             <div id="kpiUsed" class="n">0</div>
             <div class="s">الذين تم تسجيل دخولهم</div>
           </div>
-
           <div class="stat red">
             <div class="t">المتبقي</div>
             <div id="kpiLeft" class="n">0</div>
             <div class="s">لم يتم دخولهم بعد</div>
           </div>
-
           <div class="stat green">
             <div class="t">نسبة الحضور</div>
             <div id="kpiRate" class="n">0%</div>
@@ -491,9 +364,9 @@
           <div class="toolCard card">
             <h4>ملخص سريع</h4>
             <div class="muted" style="line-height:1.9">
-              • يتم تحديث بيانات الحضور مباشرة من Firebase.<br>
-              • يمكن للعميل معرفة الأسماء والأوقات بدون الوصول إلى أدوات الإدارة.<br>
-              • مناسب للعرض على الموبايل والماك.
+              • تحديث مباشر لبيانات الحضور.<br>
+              • عرض واضح للأسماء والأوقات.<br>
+              • مناسب للهواتف بشكل أفضل.
             </div>
           </div>
         </div>
@@ -517,11 +390,9 @@
             <tbody id="rowsBody"></tbody>
           </table>
         </div>
-
         <div id="mobileList" class="mobileList"></div>
       </div>
 
-      <!-- تبويب الدعوات والردود -->
       <div id="tab-invites" class="tabPane">
         <div class="inviteStats">
           <div class="miniStat">
@@ -529,35 +400,31 @@
             <div id="inviteTotal" class="n">0</div>
             <div class="s">كل المدعوين</div>
           </div>
-
           <div class="miniStat">
             <div class="t">تم الإرسال</div>
             <div id="inviteSent" class="n">0</div>
             <div class="s">الدعوات المرسلة</div>
           </div>
-
           <div class="miniStat">
             <div class="t">أكد الحضور</div>
             <div id="inviteConfirmed" class="n">0</div>
             <div class="s">RSVP موافق</div>
           </div>
-
           <div class="miniStat">
             <div class="t">اعتذر</div>
             <div id="inviteDeclined" class="n">0</div>
             <div class="s">RSVP اعتذار</div>
           </div>
-
           <div class="miniStat">
             <div class="t">في الانتظار</div>
             <div id="invitePending" class="n">0</div>
-            <div class="s">لم يرد حتى الآن</div>
+            <div class="s">لم يرد بعد</div>
           </div>
         </div>
 
         <div class="sectionTitle">
           <h4>ملخص حالات الدعوات</h4>
-          <div class="muted">عرض مبسط للعميل</div>
+          <div class="muted">عرض مبسط ومناسب للعميل</div>
         </div>
 
         <div class="tableWrap">
@@ -575,7 +442,6 @@
             <tbody id="inviteRowsBody"></tbody>
           </table>
         </div>
-
         <div id="inviteMobileList" class="mobileList"></div>
       </div>
 
@@ -585,11 +451,8 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import {
-      getFirestore, collection, query, where, onSnapshot, getDocs
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    /* ===== عدل هذه القيم فقط ===== */
     const PAGE_EVENT = "زفاف خالد محمد";
     const PAGE_PASSWORD = "9900";
 
@@ -601,11 +464,9 @@
       messagingSenderId:"747519941805",
       appId:"1:747519941805:web:468fada2492700e9da3a24"
     };
-    /* =========================== */
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
     const $ = (s, r=document) => r.querySelector(s);
 
     let allDocs = [];
@@ -619,41 +480,24 @@
     function formatDate(dt){
       return dt ? dt.toLocaleString("ar-AE") : "—";
     }
-
     function isYes(v){
       return String(v || "").toLowerCase() === "yes";
     }
-
     function normalize(v){
       return String(v || "").trim().toLowerCase();
     }
-
-    function pickName(x){
-      return x.GuestName || x.guestName || x.Name || x.name || "—";
-    }
-
-    function pickPhone(x){
-      return x.Phone || x.phone || x.mobile || x.to || "—";
-    }
-
-    function pickStatus(x){
-      return x.Status || x.status || x.CheckIn || x.checkIn || "no";
-    }
-
+    function pickName(x){ return x.GuestName || x.guestName || x.Name || x.name || "—"; }
+    function pickPhone(x){ return x.Phone || x.phone || x.mobile || x.to || "—"; }
+    function pickStatus(x){ return x.Status || x.status || x.CheckIn || x.checkIn || "no"; }
     function pickScannedAt(x){
       const ts = x.scannedAt || x.ScannedAt || x.checkedAt || x.CheckedInAt || null;
       return ts?.toDate?.() ? ts.toDate() : null;
     }
-
-    function pickInviteCount(x){
-      return x.InviteCount || x.inviteCount || x.count || 1;
-    }
-
+    function pickInviteCount(x){ return x.InviteCount || x.inviteCount || x.count || 1; }
     function pickSent(x){
       const v = normalize(x.sendStatus || x.SendStatus || x.sentStatus || x.sent || x.deliveryStatus);
       return ["sent","delivered","success","done","تم الإرسال","مرسل"].includes(v);
     }
-
     function pickRSVP(x){
       const v = normalize(x.rsvp || x.RSVP || x.reply || x.statusText || x.response);
       if(["yes","confirmed","confirm","accepted","موافق","أكد الحضور","تم تأكيد الحضور"].includes(v)) return "confirmed";
@@ -676,25 +520,14 @@
 
     function tryAutoLogin(){
       $("#eventInput").value = PAGE_EVENT;
-      if(localStorage.getItem(sessionKey()) === "ok"){
-        openContent();
-      }
+      if(localStorage.getItem(sessionKey()) === "ok") openContent();
     }
 
     function handleEnter(){
       const ev = $("#eventInput").value.trim();
       const pw = $("#passInput").value.trim();
-
-      if(ev !== PAGE_EVENT){
-        $("#gateMsg").textContent = "اسم الحدث غير صحيح";
-        return;
-      }
-
-      if(pw !== PAGE_PASSWORD){
-        $("#gateMsg").textContent = "كلمة المرور غير صحيحة";
-        return;
-      }
-
+      if(ev !== PAGE_EVENT){ $("#gateMsg").textContent = "اسم الحدث غير صحيح"; return; }
+      if(pw !== PAGE_PASSWORD){ $("#gateMsg").textContent = "كلمة المرور غير صحيحة"; return; }
       localStorage.setItem(sessionKey(), "ok");
       $("#gateMsg").textContent = "";
       openContent();
@@ -708,12 +541,9 @@
     async function startStream(){
       if(unsub) unsub();
       $("#readErr").style.display = "none";
-
       try{
         const q1 = query(collection(db, "invites"), where("EventName", "==", PAGE_EVENT));
-        unsub = onSnapshot(q1, (snap) => handleSnapshot(snap), async () => {
-          await tryFallback();
-        });
+        unsub = onSnapshot(q1, (snap) => handleSnapshot(snap), async () => { await tryFallback(); });
       }catch{
         await tryFallback();
       }
@@ -722,9 +552,7 @@
     async function tryFallback(){
       try{
         const q2 = query(collection(db, "invites"), where("eventId", "==", PAGE_EVENT));
-        unsub = onSnapshot(q2, (snap) => handleSnapshot(snap), async () => {
-          await oneTimeFetch();
-        });
+        unsub = onSnapshot(q2, (snap) => handleSnapshot(snap), async () => { await oneTimeFetch(); });
       }catch{
         await oneTimeFetch();
       }
@@ -783,7 +611,6 @@
       const used = allDocs.filter(r => isYes(r.Status)).length;
       const left = Math.max(total - used, 0);
       const rate = total > 0 ? Math.round((used / total) * 100) : 0;
-
       $("#kpiTotal").textContent = total;
       $("#kpiUsed").textContent = used;
       $("#kpiLeft").textContent = left;
@@ -796,7 +623,6 @@
       const confirmed = allDocs.filter(r => r.rsvp === "confirmed").length;
       const declined = allDocs.filter(r => r.rsvp === "declined").length;
       const pending = allDocs.filter(r => r.rsvp === "pending").length;
-
       $("#inviteTotal").textContent = total;
       $("#inviteSent").textContent = sent;
       $("#inviteConfirmed").textContent = confirmed;
@@ -808,16 +634,15 @@
       const q = ($("#searchInput").value || "").trim().toLowerCase();
       let list = allRows.slice();
 
-      if(currentFilter === "yes"){
-        list = list.filter(r => isYes(r.Status));
-      } else if(currentFilter === "no"){
+      if(currentFilter === "yes") list = list.filter(r => isYes(r.Status));
+      else if(currentFilter === "no") {
         const notEntered = allDocs.filter(r => !isYes(r.Status));
         list = notEntered.sort((a,b) => {
           const ta = a.scannedAt ? a.scannedAt.getTime() : 0;
           const tb = b.scannedAt ? b.scannedAt.getTime() : 0;
           return tb - ta;
         });
-      } else if(currentFilter === "today"){
+      } else if(currentFilter === "today") {
         const start = new Date();
         start.setHours(0,0,0,0);
         list = list.filter(r => r.scannedAt && r.scannedAt >= start);
@@ -832,7 +657,7 @@
         });
       }
 
-      filteredRows = list.slice(0, 100);
+      filteredRows = list.slice(0,100);
       renderRows();
     }
 
@@ -857,15 +682,13 @@
 
       for(const r of filteredRows){
         const ok = isYes(r.Status);
-
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="mono">${r.Code}</td>
           <td><span class="badge ${ok ? "ok" : "no"}">${ok ? "تم الدخول" : "لم يدخل"}</span></td>
           <td>${formatDate(r.scannedAt)}</td>
           <td>${r.name || "—"}</td>
-          <td class="mono">${r.phone || "—"}</td>
-        `;
+          <td class="mono">${r.phone || "—"}</td>`;
         body.appendChild(tr);
 
         const card = document.createElement("div");
@@ -877,8 +700,7 @@
           </div>
           <div class="scanLine"><span class="scanLabel">الوقت</span><span>${formatDate(r.scannedAt)}</span></div>
           <div class="scanLine"><span class="scanLabel">الاسم</span><span>${r.name || "—"}</span></div>
-          <div class="scanLine"><span class="scanLabel">الهاتف</span><span class="mono">${r.phone || "—"}</span></div>
-        `;
+          <div class="scanLine"><span class="scanLabel">الهاتف</span><span class="mono">${r.phone || "—"}</span></div>`;
         mobile.appendChild(card);
       }
     }
@@ -888,8 +710,7 @@
       const mobile = $("#inviteMobileList");
       body.innerHTML = "";
       mobile.innerHTML = "";
-
-      const rows = allDocs.slice(0, 100);
+      const rows = allDocs.slice(0,100);
 
       if(rows.length === 0){
         const tr = document.createElement("tr");
@@ -916,8 +737,7 @@
           <td>${confirmed}</td>
           <td>${declined}</td>
           <td>${pending}</td>
-          <td>${r.inviteCount}</td>
-        `;
+          <td>${r.inviteCount}</td>`;
         body.appendChild(tr);
 
         const card = document.createElement("div");
@@ -933,15 +753,13 @@
           <div class="scanLine"><span class="scanLabel">أكد الحضور</span><span>${confirmed}</span></div>
           <div class="scanLine"><span class="scanLabel">اعتذر</span><span>${declined}</span></div>
           <div class="scanLine"><span class="scanLabel">في الانتظار</span><span>${pending}</span></div>
-          <div class="scanLine"><span class="scanLabel">عدد الكروت</span><span>${r.inviteCount}</span></div>
-        `;
+          <div class="scanLine"><span class="scanLabel">عدد الكروت</span><span>${r.inviteCount}</span></div>`;
         mobile.appendChild(card);
       }
     }
 
     function exportCSV(){
       const activeTab = document.querySelector(".tabBtn.active")?.dataset.tab || "attendance";
-
       let header = [];
       let lines = [];
 
@@ -979,32 +797,23 @@
 
     function csv(v){
       const s = String(v ?? "");
-      if(/[",\n]/.test(s)) return `\"${s.replace(/"/g,'""')}\"`;
+      if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
       return s;
     }
 
     function switchTab(name){
-      document.querySelectorAll(".tabBtn").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.tab === name);
-      });
-      document.querySelectorAll(".tabPane").forEach(pane => {
-        pane.classList.toggle("active", pane.id === `tab-${name}`);
-      });
+      document.querySelectorAll(".tabBtn").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === name));
+      document.querySelectorAll(".tabPane").forEach(pane => pane.classList.toggle("active", pane.id === `tab-${name}`));
     }
 
     document.addEventListener("DOMContentLoaded", () => {
       tryAutoLogin();
-
       $("#enterBtn").addEventListener("click", handleEnter);
-      $("#passInput").addEventListener("keydown", (e) => {
-        if(e.key === "Enter") handleEnter();
-      });
-
+      $("#passInput").addEventListener("keydown", (e) => { if(e.key === "Enter") handleEnter(); });
       $("#logoutBtn").addEventListener("click", logout);
       $("#refreshBtn").addEventListener("click", () => location.reload());
       $("#printBtn").addEventListener("click", () => window.print());
       $("#exportBtn").addEventListener("click", exportCSV);
-
       $("#searchInput").addEventListener("input", applyFilters);
 
       document.querySelectorAll(".chip").forEach(btn => {
