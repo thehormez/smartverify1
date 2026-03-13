@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>KRS INVITE — Client Dashboard Luxe</title>
+  <style>
+    :root{
+      --bg:#f7f0e7;
+      --bg-soft:#fbf6ef;
+      --surface:#fffaf4;
+      --surface-2:#f4eadf;
+      --surface-3:#efe2d2;
+      --stroke:rgba(113,88,58,.14);
+      --stroke-strong:rgba(140,103,55,.24);
+      --text:#3f3124;
+      --muted:#8d765e;
+      --gold:#caa36a;
+      --gold-deep:#af8244;
+      --sand:#dcc2a0;
+      --green:#7f9f79;
+      --red:#c7867d;
+      --amber:#d5a15d;
+      --blue:#90abc4;
+      --shadow:0 20px 50px rgba(109,79,42,.12);
+      --radius:22px;
+      --radius-lg:28px;
+      --safe-top:env(safe-area-inset-top, 0px);
+      --safe-bottom:env(safe-area-inset-bottom, 0px);
+      --max:1180px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{
+      min-height:100vh;
+      background:
+        radial-gradient(900px 360px at 0% 0%, rgba(202,163,106,.18), transparent 60%),
+        radial-gradient(900px 360px at 100% 100%, rgba(173,130,68,.08), transparent 65%),
+        linear-gradient(180deg,#f9f3eb 0%, #f4ebdf 100%);
+      color:var(--text);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",Tahoma,sans-serif;
+      overflow-x:hidden;
+    }
+    button,input{font:inherit}
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:40;
+      background:rgba(250,245,238,.9);
+      backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--stroke);
+    }
+    .wrap{max-width:var(--max);margin:0 auto;padding:calc(12px + var(--safe-top)) 14px 12px}
+    .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .top-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .spacer{flex:1}
+
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:46px;height:46px;border-radius:16px;
+      display:grid;place-items:center;
+      background:linear-gradient(180deg,#f2dfbf,#e4c28c);
+      border:1px solid rgba(175,130,68,.24);
+      color:#6d502b;
+      font-weight:900;
+      box-shadow:var(--shadow);
+    }
+    .brand h1{margin:0;font-size:15px;font-weight:900}
+    .brand p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+
+    .pill{
+      min-height:36px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.62);
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:12px;color:var(--text);
+      white-space:nowrap;
+    }
+    .pill b{color:#8a6430}
+    .meta-pills{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+    .btn{
+      min-height:40px;
+      padding:10px 14px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.68);
+      color:var(--text);
+      cursor:pointer;
+      font-weight:800;
+      box-shadow:var(--shadow);
+      transition:.18s ease;
+    }
+    .btn:hover{transform:translateY(-1px);border-color:var(--stroke-strong)}
+    .btn.gold{background:linear-gradient(180deg,#e9d2ac,#caa36a);color:#5d421f;border:none}
+    .btn.red{background:rgba(199,134,125,.12);border-color:rgba(199,134,125,.25)}
+    .btn.icon{min-width:40px;padding:10px 12px}
+    .btn.block{width:100%}
+
+    .container{max-width:var(--max);margin:0 auto;padding:14px}
+    .card{
+      background:rgba(255,250,244,.84);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+
+    .gateWrap{
+      max-width:900px;
+      margin:20px auto 0;
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:14px;
+    }
+    @media (max-width:900px){.gateWrap{grid-template-columns:1fr}}
+
+    .hero{
+      padding:24px;
+      border-radius:var(--radius-lg);
+      background:
+        radial-gradient(720px 240px at 0% 0%, rgba(202,163,106,.18), transparent 55%),
+        linear-gradient(180deg, rgba(255,255,255,.78), rgba(244,234,223,.86));
+      border:1px solid rgba(175,130,68,.18);
+    }
+    .hero h2{margin:0 0 10px;font-size:26px;line-height:1.35}
+    .hero p{margin:0;color:var(--muted);line-height:1.9;font-size:14px}
+    .hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+    .gate{padding:20px}
+    .label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block;font-weight:700}
+    .input{
+      width:100%;min-height:48px;padding:12px 14px;border-radius:15px;
+      border:1px solid var(--stroke);background:#fffdf9;color:var(--text);outline:none;
+    }
+    .input:focus{border-color:rgba(175,130,68,.4);box-shadow:0 0 0 4px rgba(202,163,106,.12)}
+    .error{color:#a35d56;font-size:12px;margin-top:10px}
+
+    .content{display:none;margin-top:14px}
+
+    .hero2{
+      padding:18px 20px;
+      display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+      background:linear-gradient(180deg, rgba(255,255,255,.76), rgba(244,234,223,.84));
+      border-radius:24px;
+    }
+    .hero2 h3{margin:0;font-size:26px;line-height:1.25}
+    .hero2 .sub{margin-top:6px;color:var(--muted);font-size:13px}
+    .hero2-mini{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+    .tabs{
+      display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;
+      position:sticky;top:86px;z-index:18;padding:2px 0;
+    }
+    .tabBtn{
+      min-height:44px;padding:10px 18px;border-radius:16px;border:1px solid var(--stroke);
+      background:rgba(255,255,255,.76);color:var(--text);cursor:pointer;font-weight:900;
+      box-shadow:var(--shadow)
+    }
+    .tabBtn.active{background:linear-gradient(180deg,#ead0a5,#cfaa71);color:#644925;border:none}
+
+    .tabPane{display:none}
+    .tabPane.active{display:block}
+
+    .stats{
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px;
+    }
+    @media (max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:560px){.stats{grid-template-columns:1fr}}
+
+    .stat{
+      min-height:110px;padding:16px;border-radius:20px;box-shadow:var(--shadow);
+      display:flex;flex-direction:column;justify-content:space-between;
+    }
+    .stat .t{font-size:12px;font-weight:800;opacity:.95}
+    .stat .n{font-size:32px;font-weight:1000;line-height:1.1;margin-top:8px}
+    .stat .s{font-size:12px;margin-top:10px;opacity:.9}
+    .stat.blue{background:#dce7f4;color:#2f4c6c}
+    .stat.gold{background:#f1e3c8;color:#765727}
+    .stat.green{background:#e0ecde;color:#496a49}
+    .stat.red{background:#f3e0de;color:#8a514a}
+
+    .inviteStats{
+      display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:14px;
+    }
+    @media (max-width:1100px){.inviteStats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media (max-width:760px){
+      .tableWrap{display:none}
+      .mobileList{display:block}
+      .container{padding:12px 12px calc(92px + var(--safe-bottom))}
+      .hero2 h3{font-size:21px}
+      .tabs{
+        position:fixed;
+        left:12px;
+        right:12px;
+        bottom:12px;
+        top:auto;
+        z-index:35;
+        margin-top:0;
+        padding:8px;
+        background:rgba(250,245,238,.92);
+        backdrop-filter:blur(12px);
+        border:1px solid var(--stroke);
+        border-radius:20px;
+        box-shadow:var(--shadow);
+        display:grid;
+        grid-template-columns:1fr 1fr;
+      }
+      .tabBtn{width:100%;justify-content:center;text-align:center;min-height:48px}
+      .topbar .wrap{padding-top:calc(10px + var(--safe-top));padding-bottom:10px}
+      .top-row{align-items:flex-start}
+      .brand h1{font-size:14px}
+      .brand p{font-size:11px}
+      .top-actions{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+      .top-actions .btn{min-width:0;padding:10px 8px;font-size:13px}
+      .meta-pills{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .meta-pills .pill{justify-content:center;min-width:0}
+      .hero2{padding:16px;border-radius:20px}
+      .stats{gap:10px}
+      .stat{min-height:92px;padding:14px;border-radius:18px}
+      .stat .n{font-size:26px}
+      .miniStat{min-height:88px;padding:13px}
+      .miniStat .n{font-size:24px}
+      .toolCard{padding:14px}
+      .sectionTitle{margin-top:14px;margin-bottom:8px}
+    }
+
+    .scanCard{
+      border:1px solid var(--stroke);background:rgba(255,255,255,.78);border-radius:18px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow)
+    }
+    .scanHead{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:10px;
+      border-bottom:1px dashed rgba(120,94,60,.16);margin-bottom:10px
+    }
+    .scanCode{font-weight:1000}
+    .scanLine{display:flex;justify-content:space-between;gap:10px;margin:8px 0;font-size:13px}
+    .scanLabel{color:var(--muted);font-weight:800}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+
+    @media print{
+      .topbar,.gateWrap,.tools,.tabs,#logoutBtn,#printBtn,#refreshBtn,#exportBtn{display:none!important}
+      body{background:#fff;color:#111}
+      .card,.tableWrap{box-shadow:none;background:#fff;border:1px solid #ddd}
+      th{background:#f5f5f5;color:#111}
+      td{color:#111}
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="wrap">
+      <div class="top-row">
+        <div class="brand">
+          <div class="logo">KRS</div>
+          <div>
+            <h1>KRS INVITE</h1>
+            <p id="topSub">لوحة العميل</p>
+          </div>
+        </div>
+
+        <div class="meta-pills">
+          <span class="pill">الحدث: <b id="pillEvent">—</b></span>
+          <span class="pill">آخر تحديث: <b id="lastUpdate">—</b></span>
+        </div>
+
+        <div class="top-actions">
+          <button id="refreshBtn" class="btn icon" title="تحديث">↻</button>
+          <button id="exportBtn" class="btn">CSV ⤓</button>
+          <button id="printBtn" class="btn">🖨️</button>
+          <button id="logoutBtn" class="btn red" style="display:none">خروج</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="gateWrap" class="gateWrap" style="max-width:520px;grid-template-columns:1fr">
+      <div class="gate card" style="padding:26px">
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:18px">
+          <div class="logo" style="width:64px;height:64px;border-radius:20px;font-size:28px;margin-bottom:14px">KRS</div>
+          <div style="font-size:30px;font-weight:1000;line-height:1.2;margin-bottom:6px">KRS INVITE</div>
+          <div class="muted" style="font-size:14px">بوابة دخول العميل</div>
+        </div>
+
+        <label class="label">اسم الحدث</label>
+        <input id="eventInput" class="input" placeholder="مثال: زفاف خالد محمد" />
+
+        <div style="height:12px"></div>
+
+        <label class="label">كلمة المرور</label>
+        <input id="passInput" type="password" class="input" placeholder="••••" />
+
+        <div style="height:16px"></div>
+
+        <button id="enterBtn" class="btn gold block" style="min-height:50px;font-size:20px">دخول اللوحة</button>
+        <div id="gateMsg" class="error" style="text-align:center"></div>
+      </div>
+    </div>
+
+    <div id="content" class="content">
+      <div class="hero2 card">
+        <div>
+          <h3 id="eventTitle">—</h3>
+          <div class="sub">عرض مرتب ومباشر للحضور والدعوات.</div>
+        </div>
+        <div class="hero2-mini">
+          <span class="pill">واجهة عميل</span>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tabBtn active" data-tab="attendance">الحضور</button>
+        <button class="tabBtn" data-tab="invites">الدعوات والردود</button>
+      </div>
+
+      <div id="tab-attendance" class="tabPane active">
+        <div class="stats">
+          <div class="stat blue">
+            <div class="t">إجمالي الدعوات</div>
+            <div id="kpiTotal" class="n">0</div>
+            <div class="s">كل السجلات المرتبطة بالحدث</div>
+          </div>
+          <div class="stat gold">
+            <div class="t">الحضور</div>
+            <div id="kpiUsed" class="n">0</div>
+            <div class="s">الذين تم تسجيل دخولهم</div>
+          </div>
+          <div class="stat red">
+            <div class="t">المتبقي</div>
+            <div id="kpiLeft" class="n">0</div>
+            <div class="s">لم يتم دخولهم بعد</div>
+          </div>
+          <div class="stat green">
+            <div class="t">نسبة الحضور</div>
+            <div id="kpiRate" class="n">0%</div>
+            <div class="s">من إجمالي الدعوات</div>
+          </div>
+        </div>
+
+        <div class="tools">
+          <div class="toolCard card">
+            <h4>بحث سريع</h4>
+            <div class="searchWrap">
+              <input id="searchInput" class="input" placeholder="ابحث بالاسم أو الرقم أو الكود" />
+            </div>
+            <div class="filters">
+              <button class="chip active" data-filter="all">الكل</button>
+              <button class="chip" data-filter="yes">تم الدخول</button>
+              <button class="chip" data-filter="no">لم يدخل</button>
+              <button class="chip" data-filter="today">اليوم</button>
+            </div>
+          </div>
+
+          <div class="toolCard card">
+            <h4>ملخص</h4>
+            <div class="muted" style="line-height:1.9">
+              • مناسب للهاتف بشكل أفضل.<br>
+              • عرض أبسط وأوضح للعميل.<br>
+              • تحديث مباشر بدون ازدحام.
+            </div>
+          </div>
+        </div>
+
+        <div class="sectionTitle">
+          <h4>آخر الحضور</h4>
+          <div class="muted">أحدث 100 سجل</div>
+        </div>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>الكود</th>
+                <th>الحالة</th>
+                <th>الوقت</th>
+                <th>الاسم</th>
+                <th>الهاتف</th>
+              </tr>
+            </thead>
+            <tbody id="rowsBody"></tbody>
+          </table>
+        </div>
+        <div id="mobileList" class="mobileList"></div>
+      </div>
+
+      <div id="tab-invites" class="tabPane">
+        <div class="inviteStats">
+          <div class="miniStat">
+            <div class="t">إجمالي الدعوات</div>
+            <div id="inviteTotal" class="n">0</div>
+            <div class="s">كل المدعوين</div>
+          </div>
+          <div class="miniStat">
+            <div class="t">تم الإرسال</div>
+            <div id="inviteSent" class="n">0</div>
+            <div class="s">الدعوات المرسلة</div>
+          </div>
+          <div class="miniStat">
+            <div class="t">أكد الحضور</div>
+            <div id="inviteConfirmed" class="n">0</div>
+            <div class="s">RSVP موافق</div>
+          </div>
+          <div class="miniStat">
+            <div class="t">اعتذر</div>
+            <div id="inviteDeclined" class="n">0</div>
+            <div class="s">RSVP اعتذار</div>
+          </div>
+          <div class="miniStat">
+            <div class="t">في الانتظار</div>
+            <div id="invitePending" class="n">0</div>
+            <div class="s">لم يرد بعد</div>
+          </div>
+        </div>
+
+        <div class="sectionTitle">
+          <h4>ملخص حالات الدعوات</h4>
+          <div class="muted">عرض مبسط ومناسب للعميل</div>
+        </div>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>الهاتف</th>
+                <th>أكد الحضور</th>
+                <th>اعتذر</th>
+                <th>في الانتظار</th>
+                <th>عدد الكروت</th>
+              </tr>
+            </thead>
+            <tbody id="inviteRowsBody"></tbody>
+          </table>
+        </div>
+        <div id="inviteMobileList" class="mobileList"></div>
+      </div>
+
+      <div id="readErr" class="error" style="display:none;margin-top:12px"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const PAGE_EVENT = "زفاف خالد محمد";
+    const PAGE_PASSWORD = "9900";
+
+    const firebaseConfig = {
+      apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain:"hormez-inv.firebaseapp.com",
+      projectId:"hormez-inv",
+      storageBucket:"hormez-inv.firebasestorage.app",
+      messagingSenderId:"747519941805",
+      appId:"1:747519941805:web:468fada2492700e9da3a24"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const $ = (s, r=document) => r.querySelector(s);
+
+    let allDocs = [];
+    let allRows = [];
+    let filteredRows = [];
+    let unsub = null;
+    let currentFilter = "all";
+
+    const sessionKey = () => `krs_client_dash_${PAGE_EVENT}`;
+
+    function formatDate(dt){
+      return dt ? dt.toLocaleString("ar-AE") : "—";
+    }
+    function isYes(v){
+      return String(v || "").toLowerCase() === "yes";
+    }
+    function normalize(v){
+      return String(v || "").trim().toLowerCase();
+    }
+    function pickName(x){ return x.GuestName || x.guestName || x.Name || x.name || "—"; }
+    function pickPhone(x){ return x.Phone || x.phone || x.mobile || x.to || "—"; }
+    function pickStatus(x){ return x.Status || x.status || x.CheckIn || x.checkIn || "no"; }
+    function pickScannedAt(x){
+      const ts = x.scannedAt || x.ScannedAt || x.checkedAt || x.CheckedInAt || null;
+      return ts?.toDate?.() ? ts.toDate() : null;
+    }
+    function pickInviteCount(x){ return x.InviteCount || x.inviteCount || x.count || 1; }
+    function pickSent(x){
+      const v = normalize(x.sendStatus || x.SendStatus || x.sentStatus || x.sent || x.deliveryStatus);
+      return ["sent","delivered","success","done","تم الإرسال","مرسل"].includes(v);
+    }
+    function pickRSVP(x){
+      const v = normalize(x.rsvp || x.RSVP || x.reply || x.statusText || x.response);
+      if(["yes","confirmed","confirm","accepted","موافق","أكد الحضور","تم تأكيد الحضور"].includes(v)) return "confirmed";
+      if(["no","declined","decline","اعتذر","رفض","لن يحضر"].includes(v)) return "declined";
+      return "pending";
+    }
+
+    function setLastUpdate(){
+      $("#lastUpdate").textContent = new Date().toLocaleTimeString("ar-AE");
+    }
+
+    function openContent(){
+      $("#gateWrap").style.display = "none";
+      $("#content").style.display = "block";
+      $("#logoutBtn").style.display = "inline-flex";
+      $("#pillEvent").textContent = PAGE_EVENT;
+      $("#eventTitle").textContent = PAGE_EVENT;
+      startStream();
+    }
+
+    function tryAutoLogin(){
+      $("#eventInput").value = PAGE_EVENT;
+      if(localStorage.getItem(sessionKey()) === "ok") openContent();
+    }
+
+    function handleEnter(){
+      const ev = $("#eventInput").value.trim();
+      const pw = $("#passInput").value.trim();
+      if(ev !== PAGE_EVENT){ $("#gateMsg").textContent = "اسم الحدث غير صحيح"; return; }
+      if(pw !== PAGE_PASSWORD){ $("#gateMsg").textContent = "كلمة المرور غير صحيحة"; return; }
+      localStorage.setItem(sessionKey(), "ok");
+      $("#gateMsg").textContent = "";
+      openContent();
+    }
+
+    function logout(){
+      localStorage.removeItem(sessionKey());
+      location.reload();
+    }
+
+    async function startStream(){
+      if(unsub) unsub();
+      $("#readErr").style.display = "none";
+      try{
+        const q1 = query(collection(db, "invites"), where("EventName", "==", PAGE_EVENT));
+        unsub = onSnapshot(q1, (snap) => handleSnapshot(snap), async () => { await tryFallback(); });
+      }catch{
+        await tryFallback();
+      }
+    }
+
+    async function tryFallback(){
+      try{
+        const q2 = query(collection(db, "invites"), where("eventId", "==", PAGE_EVENT));
+        unsub = onSnapshot(q2, (snap) => handleSnapshot(snap), async () => { await oneTimeFetch(); });
+      }catch{
+        await oneTimeFetch();
+      }
+    }
+
+    async function oneTimeFetch(){
+      try{
+        let snap = await getDocs(query(collection(db, "invites"), where("EventName", "==", PAGE_EVENT)));
+        if(snap.empty){
+          snap = await getDocs(query(collection(db, "invites"), where("eventId", "==", PAGE_EVENT)));
+        }
+        handleSnapshot(snap);
+      }catch(err){
+        $("#readErr").style.display = "block";
+        $("#readErr").textContent = "تعذر قراءة البيانات: " + (err?.message || err);
+      }
+    }
+
+    function handleSnapshot(snap){
+      const docs = [];
+      const rows = [];
+
+      snap.forEach((d) => {
+        const x = d.data() || {};
+        const status = pickStatus(x);
+        const scannedAt = pickScannedAt(x);
+
+        const row = {
+          id: d.id,
+          Code: x.Code || d.id,
+          Status: String(status || "no"),
+          scannedAt,
+          name: pickName(x),
+          phone: pickPhone(x),
+          sent: pickSent(x),
+          rsvp: pickRSVP(x),
+          inviteCount: pickInviteCount(x)
+        };
+
+        docs.push(row);
+        if(scannedAt) rows.push(row);
+      });
+
+      allDocs = docs;
+      allRows = rows.sort((a,b) => b.scannedAt - a.scannedAt);
+
+      renderAttendanceKPIs();
+      renderInviteKPIs();
+      applyFilters();
+      renderInviteRows();
+      setLastUpdate();
+    }
+
+    function renderAttendanceKPIs(){
+      const total = allDocs.length;
+      const used = allDocs.filter(r => isYes(r.Status)).length;
+      const left = Math.max(total - used, 0);
+      const rate = total > 0 ? Math.round((used / total) * 100) : 0;
+      $("#kpiTotal").textContent = total;
+      $("#kpiUsed").textContent = used;
+      $("#kpiLeft").textContent = left;
+      $("#kpiRate").textContent = rate + "%";
+    }
+
+    function renderInviteKPIs(){
+      const total = allDocs.length;
+      const sent = allDocs.filter(r => r.sent).length;
+      const confirmed = allDocs.filter(r => r.rsvp === "confirmed").length;
+      const declined = allDocs.filter(r => r.rsvp === "declined").length;
+      const pending = allDocs.filter(r => r.rsvp === "pending").length;
+      $("#inviteTotal").textContent = total;
+      $("#inviteSent").textContent = sent;
+      $("#inviteConfirmed").textContent = confirmed;
+      $("#inviteDeclined").textContent = declined;
+      $("#invitePending").textContent = pending;
+    }
+
+    function applyFilters(){
+      const q = ($("#searchInput").value || "").trim().toLowerCase();
+      let list = allRows.slice();
+
+      if(currentFilter === "yes") list = list.filter(r => isYes(r.Status));
+      else if(currentFilter === "no") {
+        const notEntered = allDocs.filter(r => !isYes(r.Status));
+        list = notEntered.sort((a,b) => {
+          const ta = a.scannedAt ? a.scannedAt.getTime() : 0;
+          const tb = b.scannedAt ? b.scannedAt.getTime() : 0;
+          return tb - ta;
+        });
+      } else if(currentFilter === "today") {
+        const start = new Date();
+        start.setHours(0,0,0,0);
+        list = list.filter(r => r.scannedAt && r.scannedAt >= start);
+      }
+
+      if(q){
+        list = list.filter(r => {
+          const code = String(r.Code || "").toLowerCase();
+          const name = String(r.name || "").toLowerCase();
+          const phone = String(r.phone || "").toLowerCase();
+          return code.includes(q) || name.includes(q) || phone.includes(q);
+        });
+      }
+
+      filteredRows = list.slice(0,100);
+      renderRows();
+    }
+
+    function renderRows(){
+      const body = $("#rowsBody");
+      const mobile = $("#mobileList");
+      body.innerHTML = "";
+      mobile.innerHTML = "";
+
+      if(filteredRows.length === 0){
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 5;
+        td.textContent = "لا توجد بيانات";
+        td.className = "muted";
+        td.style.textAlign = "center";
+        tr.appendChild(td);
+        body.appendChild(tr);
+        mobile.innerHTML = `<div class="muted" style="text-align:center">لا توجد بيانات</div>`;
+        return;
+      }
+
+      for(const r of filteredRows){
+        const ok = isYes(r.Status);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="mono">${r.Code}</td>
+          <td><span class="badge ${ok ? "ok" : "no"}">${ok ? "تم الدخول" : "لم يدخل"}</span></td>
+          <td>${formatDate(r.scannedAt)}</td>
+          <td>${r.name || "—"}</td>
+          <td class="mono">${r.phone || "—"}</td>`;
+        body.appendChild(tr);
+
+        const card = document.createElement("div");
+        card.className = "scanCard";
+        card.innerHTML = `
+          <div class="scanHead">
+            <div class="scanCode mono">${r.Code}</div>
+            <span class="badge ${ok ? "ok" : "no"}">${ok ? "تم الدخول" : "لم يدخل"}</span>
+          </div>
+          <div class="scanLine"><span class="scanLabel">الوقت</span><span>${formatDate(r.scannedAt)}</span></div>
+          <div class="scanLine"><span class="scanLabel">الاسم</span><span>${r.name || "—"}</span></div>
+          <div class="scanLine"><span class="scanLabel">الهاتف</span><span class="mono">${r.phone || "—"}</span></div>`;
+        mobile.appendChild(card);
+      }
+    }
+
+    function renderInviteRows(){
+      const body = $("#inviteRowsBody");
+      const mobile = $("#inviteMobileList");
+      body.innerHTML = "";
+      mobile.innerHTML = "";
+      const rows = allDocs.slice(0,100);
+
+      if(rows.length === 0){
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 6;
+        td.textContent = "لا توجد بيانات";
+        td.className = "muted";
+        td.style.textAlign = "center";
+        tr.appendChild(td);
+        body.appendChild(tr);
+        mobile.innerHTML = `<div class="muted" style="text-align:center">لا توجد بيانات</div>`;
+        return;
+      }
+
+      for(const r of rows){
+        const confirmed = r.rsvp === "confirmed" ? "نعم" : "—";
+        const declined = r.rsvp === "declined" ? "نعم" : "—";
+        const pending = r.rsvp === "pending" ? "نعم" : "—";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.name || "—"}</td>
+          <td class="mono">${r.phone || "—"}</td>
+          <td>${confirmed}</td>
+          <td>${declined}</td>
+          <td>${pending}</td>
+          <td>${r.inviteCount}</td>`;
+        body.appendChild(tr);
+
+        const card = document.createElement("div");
+        card.className = "scanCard";
+        card.innerHTML = `
+          <div class="scanHead">
+            <div class="scanCode">${r.name || "—"}</div>
+            <span class="badge ${r.rsvp === "confirmed" ? "ok" : r.rsvp === "declined" ? "no" : "wait"}">
+              ${r.rsvp === "confirmed" ? "أكد الحضور" : r.rsvp === "declined" ? "اعتذر" : "في الانتظار"}
+            </span>
+          </div>
+          <div class="scanLine"><span class="scanLabel">الهاتف</span><span class="mono">${r.phone || "—"}</span></div>
+          <div class="scanLine"><span class="scanLabel">أكد الحضور</span><span>${confirmed}</span></div>
+          <div class="scanLine"><span class="scanLabel">اعتذر</span><span>${declined}</span></div>
+          <div class="scanLine"><span class="scanLabel">في الانتظار</span><span>${pending}</span></div>
+          <div class="scanLine"><span class="scanLabel">عدد الكروت</span><span>${r.inviteCount}</span></div>`;
+        mobile.appendChild(card);
+      }
+    }
+
+    function exportCSV(){
+      const activeTab = document.querySelector(".tabBtn.active")?.dataset.tab || "attendance";
+      let header = [];
+      let lines = [];
+
+      if(activeTab === "attendance"){
+        header = ["الكود","الحالة","الوقت","الاسم","الهاتف","الحدث"];
+        lines = filteredRows.map(r => [
+          csv(r.Code),
+          csv(isYes(r.Status) ? "تم الدخول" : "لم يدخل"),
+          csv(r.scannedAt ? r.scannedAt.toISOString() : ""),
+          csv(r.name || ""),
+          csv(r.phone || ""),
+          csv(PAGE_EVENT)
+        ].join(","));
+      } else {
+        header = ["الاسم","الهاتف","أكد الحضور","اعتذر","في الانتظار","عدد الكروت","الحدث"];
+        lines = allDocs.map(r => [
+          csv(r.name || ""),
+          csv(r.phone || ""),
+          csv(r.rsvp === "confirmed" ? "نعم" : ""),
+          csv(r.rsvp === "declined" ? "نعم" : ""),
+          csv(r.rsvp === "pending" ? "نعم" : ""),
+          csv(r.inviteCount),
+          csv(PAGE_EVENT)
+        ].join(","));
+      }
+
+      const blob = new Blob([header.join(",") + "\n" + lines.join("\n")], { type:"text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${PAGE_EVENT}-${activeTab}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csv(v){
+      const s = String(v ?? "");
+      if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+      return s;
+    }
+
+    function switchTab(name){
+      document.querySelectorAll(".tabBtn").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === name));
+      document.querySelectorAll(".tabPane").forEach(pane => pane.classList.toggle("active", pane.id === `tab-${name}`));
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      tryAutoLogin();
+      $("#enterBtn").addEventListener("click", handleEnter);
+      $("#passInput").addEventListener("keydown", (e) => { if(e.key === "Enter") handleEnter(); });
+      $("#logoutBtn").addEventListener("click", logout);
+      $("#refreshBtn").addEventListener("click", () => location.reload());
+      $("#printBtn").addEventListener("click", () => window.print());
+      $("#exportBtn").addEventListener("click", exportCSV);
+      $("#searchInput").addEventListener("input", applyFilters);
+
+      document.querySelectorAll(".chip").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".chip").forEach(x => x.classList.remove("active"));
+          btn.classList.add("active");
+          currentFilter = btn.dataset.filter;
+          applyFilters();
+        });
+      });
+
+      document.querySelectorAll(".tabBtn").forEach(btn => {
+        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+      });
+    });
+  </script>
+</body>
+</html>
