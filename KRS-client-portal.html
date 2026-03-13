@@ -282,30 +282,26 @@
   </div>
 
   <div class="container">
-    <div id="gateWrap" class="gateWrap">
-      <div class="hero card">
-        <h2>لوحة زبون فاخرة وسهلة</h2>
-        <p>واجهة مريحة للهواتف تعرض الحضور المباشر، والدعوات، والردود، بشكل واضح ومناسب للزبون.</p>
-        <div class="hero-badges">
-          <span class="pill">مناسب للهاتف</span>
-          <span class="pill">سهل الاستخدام</span>
-          <span class="pill">تحديث مباشر</span>
+    <div id="gateWrap" class="gateWrap" style="max-width:520px;grid-template-columns:1fr">
+      <div class="gate card" style="padding:26px">
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:18px">
+          <div class="logo" style="width:64px;height:64px;border-radius:20px;font-size:28px;margin-bottom:14px">KRS</div>
+          <div style="font-size:30px;font-weight:1000;line-height:1.2;margin-bottom:6px">KRS INVITE</div>
+          <div class="muted" style="font-size:14px">بوابة دخول العميل</div>
         </div>
-      </div>
 
-      <div class="gate card">
         <label class="label">اسم الحدث</label>
         <input id="eventInput" class="input" placeholder="مثال: زفاف خالد محمد" />
 
-        <div style="height:10px"></div>
+        <div style="height:12px"></div>
 
         <label class="label">كلمة المرور</label>
         <input id="passInput" type="password" class="input" placeholder="••••" />
 
-        <div style="height:12px"></div>
+        <div style="height:16px"></div>
 
-        <button id="enterBtn" class="btn gold block">دخول اللوحة</button>
-        <div id="gateMsg" class="error"></div>
+        <button id="enterBtn" class="btn gold block" style="min-height:50px;font-size:20px">دخول اللوحة</button>
+        <div id="gateMsg" class="error" style="text-align:center"></div>
       </div>
     </div>
 
