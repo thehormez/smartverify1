@@ -2,747 +2,985 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0b0c" />
-  <title>KRS Client Portal</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;800;900&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>KRS INVITE — Client Dashboard Lite</title>
+
   <style>
     :root{
-      --bg:#090a0d;
-      --panel:#11141b;
-      --panel2:#171c24;
-      --card:#121720;
-      --stroke:#292d36;
+      --bg:#0a0b0f;
+      --bg2:#10131a;
+      --card:#121722;
+      --card2:#171d2a;
+      --stroke:rgba(255,255,255,.08);
+      --text:#eef2f7;
+      --muted:#98a3b6;
       --gold:#d4af37;
-      --gold-soft:rgba(212,175,55,.13);
-      --txt:#f1f3f7;
-      --muted:#9ca6b5;
-      --green:#1dbf73;
+      --gold2:#b48821;
+      --green:#16a34a;
       --red:#ef4444;
-      --blue:#3b82f6;
-      --shadow:0 18px 40px rgba(0,0,0,.28);
+      --blue:#2563eb;
+      --orange:#f59e0b;
+      --shadow:0 18px 44px rgba(0,0,0,.30);
       --radius:20px;
-      --safe-top:env(safe-area-inset-top,0px);
-      --safe-bottom:env(safe-area-inset-bottom,0px);
-      --max:1460px;
     }
+
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:linear-gradient(180deg,#07080b,#0e1219);color:var(--txt);font-family:"Noto Sans Arabic",system-ui,-apple-system,sans-serif}
+    html,body{margin:0;padding:0;background:linear-gradient(180deg,#07080b,#0f141d);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",Tahoma,sans-serif}
     body{min-height:100vh}
-    button,input,select,textarea{font:inherit}
+    button,input{font:inherit}
     a{text-decoration:none;color:inherit}
 
     .topbar{
-      position:sticky;top:0;z-index:50;
-      backdrop-filter:blur(12px);
-      background:rgba(10,10,12,.88);
+      position:sticky;top:0;z-index:20;
+      backdrop-filter:blur(10px);
+      background:rgba(8,10,14,.86);
       border-bottom:1px solid var(--stroke);
     }
-    .wrap{max-width:var(--max);margin:0 auto;padding:calc(16px + var(--safe-top)) 16px 16px}
+    .wrap{max-width:1180px;margin:0 auto;padding:14px}
     .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
     .spacer{flex:1}
 
     .brand{display:flex;align-items:center;gap:12px}
     .logo{
-      width:44px;height:44px;border-radius:14px;display:grid;place-items:center;
-      background:linear-gradient(180deg,#19140a,#0f1014);border:1px solid rgba(212,175,55,.35);
-      color:var(--gold);font-weight:900;box-shadow:var(--shadow)
+      width:42px;height:42px;border-radius:14px;
+      display:grid;place-items:center;
+      background:linear-gradient(180deg,#171208,#0f1015);
+      border:1px solid rgba(212,175,55,.35);
+      color:var(--gold);
+      font-weight:900;
+      box-shadow:var(--shadow);
     }
-    .brand-title{font-size:15px;font-weight:900}
-    .brand-sub{font-size:12px;color:var(--muted)}
+    .brand h1{margin:0;font-size:15px}
+    .brand p{margin:3px 0 0;font-size:12px;color:var(--muted)}
 
     .pill{
-      padding:8px 12px;border-radius:999px;border:1px solid var(--stroke);
-      background:rgba(255,255,255,.04);font-size:12px;display:inline-flex;align-items:center;gap:7px
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      font-size:12px;
+      display:inline-flex;align-items:center;gap:6px;
     }
     .pill b{color:#ffe7a0}
 
     .btn{
-      min-height:42px;padding:10px 14px;border-radius:14px;border:1px solid var(--stroke);
-      background:#151922;color:#fff;font-weight:800;cursor:pointer;transition:.18s ease;
+      min-height:40px;
+      padding:10px 14px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      cursor:pointer;
+      font-weight:800;
+      transition:.15s ease;
     }
-    .btn:hover{border-color:rgba(212,175,55,.5)}
-    .btn.gold{background:linear-gradient(180deg,#e0c46b,#b48821);color:#141005;border:none}
-    .btn.ghost{background:transparent}
-    .btn.green{border-color:rgba(29,191,115,.35);background:rgba(29,191,115,.08)}
-    .btn.red{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)}
-    .btn.small{min-height:36px;padding:8px 12px;border-radius:12px;font-size:13px}
+    .btn:hover{border-color:rgba(212,175,55,.35);transform:translateY(-1px)}
+    .btn.gold{background:linear-gradient(180deg,#e2c46c,#b48821);color:#171205;border:none}
+    .btn.red{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.30)}
+    .btn.block{width:100%}
 
-    .layout{max-width:var(--max);margin:0 auto;padding:16px;display:grid;gap:14px;grid-template-columns:300px 1fr}
-    @media (max-width:1100px){.layout{grid-template-columns:1fr}}
+    .container{max-width:1180px;margin:0 auto;padding:14px}
+    .card{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
 
-    .side,.main{background:rgba(17,20,27,.94);border:1px solid var(--stroke);border-radius:24px;box-shadow:var(--shadow)}
-    .side{padding:14px;height:fit-content;position:sticky;top:94px}
-    @media (max-width:1100px){.side{position:static}}
+    .gateWrap{
+      max-width:900px;
+      margin:18px auto 0;
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:14px;
+    }
+    @media (max-width:900px){
+      .gateWrap{grid-template-columns:1fr}
+    }
 
     .hero{
-      background:linear-gradient(180deg,rgba(212,175,55,.11),rgba(255,255,255,.02));
-      border:1px solid rgba(212,175,55,.22);border-radius:22px;padding:16px;margin-bottom:14px;
+      padding:20px;
+      border-radius:24px;
+      border:1px solid rgba(212,175,55,.20);
+      background:
+        radial-gradient(800px 280px at 20% 0%, rgba(212,175,55,.12), transparent 60%),
+        radial-gradient(700px 280px at 100% 100%, rgba(37,99,235,.10), transparent 60%),
+        rgba(255,255,255,.03);
     }
-    .hero h1{margin:0 0 6px;font-size:22px}
-    .hero p{margin:0;color:var(--muted);line-height:1.75;font-size:13px}
+    .hero h2{margin:0 0 8px;font-size:22px}
+    .hero p{margin:0;color:var(--muted);line-height:1.8;font-size:14px}
 
-    .event-card{margin-top:12px;padding:12px;border:1px solid var(--stroke);border-radius:18px;background:rgba(255,255,255,.03)}
-    .event-name{font-weight:900;font-size:16px}
-    .event-meta{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.8}
-
-    .nav{display:grid;gap:10px;margin-top:14px}
-    .nav-btn{
-      width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
-      padding:12px 14px;border-radius:16px;border:1px solid var(--stroke);background:var(--panel2);
-      color:var(--txt);cursor:pointer;text-align:right
+    .gate{
+      padding:18px;
     }
-    .nav-btn.active{border-color:rgba(212,175,55,.65);box-shadow:0 0 0 2px rgba(212,175,55,.12) inset;background:#181d26}
-    .nav-btn .left{display:flex;align-items:center;gap:10px}
-    .icon{
-      width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
-      background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.18);color:var(--gold)
+    .label{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+      display:block;
     }
-    .nav-title{font-weight:900;font-size:14px}
-    .nav-sub{font-size:11px;color:var(--muted)}
-
-    .main{overflow:hidden;display:flex;flex-direction:column;min-height:82vh}
-    .toolbar{
-      padding:14px 16px;border-bottom:1px solid var(--stroke);display:flex;gap:10px;align-items:center;flex-wrap:wrap;
-      background:rgba(255,255,255,.02)
+    .input{
+      width:100%;
+      min-height:44px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background:var(--bg2);
+      color:var(--text);
+      outline:none;
     }
-    .toolbar .title{font-weight:900;font-size:18px}
-    .toolbar .sub{font-size:12px;color:var(--muted)}
+    .input:focus{border-color:rgba(212,175,55,.40)}
+    .error{color:#ffb3b3;font-size:12px;margin-top:10px}
 
-    .content{padding:16px}
-    .tab{display:none}
-    .tab.active{display:block}
+    .content{display:none;margin-top:14px}
 
-    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
-    @media (max-width:1100px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media (max-width:680px){.stats{grid-template-columns:1fr}}
+    .hero2{
+      padding:18px;
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:14px;
+      align-items:center;
+      background:
+        radial-gradient(700px 240px at 18% 0%, rgba(212,175,55,.10), transparent 60%),
+        rgba(255,255,255,.03);
+    }
+    @media (max-width:760px){
+      .hero2{grid-template-columns:1fr}
+    }
+    .hero2 h3{margin:0 0 6px;font-size:22px}
+    .hero2 p{margin:0;color:var(--muted);font-size:13px;line-height:1.8}
+
+    .tabs{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+    .tabBtn{
+      min-height:42px;
+      padding:10px 16px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      cursor:pointer;
+      font-weight:900;
+    }
+    .tabBtn.active{
+      background:rgba(212,175,55,.12);
+      border-color:rgba(212,175,55,.35);
+      color:#ffe7a0;
+    }
+
+    .tabPane{display:none}
+    .tabPane.active{display:block}
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+      margin-top:14px;
+    }
+    @media (max-width:900px){
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:560px){
+      .stats{grid-template-columns:1fr}
+    }
 
     .stat{
-      background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.04));
-      border:1px solid var(--stroke);border-radius:20px;padding:16px
+      padding:16px;
+      border-radius:20px;
+      position:relative;
+      overflow:hidden;
+      min-height:100px;
     }
-    .stat .label{font-size:12px;color:var(--muted);margin-bottom:8px}
-    .stat .value{font-size:28px;font-weight:900;letter-spacing:-.02em}
-    .stat .foot{font-size:12px;color:#cfd6df;margin-top:6px}
+    .stat .t{font-size:12px;font-weight:800;opacity:.95}
+    .stat .n{font-size:30px;font-weight:1000;margin-top:8px}
+    .stat .s{font-size:12px;margin-top:8px;opacity:.9}
+    .stat.blue{background:linear-gradient(135deg,rgba(37,99,235,.95),rgba(37,99,235,.45));color:#fff}
+    .stat.gold{background:linear-gradient(135deg,rgba(212,175,55,.95),rgba(180,136,33,.45));color:#171205}
+    .stat.green{background:linear-gradient(135deg,rgba(22,163,74,.95),rgba(22,163,74,.45));color:#fff}
+    .stat.red{background:linear-gradient(135deg,rgba(239,68,68,.95),rgba(239,68,68,.40));color:#fff}
+    .stat.orange{background:linear-gradient(135deg,rgba(245,158,11,.95),rgba(245,158,11,.40));color:#fff}
 
-    .section-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
-    @media (max-width:1100px){.section-grid{grid-template-columns:1fr}}
-
-    .card{
-      background:var(--card);border:1px solid var(--stroke);border-radius:22px;padding:16px;box-shadow:var(--shadow)
+    .tools{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
     }
-    .card h3{margin:0 0 12px;font-size:17px}
-    .muted{color:var(--muted)}
-
-    .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    @media (max-width:680px){.actions{grid-template-columns:1fr}}
-    .action-box{
-      border:1px solid var(--stroke);background:rgba(255,255,255,.025);border-radius:18px;padding:14px;
-      display:flex;flex-direction:column;gap:8px
+    @media (max-width:900px){
+      .tools{grid-template-columns:1fr}
     }
-    .action-box strong{font-size:15px}
-    .action-box p{margin:0;color:var(--muted);font-size:12px;line-height:1.7}
 
-    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .form-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-    @media (max-width:860px){.form-grid,.form-grid-3{grid-template-columns:1fr}}
-
-    .field{display:flex;flex-direction:column;gap:7px}
-    .field label{font-size:12px;color:var(--muted);font-weight:700}
-    .field input,.field select,.field textarea{
-      width:100%;min-height:46px;border-radius:14px;border:1px solid var(--stroke);background:#0e1219;color:#fff;padding:12px 14px;outline:none
+    .toolCard{padding:16px}
+    .toolCard h4{margin:0 0 12px;font-size:16px}
+    .searchWrap{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
     }
-    .field textarea{min-height:112px;resize:vertical}
+    .searchWrap input{flex:1;min-width:180px}
 
-    .inline-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-
-    .upload-zone{
-      border:1.5px dashed rgba(212,175,55,.3);background:rgba(212,175,55,.05);border-radius:18px;padding:18px;text-align:center
+    .filters{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:12px;
     }
-    .upload-zone strong{display:block;margin-bottom:6px}
-    .upload-zone p{margin:0;color:var(--muted);font-size:12px;line-height:1.8}
+    .chip{
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      padding:9px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      font-size:13px;
+      min-height:38px;
+    }
+    .chip.active{
+      border-color:rgba(212,175,55,.35);
+      background:rgba(212,175,55,.10);
+      color:#ffe7a0;
+    }
 
-    .searchbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-    .searchbar input,.searchbar select{min-height:44px;border-radius:14px;border:1px solid var(--stroke);background:#0e1219;color:#fff;padding:10px 12px}
-    .searchbar input{flex:1;min-width:180px}
+    .sectionTitle{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:18px;
+      margin-bottom:10px;
+    }
+    .sectionTitle h4{margin:0;font-size:16px}
+    .muted{color:var(--muted);font-size:12px}
 
-    .table-wrap{overflow:auto;border:1px solid var(--stroke);border-radius:18px}
-    table{width:100%;border-collapse:collapse;min-width:980px;background:#0f131a}
-    th,td{padding:12px 12px;border-bottom:1px solid var(--stroke);text-align:right;font-size:13px;vertical-align:middle}
-    th{background:#151a22;color:#f5e6ae;font-size:12px;position:sticky;top:0}
-    tr:hover td{background:rgba(255,255,255,.02)}
+    .tableWrap{
+      overflow:auto;
+      border:1px solid var(--stroke);
+      border-radius:20px;
+      background:rgba(255,255,255,.03);
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:840px;
+    }
+    th,td{
+      padding:12px 12px;
+      text-align:right;
+      border-bottom:1px solid var(--stroke);
+      font-size:13px;
+      vertical-align:middle;
+    }
+    th{
+      background:rgba(255,255,255,.05);
+      color:#ffe7a0;
+      font-weight:900;
+    }
+    tbody tr:hover td{background:rgba(255,255,255,.03)}
 
-    .badge{padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--stroke)}
-    .badge.sent{background:rgba(29,191,115,.08);border-color:rgba(29,191,115,.3);color:#aff0cd}
-    .badge.pending{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.3);color:#b9d5ff}
-    .badge.noreply{background:rgba(255,255,255,.05);color:#dce3ec}
-    .badge.attended{background:rgba(212,175,55,.08);border-color:rgba(212,175,55,.3);color:#ffe7a0}
-    .badge.failed{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#ffc1c1}
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+      border:1px solid var(--stroke);
+    }
+    .badge.ok{background:rgba(22,163,74,.10);border-color:rgba(22,163,74,.25);color:#aff0c4}
+    .badge.no{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.25);color:#ffc7c7}
+    .badge.wait{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.25);color:#ffd78f}
 
-    .mobile-bottom{display:none}
-    @media (max-width:860px){
-      .mobile-bottom{
-        display:grid;grid-template-columns:repeat(4,1fr);gap:8px;position:fixed;left:0;right:0;bottom:0;z-index:40;
-        padding:8px 10px calc(8px + var(--safe-bottom));background:rgba(9,10,13,.95);backdrop-filter:blur(12px);border-top:1px solid var(--stroke)
-      }
-      .mobile-bottom button{min-height:52px;font-size:11px}
-      .content{padding-bottom:88px}
+    .mobileList{display:none}
+    @media (max-width:760px){
+      .tableWrap{display:none}
+      .mobileList{display:block}
+    }
+
+    .scanCard{
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+      border-radius:18px;
+      padding:14px;
+      margin-bottom:10px;
+    }
+    .scanHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding-bottom:10px;
+      border-bottom:1px dashed rgba(255,255,255,.10);
+      margin-bottom:10px;
+    }
+    .scanCode{font-weight:1000}
+    .scanLine{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin:8px 0;
+      font-size:13px;
+    }
+    .scanLabel{color:var(--muted);font-weight:800}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+
+    @media print{
+      .topbar,.gateWrap,.tools,.tabs,#logoutBtn,#printBtn,#refreshBtn,#exportBtn{display:none !important}
+      body{background:#fff;color:#111}
+      .card,.tableWrap{box-shadow:none;background:#fff;border:1px solid #ddd}
+      th{background:#f5f5f5;color:#111}
+      td{color:#111}
     }
   </style>
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="wrap">
-      <div class="row">
-        <div class="brand">
-          <div class="logo">KRS</div>
-          <div>
-            <div class="brand-title">KRS Client Portal</div>
-            <div class="brand-sub">بوابة العميل الخاصة بإدارة الدعوات والضيوف</div>
-          </div>
+  <div class="topbar">
+    <div class="wrap row">
+      <div class="brand">
+        <div class="logo">KRS</div>
+        <div>
+          <h1>KRS INVITE</h1>
+          <p id="topSub">لوحة العميل المبسطة</p>
         </div>
+      </div>
 
-        <div class="spacer"></div>
+      <div class="spacer"></div>
 
-        <span class="pill">الفعالية: <b id="eventIdPill">event_001_khaled</b></span>
-        <span class="pill">الحالة: <b>نشط</b></span>
-        <button class="btn gold">حفظ التعديلات</button>
+      <span class="pill">الحدث: <b id="pillEvent">—</b></span>
+      <span class="pill">آخر تحديث: <b id="lastUpdate">—</b></span>
+      <button id="refreshBtn" class="btn">↻ تحديث</button>
+      <button id="exportBtn" class="btn">⤓ CSV</button>
+      <button id="printBtn" class="btn">🖨️ طباعة</button>
+      <button id="logoutBtn" class="btn red" style="display:none">خروج</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="gateWrap" class="gateWrap">
+      <div class="hero card">
+        <h2>لوحة زبون أنيقة وبسيطة</h2>
+        <p>
+          هذه الصفحة تعرض للزبون أهم ما يحتاجه:
+          الحضور المباشر، وعدد الدعوات المرسلة، والمؤكدين، والمعتذرين، ومن بانتظار الرد.
+        </p>
+      </div>
+
+      <div class="gate card">
+        <label class="label">اسم الحدث</label>
+        <input id="eventInput" class="input" placeholder="مثال: زفاف خالد محمد" />
+
+        <div style="height:10px"></div>
+
+        <label class="label">كلمة المرور</label>
+        <input id="passInput" type="password" class="input" placeholder="••••" />
+
+        <div style="height:12px"></div>
+
+        <button id="enterBtn" class="btn gold block">دخول اللوحة</button>
+        <div id="gateMsg" class="error"></div>
       </div>
     </div>
-  </header>
 
-  <div class="layout">
-    <aside class="side">
-      <section class="hero">
-        <h1>مرحبًا بك</h1>
-        <p>هذه الصفحة مخصصة للعميل فقط، لإضافة الضيوف، تحديد عدد الكروت، رفع ملف Excel، ومتابعة حالة الدعوات والحضور في مكان واحد.</p>
-      </section>
-
-      <div class="event-card">
-        <div class="event-name" id="eventNameSide">زفاف خالد</div>
-        <div class="event-meta">
-          التاريخ: 12 يوليو 2026<br/>
-          المكان: أبوظبي<br/>
-          رابط الحدث: مخصص لهذا العميل فقط
-        </div>
-      </div>
-
-      <nav class="nav" style="margin-top:14px">
-        <button class="nav-btn active" data-tab="overview">
-          <div class="left"><div class="icon">⌂</div><div><div class="nav-title">الرئيسية</div><div class="nav-sub">واجهة مبسطة للعميل</div></div></div>
-          <span class="pill">Home</span>
-        </button>
-        <button class="nav-btn" data-tab="live">
-          <div class="left"><div class="icon">🟢</div><div><div class="nav-title">الحضور اللحظي</div><div class="nav-sub">الاسم + الوقت + العدد المباشر</div></div></div>
-          <span class="pill">Live</span>
-        </button>
-        <button class="nav-btn" data-tab="stats">
-          <div class="left"><div class="icon">✉️</div><div><div class="nav-title">الدعوات والردود</div><div class="nav-sub">مرسل / اعتذر / أكد الحضور</div></div></div>
-          <span class="pill">RSVP</span>
-        </button>
-        <button class="nav-btn" data-tab="guests">
-          <div class="left"><div class="icon">👥</div><div><div class="nav-title">الضيوف</div><div class="nav-sub">إضافة وتعديل ومراجعة</div></div></div>
-          <span class="pill">Guests</span>
-        </button>
-        <button class="nav-btn" data-tab="upload">
-          <div class="left"><div class="icon">⤴</div><div><div class="nav-title">رفع ملف</div><div class="nav-sub">Excel أو CSV</div></div></div>
-          <span class="pill">Upload</span>
-        </button>
-        <button class="nav-btn" data-tab="settings">
-          <div class="left"><div class="icon">⚙️</div><div><div class="nav-title">الإعدادات</div><div class="nav-sub">بيانات المناسبة</div></div></div>
-          <span class="pill">Settings</span>
-        </button>
-      </nav>
-    </aside>
-
-    <main class="main">
-      <div class="toolbar">
+    <div id="content" class="content">
+      <div class="hero2 card">
         <div>
-          <div class="title" id="pageTitle">الرئيسية</div>
-          <div class="sub" id="pageSub">ملخص احترافي مبسط للعميل</div>
+          <h3 id="eventTitle">—</h3>
+          <p>متابعة مباشرة للحضور والدعوات والردود الخاصة بالفعالية الحالية.</p>
         </div>
-        <div class="spacer"></div>
-        <button class="btn small">معاينة الدعوة</button>
-        <button class="btn small ghost">تنزيل التقرير</button>
+        <div class="pill">عرض مباشر للعميل</div>
       </div>
 
-      <div class="content">
-        <section class="tab active" id="tab-overview">
-          <div class="card" style="margin-bottom:14px">
-            <h3>لوحة العميل</h3>
-            <div class="actions">
-              <div class="action-box">
-                <strong>الحضور اللحظي</strong>
-                <p>عرض مباشر للحضور الحالي، مع الأسماء ووقت الدخول والعدد الكلي.</p>
-                <button class="btn gold small" data-go="live">فتح لوحة الحضور</button>
-              </div>
-              <div class="action-box">
-                <strong>الدعوات والردود</strong>
-                <p>عرض عدد الدعوات المرسلة، وعدد المؤكدين، والمعتذرين، ومن بانتظار الرد.</p>
-                <button class="btn small" data-go="stats">فتح لوحة الدعوات</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="stats">
-            <div class="stat"><div class="label">إجمالي الضيوف</div><div class="value">248</div><div class="foot">آخر تحديث قبل دقيقة</div></div>
-            <div class="stat"><div class="label">إجمالي الكروت</div><div class="value">392</div><div class="foot">حسب Invite Count</div></div>
-            <div class="stat"><div class="label">تم الإرسال</div><div class="value">214</div><div class="foot">واتساب / باركود</div></div>
-            <div class="stat"><div class="label">الحضور</div><div class="value">87</div><div class="foot">تم تسجيل الدخول</div></div>
-          </div>
-
-          <div class="section-grid">
-            <div class="card">
-              <h3>اختصارات سريعة</h3>
-              <div class="actions">
-                <div class="action-box"><strong>إضافة ضيف جديد</strong><p>أدخل الاسم والرقم وعدد الكروت بشكل يدوي وسريع.</p><button class="btn gold small" data-go="guests">إضافة الآن</button></div>
-                <div class="action-box"><strong>رفع ملف Excel</strong><p>ارفع قائمة الضيوف دفعة واحدة مع الأرقام وعدد الدعوات.</p><button class="btn small" data-go="upload">فتح الرفع</button></div>
-              </div>
-            </div>
-
-            <div class="card">
-              <h3>نظرة سريعة على الفعالية</h3>
-              <div class="event-meta">
-                اسم المناسبة: <b id="overviewEventName">زفاف خالد</b><br/>
-                التاريخ: 12 يوليو 2026<br/>
-                المكان: فندق فاخر - أبوظبي<br/>
-                الملاحظات: الدعوات الرسمية مع RSVP ودخول باركود
-              </div>
-              <div class="inline-actions">
-                <button class="btn green">نسخ رابط العميل</button>
-                <button class="btn">مشاركة الرابط</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="tab" id="tab-live">
-          <div class="stats">
-            <div class="stat"><div class="label">الحضور الحالي</div><div class="value">87</div><div class="foot">تم الدخول بنجاح</div></div>
-            <div class="stat"><div class="label">آخر ساعة</div><div class="value">19</div><div class="foot">دخول حديث</div></div>
-            <div class="stat"><div class="label">إجمالي الدعوات</div><div class="value">248</div><div class="foot">كل الضيوف</div></div>
-            <div class="stat"><div class="label">نسبة الحضور</div><div class="value">35%</div><div class="foot">مباشر</div></div>
-          </div>
-
-          <div class="card">
-            <h3>الحضور اللحظي</h3>
-            <div class="searchbar">
-              <input type="text" placeholder="بحث بالاسم أو الرقم أو الكود" />
-              <select>
-                <option>كل الحضور</option>
-                <option>آخر ساعة</option>
-                <option>اليوم</option>
-              </select>
-              <button class="btn small">تحديث</button>
-            </div>
-
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>الاسم</th>
-                    <th>رقم الهاتف</th>
-                    <th>الكود</th>
-                    <th>وقت الدخول</th>
-                    <th>الحالة</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>1</td>
-                    <td>أحمد المنصوري</td>
-                    <td>+97150XXXXXXX</td>
-                    <td>INV-001</td>
-                    <td>08:21 PM</td>
-                    <td><span class="badge attended">تم الدخول</span></td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>فاطمة</td>
-                    <td>+97154XXXXXXX</td>
-                    <td>INV-002</td>
-                    <td>08:24 PM</td>
-                    <td><span class="badge attended">تم الدخول</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section class="tab" id="tab-stats">
-          <div class="stats">
-            <div class="stat"><div class="label">الدعوات المرسلة</div><div class="value">214</div><div class="foot">تم إرسالها بنجاح</div></div>
-            <div class="stat"><div class="label">أكد الحضور</div><div class="value">126</div><div class="foot">RSVP موافق</div></div>
-            <div class="stat"><div class="label">اعتذر</div><div class="value">14</div><div class="foot">غير قادرين على الحضور</div></div>
-            <div class="stat"><div class="label">بانتظار الرد</div><div class="value">74</div><div class="foot">لم يردوا بعد</div></div>
-          </div>
-
-          <div class="section-grid">
-            <div class="card">
-              <h3>ملخص الدعوات</h3>
-              <div class="actions">
-                <div class="action-box"><strong>تم الإرسال</strong><p>عدد المدعوين الذين وصلت لهم الدعوة أو تم تجهيز إرسالها.</p></div>
-                <div class="action-box"><strong>أكد الحضور</strong><p>كل من رد بالموافقة على الدعوة.</p></div>
-                <div class="action-box"><strong>اعتذر</strong><p>المدعوون الذين ردوا بعدم الحضور.</p></div>
-                <div class="action-box"><strong>بانتظار الرد</strong><p>من لم يردوا حتى الآن على الدعوة.</p></div>
-              </div>
-            </div>
-
-            <div class="card">
-              <h3>نمط العرض المطلوب</h3>
-              <div class="event-meta">
-                هذه اللوحة تشبه الفكرة التي أرسلتها في الصورة: تبويب خاص بالدعوات والردود، مع أرقام واضحة وسهلة للعميل بدون تعقيد تقني.
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="tab" id="tab-guests">
-          <div class="card" style="margin-bottom:14px">
-            <h3>إضافة ضيف جديد</h3>
-            <div class="form-grid-3">
-              <div class="field">
-                <label>اسم الضيف</label>
-                <input type="text" placeholder="مثال: أحمد المنصوري" />
-              </div>
-              <div class="field">
-                <label>رقم الهاتف</label>
-                <input type="text" placeholder="+9715XXXXXXXX" />
-              </div>
-              <div class="field">
-                <label>عدد الكروت</label>
-                <select>
-                  <option>1</option>
-                  <option>2</option>
-                  <option>3</option>
-                  <option>4</option>
-                  <option>5</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-grid" style="margin-top:12px">
-              <div class="field">
-                <label>فئة الضيف</label>
-                <select>
-                  <option>عادي</option>
-                  <option>VIP</option>
-                  <option>أقارب</option>
-                  <option>أصدقاء</option>
-                  <option>جهة عمل</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>ملاحظات</label>
-                <input type="text" placeholder="اختياري" />
-              </div>
-            </div>
-            <div class="inline-actions">
-              <button class="btn gold">حفظ الضيف</button>
-              <button class="btn ghost">إعادة تعيين</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3>قائمة الضيوف</h3>
-            <div class="searchbar">
-              <input type="text" placeholder="بحث بالاسم أو الرقم" />
-              <select>
-                <option>كل الحالات</option>
-                <option>تم الإرسال</option>
-                <option>لم يرسل</option>
-                <option>مؤكد</option>
-                <option>اعتذر</option>
-                <option>حضر</option>
-              </select>
-              <select>
-                <option>كل الفئات</option>
-                <option>VIP</option>
-                <option>أقارب</option>
-                <option>أصدقاء</option>
-              </select>
-              <button class="btn small">بحث</button>
-            </div>
-
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>الاسم</th>
-                    <th>رقم الهاتف</th>
-                    <th>عدد الكروت</th>
-                    <th>الفئة</th>
-                    <th>حالة الإرسال</th>
-                    <th>RSVP</th>
-                    <th>الحضور</th>
-                    <th>إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>1</td>
-                    <td>أحمد المنصوري</td>
-                    <td>+97150XXXXXXX</td>
-                    <td>2</td>
-                    <td>VIP</td>
-                    <td><span class="badge sent">تم الإرسال</span></td>
-                    <td><span class="badge pending">مؤكد</span></td>
-                    <td><span class="badge attended">حضر</span></td>
-                    <td>
-                      <div class="row">
-                        <button class="btn small">تعديل</button>
-                        <button class="btn small ghost">عرض</button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>فاطمة</td>
-                    <td>+97154XXXXXXX</td>
-                    <td>1</td>
-                    <td>أصدقاء</td>
-                    <td><span class="badge noreply">لم يرسل</span></td>
-                    <td><span class="badge noreply">بلا رد</span></td>
-                    <td><span class="badge noreply">—</span></td>
-                    <td>
-                      <div class="row">
-                        <button class="btn small">تعديل</button>
-                        <button class="btn small red">حذف</button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section class="tab" id="tab-upload">
-          <div class="section-grid">
-            <div class="card">
-              <h3>رفع ملف الضيوف</h3>
-              <div class="upload-zone">
-                <strong>اسحب ملف Excel أو CSV هنا</strong>
-                <p>أو اضغط لاختيار الملف. يفضل أن يحتوي الملف على الأعمدة: الاسم، الرقم، عدد الكروت، الفئة، الملاحظات.</p>
-                <div class="inline-actions" style="justify-content:center;margin-top:12px">
-                  <button class="btn gold">اختيار ملف</button>
-                  <button class="btn">تحميل نموذج جاهز</button>
-                </div>
-              </div>
-
-              <div class="form-grid" style="margin-top:14px">
-                <div class="field">
-                  <label>اسم العمود للاسم</label>
-                  <select><option>Name</option><option>الاسم</option></select>
-                </div>
-                <div class="field">
-                  <label>اسم العمود للرقم</label>
-                  <select><option>Phone</option><option>رقم الهاتف</option></select>
-                </div>
-                <div class="field">
-                  <label>اسم العمود لعدد الكروت</label>
-                  <select><option>InviteCount</option><option>عدد الكروت</option></select>
-                </div>
-                <div class="field">
-                  <label>اسم العمود للفئة</label>
-                  <select><option>Category</option><option>الفئة</option></select>
-                </div>
-              </div>
-
-              <div class="inline-actions">
-                <button class="btn gold">استيراد الضيوف</button>
-                <button class="btn ghost">مسح البيانات</button>
-              </div>
-            </div>
-
-            <div class="card">
-              <h3>ملاحظات الرفع</h3>
-              <div class="event-meta">
-                • يجب أن يكون رقم الهاتف بصيغة دولية إن أمكن.<br/>
-                • إذا لم يوجد عدد الكروت، سيتم اعتماد 1 بشكل افتراضي.<br/>
-                • يمكنك مراجعة الجدول قبل الحفظ النهائي.<br/>
-                • لاحقًا يمكن ربط الرفع مباشرة بإنشاء الدعوات تلقائيًا.
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="tab" id="tab-cards">
-          <div class="stats">
-            <div class="stat"><div class="label">إجمالي الكروت المطلوبة</div><div class="value">392</div><div class="foot">من جميع الضيوف</div></div>
-            <div class="stat"><div class="label">الكروت المولدة</div><div class="value">310</div><div class="foot">تم تجهيزها</div></div>
-            <div class="stat"><div class="label">الكروت المستخدمة</div><div class="value">87</div><div class="foot">تم مسحها عند الدخول</div></div>
-            <div class="stat"><div class="label">المتبقي</div><div class="value">223</div><div class="foot">قابل للاستخدام</div></div>
-          </div>
-
-          <div class="section-grid">
-            <div class="card">
-              <h3>إعدادات الكروت</h3>
-              <div class="form-grid">
-                <div class="field">
-                  <label>نوع الكود</label>
-                  <select><option>Barcode</option><option>QR Code</option></select>
-                </div>
-                <div class="field">
-                  <label>قالب الدعوة</label>
-                  <select><option>Classic Gold</option><option>Minimal Black</option></select>
-                </div>
-                <div class="field">
-                  <label>نص الكرت</label>
-                  <input type="text" placeholder="يرجى إبراز الباركود عند الدخول" />
-                </div>
-                <div class="field">
-                  <label>رابط اللوكيشن</label>
-                  <input type="text" placeholder="https://maps.app.goo.gl/..." />
-                </div>
-              </div>
-              <div class="inline-actions">
-                <button class="btn gold">حفظ الإعدادات</button>
-                <button class="btn">معاينة الكرت</button>
-              </div>
-            </div>
-
-            <div class="card">
-              <h3>ملخص المخزون</h3>
-              <div class="event-meta">
-                العميل يستطيع من هنا فقط متابعة عدد الكروت المطلوبة والمولدة، بدون الوصول إلى إعدادات الحذف أو الصفحات الحساسة.
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="tab" id="tab-reports">
-          <div class="stats">
-            <div class="stat"><div class="label">المرسل</div><div class="value">214</div><div class="foot">تم إرسال الدعوة</div></div>
-            <div class="stat"><div class="label">المؤكدون</div><div class="value">126</div><div class="foot">ردوا بالموافقة</div></div>
-            <div class="stat"><div class="label">اعتذروا</div><div class="value">14</div><div class="foot">غير قادرين على الحضور</div></div>
-            <div class="stat"><div class="label">الحضور الحالي</div><div class="value">87</div><div class="foot">تم الدخول بنجاح</div></div>
-          </div>
-
-          <div class="section-grid">
-            <div class="card">
-              <h3>لوحة تحكم مختصرة للعميل</h3>
-              <div class="actions">
-                <div class="action-box"><strong>حالة الإرسال</strong><p>عرض من تم إرسال الدعوة لهم ومن يحتاج إعادة إرسال.</p></div>
-                <div class="action-box"><strong>RSVP</strong><p>معرفة من أكد الحضور أو اعتذر أو لم يرد.</p></div>
-                <div class="action-box"><strong>الحضور</strong><p>متابعة من دخل بالفعل يوم المناسبة.</p></div>
-                <div class="action-box"><strong>تقرير نهائي</strong><p>تصدير تقرير مبسط للعميل بصيغة PDF أو Excel لاحقًا.</p></div>
-              </div>
-            </div>
-            <div class="card">
-              <h3>معلومات مهمة</h3>
-              <div class="event-meta">
-                هذه اللوحة مخصصة للعميل فقط، وتعرض الحدث الحالي دون الوصول إلى أحداث أخرى أو إعدادات الأدمن.
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="tab" id="tab-settings">
-          <div class="card">
-            <h3>إعدادات مناسبة العميل</h3>
-            <div class="form-grid">
-              <div class="field">
-                <label>اسم المناسبة</label>
-                <input id="eventNameInput" type="text" value="زفاف خالد" />
-              </div>
-              <div class="field">
-                <label>eventId</label>
-                <input id="eventIdInput" type="text" value="event_001_khaled" />
-              </div>
-              <div class="field">
-                <label>التاريخ</label>
-                <input type="date" value="2026-07-12" />
-              </div>
-              <div class="field">
-                <label>المكان</label>
-                <input type="text" value="أبوظبي" />
-              </div>
-            </div>
-            <div class="field" style="margin-top:12px">
-              <label>ملاحظات عامة</label>
-              <textarea placeholder="أي ملاحظات تخص الحدث أو الدعوات">دعوات رسمية مع باركود وRSVP</textarea>
-            </div>
-            <div class="inline-actions">
-              <button class="btn gold" id="saveSettingsBtn">حفظ بيانات المناسبة</button>
-              <button class="btn ghost">نسخ رابط العميل</button>
-            </div>
-          </div>
-        </section>
+      <div class="tabs">
+        <button class="tabBtn active" data-tab="attendance">الحضور</button>
+        <button class="tabBtn" data-tab="invites">الدعوات والردود</button>
       </div>
-    </main>
+
+      <!-- تبويب الحضور -->
+      <div id="tab-attendance" class="tabPane active">
+        <div class="stats">
+          <div class="stat blue">
+            <div class="t">إجمالي الدعوات</div>
+            <div id="kpiTotal" class="n">0</div>
+            <div class="s">كل السجلات المرتبطة بالحدث</div>
+          </div>
+
+          <div class="stat gold">
+            <div class="t">الحضور</div>
+            <div id="kpiUsed" class="n">0</div>
+            <div class="s">الذين تم تسجيل دخولهم</div>
+          </div>
+
+          <div class="stat red">
+            <div class="t">المتبقي</div>
+            <div id="kpiLeft" class="n">0</div>
+            <div class="s">لم يتم دخولهم بعد</div>
+          </div>
+
+          <div class="stat green">
+            <div class="t">نسبة الحضور</div>
+            <div id="kpiRate" class="n">0%</div>
+            <div class="s">من إجمالي الدعوات</div>
+          </div>
+        </div>
+
+        <div class="tools">
+          <div class="toolCard card">
+            <h4>بحث سريع</h4>
+            <div class="searchWrap">
+              <input id="searchInput" class="input" placeholder="ابحث بالاسم أو الرقم أو الكود" />
+            </div>
+            <div class="filters">
+              <button class="chip active" data-filter="all">الكل</button>
+              <button class="chip" data-filter="yes">تم الدخول</button>
+              <button class="chip" data-filter="no">لم يدخل</button>
+              <button class="chip" data-filter="today">اليوم</button>
+            </div>
+          </div>
+
+          <div class="toolCard card">
+            <h4>ملخص سريع</h4>
+            <div class="muted" style="line-height:1.9">
+              • يتم تحديث بيانات الحضور مباشرة من Firebase.<br>
+              • يمكن للعميل معرفة الأسماء والأوقات بدون الوصول إلى أدوات الإدارة.<br>
+              • مناسب للعرض على الموبايل والماك.
+            </div>
+          </div>
+        </div>
+
+        <div class="sectionTitle">
+          <h4>آخر الحضور</h4>
+          <div class="muted">أحدث 100 سجل</div>
+        </div>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>الكود</th>
+                <th>الحالة</th>
+                <th>الوقت</th>
+                <th>الاسم</th>
+                <th>الهاتف</th>
+              </tr>
+            </thead>
+            <tbody id="rowsBody"></tbody>
+          </table>
+        </div>
+
+        <div id="mobileList" class="mobileList"></div>
+      </div>
+
+      <!-- تبويب الدعوات والردود -->
+      <div id="tab-invites" class="tabPane">
+        <div class="stats">
+          <div class="stat blue">
+            <div class="t">إجمالي الدعوات</div>
+            <div id="inviteTotal" class="n">0</div>
+            <div class="s">كل المدعوين المرتبطين بالحدث</div>
+          </div>
+
+          <div class="stat gold">
+            <div class="t">تم الإرسال</div>
+            <div id="inviteSent" class="n">0</div>
+            <div class="s">الدعوات المرسلة</div>
+          </div>
+
+          <div class="stat green">
+            <div class="t">أكد الحضور</div>
+            <div id="inviteConfirmed" class="n">0</div>
+            <div class="s">RSVP موافق</div>
+          </div>
+
+          <div class="stat red">
+            <div class="t">اعتذر</div>
+            <div id="inviteDeclined" class="n">0</div>
+            <div class="s">RSVP اعتذار</div>
+          </div>
+        </div>
+
+        <div class="stats" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+          <div class="stat orange">
+            <div class="t">بانتظار الرد</div>
+            <div id="invitePending" class="n">0</div>
+            <div class="s">لم يردوا حتى الآن</div>
+          </div>
+
+          <div class="stat blue">
+            <div class="t">نسبة التأكيد</div>
+            <div id="inviteConfirmRate" class="n">0%</div>
+            <div class="s">من إجمالي الدعوات</div>
+          </div>
+        </div>
+
+        <div class="sectionTitle">
+          <h4>ملخص حالات الدعوات</h4>
+          <div class="muted">عرض مبسط للعميل</div>
+        </div>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>الهاتف</th>
+                <th>حالة الإرسال</th>
+                <th>الرد</th>
+                <th>عدد الكروت</th>
+              </tr>
+            </thead>
+            <tbody id="inviteRowsBody"></tbody>
+          </table>
+        </div>
+
+        <div id="inviteMobileList" class="mobileList"></div>
+      </div>
+
+      <div id="readErr" class="error" style="display:none;margin-top:12px"></div>
+    </div>
   </div>
 
-  <div class="mobile-bottom">
-    <button class="btn" data-go="overview">الرئيسية</button>
-    <button class="btn" data-go="guests">الضيوف</button>
-    <button class="btn" data-go="upload">رفع</button>
-    <button class="btn" data-go="reports">لوحة التحكم</button>
-  </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore, collection, query, where, onSnapshot, getDocs
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-  <script>
-    const tabInfo = {
-      overview:{title:'الرئيسية', sub:'واجهة مبسطة وسريعة للعميل'},
-      live:{title:'الحضور اللحظي', sub:'عدد الحضور الحالي مع الأسماء ووقت الدخول'},
-      stats:{title:'الدعوات والردود', sub:'مرسل / أكد الحضور / اعتذر / بانتظار الرد'},
-      guests:{title:'الضيوف', sub:'إضافة الضيوف وتعديل الأسماء والأرقام وعدد الكروت'},
-      upload:{title:'رفع ملف', sub:'استيراد الضيوف من Excel أو CSV'},
-      cards:{title:'الكروت', sub:'إدارة عدد الدعوات والقالب والمخزون'},
-      reports:{title:'لوحة التحكم', sub:'ملخص الإرسال وRSVP والحضور'},
-      settings:{title:'الإعدادات', sub:'بيانات المناسبة الخاصة بالعميل'}
+    /* ===== عدل هذه القيم فقط ===== */
+    const PAGE_EVENT = "زفاف خالد محمد";
+    const PAGE_PASSWORD = "9900";
+
+    const firebaseConfig = {
+      apiKey:"AIzaSyBt7eV0k_yTcOgiU8rx5UbvkkeBHduR6ac",
+      authDomain:"hormez-inv.firebaseapp.com",
+      projectId:"hormez-inv",
+      storageBucket:"hormez-inv.firebasestorage.app",
+      messagingSenderId:"747519941805",
+      appId:"1:747519941805:web:468fada2492700e9da3a24"
     };
+    /* =========================== */
 
-    const navButtons = document.querySelectorAll('.nav-btn');
-    const tabs = document.querySelectorAll('.tab');
-    const pageTitle = document.getElementById('pageTitle');
-    const pageSub = document.getElementById('pageSub');
-    const quickGo = document.querySelectorAll('[data-go]');
-    const eventNameSide = document.getElementById('eventNameSide');
-    const overviewEventName = document.getElementById('overviewEventName');
-    const eventIdPill = document.getElementById('eventIdPill');
-    const eventNameInput = document.getElementById('eventNameInput');
-    const eventIdInput = document.getElementById('eventIdInput');
-    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    function getParams(){
-      const params = new URLSearchParams(location.search);
-      return {
-        eventId: params.get('eventId') || 'event_001_khaled',
-        eventName: params.get('eventName') || 'زفاف خالد'
-      };
+    const $ = (s, r=document) => r.querySelector(s);
+
+    let allDocs = [];
+    let allRows = [];
+    let filteredRows = [];
+    let unsub = null;
+    let currentFilter = "all";
+
+    const sessionKey = () => `krs_client_dash_${PAGE_EVENT}`;
+
+    function formatDate(dt){
+      return dt ? dt.toLocaleString("ar-AE") : "—";
     }
 
-    function openTab(name){
-      tabs.forEach(tab => tab.classList.toggle('active', tab.id === `tab-${name}`));
-      navButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
-      const meta = tabInfo[name] || tabInfo.overview;
-      pageTitle.textContent = meta.title;
-      pageSub.textContent = meta.sub;
-      localStorage.setItem('krs_client_portal_tab', name);
-      window.scrollTo({top:0, behavior:'smooth'});
+    function isYes(v){
+      return String(v || "").toLowerCase() === "yes";
     }
 
-    navButtons.forEach(btn => btn.addEventListener('click', ()=> openTab(btn.dataset.tab)));
-    quickGo.forEach(btn => btn.addEventListener('click', ()=> openTab(btn.dataset.go)));
+    function normalize(v){
+      return String(v || "").trim().toLowerCase();
+    }
 
-    saveSettingsBtn.addEventListener('click', ()=>{
-      eventNameSide.textContent = eventNameInput.value || 'اسم المناسبة';
-      overviewEventName.textContent = eventNameInput.value || 'اسم المناسبة';
-      eventIdPill.textContent = eventIdInput.value || 'event_id';
-      alert('تم حفظ بيانات المناسبة في الواجهة ✅');
+    function pickName(x){
+      return x.GuestName || x.guestName || x.Name || x.name || "—";
+    }
+
+    function pickPhone(x){
+      return x.Phone || x.phone || x.mobile || x.to || "—";
+    }
+
+    function pickStatus(x){
+      return x.Status || x.status || x.CheckIn || x.checkIn || "no";
+    }
+
+    function pickScannedAt(x){
+      const ts = x.scannedAt || x.ScannedAt || x.checkedAt || x.CheckedInAt || null;
+      return ts?.toDate?.() ? ts.toDate() : null;
+    }
+
+    function pickInviteCount(x){
+      return x.InviteCount || x.inviteCount || x.count || 1;
+    }
+
+    function pickSent(x){
+      const v = normalize(x.sendStatus || x.SendStatus || x.sentStatus || x.sent || x.deliveryStatus);
+      return ["sent","delivered","success","done","تم الإرسال","مرسل"].includes(v);
+    }
+
+    function pickRSVP(x){
+      const v = normalize(x.rsvp || x.RSVP || x.reply || x.statusText || x.response);
+      if(["yes","confirmed","confirm","accepted","موافق","أكد الحضور","تم تأكيد الحضور"].includes(v)) return "confirmed";
+      if(["no","declined","decline","اعتذر","رفض","لن يحضر"].includes(v)) return "declined";
+      return "pending";
+    }
+
+    function setLastUpdate(){
+      $("#lastUpdate").textContent = new Date().toLocaleTimeString("ar-AE");
+    }
+
+    function openContent(){
+      $("#gateWrap").style.display = "none";
+      $("#content").style.display = "block";
+      $("#logoutBtn").style.display = "inline-flex";
+      $("#pillEvent").textContent = PAGE_EVENT;
+      $("#eventTitle").textContent = PAGE_EVENT;
+      startStream();
+    }
+
+    function tryAutoLogin(){
+      $("#eventInput").value = PAGE_EVENT;
+      if(localStorage.getItem(sessionKey()) === "ok"){
+        openContent();
+      }
+    }
+
+    function handleEnter(){
+      const ev = $("#eventInput").value.trim();
+      const pw = $("#passInput").value.trim();
+
+      if(ev !== PAGE_EVENT){
+        $("#gateMsg").textContent = "اسم الحدث غير صحيح";
+        return;
+      }
+
+      if(pw !== PAGE_PASSWORD){
+        $("#gateMsg").textContent = "كلمة المرور غير صحيحة";
+        return;
+      }
+
+      localStorage.setItem(sessionKey(), "ok");
+      $("#gateMsg").textContent = "";
+      openContent();
+    }
+
+    function logout(){
+      localStorage.removeItem(sessionKey());
+      location.reload();
+    }
+
+    async function startStream(){
+      if(unsub) unsub();
+      $("#readErr").style.display = "none";
+
+      try{
+        const q1 = query(collection(db, "invites"), where("EventName", "==", PAGE_EVENT));
+        unsub = onSnapshot(q1, (snap) => handleSnapshot(snap), async () => {
+          await tryFallback();
+        });
+      }catch{
+        await tryFallback();
+      }
+    }
+
+    async function tryFallback(){
+      try{
+        const q2 = query(collection(db, "invites"), where("eventId", "==", PAGE_EVENT));
+        unsub = onSnapshot(q2, (snap) => handleSnapshot(snap), async () => {
+          await oneTimeFetch();
+        });
+      }catch{
+        await oneTimeFetch();
+      }
+    }
+
+    async function oneTimeFetch(){
+      try{
+        let snap = await getDocs(query(collection(db, "invites"), where("EventName", "==", PAGE_EVENT)));
+        if(snap.empty){
+          snap = await getDocs(query(collection(db, "invites"), where("eventId", "==", PAGE_EVENT)));
+        }
+        handleSnapshot(snap);
+      }catch(err){
+        $("#readErr").style.display = "block";
+        $("#readErr").textContent = "تعذر قراءة البيانات: " + (err?.message || err);
+      }
+    }
+
+    function handleSnapshot(snap){
+      const docs = [];
+      const rows = [];
+
+      snap.forEach((d) => {
+        const x = d.data() || {};
+        const status = pickStatus(x);
+        const scannedAt = pickScannedAt(x);
+
+        const row = {
+          id: d.id,
+          Code: x.Code || d.id,
+          Status: String(status || "no"),
+          scannedAt,
+          name: pickName(x),
+          phone: pickPhone(x),
+          sent: pickSent(x),
+          rsvp: pickRSVP(x),
+          inviteCount: pickInviteCount(x)
+        };
+
+        docs.push(row);
+        if(scannedAt) rows.push(row);
+      });
+
+      allDocs = docs;
+      allRows = rows.sort((a,b) => b.scannedAt - a.scannedAt);
+
+      renderAttendanceKPIs();
+      renderInviteKPIs();
+      applyFilters();
+      renderInviteRows();
+      setLastUpdate();
+    }
+
+    function renderAttendanceKPIs(){
+      const total = allDocs.length;
+      const used = allDocs.filter(r => isYes(r.Status)).length;
+      const left = Math.max(total - used, 0);
+      const rate = total > 0 ? Math.round((used / total) * 100) : 0;
+
+      $("#kpiTotal").textContent = total;
+      $("#kpiUsed").textContent = used;
+      $("#kpiLeft").textContent = left;
+      $("#kpiRate").textContent = rate + "%";
+    }
+
+    function renderInviteKPIs(){
+      const total = allDocs.length;
+      const sent = allDocs.filter(r => r.sent).length;
+      const confirmed = allDocs.filter(r => r.rsvp === "confirmed").length;
+      const declined = allDocs.filter(r => r.rsvp === "declined").length;
+      const pending = allDocs.filter(r => r.rsvp === "pending").length;
+      const confirmRate = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+
+      $("#inviteTotal").textContent = total;
+      $("#inviteSent").textContent = sent;
+      $("#inviteConfirmed").textContent = confirmed;
+      $("#inviteDeclined").textContent = declined;
+      $("#invitePending").textContent = pending;
+      $("#inviteConfirmRate").textContent = confirmRate + "%";
+    }
+
+    function applyFilters(){
+      const q = ($("#searchInput").value || "").trim().toLowerCase();
+      let list = allRows.slice();
+
+      if(currentFilter === "yes"){
+        list = list.filter(r => isYes(r.Status));
+      } else if(currentFilter === "no"){
+        const notEntered = allDocs.filter(r => !isYes(r.Status));
+        list = notEntered.sort((a,b) => {
+          const ta = a.scannedAt ? a.scannedAt.getTime() : 0;
+          const tb = b.scannedAt ? b.scannedAt.getTime() : 0;
+          return tb - ta;
+        });
+      } else if(currentFilter === "today"){
+        const start = new Date();
+        start.setHours(0,0,0,0);
+        list = list.filter(r => r.scannedAt && r.scannedAt >= start);
+      }
+
+      if(q){
+        list = list.filter(r => {
+          const code = String(r.Code || "").toLowerCase();
+          const name = String(r.name || "").toLowerCase();
+          const phone = String(r.phone || "").toLowerCase();
+          return code.includes(q) || name.includes(q) || phone.includes(q);
+        });
+      }
+
+      filteredRows = list.slice(0, 100);
+      renderRows();
+    }
+
+    function renderRows(){
+      const body = $("#rowsBody");
+      const mobile = $("#mobileList");
+      body.innerHTML = "";
+      mobile.innerHTML = "";
+
+      if(filteredRows.length === 0){
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 5;
+        td.textContent = "لا توجد بيانات";
+        td.className = "muted";
+        td.style.textAlign = "center";
+        tr.appendChild(td);
+        body.appendChild(tr);
+        mobile.innerHTML = `<div class="muted" style="text-align:center">لا توجد بيانات</div>`;
+        return;
+      }
+
+      for(const r of filteredRows){
+        const ok = isYes(r.Status);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="mono">${r.Code}</td>
+          <td><span class="badge ${ok ? "ok" : "no"}">${ok ? "تم الدخول" : "لم يدخل"}</span></td>
+          <td>${formatDate(r.scannedAt)}</td>
+          <td>${r.name || "—"}</td>
+          <td class="mono">${r.phone || "—"}</td>
+        `;
+        body.appendChild(tr);
+
+        const card = document.createElement("div");
+        card.className = "scanCard";
+        card.innerHTML = `
+          <div class="scanHead">
+            <div class="scanCode mono">${r.Code}</div>
+            <span class="badge ${ok ? "ok" : "no"}">${ok ? "تم الدخول" : "لم يدخل"}</span>
+          </div>
+          <div class="scanLine"><span class="scanLabel">الوقت</span><span>${formatDate(r.scannedAt)}</span></div>
+          <div class="scanLine"><span class="scanLabel">الاسم</span><span>${r.name || "—"}</span></div>
+          <div class="scanLine"><span class="scanLabel">الهاتف</span><span class="mono">${r.phone || "—"}</span></div>
+        `;
+        mobile.appendChild(card);
+      }
+    }
+
+    function rsvpLabel(val){
+      if(val === "confirmed") return `<span class="badge ok">أكد الحضور</span>`;
+      if(val === "declined") return `<span class="badge no">اعتذر</span>`;
+      return `<span class="badge wait">بانتظار الرد</span>`;
+    }
+
+    function renderInviteRows(){
+      const body = $("#inviteRowsBody");
+      const mobile = $("#inviteMobileList");
+      body.innerHTML = "";
+      mobile.innerHTML = "";
+
+      const rows = allDocs.slice(0, 100);
+
+      if(rows.length === 0){
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 5;
+        td.textContent = "لا توجد بيانات";
+        td.className = "muted";
+        td.style.textAlign = "center";
+        tr.appendChild(td);
+        body.appendChild(tr);
+        mobile.innerHTML = `<div class="muted" style="text-align:center">لا توجد بيانات</div>`;
+        return;
+      }
+
+      for(const r of rows){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.name || "—"}</td>
+          <td class="mono">${r.phone || "—"}</td>
+          <td><span class="badge ${r.sent ? "ok" : "wait"}">${r.sent ? "تم الإرسال" : "لم يرسل"}</span></td>
+          <td>${rsvpLabel(r.rsvp)}</td>
+          <td>${r.inviteCount}</td>
+        `;
+        body.appendChild(tr);
+
+        const card = document.createElement("div");
+        card.className = "scanCard";
+        card.innerHTML = `
+          <div class="scanHead">
+            <div class="scanCode">${r.name || "—"}</div>
+            ${rsvpLabel(r.rsvp)}
+          </div>
+          <div class="scanLine"><span class="scanLabel">الهاتف</span><span class="mono">${r.phone || "—"}</span></div>
+          <div class="scanLine"><span class="scanLabel">حالة الإرسال</span><span>${r.sent ? "تم الإرسال" : "لم يرسل"}</span></div>
+          <div class="scanLine"><span class="scanLabel">عدد الكروت</span><span>${r.inviteCount}</span></div>
+        `;
+        mobile.appendChild(card);
+      }
+    }
+
+    function exportCSV(){
+      const activeTab = document.querySelector(".tabBtn.active")?.dataset.tab || "attendance";
+
+      let header = [];
+      let lines = [];
+
+      if(activeTab === "attendance"){
+        header = ["الكود","الحالة","الوقت","الاسم","الهاتف","الحدث"];
+        lines = filteredRows.map(r => [
+          csv(r.Code),
+          csv(isYes(r.Status) ? "تم الدخول" : "لم يدخل"),
+          csv(r.scannedAt ? r.scannedAt.toISOString() : ""),
+          csv(r.name || ""),
+          csv(r.phone || ""),
+          csv(PAGE_EVENT)
+        ].join(","));
+      } else {
+        header = ["الاسم","الهاتف","حالة الإرسال","الرد","عدد الكروت","الحدث"];
+        lines = allDocs.map(r => [
+          csv(r.name || ""),
+          csv(r.phone || ""),
+          csv(r.sent ? "تم الإرسال" : "لم يرسل"),
+          csv(r.rsvp === "confirmed" ? "أكد الحضور" : r.rsvp === "declined" ? "اعتذر" : "بانتظار الرد"),
+          csv(r.inviteCount),
+          csv(PAGE_EVENT)
+        ].join(","));
+      }
+
+      const blob = new Blob([header.join(",") + "\n" + lines.join("\n")], { type:"text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${PAGE_EVENT}-${activeTab}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csv(v){
+      const s = String(v ?? "");
+      if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+      return s;
+    }
+
+    function switchTab(name){
+      document.querySelectorAll(".tabBtn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === name);
+      });
+      document.querySelectorAll(".tabPane").forEach(pane => {
+        pane.classList.toggle("active", pane.id === `tab-${name}`);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      tryAutoLogin();
+
+      $("#enterBtn").addEventListener("click", handleEnter);
+      $("#passInput").addEventListener("keydown", (e) => {
+        if(e.key === "Enter") handleEnter();
+      });
+
+      $("#logoutBtn").addEventListener("click", logout);
+      $("#refreshBtn").addEventListener("click", () => location.reload());
+      $("#printBtn").addEventListener("click", () => window.print());
+      $("#exportBtn").addEventListener("click", exportCSV);
+
+      $("#searchInput").addEventListener("input", applyFilters);
+
+      document.querySelectorAll(".chip").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".chip").forEach(x => x.classList.remove("active"));
+          btn.classList.add("active");
+          currentFilter = btn.dataset.filter;
+          applyFilters();
+        });
+      });
+
+      document.querySelectorAll(".tabBtn").forEach(btn => {
+        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+      });
     });
-
-    (function boot(){
-      const params = getParams();
-      eventNameSide.textContent = params.eventName;
-      overviewEventName.textContent = params.eventName;
-      eventIdPill.textContent = params.eventId;
-      eventNameInput.value = params.eventName;
-      eventIdInput.value = params.eventId;
-      openTab(localStorage.getItem('krs_client_portal_tab') || 'overview');
-    })();
   </script>
 </body>
 </html>
