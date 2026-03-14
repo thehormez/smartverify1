@@ -10,7 +10,6 @@
       --bg:#070b14;
       --bg2:#0b1120;
       --card:#0f172a;
-      --card-soft:#111c34;
       --line:rgba(255,255,255,.08);
       --line-strong:rgba(255,255,255,.14);
       --text:#e5e7eb;
@@ -150,7 +149,7 @@
       margin-top:14px;
     }
 
-    @media (max-width: 980px){
+    @media (max-width:980px){
       .page{grid-template-columns:1fr}
     }
 
@@ -187,15 +186,6 @@
       padding:14px;
     }
 
-    .status-line{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:12px;
-    }
-
     .status{
       display:flex;
       align-items:center;
@@ -222,7 +212,7 @@
       width:100%;
       max-width:620px;
       margin:0 auto;
-      aspect-ratio: 4 / 5;
+      aspect-ratio:4 / 5;
       background:#000;
       border-radius:18px;
       overflow:hidden;
@@ -372,6 +362,15 @@
       word-break:break-word;
     }
 
+    .guestHero{
+      margin-top:10px;
+      font-size:clamp(24px, 4vw, 42px);
+      font-weight:900;
+      line-height:1.15;
+      color:#fff;
+      word-break:break-word;
+    }
+
     .resultMsg{
       margin-top:8px;
       font-size:15px;
@@ -484,6 +483,13 @@
       line-height:1;
       word-break:break-word;
     }
+    .overlay .guest{
+      margin-top:12px;
+      font-size:clamp(22px,5vw,44px);
+      font-weight:900;
+      line-height:1.15;
+      word-break:break-word;
+    }
     .overlay .msg{
       margin-top:12px;
       font-size:clamp(18px,3.8vw,28px);
@@ -557,7 +563,6 @@
       display:none;
     }
 
-    /* Full screen */
     .scanWrap.fs{
       position:fixed !important;
       inset:0 !important;
@@ -626,6 +631,7 @@
   <div id="okOverlay" class="overlay">
     <div>
       <div class="code" id="okCode">—</div>
+      <div class="guest" id="okGuest">—</div>
       <div class="msg" id="okMsg">تم قبول الدعوة ✅</div>
     </div>
   </div>
@@ -633,6 +639,7 @@
   <div id="errOverlay" class="overlay">
     <div>
       <div class="code" id="errCode">—</div>
+      <div class="guest" id="errGuest">—</div>
       <div class="msg" id="errMsg">مرفوض</div>
     </div>
   </div>
@@ -668,7 +675,7 @@
             <div class="scanHud">
               <div class="scanTitle">
                 <span id="scanHint">وجّه الكاميرا نحو الباركود</span>
-                <span><span id="scanEventText">Event:</span> <b id="scanEv">—</b></span>
+                <span><span id="scanEventText">الحدث:</span> <b id="scanEv">—</b></span>
               </div>
 
               <div class="scanTarget">
@@ -778,6 +785,7 @@
 
             <div>
               <div class="resultCode mono" id="lastCode">—</div>
+              <div class="guestHero" id="guestHero">—</div>
               <div class="resultMsg" id="lastMsg">—</div>
 
               <div class="resultMeta">
@@ -1019,10 +1027,15 @@
     let reader = null;
     let ndet = null;
     let scannerEnabled = false;
-    let scanTimer = null;
+    let hiddenInputTimer = null;
     let isFakeFullscreen = false;
 
     const counters = { accepted:0, rejected:0, duplicate:0 };
+
+    const scannerInput = document.getElementById('scannerInput');
+    let wedgeBuffer = '';
+    let wedgeLastTs = 0;
+    let wedgeTimer = null;
 
     function t(key){
       return (I18N[LANG] && I18N[LANG][key]) || key;
@@ -1079,11 +1092,13 @@
       $('#historySub').textContent = t('historySub');
       $('#clearHist').textContent = t('clearHist');
       $('#httpsWarn').textContent = t('httpsWarn');
-      $('#okMsg').textContent = t('acceptedOverlay');
-      $('#errMsg').textContent = t('rejectedOverlay');
-
-      $('#statusText').textContent = t('ready');
       $('#langBtn').textContent = LANG === 'ar' ? 'EN' : 'AR';
+
+      if($('#statusText').dataset.stateKey){
+        $('#statusText').textContent = t($('#statusText').dataset.stateKey);
+      }else{
+        $('#statusText').textContent = t('ready');
+      }
 
       renderHist();
     }
@@ -1172,8 +1187,9 @@
         .replaceAll("'","&#039;");
     }
 
-    function setStatus(text,color){
+    function setStatus(text,color,key='ready'){
       $('#statusText').textContent = text;
+      $('#statusText').dataset.stateKey = key;
       $('#statusDot').style.background = color;
     }
 
@@ -1225,34 +1241,45 @@
       }catch{}
     }
 
-    function showOverlay(ok, code, msg){
+    function showOverlay(ok, code, msg, guestName='—'){
       if(ok){
         $('#okCode').textContent = code || '—';
+        $('#okGuest').textContent = guestName || '—';
         $('#okMsg').textContent = msg || t('acceptedOverlay');
         const el = $('#okOverlay');
         el.style.display = 'flex';
-        setTimeout(()=> el.style.display = 'none', 1200);
+        setTimeout(()=> el.style.display = 'none', 1400);
       }else{
         $('#errCode').textContent = code || '—';
+        $('#errGuest').textContent = guestName || '—';
         $('#errMsg').textContent = msg || t('rejectedOverlay');
         const el = $('#errOverlay');
         el.style.display = 'flex';
-        setTimeout(()=> el.style.display = 'none', 1400);
+        setTimeout(()=> el.style.display = 'none', 1500);
       }
     }
 
     function showLast(code,msg,good,type='bad',extra={}){
+      const guestName = extra.guestName || t('unknownGuest');
+      const companions = extra.companions ?? 0;
+
       $('#lastCode').textContent = code || '—';
       $('#lastCode').style.color =
         type === 'ok' ? '#86efac' :
         type === 'dupe' ? '#fcd34d' :
         '#fca5a5';
 
+      $('#guestHero').textContent = guestName;
+      $('#guestHero').style.color =
+        type === 'ok' ? '#ffffff' :
+        type === 'dupe' ? '#fef08a' :
+        '#ffffff';
+
       $('#lastMsg').textContent = msg || '—';
       $('#lastEvent').textContent = EVENT_NAME || '—';
       $('#lastTime').textContent = new Date().toLocaleTimeString(LANG === 'ar' ? 'ar-EG' : 'en-GB');
-      $('#guestNameVal').textContent = extra.guestName || t('unknownGuest');
-      $('#companionsVal').textContent = String(extra.companions ?? t('companionsDefault'));
+      $('#guestNameVal').textContent = guestName;
+      $('#companionsVal').textContent = String(companions);
 
       drawQRPreview(code || '');
 
@@ -1261,7 +1288,7 @@
         navigator.vibrate?.(type === 'ok' ? 60 : 120);
       }catch{}
 
-      showOverlay(good, code, msg);
+      showOverlay(good, code, msg, guestName);
     }
 
     async function ensureAnonAuth(){
@@ -1356,24 +1383,51 @@
         .trim();
     }
 
-    function focusScannerInput(){
-      if(!scannerEnabled) return;
+    function isTypingInRealField() {
       const ae = document.activeElement;
-      if(ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)){
-        if(ae !== $('#manualCode') && ae !== $('#gateEvent')) return;
-      }
-      try{
-        $('#scannerInput').focus({ preventScroll:true });
-      }catch{}
+      if(!ae) return false;
+      return ae === $('#manualCode') || ae === $('#gateEvent') || ae.tagName === 'TEXTAREA' || ae.isContentEditable;
     }
 
-    function commitScannerValue(){
-      const raw = $('#scannerInput').value;
-      $('#scannerInput').value = '';
+    function resetWedgeBuffer(){
+      wedgeBuffer = '';
+      wedgeLastTs = 0;
+      if(wedgeTimer) clearTimeout(wedgeTimer);
+      wedgeTimer = null;
+    }
+
+    function commitWedgeBuffer(){
+      const code = normalizeScanValue(wedgeBuffer);
+      resetWedgeBuffer();
+      if(!code) return;
+
+      showLast(code, t('codeReceived'), true, 'ok', {
+        guestName: t('unknownGuest'),
+        companions: 0
+      });
+      setStatus(t('codeReceived'), '#22c55e', 'ready');
+      handleRawScan(code);
+    }
+
+    function focusScannerInput(){
+      if(!scannerEnabled) return;
+      if(isTypingInRealField()) return;
+      try {
+        scannerInput.focus({ preventScroll:true });
+      } catch(_) {}
+    }
+
+    function commitHiddenScannerValue(){
+      const raw = scannerInput.value;
+      scannerInput.value = '';
       const code = normalizeScanValue(raw);
       if(!code) return;
-      showLast(code, t('codeReceived'), true, 'ok');
-      setStatus(t('codeReceived'), '#22c55e');
+
+      showLast(code, t('codeReceived'), true, 'ok', {
+        guestName: t('unknownGuest'),
+        companions: 0
+      });
+      setStatus(t('codeReceived'), '#22c55e', 'ready');
       handleRawScan(code);
     }
 
@@ -1406,12 +1460,15 @@
     }
 
     async function verifyAndMark(code){
-      setStatus(t('checking'), '#f59e0b');
+      setStatus(t('checking'), '#f59e0b', 'checking');
 
       try{
         const ok = await ensureAnonAuth();
         if(!ok){
-          showLast(code, t('authFailed'), false, 'bad');
+          showLast(code, t('authFailed'), false, 'bad', {
+            guestName: t('unknownGuest'),
+            companions: 0
+          });
           pushHist(code, t('authFailed'), false, 'bad');
           return;
         }
@@ -1425,7 +1482,7 @@
             companions: 0
           });
           pushHist(code, t('notFound'), false, 'bad');
-          setStatus(t('notFound'), '#ef4444');
+          setStatus(t('notFound'), '#ef4444', 'notFound');
           return;
         }
 
@@ -1439,7 +1496,7 @@
           const msg = `${t('eventMismatch')} (${ev})`;
           showLast(code, msg, false, 'bad', { guestName, companions });
           pushHist(code, msg, false, 'bad');
-          setStatus(t('eventMismatch'), '#ef4444');
+          setStatus(t('eventMismatch'), '#ef4444', 'eventMismatch');
           return;
         }
 
@@ -1447,7 +1504,7 @@
           const msg = t('alreadyUsed');
           showLast(code, msg, false, 'dupe', { guestName, companions });
           pushHist(code, msg, false, 'dupe');
-          setStatus(t('alreadyUsed'), '#f59e0b');
+          setStatus(t('alreadyUsed'), '#f59e0b', 'alreadyUsed');
           return;
         }
 
@@ -1458,14 +1515,17 @@
 
         showLast(code, t('accepted'), true, 'ok', { guestName, companions });
         pushHist(code, t('accepted'), true, 'ok');
-        setStatus(t('accepted'), '#22c55e');
+        setStatus(t('accepted'), '#22c55e', 'accepted');
 
       }catch(e){
         console.error(e);
         const msg = (LANG === 'ar' ? 'خطأ: ' : 'Error: ') + (e?.message || 'Unknown error');
-        showLast(code, msg, false, 'bad');
+        showLast(code, msg, false, 'bad', {
+          guestName: t('unknownGuest'),
+          companions: 0
+        });
         pushHist(code, msg, false, 'bad');
-        setStatus(LANG === 'ar' ? 'خطأ' : 'Error', '#ef4444');
+        setStatus(LANG === 'ar' ? 'خطأ' : 'Error', '#ef4444', 'ready');
       }
     }
 
@@ -1481,7 +1541,10 @@
       if(!cleaned) return;
 
       if(!EVENT_NAME){
-        showLast(cleaned, t('needEvent'), false, 'bad');
+        showLast(cleaned, t('needEvent'), false, 'bad', {
+          guestName: t('unknownGuest'),
+          companions: 0
+        });
         return;
       }
 
@@ -1489,7 +1552,10 @@
         const re = codeRegex();
         if(!re) return;
         if(!re.test(cleaned)){
-          showLast(cleaned, t('invalidRegexCode'), false, 'bad');
+          showLast(cleaned, t('invalidRegexCode'), false, 'bad', {
+            guestName: t('unknownGuest'),
+            companions: 0
+          });
           pushHist(cleaned, t('invalidRegexCode'), false, 'bad');
           return;
         }
@@ -1577,7 +1643,7 @@
       $('#switchBtn').disabled = false;
       $('#torchBtn').disabled = false;
 
-      setStatus(t('cameraRunning'), '#22c55e');
+      setStatus(t('cameraRunning'), '#22c55e', 'cameraRunning');
 
       const zxingOk = await window.ensureZXing();
 
@@ -1607,7 +1673,7 @@
         loop();
       } else {
         alert(t('camLibMissing'));
-        setStatus(t('camLibMissing'), '#f59e0b');
+        setStatus(t('camLibMissing'), '#f59e0b', 'camLibMissing');
       }
     }
 
@@ -1635,7 +1701,7 @@
       scanning = false;
       $('#startBtn').disabled = false;
       $('#stopBtn').disabled = true;
-      setStatus(t('cameraStopped'), '#f59e0b');
+      setStatus(t('cameraStopped'), '#f59e0b', 'cameraStopped');
     }
 
     async function switchCam(){
@@ -1690,6 +1756,7 @@
       }
 
       applyLangUI();
+      applyScanSize();
     }
 
     async function enterFromGate(){
@@ -1706,6 +1773,7 @@
       closeGate();
 
       scannerEnabled = true;
+      focusScannerInput();
       setTimeout(focusScannerInput, 120);
       setTimeout(focusScannerInput, 450);
     }
@@ -1723,6 +1791,51 @@
       applyScanSize();
     });
 
+    // USB / Bluetooth keyboard wedge scanner support
+    document.addEventListener('keydown', (e)=>{
+      if(!scannerEnabled || !EVENT_NAME) return;
+      if(isTypingInRealField()) return;
+      if(e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const now = Date.now();
+      const diff = now - wedgeLastTs;
+      wedgeLastTs = now;
+
+      if(diff > 120){
+        wedgeBuffer = '';
+      }
+
+      if(e.key === 'Enter' || e.key === 'Tab'){
+        if(wedgeBuffer.length >= 3){
+          e.preventDefault();
+          commitWedgeBuffer();
+        }
+        return;
+      }
+
+      if(e.key && e.key.length === 1){
+        wedgeBuffer += e.key;
+        if(wedgeTimer) clearTimeout(wedgeTimer);
+
+        wedgeTimer = setTimeout(()=>{
+          if(wedgeBuffer.length >= 3) commitWedgeBuffer();
+          else resetWedgeBuffer();
+        }, 90);
+      }
+    });
+
+    scannerInput.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === 'Tab'){
+        e.preventDefault();
+        commitHiddenScannerValue();
+      }
+    });
+
+    scannerInput.addEventListener('input', ()=>{
+      if(hiddenInputTimer) clearTimeout(hiddenInputTimer);
+      hiddenInputTimer = setTimeout(commitHiddenScannerValue, 70);
+    });
+
     document.addEventListener('DOMContentLoaded', async ()=>{
       const savedW = localStorage.getItem('hs:evscan:scanw');
       if(savedW) $('#scanSize').value = savedW;
@@ -1734,6 +1847,7 @@
 
       $('#guestNameVal').textContent = t('unknownGuest');
       $('#companionsVal').textContent = t('companionsDefault');
+      $('#guestHero').textContent = '—';
 
       await ensureAnonAuth();
 
@@ -1741,6 +1855,7 @@
       applyLangUI();
       renderHist();
       setCountersFromHistory();
+      setStatus(t('ready'), '#9ca3af', 'ready');
 
       $('#scanSize').addEventListener('change', applyScanSize);
 
@@ -1784,7 +1899,10 @@
         ensureAudio();
         const c = $('#manualCode').value.trim();
         if(!c) return;
-        showLast(c, t('codeReceived'), true, 'ok');
+        showLast(c, t('codeReceived'), true, 'ok', {
+          guestName: t('unknownGuest'),
+          companions: 0
+        });
         handleRawScan(c);
       });
 
@@ -1793,19 +1911,6 @@
         localStorage.removeItem(hKey());
         renderHist();
         setCountersFromHistory();
-      });
-
-      $('#scannerInput').addEventListener('keydown', (e)=>{
-        if(e.key === 'Enter' || e.key === 'Tab'){
-          e.preventDefault();
-          if(scanTimer) clearTimeout(scanTimer);
-          commitScannerValue();
-        }
-      });
-
-      $('#scannerInput').addEventListener('input', ()=>{
-        if(scanTimer) clearTimeout(scanTimer);
-        scanTimer = setTimeout(commitScannerValue, 70);
       });
 
       setInterval(focusScannerInput, 500);
