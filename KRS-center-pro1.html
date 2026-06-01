@@ -537,6 +537,7 @@
 
           <div class="row" style="margin-top:12px">
             <button class="btn ok" onclick="saveCloudCfg()">💾 حفظ الإعدادات</button>
+            <button class="btn gold" onclick="resetCloudCfg()">↩️ إعادة الروابط الصحيحة</button>
           </div>
 
           <div class="hint" style="margin-top:10px">
@@ -745,21 +746,7 @@
     }
     const db = firebase.firestore();
     const auth = firebase.auth();
-
-    async function ensureFirebaseAuth(){
-      try{
-        if (auth.currentUser) return auth.currentUser;
-        const cred = await auth.signInAnonymously();
-        return cred.user;
-      }catch(e){
-        console.error("Firebase anonymous auth failed:", e);
-        const statusEl = document.getElementById("eventLoadStatus");
-        if(statusEl){
-          statusEl.textContent = "فشل تسجيل الدخول المجهول في Firebase. تأكد أن Anonymous Auth مفعّل في Firebase Authentication.";
-        }
-        throw e;
-      }
-    }
+    const authReady = auth.signInAnonymously().catch((e)=>{ console.warn("Anonymous auth failed", e); return null; });
 
     // =========================
     // Constants
@@ -772,8 +759,8 @@
     const LS_EVENT_CACHE = "hormez_event_cache";
 
     const LS_CLOUD_CFG = "hormez_cloud_cfg_v2";
-    const DEFAULT_UPLOAD_URL = "https://us-central1-hormez-inv.cloudfunctions.net/uploadBarcodeCard";
-    const DEFAULT_SEND_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendWelcomeAndCards";
+    const DEFAULT_UPLOAD_URL = "https://uploadbarcodecard-veaqamnndq-uc.a.run.app";
+    const DEFAULT_SEND_URL = "https://sendwelcomeandcards-veaqamnndq-uc.a.run.app";
     const DEFAULT_REMINDER_URL = "https://us-central1-hormez-inv.cloudfunctions.net/sendReminderText";
 
     const KEY_GUESTS = "hormez_guests";
@@ -840,40 +827,19 @@
     }
 
     function getCloudCfg(){
-      const normalizeEndpoint = (url, fallback) => {
-        const u = String(url || "").trim();
-        if(!u) return fallback;
-
-        // إصلاح تلقائي: روابط a.run.app سببت CORS في المتصفح، لذلك نرجع لرابط cloudfunctions.net
-        if(u.includes("uploadbarcodecard-") && u.includes(".a.run.app")) {
-          return DEFAULT_UPLOAD_URL;
-        }
-        if(u.includes("sendwelcomeandcards-") && u.includes(".a.run.app")) {
-          return DEFAULT_SEND_URL;
-        }
-
-        return u;
-      };
-
       try{
-        const o = JSON.parse(localStorage.getItem(LS_CLOUD_CFG) || "null") || {};
-        const cfg = {
-          uploadUrl: normalizeEndpoint(o.uploadUrl, DEFAULT_UPLOAD_URL),
-          sendUrl: normalizeEndpoint(o.sendUrl, DEFAULT_SEND_URL),
-          reminderUrl: normalizeEndpoint(o.reminderUrl, DEFAULT_REMINDER_URL)
+        const o = JSON.parse(localStorage.getItem(LS_CLOUD_CFG) || "null");
+        return {
+          uploadUrl: (o?.uploadUrl || DEFAULT_UPLOAD_URL).trim(),
+          sendUrl: (o?.sendUrl || DEFAULT_SEND_URL).trim(),
+          reminderUrl: (o?.reminderUrl || DEFAULT_REMINDER_URL).trim()
         };
-
-        // نحفظ التصحيح حتى لا يرجع المتصفح يستخدم الرابط القديم المخزن
-        localStorage.setItem(LS_CLOUD_CFG, JSON.stringify(cfg));
-        return cfg;
       }catch{
-        const cfg = {
+        return {
           uploadUrl: DEFAULT_UPLOAD_URL,
           sendUrl: DEFAULT_SEND_URL,
           reminderUrl: DEFAULT_REMINDER_URL
         };
-        localStorage.setItem(LS_CLOUD_CFG, JSON.stringify(cfg));
-        return cfg;
       }
     }
 
@@ -883,6 +849,18 @@
       const reminderUrl = (document.getElementById("cfgReminderUrl").value || "").trim() || DEFAULT_REMINDER_URL;
       localStorage.setItem(LS_CLOUD_CFG, JSON.stringify({ uploadUrl, sendUrl, reminderUrl }));
       alert("تم حفظ روابط Cloud ✅");
+    }
+
+    function resetCloudCfg(){
+      localStorage.setItem(LS_CLOUD_CFG, JSON.stringify({
+        uploadUrl: DEFAULT_UPLOAD_URL,
+        sendUrl: DEFAULT_SEND_URL,
+        reminderUrl: DEFAULT_REMINDER_URL
+      }));
+      document.getElementById("cfgUploadUrl").value = DEFAULT_UPLOAD_URL;
+      document.getElementById("cfgSendUrl").value = DEFAULT_SEND_URL;
+      document.getElementById("cfgReminderUrl").value = DEFAULT_REMINDER_URL;
+      alert("تمت إعادة روابط Cloud للوضع الصحيح ✅");
     }
 
     function applyTheme(mode){
@@ -896,29 +874,35 @@
     }
 
     async function postJsonStrict(url, payload){
+      const finalUrl = String(url || "").trim();
+      if(!finalUrl) throw new Error("Cloud URL فارغ. افتح بيانات الحدث واحفظ روابط Cloud API.");
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 120000);
+
+      let r;
       try{
-        const r = await fetch(url, {
+        r = await fetch(finalUrl, {
           method:"POST",
+          mode:"cors",
+          cache:"no-store",
           headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: controller.signal
         });
-
-        const raw = await r.text();
-        let j = null;
-        try { j = JSON.parse(raw); } catch(_) {}
-
-        if(!r.ok) throw new Error(`HTTP ${r.status} :: ${raw}`);
-        if(j && j.ok === false) throw new Error(`APP_ERROR :: ${raw}`);
-        return j || { raw };
       }catch(e){
-        const msg = String(e?.message || e || "");
-        if(msg.includes("Failed to fetch")){
-          throw new Error(
-            "فشل الاتصال بالفنكشن. تم ضبط الصفحة لاستخدام cloudfunctions.net. إذا استمر الخطأ تأكد من نشر functions وأن الرابط صحيح."
-          );
-        }
-        throw e;
+        clearTimeout(timer);
+        throw new Error("فشل الاتصال بالفنكشن. السبب غالباً CORS أو الرابط غير صحيح: " + finalUrl + " :: " + (e?.message || e));
       }
+
+      clearTimeout(timer);
+      const raw = await r.text();
+      let j = null;
+      try { j = JSON.parse(raw); } catch(_) {}
+
+      if(!r.ok) throw new Error(`HTTP ${r.status} :: ${raw}`);
+      if(j && j.ok === false) throw new Error(`APP_ERROR :: ${raw}`);
+      return j || { raw };
     }
 
     // =========================
@@ -1114,6 +1098,7 @@ function addManualFallbackEvent(){
 }
 
 async function refreshEventsFromFirebase(preserveSelection = true){
+  await authReady;
   const statusEl = document.getElementById("eventLoadStatus");
 
   try{
@@ -1222,7 +1207,8 @@ async function refreshEventsFromFirebase(preserveSelection = true){
   }
 }
 
-function subscribeEventsRealtime(){
+async function subscribeEventsRealtime(){
+  await authReady;
   try{
     if(eventsUnsub) eventsUnsub();
 
@@ -1971,12 +1957,6 @@ function syncEventSelectorMirror(value){
       for (let i=0; i<guests.length; i++){
         const g = guests[i];
 
-        // الإرسال الجماعي يتخطى المرسل سابقًا لحماية الضيوف من التكرار
-        if(g.inviteStatus === "sent"){
-          previouslySent++;
-          continue;
-        }
-
         try{
           g.inviteStatus = "sending";
           g.err = "";
@@ -2028,12 +2008,6 @@ function syncEventSelectorMirror(value){
       let ok=0, fail=0, previouslySent=0;
 
       for (const g of list){
-        // الإرسال المحدد يتخطى المرسل سابقًا، أما زر الضيف نفسه يسمح بالإعادة بعد تأكيد
-        if(g.inviteStatus === "sent"){
-          previouslySent++;
-          continue;
-        }
-
         try{
           g.inviteStatus = "sending";
           g.err = "";
@@ -2130,11 +2104,6 @@ function syncEventSelectorMirror(value){
       const guest = getGuestById(id);
       if(!guest) return;
 
-      if(guest.inviteStatus === "sent"){
-        const again = confirm("تم إرسال الدعوة لهذا الضيف مسبقًا.\nهل تريد إعادة إرسالها الآن؟");
-        if(!again) return;
-      }
-
       try{
         guest.inviteStatus = "sending";
         guest.err = "";
@@ -2143,16 +2112,23 @@ function syncEventSelectorMirror(value){
         const out = await sendWelcomeAndCardsCloud(guest);
 
         guest.inviteStatus = "sent";
-        guest.inviteAlreadySent = true;
+        guest.inviteAlreadySent = false;
         guest.wamid = out.templateWamid || out.textWamid || "";
         guest.err = "";
         alert("✅ تم إرسال الدعوة");
       }catch(e){
         const msg = prettyErr(e?.message || e);
 
-        guest.inviteStatus = "failed";
-        guest.err = msg;
-        alert("❌ فشل الإرسال:\n" + guest.err);
+        if (msg.includes("تم إرسالها مسبقًا")) {
+          guest.inviteStatus = "sent";
+          guest.inviteAlreadySent = false;
+          guest.err = "تم الإرسال سابقًا من السيرفر، لكن يمكنك إعادة الإرسال من اللوحة";
+          alert("ℹ️ هذه الدعوة كانت مرسلة سابقًا من جهة السيرفر");
+        } else {
+          guest.inviteStatus = "failed";
+          guest.err = msg;
+          alert("❌ فشل الإرسال:\n" + guest.err);
+        }
       }
 
       persistAll();
@@ -2533,18 +2509,13 @@ function syncEventSelectorMirror(value){
       });
     }
 
-    function forceStableCloudFunctionsUrls(){
-      const cfg = {
-        uploadUrl: DEFAULT_UPLOAD_URL,
-        sendUrl: DEFAULT_SEND_URL,
-        reminderUrl: DEFAULT_REMINDER_URL
-      };
-      localStorage.setItem(LS_CLOUD_CFG, JSON.stringify(cfg));
-      return cfg;
-    }
-
     function loadCloudCfgUI(){
-      const cfg = getCloudCfg();
+      let cfg = getCloudCfg();
+      // إذا كان المتصفح حافظ روابط cloudfunctions.net القديمة للدعوة، نرجع تلقائيًا لروابط Gen2 الصحيحة
+      if ((cfg.uploadUrl || "").includes("cloudfunctions.net/uploadBarcodeCard") || (cfg.sendUrl || "").includes("cloudfunctions.net/sendWelcomeAndCards")) {
+        cfg = { uploadUrl: DEFAULT_UPLOAD_URL, sendUrl: DEFAULT_SEND_URL, reminderUrl: DEFAULT_REMINDER_URL };
+        localStorage.setItem(LS_CLOUD_CFG, JSON.stringify(cfg));
+      }
       document.getElementById("cfgUploadUrl").value = cfg.uploadUrl;
       document.getElementById("cfgSendUrl").value = cfg.sendUrl;
       document.getElementById("cfgReminderUrl").value = cfg.reminderUrl;
@@ -2552,14 +2523,8 @@ function syncEventSelectorMirror(value){
 
     async function boot(){
       applyTheme(localStorage.getItem(LS_THEME) || "dark");
-
-      // مهم: نثبت روابط cloudfunctions.net بدل a.run.app لتفادي CORS
-      forceStableCloudFunctionsUrls();
       loadCloudCfgUI();
       bindAutoSave();
-
-      // مهم إذا كانت Firestore rules تشترط request.auth != null
-      await ensureFirebaseAuth();
 
       await refreshEventsFromFirebase(true);
 
